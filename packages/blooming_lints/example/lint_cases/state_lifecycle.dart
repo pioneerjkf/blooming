@@ -1,0 +1,67 @@
+// Canonical lint cases for State lifecycle rules:
+// `deactivate_effect_runner`.
+// Grammar: see blooming_lints/test/harness/lint_harness.dart
+// ignore_for_file: avoid_print
+
+import 'package:flutter/material.dart';
+import 'package:blooming_flutter/blooming_flutter.dart';
+
+final count = BloomController(0).bloom;
+final text = BloomController('');
+
+// =============================================================================
+// BAD
+// =============================================================================
+
+// #case deactivate_effect_runner/bad/runner-never-deactivated
+class LeakyRunner extends StatefulWidget {
+  const LeakyRunner({super.key});
+
+  @override
+  State<LeakyRunner> createState() => LeakyRunnerState();
+}
+
+class LeakyRunnerState extends State<LeakyRunner> {
+  // expect_lint: deactivate_effect_runner
+  EffectRunner? _runner; // ignore: unused_field
+
+  @override
+  void initState() {
+    super.initState();
+    _runner = count.effect(() => print(untracked(count))).run();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox();
+}
+
+// =============================================================================
+// GOOD
+// =============================================================================
+
+// #case deactivate_effect_runner/good/runner-deactivated
+class CleanRunner extends StatefulWidget {
+  const CleanRunner({super.key});
+
+  @override
+  State<CleanRunner> createState() => CleanRunnerState();
+}
+
+class CleanRunnerState extends State<CleanRunner> {
+  EffectRunner? _runner;
+
+  @override
+  void initState() {
+    super.initState();
+    _runner = count.effect(() => print(untracked(count))).run();
+  }
+
+  @override
+  void dispose() {
+    _runner?.deactivate();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox();
+}

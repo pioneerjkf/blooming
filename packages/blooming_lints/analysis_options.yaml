@@ -1,0 +1,11 @@
+include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    - build/**
+  errors:
+    comment_references: error
+
+linter:
+  rules:
+    - comment_references

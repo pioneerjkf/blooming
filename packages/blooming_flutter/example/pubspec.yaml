@@ -1,0 +1,26 @@
+name: blooming_flutter_example
+description: "An interactive showcase example application for blooming_flutter."
+publish_to: "none"
+
+resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  blooming:
+  blooming_flutter:
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  blooming_lints:
+    path: ../../blooming_lints
+  custom_lint: ^0.8.1
+
+flutter:
+  uses-material-design: true

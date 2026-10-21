@@ -1,0 +1,330 @@
+// Copyright 2023-2026 Youngjune Jeon All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
+part of '../../framework.dart';
+
+/// Internal plumbing mixin that directly bridges [BloomState] inspection getters to the
+/// underlying physical 3-State FSM container ([_read()]).
+///
+/// ---
+/// ### [CRITICAL ARCHITECTURAL & COMPILER INVARIANTS] (DO NOT MODIFY)
+///
+/// 1. **DO NOT Expose as Public (`_BloomStateMixin` MUST Remain Private)**:
+///    * This mixin is strictly internal engine plumbing designed to eliminate repetitive
+///      boilerplate across internal reactive entities (concrete nodes like `_Entry`,
+///      `_ConstantBloom`, `_ComputedBloomBase`, `_DeltaBloom`, `_CoupledBloom`, `_ManagedBloom`,
+///      `_ElementsBloom`, plus `BloomController`, `RawBloomTerminal`, `BloomCoupler`, etc.).
+///    * Note: [Bloom] itself does NOT mix in `_BloomStateMixin` on its static public surface,
+///      keeping [Bloom] instances opaque and forcing untracked reads through [untracked].
+///    * It requires direct access to the private sealed container [_BloomState<T>]. Exposing
+///      this mixin publicly would leak engine memory layout details across the library boundary.
+///
+/// 2. **`_read()` MUST Return Sealed `_BloomState<T>`, NOT `BloomState<T>`**:
+///    * **Sealed Hierarchy & Fast Dispatch Guarantee**: [_BloomState<T>] is a strictly library-private
+///      `sealed class` whose hierarchy is 100% closed to exactly three leaves:
+///      `_ValidBloomState<T>`, `_EmptyBloomState<T>`, and `_ErrorBloomState<T>`.
+///    * In the 99.999% hot path (`_ValidBloomState`), `data` is a concrete memory field.
+///      Keeping `_read()` returning the closed sealed hierarchy allows Dart AOT Type Flow Analysis (TFA)
+///      to specialize inspection paths with minimal class-ID checks and inline getters.
+///    * **Scope of Application**: `_read()` and the `via(x)` hot path require zero extra indirection.
+///      On the other hand, `via.state(x)` and `untracked.state(x)` return the live node itself (`BloomState<T>`),
+///      incurring a single node-level interface dispatch (+~0.8 ns) which eliminates aliasing inconsistency
+///      while maintaining 0 heap allocations.
+base mixin _BloomStateMixin<T> implements BloomState<T> {
+  _BloomState<T> _read();
+
+  /// The immutable snapshot representation of the current state of this [BloomState] entity.
+  @override
+  @pragma('vm:prefer-inline')
+  BloomSnapshot<T> get snapshot => _read().snapshot;
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomPhase get phase => _read().phase;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T get data => _read().data;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T? get dataOrNull => _read().dataOrNull;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T dataOrElse(T Function() fallback) => _read().dataOrElse(fallback);
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasData => _read().hasData;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get isEmpty => _read().isEmpty;
+
+  @override
+  @pragma('vm:prefer-inline')
+  Object? get emptyReason => _read().emptyReason;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasError => _read().hasError;
+
+  @override
+  @pragma('vm:prefer-inline')
+  Object get error => _read().error;
+
+  @override
+  @pragma('vm:prefer-inline')
+  StackTrace get stackTrace => _read().stackTrace;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool equals(covariant BloomState<T> other, [bool Function(T previous, T next)? equals]) =>
+      _read().equals(other, equals);
+}
+
+// =============================================================================
+// Physical State Container Hierarchy (_BloomState & 3-State FSM)
+// =============================================================================
+
+/// The internal, high-throughput state container protocol for the Bloom reactive DAG engine.
+///
+/// Unlike public immutable [BloomSnapshot]s, [_BloomState] instances are owned by their
+/// respective nodes and support in-place mutation on hot paths, achieving zero heap
+/// allocations during high-frequency tick processing.
+sealed class _BloomState<T> implements BloomState<T> {
+  const _BloomState();
+
+  @override
+  BloomPhase get phase;
+
+  /// Central factory translating caught derivation exceptions or short-circuits
+  /// into the proper [_BloomState<T>] representation.
+  @pragma('vm:prefer-inline')
+  factory _BloomState.fromCaught(Object error, StackTrace stackTrace) {
+    if (error is _ViaShortCircuit) {
+      return error.state._retype<T>();
+    }
+    return _ErrorBloomState<T>(error, stackTrace);
+  }
+
+  /// Retypes this non-data state container to an alternate type [R].
+  ///
+  /// Used during short-circuit propagation to forward Empty/Error states
+  /// without reallocating error payloads or losing diagnostic empty reasons.
+  _BloomState<R> _retype<R>();
+}
+
+/// The 99.999% hot-path state container representing valid data.
+///
+/// Supports zero-allocation in-place data mutation via [update].
+///
+/// ---
+/// ### [HOT-PATH PERFORMANCE CRITICAL GUIDELINES]
+/// When testing or matching on this container inside engine nodes:
+///
+/// 1. **DO NOT** use generic type testing on raw states:
+///    * **AVOID:** `if (state is _ValidBloomState<T>)`
+///    * **Reason**: Forces Dart VM `SubtypeTestCache` runtime lookup (10x-20x slower).
+///
+/// 2. **DO NOT** use object pattern destructuring:
+///    * **AVOID:** `if (state case _ValidBloomState(:final data))`
+///    * **AVOID:** `if (state case _ValidBloomState())`
+///    * **Reason**: Dart type inference silently injects `<T>`, re-triggering `SubtypeTestCache` (10x-20x slower).
+///
+/// 3. **PREFERRED ZERO-OVERHEAD PATTERNS**:
+///    * **When reading `data` only**: Use `if (state is _ValidBloomState)` followed by `state.data`.
+///      (Single CPU Class ID `cmp` instruction, 0 SubtypeTestCache lookups, and `state.data`
+///      statically resolves to `T` without dynamic downcasts).
+///    * **When mutating in-place (`update`)**: Use `if (state case final _ValidBloomState<T> s) { s.update(next); }`.
+///      (Ensures strict static typing on `update(T next)` while retaining in-place mutation).
+final class _ValidBloomState<T> extends _BloomState<T> {
+  _ValidBloomState(this.data);
+
+  @override
+  T data;
+
+  @pragma('vm:prefer-inline')
+  void update(T nextData) {
+    data = nextData;
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomPhase get phase => BloomPhase.valid;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasData => true;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get isEmpty => false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasError => false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  Object? get emptyReason => null;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T? get dataOrNull => data;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T dataOrElse(T Function() fallback) => data;
+
+  @override
+  @pragma('vm:prefer-inline')
+  Object get error => throw BloomSnapshotStateException('Valid', 'No error was found in this valid state.');
+
+  @override
+  @pragma('vm:prefer-inline')
+  StackTrace get stackTrace =>
+      throw BloomSnapshotStateException('Valid', 'No stackTrace was found in this valid state.');
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool equals(covariant BloomState<T> other, [bool Function(T previous, T next)? equals]) {
+    if (identical(this, other)) return true;
+    if (!other.hasData) return false;
+    final otherData = other.data;
+    if (identical(data, otherData)) return true;
+    return null != equals ? equals(data, otherData) : otherData == data;
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomSnapshot<T> get snapshot => _ValidBloomSnapshot<T>(data);
+
+  @override
+  _BloomState<R> _retype<R>() => throw StateError('Cannot retype valid state in short-circuit.');
+}
+
+/// Cold-path state container representing an uninitialized/dormant state.
+final class _EmptyBloomState<T> extends _BloomState<T> {
+  const _EmptyBloomState([this.emptyReason]);
+
+  @override
+  final Object? emptyReason;
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomPhase get phase => BloomPhase.empty;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasData => false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get isEmpty => true;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasError => false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T get data => throw BloomSnapshotExtractionException('Empty', 'No data available in this empty state.');
+
+  @override
+  @pragma('vm:prefer-inline')
+  T? get dataOrNull => null;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T dataOrElse(T Function() fallback) => fallback.call();
+
+  @override
+  @pragma('vm:prefer-inline')
+  Object get error => throw BloomSnapshotStateException('Empty', 'No error was found in this empty state.');
+
+  @override
+  @pragma('vm:prefer-inline')
+  StackTrace get stackTrace =>
+      throw BloomSnapshotStateException('Empty', 'No stackTrace was found in this empty state.');
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool equals(covariant BloomState<T> other, [bool Function(T previous, T next)? equals]) {
+    if (identical(this, other)) return true;
+    return other.isEmpty && other.emptyReason == emptyReason;
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomSnapshot<T> get snapshot => _EmptyBloomSnapshot<T>(emptyReason);
+
+  @override
+  @pragma('vm:prefer-inline')
+  _BloomState<R> _retype<R>() => _EmptyBloomState<R>(emptyReason);
+}
+
+/// Cold-path state container representing a failed computation.
+final class _ErrorBloomState<T> extends _BloomState<T> {
+  const _ErrorBloomState(this.error, [StackTrace? stackTrace]) : stackTrace = stackTrace ?? StackTrace.empty;
+
+  @override
+  final Object error;
+
+  @override
+  final StackTrace stackTrace;
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomPhase get phase => BloomPhase.error;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasData => false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get isEmpty => false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get hasError => true;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T get data => throw BloomSnapshotExtractionException(
+        'Error',
+        'This state contains an error instead of data.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+  @override
+  @pragma('vm:prefer-inline')
+  Object? get emptyReason => null;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T? get dataOrNull => null;
+
+  @override
+  @pragma('vm:prefer-inline')
+  T dataOrElse(T Function() fallback) => fallback.call();
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool equals(covariant BloomState<T> other, [bool Function(T previous, T next)? equals]) {
+    if (identical(this, other)) return true;
+    return other.hasError && other.error == error && other.stackTrace == stackTrace;
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  BloomSnapshot<T> get snapshot => _ErrorBloomSnapshot<T>(error, stackTrace);
+
+  @override
+  @pragma('vm:prefer-inline')
+  _BloomState<R> _retype<R>() => _ErrorBloomState<R>(error, stackTrace);
+}

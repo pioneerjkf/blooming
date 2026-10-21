@@ -1,0 +1,120 @@
+// Copyright 2023-2026 Youngjune Jeon All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
+import 'dart:async';
+import 'package:blooming/blooming.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('GracefulBloom & BloomGracefulExtension Comprehensive Unit Tests', () {
+    test('1. Passthrough data read and dirty notification', () {
+      final controller = BloomController<int>(10);
+      final gracefulBloom = controller.bloom.graceful();
+
+      expect(untracked(gracefulBloom), 10);
+      expect(untracked.state(gracefulBloom).hasData, isTrue);
+      expect(gracefulBloom, isA<Bloom<int>>());
+
+      int observed = 0;
+      final terminal = RawBloomTerminal(
+        gracefulBloom,
+        onInvalidated: () {
+          observed = untracked(gracefulBloom);
+        },
+      );
+      terminal.activate();
+
+      expect(terminal.data, 10);
+
+      controller.set(42);
+      expect(observed, 42);
+      expect(terminal.data, 42);
+
+      terminal.deactivate();
+    });
+
+    test('2. Retains upstream active state during grace period when terminal deactivates', () async {
+      int createCount = 0;
+      int disposeCount = 0;
+
+      // Upstream resource with strict zero-drop dormancy tracking
+      final res = managed<String>(
+        create: (_) {
+          createCount++;
+          return 'Managed-$createCount';
+        },
+        dispose: (_) {
+          disposeCount++;
+        },
+      );
+
+      // Wrap standard resource with GracefulBloom via Graceful.period
+      final gracefulBloom = res.graceful(const Graceful.period(Duration(milliseconds: 80)));
+
+      final t1 = RawBloomTerminal(gracefulBloom, onInvalidated: () {});
+      final t2 = RawBloomTerminal(gracefulBloom, onInvalidated: () {});
+
+      t1.activate();
+      expect(createCount, 0);
+      expect(t1.data, 'Managed-1');
+      expect(createCount, 1);
+      expect(disposeCount, 0);
+
+      // t1 departs: GracefulBloom drops to 0 subscribers and enters mooring harbor
+      t1.deactivate();
+      expect(disposeCount, 0); // Upstream is NOT disposed!
+
+      // Wait 30ms (< 80ms)
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(disposeCount, 0);
+
+      // Early return: t2 attaches before grace period expires
+      t2.activate();
+      expect(createCount, 1); // Not recreated
+      expect(disposeCount, 0);
+      expect(t2.data, 'Managed-1');
+
+      // Wait past original 80ms
+      await Future<void>.delayed(const Duration(milliseconds: 70));
+      expect(disposeCount, 0); // Grace timer was cancelled upon early return
+
+      // Now t2 deactivates
+      t2.deactivate();
+      expect(disposeCount, 0);
+
+      // Wait past the new grace period expiration
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(disposeCount, 1); // Cleanly disposed after grace period elapsed!
+    });
+
+    test('3. Default graceful() uses microtask deferral policy', () {
+      final res = BloomController<int>(100);
+      final defaultGraceful = res.bloom.graceful();
+
+      expect(defaultGraceful, isA<Bloom<int>>());
+      expect(untracked(defaultGraceful), 100);
+    });
+
+    test('4. graceful(Graceful.microtask) microtask deferral policy', () async {
+      int disposeCount = 0;
+      final res = managed<int>(
+        create: (_) => 999,
+        dispose: (_) => disposeCount++,
+      );
+
+      final microtaskBloom = res.graceful(Graceful.microtask);
+
+      final t = RawBloomTerminal(microtaskBloom, onInvalidated: () {});
+      t.activate();
+      expect(t.data, 999);
+
+      t.deactivate();
+      expect(disposeCount, 0); // Microtask deferred
+
+      // Flush microtasks
+      await Future<void>.delayed(Duration.zero);
+      expect(disposeCount, 1);
+    });
+  });
+}

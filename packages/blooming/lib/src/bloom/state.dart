@@ -1,0 +1,672 @@
+// Copyright 2023-2026 Youngjune Jeon All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
+part of '../framework.dart';
+
+/// The universal reactive state protocol in the Bloom framework.
+///
+/// Implemented by all state-bearing entities:
+/// - [BloomController] (and [RawBloomController], imperative state producer)
+/// - [BloomSnapshot] (Immutable point-in-time state container)
+/// - [RawBloomTerminal] (Reactive consumer sink)
+/// - [BloomCoupler] (Dynamic socket relay)
+/// - [Computation] (Class-based derivation component)
+///
+/// Note that [Bloom] itself does not implement [BloomState] directly; instead, it exposes
+/// an untracked live view via [BloomUntracked.state] or scoped tracking via [BloomVia.state].
+///
+/// Guarantees consistent state interrogation ([BloomState.phase], [BloomState.data], [BloomState.hasData], [BloomState.isEmpty],
+/// [BloomState.emptyReason], [BloomState.hasError], [BloomState.error], [BloomState.stackTrace]) and declarative pattern
+/// matching via exhaustive Dart 3 switch on [BloomState.phase] or [BloomState].
+///
+/// ## System Architectural Flow
+///
+/// ### 1. 3-State Finite State Machine
+/// ```text
+///                     ┌────────────────────────────────────────┐
+///                     │   BloomState<T> 3-State State Machine  │
+///                     └────────────────────────────────────────┘
+///                            │ (Initial uninitialized / late)
+///                            ▼
+///                     ┌──────────────┐         Value Resolved        ┌──────────────┐
+///                     │    EMPTY     │ ────────────────────────────> │     DATA     │ (hasData == true)
+///                     │  (isEmpty)   │ <──────────────────────────── │  (payload:T) │
+///                     └──────┬───────┘       .empty([reason])        └──────┬───────┘
+///                            │                                              │
+///                            │ .setError()                      .setError() │
+///                            ▼                                              ▼
+///                     ┌─────────────────────────────────────────────────────────────┐
+///                     │                            ERROR                            │ (hasError == true)
+///                     │              (payload: Object, [StackTrace])                │
+///                     └─────────────────────────────────────────────────────────────┘
+/// ```
+///
+/// ### 2. Explicit Dependency Registration vs. Raw Reads
+/// ```text
+/// [computed / Effect.via Scope]
+///             │ (Injected BloomVia parameter)
+///             ▼
+///      via(sourceBloom)         ──>  [Registers Source Edge & Returns Payload T]
+///
+/// [Outside Derivation Scope / Raw Read]
+///             │
+///      untracked(sourceBloom)   ──>  [Pure Direct Field Dereference (Zero Tracking Overhead)]
+/// ```
+///
+/// ## Key Invariants & Architectural Benefits
+/// 1. **Zero-Overhead Raw Reads & Explicit Tracking**: Reading via [untracked] or [BloomUntracked.state] directly on
+///    a node is a pure field dereference with zero tracking overhead and no dynamic tracking stack penalty.
+///    Reactive derivations explicitly declare dependencies via the injected [BloomVia] parameter (`via(node)`).
+/// 2. **3-State Exclusivity**: A [BloomState] entity is strictly in one of three mutually exclusive states:
+///    * **Data** ([BloomState.hasData] == true): Contains a valid payload of type `T` (including `null` for nullable `T?`).
+///    * **Empty** ([BloomState.isEmpty] == true): Uninitialized or dormant state with optional [BloomState.emptyReason].
+///    * **Error** ([BloomState.hasError] == true): Failure state encapsulating [BloomState.error] and optional [BloomState.stackTrace].
+/// 3. **Sound Fail-Fast Extraction**: Reading [BloomState.data] while in Empty or Error state throws [BloomSnapshotExtractionException].
+///    Use [BloomState.dataOrNull], [BloomState.dataOrElse], or native Dart 3 `switch (state.phase)` for safe exhaustive pattern matching.
+///
+/// **Warning (Anti-Pattern Prevention):**
+/// - Do NOT read untracked values directly inside a [computed] or `Effect.via` scope without wrapping in `via(...)`,
+///   as calling `untracked(node)` performs a pure untracked read.
+/// - Do NOT read [BloomState.data] without checking [BloomState.hasData] or handling fallback via [BloomState.dataOrNull] / [BloomState.dataOrElse].
+///
+/// **BAD:**
+/// ```dart
+/// // [Anti-Pattern] Reading untracked without via() bypasses dependency registration
+/// final badComputed = computed((via) {
+///   return untracked(count.bloom) * 2; // count is NOT tracked!
+/// });
+/// ```
+///
+/// **GOOD:**
+/// ```dart
+/// // [Recommended] Explicitly register dependencies through via()
+/// final goodComputed = computed((via) {
+///   return via(count.bloom) * 2; // Dynamically and explicitly registered
+/// });
+/// ```
+///
+/// ## Examples
+/// ```dart
+/// final count = BloomController(0);
+/// final doubled = computed((via) => via(count.bloom) * 2);
+///
+/// print(untracked(doubled)); // 0
+/// count.data = 5;
+/// print(untracked(doubled)); // 10
+/// ```
+///
+/// The mutually exclusive operational phase of a [BloomState].
+///
+/// Every [BloomState] (including [BloomSnapshot] and [BloomController]) deterministically
+/// exists in exactly one of these three phases at any point in time:
+/// - [valid]: The state contains a safely extractable data payload of type `T` (including `null` for nullable types).
+/// - [empty]: The state is uninitialized or dormant, awaiting prerequisites (with optional [BloomState.emptyReason]).
+/// - [error]: The state is in a failure state holding an exception and stack trace.
+///
+/// ## Pattern Matching & State Handling Idioms
+///
+/// ### 1. Exhaustive 3-Phase Matching (UI Routing / Complete Handling)
+/// For complete, type-safe handling across all possible states:
+/// ```dart
+/// final message = switch (state.phase) {
+///   BloomPhase.valid => 'Data: ${state.data}',
+///   BloomPhase.empty => 'Waiting (reason: ${state.emptyReason})',
+///   BloomPhase.error => 'Failed: ${state.error}',
+/// };
+/// ```
+///
+/// ### 2. Inline Fallback & Extraction (Avoid verbose `_ =>` wildcards)
+/// For simple 2-phase fallback or optional extraction, prefer concise ternary expressions
+/// or built-in safe extractors over wildcard switch expressions:
+/// ```dart
+/// // Idiomatic ternary check
+/// final label = state.hasData ? 'Value: ${state.data}' : 'Fallback';
+///
+/// // Or using built-in safe accessors
+/// final value = state.dataOrElse(() => defaultValue);
+/// final optional = state.dataOrNull;
+/// ```
+enum BloomPhase {
+  /// Contains a safely extractable valid data payload (accessible via [BloomState.data]).
+  valid,
+
+  /// In an uninitialized or dormant state awaiting prerequisites (optional [BloomState.emptyReason]).
+  empty,
+
+  /// In a failure state encapsulating an exception (accessible via [BloomState.error]).
+  error;
+}
+
+abstract interface class BloomState<T> {
+  /// The operational phase ([BloomPhase.valid], [BloomPhase.empty], or [BloomPhase.error]) of this state.
+  BloomPhase get phase;
+
+  /// The underlying snapshot representing this entity's current state.
+  BloomSnapshot<T> get snapshot;
+
+  /// Whether this state contains a valid, extractable data payload.
+  ///
+  /// Note that `null` is a valid data payload for nullable types (`T?`) and does not
+  /// indicate an empty state.
+  bool get hasData;
+
+  /// Whether this state is in an uninitialized or dormant state.
+  bool get isEmpty;
+
+  /// The optional reason explaining why this state is empty, or `null` if unspecified or not empty.
+  Object? get emptyReason;
+
+  /// Whether this state is in a corrupted state containing an error or exception.
+  bool get hasError;
+
+  /// Extracts the underlying data synchronously from this node or state.
+  ///
+  /// **Requires:**
+  /// * Must be in a [hasData] state.
+  ///
+  /// **Ensures:**
+  /// * Returns the underlying payload of type [T].
+  ///
+  /// **Throws:**
+  /// * [BloomSnapshotExtractionException] if [hasData] is `false` (i.e. [isEmpty] or [hasError] is `true`).
+  T get data;
+
+  /// Safely extracts the underlying data, returning `null` if not in a [hasData] state.
+  ///
+  /// **Ensures:**
+  /// * Returns the data payload of type [T] when [hasData] is `true`.
+  /// * Returns `null` when [isEmpty] or [hasError] is `true`.
+  T? get dataOrNull;
+
+  /// Safely extracts the underlying data, returning the result of [fallback] if not in a [hasData] state.
+  ///
+  /// * [fallback]: Callback invoked to produce a default value when not in a valid data state.
+  ///
+  /// **Ensures:**
+  /// * Returns the underlying data when [hasData] is `true`.
+  /// * Evaluates and returns the result of [fallback] when [isEmpty] or [hasError] is `true`.
+  T dataOrElse(T Function() fallback);
+
+  /// Extracts the underlying exception or failure object from an error state.
+  ///
+  /// **Requires:**
+  /// * Must be in a [hasError] state.
+  ///
+  /// **Ensures:**
+  /// * Returns the failure [Object].
+  ///
+  /// **Throws:**
+  /// * [BloomSnapshotStateException] if [hasError] is `false`.
+  Object get error;
+
+  /// Extracts the call stack trace at the point of failure from an error state.
+  ///
+  /// **Requires:**
+  /// * Must be in a [hasError] state.
+  ///
+  /// **Ensures:**
+  /// * Returns the associated [StackTrace].
+  ///
+  /// **Throws:**
+  /// * [BloomSnapshotStateException] if [hasError] is `false`.
+  StackTrace get stackTrace;
+
+  /// Determines if this state is equivalent to [other] using an optional custom [equals] comparator.
+  ///
+  /// * [other]: The secondary state contract entity to compare against.
+  /// * [equals]: Optional custom equality comparison callback.
+  ///
+  /// **Ensures:**
+  /// * Returns `true` if both entities hold equivalent validity states and payloads.
+  bool equals(covariant BloomState<T> other, [bool Function(T previous, T next)? equals]);
+}
+
+/// Convenience inspection and filtering methods on an [Iterable] of objects implementing [BloomState].
+///
+/// Enables fluent queries across collections of stateful entities (such as [BloomController],
+/// [RawBloomTerminal], [BloomSnapshot], or [BloomCoupler]).
+extension BloomStateCollectionExtension<E extends BloomState<dynamic>> on Iterable<E> {
+  /// Returns `true` if every entity in this collection holds a valid data payload ([BloomState.hasData] == `true`).
+  @pragma('vm:prefer-inline')
+  bool allHaveData() => every((state) => state.phase == BloomPhase.valid);
+
+  /// Returns `true` if at least one entity in this collection is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() => any((state) => state.phase == BloomPhase.empty);
+
+  /// Returns `true` if at least one entity in this collection is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() => any((state) => state.phase == BloomPhase.error);
+
+  /// Filters this collection, returning only the entities holding a valid data payload ([BloomState.hasData] == `true`).
+  @pragma('vm:prefer-inline')
+  Iterable<E> whereHasData() => wherePhase(BloomPhase.valid);
+
+  /// Filters this collection, returning only the entities in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  Iterable<E> whereEmpty() => wherePhase(BloomPhase.empty);
+
+  /// Filters this collection, returning only the entities in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  Iterable<E> whereError() => wherePhase(BloomPhase.error);
+
+  /// Filters this collection, returning only the entities matching the specified operational [phase].
+  @pragma('vm:prefer-inline')
+  Iterable<E> wherePhase(BloomPhase phase) => where((state) => state.phase == phase);
+}
+
+// =============================================================================
+// BloomState Record Tuple Extensions (Zero Heap Allocation)
+// =============================================================================
+
+/// High-performance multi-state inspection and reactive guard extensions on 2-tuples of [BloomState].
+///
+/// Provides zero-heap inspection methods ([allHaveData], [hasAnyEmpty], [hasAnyError])
+/// and precondition gating ([guarded]) across 2 [BloomState] entities.
+///
+/// ## Why Record Tuples instead of `List`
+/// While `[a, b].allHaveData()` allocates a `List` on the heap and executes dynamic
+/// iterators, `(a, b).allHaveData()` evaluates on CPU registers and the call stack with
+/// zero heap allocations and single-read eager dependency registration.
+///
+/// ## Unified Guard Pattern Across the Dynamic Triad
+/// Record tuples serve as the canonical multi-prerequisite guard for all nodes in the
+/// **Dynamic Triad** (`computed`, `switched`, `managed`):
+///
+/// ```dart
+/// // 1. Multi-input calculation (computed)
+/// final total = computed(
+///   (via) => via(a) + via(b) + via(c),
+///   guard: (via) => (via.state(a), via.state(b), via.state(c)).guarded(),
+/// );
+///
+/// // 2. Protected external resource (managed)
+/// final client = managed(
+///   create: (via) => WebSocketClient(via(url), token: via(token)),
+///   dispose: (ws) => ws.close(),
+///   guard: (via) => (via.state(url), via.state(token)).guarded('AwaitingAuthCredentials'),
+/// );
+///
+/// // 3. Gated dynamic branch switching (switched)
+/// final activeFeed = switched(
+///   (via) => via(isVip) ? vipFeed : publicFeed,
+///   guard: (via) => (via.state(session), via.state(userProfile)).guarded('AwaitingSession'),
+/// );
+/// ```
+extension BloomStateRecord2Extension on (BloomState, BloomState) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  ///
+  /// Evaluates across all tuple elements with zero heap allocations and pure field dereferences.
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData, d2 = $2.hasData;
+    return d1 && d2;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty, e2 = $2.isEmpty;
+    return e1 || e2;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError, err2 = $2.hasError;
+    return err1 || err2;
+  }
+}
+
+/// Zero-cost compile-time extensions on 3-tuples of [BloomState].
+extension BloomStateRecord3Extension on (BloomState, BloomState, BloomState) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  ///
+  /// Evaluates across all tuple elements with zero heap allocations and pure field dereferences.
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData, d2 = $2.hasData, d3 = $3.hasData;
+    return d1 && d2 && d3;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty, e2 = $2.isEmpty, e3 = $3.isEmpty;
+    return e1 || e2 || e3;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError, err2 = $2.hasError, err3 = $3.hasError;
+    return err1 || err2 || err3;
+  }
+}
+
+/// Zero-cost compile-time extensions on 4-tuples of [BloomState].
+extension BloomStateRecord4Extension on (BloomState, BloomState, BloomState, BloomState) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  ///
+  /// Evaluates across all tuple elements with zero heap allocations and pure field dereferences.
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData, d2 = $2.hasData, d3 = $3.hasData, d4 = $4.hasData;
+    return d1 && d2 && d3 && d4;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty, e2 = $2.isEmpty, e3 = $3.isEmpty, e4 = $4.isEmpty;
+    return e1 || e2 || e3 || e4;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError, err2 = $2.hasError, err3 = $3.hasError, err4 = $4.hasError;
+    return err1 || err2 || err3 || err4;
+  }
+}
+
+/// Zero-cost compile-time extensions on 5-tuples of [BloomState].
+extension BloomStateRecord5Extension on (
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  ///
+  /// Evaluates across all tuple elements with zero heap allocations and pure field dereferences.
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData;
+    final d2 = $2.hasData;
+    final d3 = $3.hasData;
+    final d4 = $4.hasData;
+    final d5 = $5.hasData;
+    return d1 && d2 && d3 && d4 && d5;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty;
+    final e2 = $2.isEmpty;
+    final e3 = $3.isEmpty;
+    final e4 = $4.isEmpty;
+    final e5 = $5.isEmpty;
+    return e1 || e2 || e3 || e4 || e5;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError;
+    final err2 = $2.hasError;
+    final err3 = $3.hasError;
+    final err4 = $4.hasError;
+    final err5 = $5.hasError;
+    return err1 || err2 || err3 || err4 || err5;
+  }
+}
+
+/// Zero-cost compile-time extensions on 6-tuples of [BloomState].
+extension BloomStateRecord6Extension on (
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData;
+    final d2 = $2.hasData;
+    final d3 = $3.hasData;
+    final d4 = $4.hasData;
+    final d5 = $5.hasData;
+    final d6 = $6.hasData;
+    return d1 && d2 && d3 && d4 && d5 && d6;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty;
+    final e2 = $2.isEmpty;
+    final e3 = $3.isEmpty;
+    final e4 = $4.isEmpty;
+    final e5 = $5.isEmpty;
+    final e6 = $6.isEmpty;
+    return e1 || e2 || e3 || e4 || e5 || e6;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError;
+    final err2 = $2.hasError;
+    final err3 = $3.hasError;
+    final err4 = $4.hasError;
+    final err5 = $5.hasError;
+    final err6 = $6.hasError;
+    return err1 || err2 || err3 || err4 || err5 || err6;
+  }
+}
+
+/// Zero-cost compile-time extensions on 7-tuples of [BloomState].
+extension BloomStateRecord7Extension on (
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData;
+    final d2 = $2.hasData;
+    final d3 = $3.hasData;
+    final d4 = $4.hasData;
+    final d5 = $5.hasData;
+    final d6 = $6.hasData;
+    final d7 = $7.hasData;
+    return d1 && d2 && d3 && d4 && d5 && d6 && d7;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty;
+    final e2 = $2.isEmpty;
+    final e3 = $3.isEmpty;
+    final e4 = $4.isEmpty;
+    final e5 = $5.isEmpty;
+    final e6 = $6.isEmpty;
+    final e7 = $7.isEmpty;
+    return e1 || e2 || e3 || e4 || e5 || e6 || e7;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError;
+    final err2 = $2.hasError;
+    final err3 = $3.hasError;
+    final err4 = $4.hasError;
+    final err5 = $5.hasError;
+    final err6 = $6.hasError;
+    final err7 = $7.hasError;
+    return err1 || err2 || err3 || err4 || err5 || err6 || err7;
+  }
+}
+
+/// Zero-cost compile-time extensions on 8-tuples of [BloomState].
+extension BloomStateRecord8Extension on (
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData;
+    final d2 = $2.hasData;
+    final d3 = $3.hasData;
+    final d4 = $4.hasData;
+    final d5 = $5.hasData;
+    final d6 = $6.hasData;
+    final d7 = $7.hasData;
+    final d8 = $8.hasData;
+    return d1 && d2 && d3 && d4 && d5 && d6 && d7 && d8;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty;
+    final e2 = $2.isEmpty;
+    final e3 = $3.isEmpty;
+    final e4 = $4.isEmpty;
+    final e5 = $5.isEmpty;
+    final e6 = $6.isEmpty;
+    final e7 = $7.isEmpty;
+    final e8 = $8.isEmpty;
+    return e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError;
+    final err2 = $2.hasError;
+    final err3 = $3.hasError;
+    final err4 = $4.hasError;
+    final err5 = $5.hasError;
+    final err6 = $6.hasError;
+    final err7 = $7.hasError;
+    final err8 = $8.hasError;
+    return err1 || err2 || err3 || err4 || err5 || err6 || err7 || err8;
+  }
+}
+
+/// Zero-cost compile-time extensions on 9-tuples of [BloomState].
+extension BloomStateRecord9Extension on (
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+  BloomState,
+) {
+  /// Returns `true` if all entities in this tuple hold a valid data payload ([BloomState.hasData] == `true`).
+  @pragma('vm:prefer-inline')
+  bool allHaveData() {
+    final d1 = $1.hasData;
+    final d2 = $2.hasData;
+    final d3 = $3.hasData;
+    final d4 = $4.hasData;
+    final d5 = $5.hasData;
+    final d6 = $6.hasData;
+    final d7 = $7.hasData;
+    final d8 = $8.hasData;
+    final d9 = $9.hasData;
+    return d1 && d2 && d3 && d4 && d5 && d6 && d7 && d8 && d9;
+  }
+
+  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
+  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
+  @pragma('vm:prefer-inline')
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyEmpty() {
+    final e1 = $1.isEmpty;
+    final e2 = $2.isEmpty;
+    final e3 = $3.isEmpty;
+    final e4 = $4.isEmpty;
+    final e5 = $5.isEmpty;
+    final e6 = $6.isEmpty;
+    final e7 = $7.isEmpty;
+    final e8 = $8.isEmpty;
+    final e9 = $9.isEmpty;
+    return e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9;
+  }
+
+  /// Returns `true` if at least one entity in this tuple is in an error state ([BloomState.hasError] == `true`).
+  @pragma('vm:prefer-inline')
+  bool hasAnyError() {
+    final err1 = $1.hasError;
+    final err2 = $2.hasError;
+    final err3 = $3.hasError;
+    final err4 = $4.hasError;
+    final err5 = $5.hasError;
+    final err6 = $6.hasError;
+    final err7 = $7.hasError;
+    final err8 = $8.hasError;
+    final err9 = $9.hasError;
+    return err1 || err2 || err3 || err4 || err5 || err6 || err7 || err8 || err9;
+  }
+}

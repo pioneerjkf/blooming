@@ -1,0 +1,19 @@
+name: blooming_workspace
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/blooming
+  - packages/blooming_extensions
+  - packages/blooming_flutter
+  - packages/blooming_flutter/example
+  - packages/blooming_lints
+  - packages/blooming_lints/example
+  - packages/blooming_test
+  - packages/blooming_flutter_test
+
+dev_dependencies:
+  custom_lint: ^0.8.1
+  blooming_lints:
+    path: packages/blooming_lints
+  lints: ^6.0.0

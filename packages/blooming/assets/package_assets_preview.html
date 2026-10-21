@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blooming Official Assets Preview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090D16;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --accent: #FB7185;
+      --accent-dark: #FF5277;
+      --accent-light: #F43F5E;
+      --sky: #38BDF8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      padding: 40px 24px;
+      line-height: 1.5;
+    }
+    .header {
+      max-width: 1400px;
+      margin: 0 auto 40px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header h1 span {
+      color: var(--accent);
+    }
+    .header .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: rgba(251, 113, 133, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(251, 113, 133, 0.3);
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+    }
+    .theme-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .theme-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+    }
+    .theme-title {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .theme-color-pill {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+    }
+    .pill-dark { background: #061525; border: 2px solid #FF5277; }
+    .pill-light { background: #FDFBF7; border: 2px solid #F43F5E; }
+    .pill-neutral { background: #27272A; border: 2px solid #FB7185; }
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+    }
+    .asset-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .asset-card.full-width {
+      grid-column: 1 / -1;
+    }
+    .asset-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .asset-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: monospace;
+    }
+    .asset-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .preview-box {
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: repeating-conic-gradient(rgba(255, 255, 255, 0.03) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+    }
+    .preview-box img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 6px;
+    }
+    .logo-preview-box {
+      padding: 32px;
+    }
+    .logo-preview-box img {
+      max-height: 56px;
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>🌸 Blooming <span>Design System Preview</span></h1>
+      <div class="subtitle">Complete unified asset suite based on official Dark (#061525), Light (#FDFBF7), and Neutral (#27272A) banners</div>
+    </div>
+    <span class="badge">Official Assets</span>
+  </div>
+
+  <div class="container">
+    <!-- DARK THEME -->
+    <section class="theme-section">
+      <div class="theme-header">
+        <div class="theme-title">
+          <span class="theme-color-pill pill-dark"></span>
+          Dark Theme (Deep Midnight Navy &amp; Vivid Peony Pink)
+        </div>
+        <span class="badge" style="background: rgba(255, 82, 119, 0.12); color: #FF5277; border-color: rgba(255, 82, 119, 0.3);">#061525 · #FF5277</span>
+      </div>
+
+      <div class="asset-grid">
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_core_banner_dark.svg</span>
+            <span class="asset-desc">Baseline Reference (1024 × 860)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_core_banner_dark.svg" alt="Dark Banner">
+          </div>
+        </div>
+
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_core_banner_compact_dark.svg</span>
+            <span class="asset-desc">Compact Banner (1024 × 460)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_core_banner_compact_dark.svg" alt="Dark Compact Banner">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_pub_card_dark.svg</span>
+            <span class="asset-desc">Original Pub Card (Squircle 984 × 984)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_pub_card_dark.svg" alt="Dark Pub Card">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_dart_pub_card_dark.svg</span>
+            <span class="asset-desc">New Dart Pub Card (Full Bleed 1000 × 1000)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_dart_pub_card_dark.svg" alt="New Dart Pub Card">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_squircle_dark.svg</span>
+            <span class="asset-desc">Squircle Icon (1000 × 400)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_squircle_dark.svg" alt="Dark Squircle">
+          </div>
+          <div class="asset-info" style="margin-top: 12px;">
+            <span class="asset-name">blooming_logo_dark.svg</span>
+            <span class="asset-desc">Vector Wordmark Logo</span>
+          </div>
+          <div class="preview-box logo-preview-box">
+            <img src="./blooming_logo_dark.svg" alt="Dark Logo">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIGHT THEME -->
+    <section class="theme-section">
+      <div class="theme-header">
+        <div class="theme-title">
+          <span class="theme-color-pill pill-light"></span>
+          Light Theme (Warm Linen &amp; Soft Rose Peony)
+        </div>
+        <span class="badge" style="background: rgba(244, 63, 94, 0.08); color: #F43F5E; border-color: rgba(244, 63, 94, 0.3);">#FDFBF7 · #F43F5E</span>
+      </div>
+
+      <div class="asset-grid">
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_core_banner_light.svg</span>
+            <span class="asset-desc">Baseline Reference (1024 × 860)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_core_banner_light.svg" alt="Light Banner">
+          </div>
+        </div>
+
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_core_banner_compact_light.svg</span>
+            <span class="asset-desc">Compact Banner (1024 × 460)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_core_banner_compact_light.svg" alt="Light Compact Banner">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_pub_card_light.svg</span>
+            <span class="asset-desc">Original Pub Card (Squircle 984 × 984)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_pub_card_light.svg" alt="Light Pub Card">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_dart_pub_card_light.svg</span>
+            <span class="asset-desc">New Dart Pub Card (Full Bleed 1000 × 1000)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_dart_pub_card_light.svg" alt="New Light Dart Pub Card">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_squircle_light.svg</span>
+            <span class="asset-desc">Squircle Icon (1000 × 400)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_squircle_light.svg" alt="Light Squircle">
+          </div>
+          <div class="asset-info" style="margin-top: 12px;">
+            <span class="asset-name">blooming_logo_light.svg</span>
+            <span class="asset-desc">Vector Wordmark Logo</span>
+          </div>
+          <div class="preview-box logo-preview-box" style="background: #FDFBF7;">
+            <img src="./blooming_logo_light.svg" alt="Light Logo">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEUTRAL THEME -->
+    <section class="theme-section">
+      <div class="theme-header">
+        <div class="theme-title">
+          <span class="theme-color-pill pill-neutral"></span>
+          Neutral Theme (Titanium Zinc &amp; Neon Rose)
+        </div>
+        <span class="badge" style="background: rgba(251, 113, 133, 0.18); color: #FB7185; border-color: rgba(251, 113, 133, 0.5);">#27272A · #FB7185</span>
+      </div>
+
+      <div class="asset-grid">
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_core_banner_neutral.svg</span>
+            <span class="asset-desc">Baseline Reference (1024 × 860)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_core_banner_neutral.svg" alt="Neutral Banner">
+          </div>
+        </div>
+
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_core_banner_compact_neutral.svg</span>
+            <span class="asset-desc">Compact Banner (1024 × 460)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_core_banner_compact_neutral.svg" alt="Neutral Compact Banner">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_pub_card_neutral.svg</span>
+            <span class="asset-desc">Original Pub Card (Squircle 984 × 984)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_pub_card_neutral.svg" alt="Neutral Pub Card">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_dart_pub_card_neutral.svg</span>
+            <span class="asset-desc">New Dart Pub Card (Full Bleed 1000 × 1000)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_dart_pub_card_neutral.svg" alt="New Neutral Dart Pub Card">
+          </div>
+        </div>
+
+        <div class="asset-card">
+          <div class="asset-info">
+            <span class="asset-name">blooming_squircle_neutral.svg</span>
+            <span class="asset-desc">Squircle Icon (1000 × 400)</span>
+          </div>
+          <div class="preview-box">
+            <img src="./blooming_squircle_neutral.svg" alt="Neutral Squircle">
+          </div>
+          <div class="asset-info" style="margin-top: 12px;">
+            <span class="asset-name">blooming_logo_neutral.svg</span>
+            <span class="asset-desc">Vector Wordmark Logo</span>
+          </div>
+          <div class="preview-box logo-preview-box" style="background: #27272A;">
+            <img src="./blooming_logo_neutral.svg" alt="Neutral Logo">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADAPTIVE LOGO -->
+    <section class="theme-section">
+      <div class="theme-header">
+        <div class="theme-title">
+          Adaptive Universal Logo (prefers-color-scheme)
+        </div>
+        <span class="badge">Adaptive</span>
+      </div>
+      <div class="asset-grid">
+        <div class="asset-card full-width">
+          <div class="asset-info">
+            <span class="asset-name">blooming_logo.svg</span>
+            <span class="asset-desc">Adapts automatically to dark/light browser and GitHub preference</span>
+          </div>
+          <div class="preview-box logo-preview-box">
+            <img src="./blooming_logo.svg" alt="Adaptive Logo">
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,309 @@
+// Copyright 2023-2026 Youngjune Jeon All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:blooming_flutter/blooming_flutter.dart';
+import '../../models/section.dart';
+import '../../sections/dual_engine_battle_section.dart';
+
+/// Sub-store for Section 13: Dual Engine Battle & Unbounded Motion
+class DualEngineBattleStore {
+  DualEngineBattleStore({DateTime Function()? clock})
+      : frozenCtrl = DurableAnimationController(
+          policy: DurabilityPolicy.resume,
+          duration: const Duration(seconds: 4),
+        ),
+        catchUpCtrl = DurableAnimationController(
+          policy: DurabilityPolicy.catchUp,
+          duration: const Duration(seconds: 4),
+          clock: clock ?? DateTime.now,
+        ),
+        unboundedFrozenCtrl = DurableAnimationController.unbounded(
+          value: 0.0,
+        ),
+        unboundedCatchUpCtrl = DurableAnimationController.unbounded(
+          policy: DurabilityPolicy.catchUp,
+          value: 0.0,
+          duration: const Duration(seconds: 6),
+          clock: clock ?? DateTime.now,
+        ),
+        repeatCatchUpCtrl = DurableAnimationController(
+          policy: DurabilityPolicy.catchUp,
+          duration: const Duration(seconds: 2),
+          clock: clock ?? DateTime.now,
+        ),
+        _isMounted = BloomController<bool>(true),
+        _isSleeping = BloomController<bool>(false),
+        _isPingPong = BloomController<bool>(false),
+        _isUnboundedMode = BloomController<bool>(false),
+        _unboundedTarget = BloomController<double>(0.0),
+        _isRepeatMounted = BloomController<bool>(true),
+        _repeatPhase = BloomController<String>('Idle'),
+        _repeatCount = BloomController<int>(4),
+        _isAutoScenarioRunning = BloomController<bool>(false) {
+    frozenCtrl.repeat();
+    catchUpCtrl.repeat();
+  }
+
+  final DurableAnimationController frozenCtrl;
+  final DurableAnimationController catchUpCtrl;
+  final DurableAnimationController unboundedFrozenCtrl;
+  final DurableAnimationController unboundedCatchUpCtrl;
+  final DurableAnimationController repeatCatchUpCtrl;
+
+  final BloomController<bool> _isMounted;
+  final BloomController<bool> _isSleeping;
+  final BloomController<bool> _isPingPong;
+  final BloomController<bool> _isUnboundedMode;
+  final BloomController<double> _unboundedTarget;
+  final BloomController<bool> _isRepeatMounted;
+  final BloomController<String> _repeatPhase;
+  final BloomController<int> _repeatCount;
+  final BloomController<bool> _isAutoScenarioRunning;
+
+  Bloom<bool> get isMounted => _isMounted.bloom;
+  Bloom<bool> get isSleeping => _isSleeping.bloom;
+  Bloom<bool> get isPingPong => _isPingPong.bloom;
+  Bloom<bool> get isUnboundedMode => _isUnboundedMode.bloom;
+  Bloom<double> get unboundedTarget => _unboundedTarget.bloom;
+  Bloom<bool> get isRepeatMounted => _isRepeatMounted.bloom;
+  Bloom<String> get repeatPhase => _repeatPhase.bloom;
+  Bloom<int> get repeatCount => _repeatCount.bloom;
+  Bloom<bool> get isAutoScenarioRunning => _isAutoScenarioRunning.bloom;
+
+  void setRepeatCount(int value) {
+    if (_repeatCount.data != value) {
+      _repeatCount.set(value);
+      resetRepeat();
+    }
+  }
+
+  /// Cached reactive bridge nodes observing controller progress (zero allocation in build).
+  late final Bloom<double> frozenProgress = frozenCtrl.observe();
+  late final Bloom<double> catchUpProgress = catchUpCtrl.observe();
+  late final Bloom<double> unboundedFrozenProgress =
+      unboundedFrozenCtrl.observe();
+  late final Bloom<double> unboundedCatchUpProgress =
+      unboundedCatchUpCtrl.observe();
+
+  void toggleMount() => _isMounted.set(!_isMounted.data);
+  void setMounted(bool value) => _isMounted.set(value);
+  void setUnboundedMode(bool value) => _isUnboundedMode.set(value);
+
+  void togglePingPong() {
+    final next = !_isPingPong.data;
+    _isPingPong.set(next);
+    frozenCtrl.repeat(reverse: next);
+    catchUpCtrl.repeat(reverse: next);
+  }
+
+  void runUnboundedJump(double target) {
+    _unboundedTarget.set(target);
+    unboundedFrozenCtrl.animateTo(
+      target,
+      duration: const Duration(seconds: 6),
+      curve: Curves.linear,
+    );
+    unboundedCatchUpCtrl.animateTo(
+      target,
+      duration: const Duration(seconds: 6),
+      curve: Curves.linear,
+    );
+  }
+
+  void resetUnboundedToZero() {
+    _unboundedTarget.set(0.0);
+    unboundedFrozenCtrl.animateTo(
+      0.0,
+      duration: const Duration(seconds: 4),
+      curve: Curves.linear,
+    );
+    unboundedCatchUpCtrl.animateTo(
+      0.0,
+      duration: const Duration(seconds: 4),
+      curve: Curves.linear,
+    );
+  }
+
+  Future<void> triggerSimulatedSleep(int seconds) async {
+    if (_isSleeping.data) return;
+    _isSleeping.set(true); // Automatically unmounts via sleepMountSyncEffect
+
+    await Future<void>.delayed(Duration(seconds: seconds));
+
+    if (_isSleeping.data) {
+      _isSleeping.set(false); // Automatically remounts via sleepMountSyncEffect
+    }
+  }
+
+  void cancelSleep() {
+    _isSleeping.set(false); // Automatically remounts via sleepMountSyncEffect
+  }
+
+  void startRepeat({int? count, bool reverse = true}) {
+    final effectiveCount = count ?? _repeatCount.data;
+    _isAutoScenarioRunning.set(false);
+    _isRepeatMounted.set(true);
+    final totalSec = effectiveCount * 2.0;
+    final rounds = effectiveCount / 2;
+    final roundStr = rounds % 1 == 0 ? '${rounds.toInt()}' : '$rounds';
+    _repeatPhase.set(
+      'Active: $effectiveCount legs ($roundStr round trips / ${totalSec.toStringAsFixed(1)}s budget)',
+    );
+    repeatCatchUpCtrl.reset();
+    repeatCatchUpCtrl
+        .repeat(
+          count: effectiveCount,
+          reverse: reverse,
+          period: const Duration(seconds: 2),
+        )
+        .orCancel
+        .then((_) {
+      if (!_isAutoScenarioRunning.data) {
+        _repeatPhase.set(
+          'Completed: $effectiveCount legs ($roundStr round trips) terminated on schedule',
+        );
+      }
+    }).catchError((_) {});
+  }
+
+  void hibernateRepeat() {
+    if (!_isRepeatMounted.data) return;
+    _isRepeatMounted.set(false);
+    _repeatPhase.set(
+        'Dormant: Unmounted (Compensating wall-clock time in background...)');
+  }
+
+  void wakeRepeat() {
+    if (_isRepeatMounted.data) return;
+    _isRepeatMounted.set(true);
+    _repeatPhase
+        .set('Awakened: Remounted (Executing remaining deducted budget live)');
+  }
+
+  void resetRepeat() {
+    _isAutoScenarioRunning.set(false);
+    repeatCatchUpCtrl.reset();
+    _isRepeatMounted.set(true);
+    _repeatPhase.set('Idle');
+  }
+
+  Future<void> runAutoScenario() async {
+    if (_isAutoScenarioRunning.data) return;
+    _isAutoScenarioRunning.set(true);
+    final count = _repeatCount.data;
+    try {
+      startRepeat(count: count, reverse: true);
+
+      if (count == 2) {
+        // Count 2: 1 round trip (4.0s budget)
+        // 1. Run for 1.0s active (0.5 legs forward, value reaches ~0.5)
+        _repeatPhase.set(
+            'Step 1 (0-1s): Active run for 1.0s (Leg 1 forward 50% consumed)');
+        await Future<void>.delayed(const Duration(milliseconds: 1000));
+        if (!_isAutoScenarioRunning.data) return;
+
+        // 2. Unmount into dormancy for 1.0s (+0.5 legs in dormancy, finishes leg 1 at 1.0)
+        hibernateRepeat();
+        _repeatPhase.set(
+            'Step 2 (1-2s): Dormant for 1.0s -> Background finishes Leg 1 (forward)!');
+        await Future<void>.delayed(const Duration(milliseconds: 1000));
+        if (!_isAutoScenarioRunning.data) return;
+
+        // 3. Remount & Wake to resume remaining budget (leg 2: 1.0 -> 0.0 in reverse, 2.0s duration)
+        wakeRepeat();
+        _repeatPhase.set(
+            'Step 3 (2-4s): Awakened -> Remaining Leg 2 (reverse) runs live to 4.0s cleanly!');
+
+        // 4. Wait for completion at 4.0s total lifecycle
+        await Future<void>.delayed(const Duration(milliseconds: 2200));
+        if (!_isAutoScenarioRunning.data) return;
+        _repeatPhase.set(
+            'Finished! 2 legs = 1 round trip / 4.0s budget terminated accurately.');
+      } else {
+        // Count >= 4 (Default: 4 legs = 2 round trips = 8.0s budget)
+        // 1. Run for 1.5s active (0.75 legs forward, value reaches ~0.75)
+        _repeatPhase
+            .set('Step 1 (0-1.5s): Active run (Leg 1 forward 75% consumed)');
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        if (!_isAutoScenarioRunning.data) return;
+
+        // 2. Unmount into dormancy for 2.0s
+        hibernateRepeat();
+        _repeatPhase.set(
+            'Step 2 (1.5-3.5s): Dormant for 2.0s -> Completes Round 1 in background and turns around!');
+        await Future<void>.delayed(const Duration(milliseconds: 2000));
+        if (!_isAutoScenarioRunning.data) return;
+
+        // 3. Remount & Wake to resume remaining budget
+        wakeRepeat();
+        _repeatPhase.set(
+            'Step 3 (3.5-8s): Awakened -> Remaining legs run live, cleanly terminating at 8.0s!');
+
+        final remainingMs = (count * 2000) - 3500 + 200;
+        await Future<void>.delayed(Duration(milliseconds: remainingMs));
+        if (!_isAutoScenarioRunning.data) return;
+        final rounds = count / 2;
+        final roundStr = rounds % 1 == 0 ? '${rounds.toInt()}' : '$rounds';
+        _repeatPhase.set(
+            'Finished! $count legs = $roundStr round trips / ${(count * 2).toStringAsFixed(1)}s budget terminated accurately.');
+      }
+    } finally {
+      _isAutoScenarioRunning.set(false);
+    }
+  }
+
+  ShowcaseSection get section => ShowcaseSection(
+        id: '13_dual_engine_battle',
+        number: '13',
+        title: 'Dual Engine Battle & Unbounded Motion',
+        subtitle:
+            'Frozen vs Catch-Up wall-clock time warp & unbounded coordinates (-1000 ~ +5000)',
+        badge: 'Time Warp & Unbounded',
+        icon: Icons.compare_arrows_rounded,
+        codeSnippet: '''
+// =============================================================================
+// [1. Resume: Freezes on unmount, resumes from exact position]
+// =============================================================================
+final frozenCtrl = DurableAnimationController(
+  policy: DurabilityPolicy.resume,
+  duration: const Duration(seconds: 4),
+)..repeat();
+
+// =============================================================================
+// [2. CatchUp: Calculates dormant wall-clock elapsed time on remount]
+// =============================================================================
+final catchUpCtrl = DurableAnimationController(
+  policy: DurabilityPolicy.catchUp,
+  duration: const Duration(seconds: 4),
+)..repeat();
+
+// =============================================================================
+// [3. Unbounded Coordinates: Continuous infinite space (-∞ ~ +∞)]
+// =============================================================================
+final unboundedCtrl = DurableAnimationController.unbounded(
+  policy: DurabilityPolicy.catchUp,
+  value: 0.0,
+);
+unboundedCtrl.animateTo(5000.0, duration: const Duration(seconds: 6));''',
+        highlights: const [
+          'Engine Battle: Side-by-side comparison of Frozen and CatchUp controllers.',
+          'DurabilityPolicy.resume: Freezes on unmount, seamlessly resumes on remount.',
+          'DurabilityPolicy.catchUp: Compensates wall-clock elapsed time while unmounted.',
+          'Unbounded Motion: Infinite coordinate navigation (-1000.0 ~ +5000.0) without range clamping.',
+        ],
+        roadmapTree: '''
+[Engine Selection Roadmap]
+ ├── DurabilityPolicy.resume          (Pauses on unmount, resumes from frozen value on remount)
+ │    └── Ideal for: Tabs, BottomSheets, Modal Dialogs, Scroll-Out Lists
+ │
+ ├── DurabilityPolicy.catchUp         (Calculates dormant wall-clock elapsed time on remount)
+ │    └── Ideal for: Radar Scanners, Clocks, Planetary Orbits, Periodic Pollers
+ │
+ └── DurableAnimationController.unbounded (Infinite coordinate spaces without [0.0, 1.0] limits)
+''',
+        builder: () => DualEngineBattleSectionDemo(),
+      );
+}

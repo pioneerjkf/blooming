@@ -1,0 +1,357 @@
+// Copyright 2023-2026 Youngjune Jeon All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
+part of '../../framework.dart';
+
+// =============================================================================
+// Canonical Functor Cascade Extensions
+// =============================================================================
+
+/// Extensions on a single [Bloom] providing the [build] and [listen] functor entry points.
+///
+/// ## Canonical Invocation & Cascade Hierarchy
+/// ```text
+/// bloom
+///  ├── .build                    ((context, data) => ...)       [Declarative UI Rendering]
+///  │    ├── .child               ((context, data, child) => ..., child: W)
+///  │    ├── .children            ((context, data, children) => ..., children: [...])
+///  │    └── .async               (data: ..., loading: ..., error: ..., empty: ...)
+///  │
+///  └── .listen                   ((context, state) => ...)      [0-Rebuild Side Effects]
+///       ├── .debounce            (duration, (context, state) => ...)
+///       └── .throttle            (duration, (context, state) => ...)
+/// ```
+///
+/// Built using Dart extension types (`extension type const`), `bloom.build` and `bloom.listen` incur
+/// **zero runtime allocation overhead** while providing a fully type-safe, fluent, and canonical API for
+/// inline reactive UI composition and 0-rebuild side-effect dispatch.
+///
+/// ## 2-Phase LPDAG & Terminal Invariant Architecture
+/// Unlike [composed] which uses [RawComputedTerminal] for dynamic multi-dependency discovery,
+/// `bloom.build` provisions a dedicated 1:1 [RawBloomTerminal] hosted inside an internal [ComponentElement]
+/// (`_InlineSingleBloomElement`, etc.) mixing in `_BloomTerminalElementMixin<T>`.
+///
+/// ## System Architectural Flow
+/// ```text
+/// [ Upstream Bloom<T> Mutates ]
+///              │
+///              │ (Phase 1: 0-Compute Push-Dirty Invalidation)
+///              ▼
+/// [ RawBloomTerminal<T>.onInvalidated: markNeedsBuild() ]
+///              │
+///              │ (Flutter Render Pipeline Scheduling)
+///              ▼
+/// [ _InlineSingleBloomElement.build() ]
+///              │
+///              ├─► .build()        ──► Evaluates builder(context, untracked(bloom))
+///              ├─► .build.child()  ──► If hasData: builder(..., child) | Else: returns child (fallback)
+///              └─► .build.children ──► If hasData: builder(..., children) | Else: returns SizedBox.shrink()
+/// ```
+///
+/// ## Key Invariants & Architectural Benefits
+/// 1. **Zero-Copy Auto-Healing Gateway**: Directly routes dirty invalidation pulses to [Element.markNeedsBuild]
+///    without allocating intermediate tracking collections.
+/// 2. **Empty/Error State Fallback**: When [BloomState.hasData] is `false`, builder variants with a static
+///    `child` parameter return the fallback `child` (or [SizedBox.shrink] for children), protecting
+///    against extraction exceptions during uninitialized states.
+/// 3. **Subtree Isolation**: Static subtrees passed via `child` or `children` are pre-constructed and
+///    bypass re-evaluation when the enclosing reactive element rebuilds.
+/// 4. **Zero Runtime Allocation**: Backed by `extension type const`, dispatching directly to dedicated 1:1 elements.
+///
+/// **Warning (Anti-Pattern Prevention):**
+/// - Avoid instantiating static child trees inside the builder closure, which forces them to rebuild on every emission.
+///   Pass static subtrees to the `child:` or `children:` parameter to isolate them from rebuilds.
+/// - When invoking `bloom.build((context, data) => ...)`, ensure this [Bloom] node contains valid data.
+///   If the target node is uninitialized or in an error state, extracting data throws [BloomSnapshotExtractionException].
+///   Use `bloom.build.child` or [BloomAsyncBuilder] for safe uninitialized/asynchronous state handling.
+///
+/// **BAD:**
+/// ```dart
+/// // [Anti-Pattern] Static icon/chart recreated on every emission
+/// counterBloom.build(
+///   (context, count) => Row(children: [Text('$count'), const HeavyChartWidget()]),
+/// );
+/// ```
+///
+/// **GOOD:**
+/// ```dart
+/// // [Recommended] Static subtree cached and passed via child parameter
+/// counterBloom.build.child(
+///   (context, count, child) => Row(children: [Text('$count'), child]),
+///   child: const HeavyChartWidget(),
+/// );
+/// ```
+extension BloomFlutterExtension<T> on Bloom<T> {
+  /// Entry point for inline reactive build functors.
+  @pragma('vm:prefer-inline')
+  BloomBuildFunctor<T> get build => BloomBuildFunctor._(this);
+
+  /// Entry point for inline reactive side-effect listener functors.
+  @pragma('vm:prefer-inline')
+  BloomListenFunctor<T> get listen => BloomListenFunctor._(this);
+}
+
+/// Zero-cost compile-time functor for [BloomFlutterExtension.build].
+extension type const BloomBuildFunctor<T>._(Bloom<T> _bloom) {
+  /// Creates an inline reactive widget bound 1:1 to this [Bloom<T>] node.
+  ///
+  /// * [builder]: Pure widget construction callback receiving [BuildContext] and current data payload.
+  /// * [key]: Optional widget key.
+  ///
+  /// **Requires:**
+  /// * [builder] must be a pure widget construction callback.
+  /// * [_bloom] should contain valid data of type [T]. If evaluated while [_bloom] has no data,
+  ///   extracting data throws [BloomSnapshotExtractionException]. For uninitialized or asynchronous states,
+  ///   use [child] or [BloomAsyncBuilder].
+  ///
+  /// **Ensures:**
+  /// * Returns a lightweight reactive [Widget] bound 1:1 to [_bloom].
+  ///
+  /// ## Examples
+  /// ```dart
+  /// countBloom.build((context, count) => Text('Count: $count'));
+  /// ```
+  @pragma('vm:prefer-inline')
+  Widget call(
+    Widget Function(BuildContext context, T data) builder, {
+    Key? key,
+  }) =>
+      _InlineSingleBloomWidget<T>(
+        key: key,
+        bloom: _bloom,
+        builder: builder,
+      );
+
+  /// Creates an inline reactive widget with an isolated static [child] subtree and fallback protection.
+  ///
+  /// When [_bloom] contains valid data, invokes [builder] with [BuildContext], data payload, and [child].
+  /// When [_bloom] does not contain data ([BloomState.hasData] == false), returns [child] directly,
+  /// protecting against extraction exceptions during uninitialized states.
+  ///
+  /// * [builder]: Reactive builder callback receiving [BuildContext], current data payload, and cached [child].
+  /// * [child]: The static subtree to preserve across rebuilds, also used as fallback when uninitialized.
+  /// * [key]: Optional widget key.
+  ///
+  /// **Requires:**
+  /// * [builder] must be a pure widget construction callback.
+  ///
+  /// **Ensures:**
+  /// * Returns a reactive [Widget] isolating [child] from rebuilds and using [child] as uninitialized fallback.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// userBloom.build.child(
+  ///   (context, user, child) => Row(children: [Text(user.name), child]),
+  ///   child: const HeavyAvatar(),
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Widget child(
+    Widget Function(BuildContext context, T data, Widget child) builder, {
+    required Widget child,
+    Key? key,
+  }) =>
+      _InlineSingleBloomWithChildWidget<T>(
+        key: key,
+        bloom: _bloom,
+        builder: builder,
+        child: child,
+      );
+
+  /// Creates an inline reactive widget with isolated static [children] subtrees and fallback protection.
+  ///
+  /// When [_bloom] contains valid data, invokes [builder] with [BuildContext], data payload, and [children].
+  /// When [_bloom] does not contain data ([BloomState.hasData] == false), returns [SizedBox.shrink],
+  /// protecting against extraction exceptions during uninitialized states.
+  ///
+  /// * [builder]: Reactive builder callback receiving [BuildContext], current data payload, and cached [children].
+  /// * [children]: The static subtrees to preserve across rebuilds.
+  /// * [key]: Optional widget key.
+  ///
+  /// **Requires:**
+  /// * [builder] must be a pure widget construction callback.
+  ///
+  /// **Ensures:**
+  /// * Returns a reactive [Widget] isolating [children] from rebuilds.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// menuBloom.build.children(
+  ///   (context, menu, children) => Column(children: [Header(menu.title), ...children]),
+  ///   children: const [HeavyChart(), HeavyFooter()],
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Widget children(
+    Widget Function(BuildContext context, T data, List<Widget> children)
+        builder, {
+    required List<Widget> children,
+    Key? key,
+  }) =>
+      _InlineSingleBloomWithChildrenWidget<T>(
+        key: key,
+        bloom: _bloom,
+        builder: builder,
+        children: children,
+      );
+}
+
+// =============================================================================
+// BloomListenFunctor (Unary Side-Effect Terminal Functor)
+// =============================================================================
+
+/// Zero-cost compile-time functor for [BloomFlutterExtension.listen].
+extension type const BloomListenFunctor<T>._(Bloom<T> _target) {
+  /// Listens to this [Bloom<T>] node and executes [action] when its state mutates without rebuilding.
+  ///
+  /// Composes a high-performance unary [Effect] via [EffectRunner] internally, deferring executions
+  /// to the microtask queue to shield the Flutter build phase from re-entrancy conflicts.
+  ///
+  /// * [action]: Side-effect callback receiving [BuildContext] and current state payload.
+  /// * [key]: Optional widget key.
+  /// * [guard]: Optional boolean predicate gating execution. When false, execution is skipped.
+  /// * [take]: Optional maximum number of times this listener may execute before automatic deactivation.
+  /// * [onUncaughtError]: Optional error boundary callback for uncaught exceptions.
+  /// * [child]: Optional static child widget preserved across reactive notifications.
+  ///
+  /// **Requires:**
+  /// * [action] must be a non-null side-effect callback.
+  /// * [take], if provided, must be greater than or equal to 0.
+  ///
+  /// **Ensures:**
+  /// * Returns a [BloomListener] attached 1:1 to [_target].
+  /// * Guarantees 0 rebuilds of the widget tree (Rebuild Count: 0).
+  /// * Skips initial evaluation upon mount (0-Run on Mount Invariant); executes strictly upon subsequent mutations.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// counter.bloom.listen(
+  ///   (context, count) => showToast(context, 'Count: $count'),
+  ///   guard: (count) => count > 5,
+  ///   child: const MainContent(),
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Widget call(
+    BloomListenerActionCallback<T> action, {
+    Key? key,
+    bool Function(T state)? guard,
+    int? take,
+    BloomListenerUncaughtErrorCallback? onUncaughtError,
+    Widget? child,
+  }) =>
+      BloomListener<T>(
+        _target,
+        action,
+        key: key,
+        guard: guard,
+        take: take,
+        onUncaughtError: onUncaughtError,
+        child: child,
+      );
+
+  /// Delays [action] execution until mutations on this node have ceased for at least [duration].
+  ///
+  /// * [duration]: The silence window duration required before executing [action].
+  /// * [action]: Side-effect callback receiving [BuildContext] and current state payload.
+  /// * [key]: Optional widget key.
+  /// * [leading]: Whether to execute [action] immediately on the first mutation. Defaults to `false`.
+  /// * [trailing]: Whether to execute [action] on the trailing edge after silence elapses. Defaults to `true`.
+  /// * [guard]: Optional boolean predicate gating execution.
+  /// * [take]: Optional maximum number of times this listener may execute before automatic deactivation.
+  /// * [onUncaughtError]: Optional error boundary callback for uncaught exceptions.
+  /// * [child]: Optional static child widget preserved across reactive notifications.
+  ///
+  /// **Requires:**
+  /// * [duration] must be a non-negative [Duration].
+  /// * At least one of [leading] or [trailing] must be `true`.
+  /// * [take], if provided, must be greater than or equal to 0.
+  ///
+  /// **Ensures:**
+  /// * Returns a debounced [BloomListener] with guaranteed 0-rebuild execution.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// searchBloom.listen.debounce(
+  ///   const Duration(milliseconds: 300),
+  ///   (context, query) => fetchSuggestions(context, query),
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Widget debounce(
+    Duration duration,
+    BloomListenerActionCallback<T> action, {
+    Key? key,
+    bool leading = false,
+    bool trailing = true,
+    bool Function(T state)? guard,
+    int? take,
+    BloomListenerUncaughtErrorCallback? onUncaughtError,
+    Widget? child,
+  }) =>
+      BloomListener<T>.debounce(
+        _target,
+        action,
+        duration: duration,
+        key: key,
+        leading: leading,
+        trailing: trailing,
+        guard: guard,
+        take: take,
+        onUncaughtError: onUncaughtError,
+        child: child,
+      );
+
+  /// Suppresses rapid consecutive mutations on this node, executing [action] at most once per [duration].
+  ///
+  /// * [duration]: The minimum time interval between consecutive executions.
+  /// * [action]: Side-effect callback receiving [BuildContext] and current state payload.
+  /// * [key]: Optional widget key.
+  /// * [leading]: Whether to execute [action] on the leading edge. Defaults to `true`.
+  /// * [trailing]: Whether to execute [action] on the trailing edge if mutations occurred during the window. Defaults to `true`.
+  /// * [guard]: Optional boolean predicate gating execution.
+  /// * [take]: Optional maximum number of times this listener may execute before automatic deactivation.
+  /// * [onUncaughtError]: Optional error boundary callback for uncaught exceptions.
+  /// * [child]: Optional static child widget preserved across reactive notifications.
+  ///
+  /// **Requires:**
+  /// * [duration] must be a non-negative [Duration].
+  /// * At least one of [leading] or [trailing] must be `true`.
+  /// * [take], if provided, must be greater than or equal to 0.
+  ///
+  /// **Ensures:**
+  /// * Returns a throttled [BloomListener] with guaranteed 0-rebuild execution.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// scrollBloom.listen.throttle(
+  ///   const Duration(milliseconds: 100),
+  ///   (context, offset) => triggerHaptic(context),
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Widget throttle(
+    Duration duration,
+    BloomListenerActionCallback<T> action, {
+    Key? key,
+    bool leading = true,
+    bool trailing = true,
+    bool Function(T state)? guard,
+    int? take,
+    BloomListenerUncaughtErrorCallback? onUncaughtError,
+    Widget? child,
+  }) =>
+      BloomListener<T>.throttle(
+        _target,
+        action,
+        duration: duration,
+        key: key,
+        leading: leading,
+        trailing: trailing,
+        guard: guard,
+        take: take,
+        onUncaughtError: onUncaughtError,
+        child: child,
+      );
+}
