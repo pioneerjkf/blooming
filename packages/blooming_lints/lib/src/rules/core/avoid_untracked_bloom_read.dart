@@ -237,25 +237,36 @@ class AvoidUntrackedBloomRead extends DartLintRule {
     return false;
   }
 
-  static bool _isExpressionTrackedByVia(Expression? expr) {
+  /// Maximum variable alias resolution hops permitted before aborting to prevent
+  /// infinite recursion on self-referential or cyclic variable assignments.
+  static const _maxAliasHops = 4;
+
+  static bool _isExpressionTrackedByVia(Expression? expr, [int aliasHops = 0]) {
     if (expr == null) return false;
     final unwrapped = expr.unParenthesized;
     if (BloomTypeChecker.isBloomViaInvocation(unwrapped)) return true;
-    if (_isAliasOfViaInvocation(unwrapped)) return true;
+
+    // Only variable alias resolution hops consume aliasHops budget.
+    if (aliasHops < _maxAliasHops &&
+        _isAliasOfViaInvocation(unwrapped, aliasHops + 1)) {
+      return true;
+    }
+
+    // Syntactic AST descent (target, prefix) does not cycle, so it retains current aliasHops.
     if (unwrapped is PropertyAccess) {
-      return _isExpressionTrackedByVia(unwrapped.target);
+      return _isExpressionTrackedByVia(unwrapped.target, aliasHops);
     }
     if (unwrapped is PrefixedIdentifier) {
-      return _isExpressionTrackedByVia(unwrapped.prefix);
+      return _isExpressionTrackedByVia(unwrapped.prefix, aliasHops);
     }
     if (unwrapped is MethodInvocation) {
-      return _isExpressionTrackedByVia(unwrapped.target);
+      return _isExpressionTrackedByVia(unwrapped.target, aliasHops);
     }
     return false;
   }
 
-  static bool _isAliasOfViaInvocation(Expression? expr) {
-    if (expr is! SimpleIdentifier) return false;
+  static bool _isAliasOfViaInvocation(Expression? expr, [int aliasHops = 0]) {
+    if (expr is! SimpleIdentifier || aliasHops >= _maxAliasHops) return false;
     final element = expr.element;
 
     // Search the enclosing root FunctionBody to support local variable lookups across closures
@@ -265,16 +276,21 @@ class AvoidUntrackedBloomRead extends DartLintRule {
     bool isTracked = false;
     if (element != null) {
       body.accept(_VariableFinder(element, (decl) {
-        if (decl.initializer != null &&
-            _isExpressionTrackedByVia(decl.initializer)) {
+        if (!isTracked &&
+            decl.initializer != null &&
+            _isExpressionTrackedByVia(decl.initializer, aliasHops)) {
           isTracked = true;
         }
       }));
     } else {
       final targetName = expr.name;
+      final exprOffset = expr.offset;
       body.accept(_UnresolvedVariableFinder(targetName, (decl) {
-        if (decl.initializer != null &&
-            _isExpressionTrackedByVia(decl.initializer)) {
+        // Enforce lexical order for unresolved symbols: declaration must precede usage
+        if (!isTracked &&
+            decl.offset < exprOffset &&
+            decl.initializer != null &&
+            _isExpressionTrackedByVia(decl.initializer, aliasHops)) {
           isTracked = true;
         }
       }));

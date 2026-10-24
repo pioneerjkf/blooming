@@ -382,5 +382,27 @@ class MyWidget extends BloomWidget {
 
       expect(visitor.untrackedNodes.length, equals(0));
     });
+
+    test('safely terminates on cyclic and self-referential variable aliases without stack overflow', () {
+      final unit = parseString(content: '''
+void testFunc() {
+  final doubled = computed((via) {
+    // Direct self-reference
+    final xBloom = xBloom.data;
+
+    // Mutual cyclic reference
+    final aBloom = bBloom.data;
+    final bBloom = aBloom.data;
+
+    return xBloom + aBloom;
   });
 }
+''').unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      expect(() => unit.accept(visitor), returnsNormally);
+      expect(visitor.untrackedNodes.length, greaterThanOrEqualTo(1));
+    });
+  });
+}
+
