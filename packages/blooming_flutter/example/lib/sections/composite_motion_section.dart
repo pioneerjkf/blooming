@@ -294,230 +294,234 @@ base class _OrigamiMorphStage extends BloomWidget {
   Widget build(BuildContext context, BloomVia via) {
     final store = via.of<CompositeMotionStore>(context);
     final masterCtrl = via(store.masterCtrl);
-    return composed.animate(masterCtrl, (context, via, ctrl) {
-      // 1. Read isolation filter flags
-      final enableSlideElevation = via(store.enableSlideElevation);
-      final enable3DRotation = via(store.enable3DRotation);
-      final enableBorderRadius = via(store.enableBorderRadius);
-      final enableColorGradient = via(store.enableColorGradient);
-      final enableElasticBadge = via(store.enableElasticBadge);
-      final enableCascade = via(store.enableStaggeredCascade);
+    return composed.animate.child(
+      masterCtrl,
+      (context, via, ctrl, badge) {
+        // 1. Read isolation filter flags
+        final enableSlideElevation = via(store.enableSlideElevation);
+        final enable3DRotation = via(store.enable3DRotation);
+        final enableBorderRadius = via(store.enableBorderRadius);
+        final enableColorGradient = via(store.enableColorGradient);
+        final enableElasticBadge = via(store.enableElasticBadge);
+        final enableCascade = via(store.enableStaggeredCascade);
 
-      // -----------------------------------------------------------------------
-      // Sub-Animation Pipeline
-      // -----------------------------------------------------------------------
-      // Sub-Motion 1: Staggered Slide & Elevation (0.00 ~ 0.35, easeOutBack)
-      final slideOffset = enableSlideElevation
-          ? Tween<Offset>(
-              begin: const Offset(0, 0.35),
-              end: Offset.zero,
-            )
-              .animate(CurvedAnimation(
-                parent: ctrl.view,
-                curve: const Interval(0.00, 0.35, curve: Curves.easeOutBack),
-              ))
-              .value
-          : Offset.zero;
-
-      final elevation = enableSlideElevation
-          ? Tween<double>(begin: 2.0, end: 18.0)
-              .animate(CurvedAnimation(
-                parent: ctrl.view,
-                curve: const Interval(0.05, 0.40, curve: Curves.easeOut),
-              ))
-              .value
-          : 6.0;
-
-      // Sub-Motion 2: 3D Perspective Rotation & Tilt (0.15 ~ 0.55, easeInOutCubic)
-      final tiltY = enable3DRotation
-          ? Tween<double>(begin: -0.22, end: 0.0)
-              .animate(CurvedAnimation(
-                parent: ctrl.view,
-                curve: const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
-              ))
-              .value
-          : 0.0;
-
-      final tiltX = enable3DRotation
-          ? Tween<double>(begin: 0.12, end: 0.0)
-              .animate(CurvedAnimation(
-                parent: ctrl.view,
-                curve: const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
-              ))
-              .value
-          : 0.0;
-
-      // Sub-Motion 3: Shape & Corner Radius Morph (0.30 ~ 0.70, easeInOutBack)
-      final borderRadius = enableBorderRadius
-          ? (BorderRadiusTween(
-                begin: BorderRadius.circular(44),
-                end: BorderRadius.circular(16),
+        // -----------------------------------------------------------------------
+        // Sub-Animation Pipeline
+        // -----------------------------------------------------------------------
+        // Sub-Motion 1: Staggered Slide & Elevation (0.00 ~ 0.35, easeOutBack)
+        final slideOffset = enableSlideElevation
+            ? Tween<Offset>(
+                begin: const Offset(0, 0.35),
+                end: Offset.zero,
               )
-                  .animate(CurvedAnimation(
-                    parent: ctrl.view,
-                    curve:
-                        const Interval(0.30, 0.70, curve: Curves.easeInOutBack),
-                  ))
-                  .value ??
-              BorderRadius.circular(16))
-          : BorderRadius.circular(16);
+                .animate(CurvedAnimation(
+                  parent: ctrl.view,
+                  curve: const Interval(0.00, 0.35, curve: Curves.easeOutBack),
+                ))
+                .value
+            : Offset.zero;
 
-      // Sub-Motion 4: Color Spectrum Dual-Gradient (0.20 ~ 0.80, linear)
-      final startColor = enableColorGradient
-          ? (ColorTween(
-                begin: const Color(0xFF6366F1), // Indigo
-                end: const Color(0xFF06B6D4), // Cyan
-              )
-                  .animate(CurvedAnimation(
-                    parent: ctrl.view,
-                    curve: const Interval(0.20, 0.80, curve: Curves.linear),
-                  ))
-                  .value ??
-              const Color(0xFF6366F1))
-          : const Color(0xFF6366F1);
+        final elevation = enableSlideElevation
+            ? Tween<double>(begin: 2.0, end: 18.0)
+                .animate(CurvedAnimation(
+                  parent: ctrl.view,
+                  curve: const Interval(0.05, 0.40, curve: Curves.easeOut),
+                ))
+                .value
+            : 6.0;
 
-      final endColor = enableColorGradient
-          ? (ColorTween(
-                begin: const Color(0xFF8B5CF6), // Purple
-                end: const Color(0xFF10B981), // Emerald
-              )
-                  .animate(CurvedAnimation(
-                    parent: ctrl.view,
-                    curve: const Interval(0.20, 0.80, curve: Curves.linear),
-                  ))
-                  .value ??
-              const Color(0xFF8B5CF6))
-          : const Color(0xFF8B5CF6);
+        // Sub-Motion 2: 3D Perspective Rotation & Tilt (0.15 ~ 0.55, easeInOutCubic)
+        final tiltY = enable3DRotation
+            ? Tween<double>(begin: -0.22, end: 0.0)
+                .animate(CurvedAnimation(
+                  parent: ctrl.view,
+                  curve: const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
+                ))
+                .value
+            : 0.0;
 
-      // Sub-Motion 5: Elastic Badge Scale & Pulse (0.45 ~ 0.80, elasticOut)
-      final badgeScale = enableElasticBadge
-          ? Tween<double>(begin: 0.5, end: 1.15)
-              .animate(CurvedAnimation(
+        final tiltX = enable3DRotation
+            ? Tween<double>(begin: 0.12, end: 0.0)
+                .animate(CurvedAnimation(
+                  parent: ctrl.view,
+                  curve: const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
+                ))
+                .value
+            : 0.0;
+
+        // Sub-Motion 3: Shape & Corner Radius Morph (0.30 ~ 0.70, easeInOutBack)
+        final borderRadius = enableBorderRadius
+            ? (BorderRadiusTween(
+                  begin: BorderRadius.circular(44),
+                  end: BorderRadius.circular(16),
+                )
+                    .animate(CurvedAnimation(
+                      parent: ctrl.view,
+                      curve:
+                          const Interval(0.30, 0.70, curve: Curves.easeInOutBack),
+                    ))
+                    .value ??
+                BorderRadius.circular(16))
+            : BorderRadius.circular(16);
+
+        // Sub-Motion 4: Color Spectrum Dual-Gradient (0.20 ~ 0.80, linear)
+        final startColor = enableColorGradient
+            ? (ColorTween(
+                  begin: const Color(0xFF6366F1), // Indigo
+                  end: const Color(0xFF06B6D4), // Cyan
+                )
+                    .animate(CurvedAnimation(
+                      parent: ctrl.view,
+                      curve: const Interval(0.20, 0.80, curve: Curves.linear),
+                    ))
+                    .value ??
+                const Color(0xFF6366F1))
+            : const Color(0xFF6366F1);
+
+        final endColor = enableColorGradient
+            ? (ColorTween(
+                  begin: const Color(0xFF8B5CF6), // Purple
+                  end: const Color(0xFF10B981), // Emerald
+                )
+                    .animate(CurvedAnimation(
+                      parent: ctrl.view,
+                      curve: const Interval(0.20, 0.80, curve: Curves.linear),
+                    ))
+                    .value ??
+                const Color(0xFF8B5CF6))
+            : const Color(0xFF8B5CF6);
+
+        // Sub-Motion 5: Elastic Badge Scale & Pulse (0.45 ~ 0.80, elasticOut)
+        final badgeScale = enableElasticBadge
+            ? Tween<double>(begin: 0.5, end: 1.15)
+                .animate(CurvedAnimation(
+                  parent: ctrl.view,
+                  curve: const Interval(0.45, 0.80, curve: Curves.elasticOut),
+                ))
+                .value
+            : 1.0;
+
+        // Sub-Motion 6: Staggered Cascade Chips (0.55 ~ 1.00)
+        final chip1Progress = enableCascade
+            ? CurvedAnimation(
                 parent: ctrl.view,
-                curve: const Interval(0.45, 0.80, curve: Curves.elasticOut),
-              ))
-              .value
-          : 1.0;
+                curve: const Interval(0.55, 0.75, curve: Curves.easeOutCubic),
+              ).value
+            : 1.0;
 
-      // Sub-Motion 6: Staggered Cascade Chips (0.55 ~ 1.00)
-      final chip1Progress = enableCascade
-          ? CurvedAnimation(
-              parent: ctrl.view,
-              curve: const Interval(0.55, 0.75, curve: Curves.easeOutCubic),
-            ).value
-          : 1.0;
+        final chip2Progress = enableCascade
+            ? CurvedAnimation(
+                parent: ctrl.view,
+                curve: const Interval(0.68, 0.88, curve: Curves.easeOutCubic),
+              ).value
+            : 1.0;
 
-      final chip2Progress = enableCascade
-          ? CurvedAnimation(
-              parent: ctrl.view,
-              curve: const Interval(0.68, 0.88, curve: Curves.easeOutCubic),
-            ).value
-          : 1.0;
+        final chip3Progress = enableCascade
+            ? CurvedAnimation(
+                parent: ctrl.view,
+                curve: const Interval(0.80, 1.00, curve: Curves.easeOutCubic),
+              ).value
+            : 1.0;
 
-      final chip3Progress = enableCascade
-          ? CurvedAnimation(
-              parent: ctrl.view,
-              curve: const Interval(0.80, 1.00, curve: Curves.easeOutCubic),
-            ).value
-          : 1.0;
-
-      // -----------------------------------------------------------------------
-      // Visual Presentation Assembly
-      // -----------------------------------------------------------------------
-      return Center(
-        child: Transform(
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.0015)
-            ..rotateY(tiltY)
-            ..rotateX(tiltX),
-          alignment: Alignment.center,
-          child: FractionalTranslation(
-            translation: slideOffset,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 380),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                gradient: LinearGradient(
-                  colors: [startColor, endColor],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+        // -----------------------------------------------------------------------
+        // Visual Presentation Assembly
+        // -----------------------------------------------------------------------
+        return Center(
+          child: Transform(
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0015)
+              ..rotateY(tiltY)
+              ..rotateX(tiltX),
+            alignment: Alignment.center,
+            child: FractionalTranslation(
+              translation: slideOffset,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 380),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  gradient: LinearGradient(
+                    colors: [startColor, endColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: startColor.withAlpha(90),
+                      blurRadius: elevation * 1.5,
+                      offset: Offset(0, elevation * 0.7),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: startColor.withAlpha(90),
-                    blurRadius: elevation * 1.5,
-                    offset: Offset(0, elevation * 0.7),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Top Row: Elastic Badge & Title
-                  Row(
-                    children: [
-                      Transform.scale(
-                        scale: badgeScale,
-                        child: const _OrigamiBadgeIcon(),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Origami Morphing Entity',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              't = ${ctrl.value.toStringAsFixed(3)} | 6 Active Sub-Tweens',
-                              style: TextStyle(
-                                color: Colors.white.withAlpha(200),
-                                fontSize: 11,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Top Row: Elastic Badge & Title
+                    Row(
+                      children: [
+                        Transform.scale(
+                          scale: badgeScale,
+                          child: badge,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Origami Morphing Entity',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                't = ${ctrl.value.toStringAsFixed(3)} | 6 Active Sub-Tweens',
+                                style: TextStyle(
+                                  color: Colors.white.withAlpha(200),
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
 
-                  // Staggered Cascade Chips (No emoji, Material icons used)
-                  _buildCascadeChip(
-                    icon: Icons.bolt_rounded,
-                    label: 'DAG Throughput',
-                    value: '142,000 ops/s',
-                    progress: chip1Progress,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCascadeChip(
-                    icon: Icons.timer_outlined,
-                    label: 'Frame Latency',
-                    value: '0.34 ms (Budget: 16ms)',
-                    progress: chip2Progress,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildCascadeChip(
-                    icon: Icons.shield_outlined,
-                    label: 'Memory Overhead',
-                    value: '0 Leaks | 0 Rebuilds',
-                    progress: chip3Progress,
-                  ),
-                ],
+                    // Staggered Cascade Chips (No emoji, Material icons used)
+                    _buildCascadeChip(
+                      icon: Icons.bolt_rounded,
+                      label: 'DAG Throughput',
+                      value: '142,000 ops/s',
+                      progress: chip1Progress,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCascadeChip(
+                      icon: Icons.timer_outlined,
+                      label: 'Frame Latency',
+                      value: '0.34 ms (Budget: 16ms)',
+                      progress: chip2Progress,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildCascadeChip(
+                      icon: Icons.shield_outlined,
+                      label: 'Memory Overhead',
+                      value: '0 Leaks | 0 Rebuilds',
+                      progress: chip3Progress,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
-    });
+        );
+      },
+      child: const _OrigamiBadgeIcon(),
+    );
   }
 
   Widget _buildCascadeChip({
@@ -601,39 +605,39 @@ class _OrigamiBadgeIcon extends StatelessWidget {
 base class _MultiCurveRaceStage extends BloomWidget {
   const _MultiCurveRaceStage();
 
+  static const _tracks = [
+    _CurveTrackDef('Linear', Curves.linear, Colors.blueGrey),
+    _CurveTrackDef('EaseOutCubic', Curves.easeOutCubic, Colors.indigo),
+    _CurveTrackDef('EaseInOutBack', Curves.easeInOutBack, Colors.purple),
+    _CurveTrackDef('ElasticOut', Curves.elasticOut, Colors.teal),
+    _CurveTrackDef('BounceOut', Curves.bounceOut, Colors.amber),
+  ];
+
   @override
   Widget build(BuildContext context, BloomVia via) {
     final store = via.of<CompositeMotionStore>(context);
     final masterCtrl = via(store.masterCtrl);
-    return composed.animate(masterCtrl, (context, via, ctrl) {
-      final t = ctrl.value;
 
-      final tracks = [
-        _CurveTrackDef('Linear', Curves.linear, Colors.blueGrey, t),
-        _CurveTrackDef('EaseOutCubic', Curves.easeOutCubic, Colors.indigo, t),
-        _CurveTrackDef('EaseInOutBack', Curves.easeInOutBack, Colors.purple, t),
-        _CurveTrackDef('ElasticOut', Curves.elasticOut, Colors.teal, t),
-        _CurveTrackDef('BounceOut', Curves.bounceOut, Colors.amber, t),
-      ];
-
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    '5 Concurrent Curves driven by Single Master Timeline:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '5 Concurrent Curves driven by Single Master Timeline:',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Master t: ${t.toStringAsFixed(3)}',
+              ),
+              const SizedBox(width: 8),
+              composed.animate(
+                masterCtrl,
+                (context, via, ctrl) => Text(
+                  'Master t: ${ctrl.value.toStringAsFixed(3)}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontFamily: 'monospace',
@@ -641,120 +645,132 @@ base class _MultiCurveRaceStage extends BloomWidget {
                     color: Colors.indigoAccent,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          for (final track in tracks) ...[
-            _buildTrackRow(track),
-            const SizedBox(height: 10),
-          ],
+        ),
+        for (final track in _tracks) ...[
+          _CurveTrackRow(track: track, controller: masterCtrl),
+          const SizedBox(height: 10),
         ],
-      );
-    });
-  }
-
-  Widget _buildTrackRow(_CurveTrackDef track) {
-    final transformed = track.curve.transform(track.masterT.clamp(0.0, 1.0));
-    // Clamped for layout bounds, but displayed accurately
-    final posNorm = transformed.clamp(-0.2, 1.2);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final trackWidth = math.max(30.0, constraints.maxWidth - 160);
-        final knobX = (posNorm * (trackWidth - 24)).clamp(0.0, trackWidth - 24);
-
-        return Row(
-          children: [
-            SizedBox(
-              width: 100,
-              child: Text(
-                track.name,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 28,
-                decoration: BoxDecoration(
-                  color: track.color.withAlpha(25),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: track.color.withAlpha(60)),
-                ),
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    // Finish Line
-                    Positioned(
-                      right: 12,
-                      top: 4,
-                      bottom: 4,
-                      child: Container(
-                        width: 2,
-                        color: track.color.withAlpha(100),
-                      ),
-                    ),
-                    // Runner Sphere
-                    Positioned(
-                      left: knobX,
-                      child: Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: track.color,
-                          boxShadow: [
-                            BoxShadow(
-                              color: track.color.withAlpha(120),
-                              blurRadius: 6,
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            SizedBox(
-              width: 50,
-              child: Text(
-                transformed.toStringAsFixed(2),
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.bold,
-                  color: track.color,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      ],
     );
   }
 }
 
+class _CurveTrackRow extends StatelessWidget {
+  const _CurveTrackRow({
+    required this.track,
+    required this.controller,
+  });
+
+  final _CurveTrackDef track;
+  final DurableAnimationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return composed.animate(controller, (context, via, ctrl) {
+      final transformed = track.curve.transform(ctrl.value.clamp(0.0, 1.0));
+      // Clamped for layout bounds, but displayed accurately
+      final posNorm = transformed.clamp(-0.2, 1.2);
+
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final trackWidth = math.max(30.0, constraints.maxWidth - 160);
+          final knobX = (posNorm * (trackWidth - 24)).clamp(0.0, trackWidth - 24);
+
+          return Row(
+            children: [
+              SizedBox(
+                width: 100,
+                child: Text(
+                  track.name,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: track.color.withAlpha(25),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: track.color.withAlpha(60)),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      // Finish Line
+                      Positioned(
+                        right: 12,
+                        top: 4,
+                        bottom: 4,
+                        child: Container(
+                          width: 2,
+                          color: track.color.withAlpha(100),
+                        ),
+                      ),
+                      // Runner Sphere
+                      Positioned(
+                        left: knobX,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: track.color,
+                            boxShadow: [
+                              BoxShadow(
+                                color: track.color.withAlpha(120),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 50,
+                child: Text(
+                  transformed.toStringAsFixed(2),
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
+                    color: track.color,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+}
+
 class _CurveTrackDef {
-  const _CurveTrackDef(this.name, this.curve, this.color, this.masterT);
+  const _CurveTrackDef(this.name, this.curve, this.color);
   final String name;
   final Curve curve;
   final Color color;
-  final double masterT;
 }
 
 // =============================================================================
