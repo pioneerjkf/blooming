@@ -15,7 +15,7 @@ base class ComposedFunctorsSectionDemo extends BloomWidget {
 
   final _animCtrl = DurableAnimationController(
     duration: const Duration(seconds: 1),
-  );
+  )..repeat(reverse: true);
 
   @override
   Widget build(BuildContext context, BloomVia via) {
@@ -281,7 +281,6 @@ base class ComposedFunctorsSectionDemo extends BloomWidget {
               value: '$score pts',
             );
           },
-          onActivate: (c) => c.repeat(reverse: true),
         );
 
       case 3:

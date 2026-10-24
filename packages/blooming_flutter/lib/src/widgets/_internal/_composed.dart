@@ -193,37 +193,17 @@ final class _ComposedVsyncWithChildrenElement extends ComponentElement
 // Section 3: Controller-Driven Animate Composed Widgets & Elements
 // =============================================================================
 
-/// Internal interface implemented by widgets that host an animation controller.
-abstract interface class _AnimatedControllerWidget {
-  /// The underlying target controller.
-  DurableAnimationController get controller;
-
-  /// Optional lifecycle callback executed when this controller couples and activates.
-  void Function(ScopedAnimationController controller)? get onActivate;
-
-  /// Optional lifecycle callback executed when this controller unmounts/deactivates.
-  void Function(ScopedAnimationController controller)? get onDeactivate;
-}
-
 /// Internal reactive widget backing `composed.animate(...)`.
-final class _ComposedAnimateWidget extends Widget
-    implements _AnimatedControllerWidget {
+final class _ComposedAnimateWidget extends Widget {
   const _ComposedAnimateWidget({
     super.key,
     required this.controller,
     required this.builder,
-    this.onActivate,
-    this.onDeactivate,
   });
 
-  @override
   final DurableAnimationController controller;
   final Widget Function(BuildContext context, BloomVia via,
       ScopedAnimationController controller) builder;
-  @override
-  final void Function(ScopedAnimationController controller)? onActivate;
-  @override
-  final void Function(ScopedAnimationController controller)? onDeactivate;
 
   @override
   _ComposedAnimateElement createElement() => _ComposedAnimateElement(this);
@@ -240,30 +220,25 @@ final class _ComposedAnimateElement extends ComponentElement
   _ComposedAnimateWidget get widget => super.widget as _ComposedAnimateWidget;
 
   @override
-  Widget _buildVia(BloomVia via) => widget.builder(this, via, proxy);
+  DurableAnimationController get _controller => widget.controller;
+
+  @override
+  Widget _buildVia(BloomVia via) => widget.builder(this, via, _scopedController);
 }
 
 /// Internal reactive widget backing `composed.animate.child(...)`.
-final class _ComposedAnimateWithChildWidget extends Widget
-    implements _AnimatedControllerWidget {
+final class _ComposedAnimateWithChildWidget extends Widget {
   const _ComposedAnimateWithChildWidget({
     super.key,
     required this.controller,
     required this.builder,
     required this.child,
-    this.onActivate,
-    this.onDeactivate,
   });
 
-  @override
   final DurableAnimationController controller;
   final Widget Function(BuildContext context, BloomVia via,
       ScopedAnimationController controller, Widget child) builder;
   final Widget child;
-  @override
-  final void Function(ScopedAnimationController controller)? onActivate;
-  @override
-  final void Function(ScopedAnimationController controller)? onDeactivate;
 
   @override
   _ComposedAnimateWithChildElement createElement() =>
@@ -283,31 +258,26 @@ final class _ComposedAnimateWithChildElement extends ComponentElement
       super.widget as _ComposedAnimateWithChildWidget;
 
   @override
+  DurableAnimationController get _controller => widget.controller;
+
+  @override
   Widget _buildVia(BloomVia via) =>
-      widget.builder(this, via, proxy, widget.child);
+      widget.builder(this, via, _scopedController, widget.child);
 }
 
 /// Internal reactive widget backing `composed.animate.children(...)`.
-final class _ComposedAnimateWithChildrenWidget extends Widget
-    implements _AnimatedControllerWidget {
+final class _ComposedAnimateWithChildrenWidget extends Widget {
   const _ComposedAnimateWithChildrenWidget({
     super.key,
     required this.controller,
     required this.builder,
     required this.children,
-    this.onActivate,
-    this.onDeactivate,
   });
 
-  @override
   final DurableAnimationController controller;
   final Widget Function(BuildContext context, BloomVia via,
       ScopedAnimationController controller, List<Widget> children) builder;
   final List<Widget> children;
-  @override
-  final void Function(ScopedAnimationController controller)? onActivate;
-  @override
-  final void Function(ScopedAnimationController controller)? onDeactivate;
 
   @override
   _ComposedAnimateWithChildrenElement createElement() =>
@@ -327,8 +297,11 @@ final class _ComposedAnimateWithChildrenElement extends ComponentElement
       super.widget as _ComposedAnimateWithChildrenWidget;
 
   @override
+  DurableAnimationController get _controller => widget.controller;
+
+  @override
   Widget _buildVia(BloomVia via) =>
-      widget.builder(this, via, proxy, widget.children);
+      widget.builder(this, via, _scopedController, widget.children);
 }
 
 // =============================================================================

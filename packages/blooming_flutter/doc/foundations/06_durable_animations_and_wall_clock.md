@@ -247,10 +247,39 @@ To eliminate zombie lifecycle leaks, the proxy and its view enforce strict asser
 
 ## 8. Production Code Patterns
 
-### 8.1 Pairing Declarative CatchUp with `composed.animate`
+### 8.1 Class-Based Durable Motion (`BloomAnimatedWidget`)
+When building cohesive, modular animated components, `BloomAnimatedWidget` eliminates all boilerplate by directly binding a `DurableAnimationController` with a reactive `BloomVia` scope:
+
 ```dart
-class RadarScannerView extends StatelessWidget {
-  const RadarScannerView({super.key, required this.controller});
+base class RadarScannerView extends BloomAnimatedWidget {
+  const RadarScannerView({super.key, required super.controller});
+
+  @override
+  Widget build(BuildContext context, BloomVia via, ScopedAnimationController controller) {
+    return RotationTransition(
+      turns: controller.view,
+      child: const RadarSweepImage(),
+    );
+  }
+}
+```
+
+#### Staged Motion and Dormancy Behavior
+Motion commands are staged directly on the controller without requiring artificial lifecycle callbacks:
+```dart
+// Staged motion: Begins cleanly from 0.0 upon widget mount without initial time skips
+final controller = DurableAnimationController(
+  duration: const Duration(seconds: 2),
+  durability: DurabilityPolicy.catchUp,
+)..repeat();
+```
+* **Clean Mount Transition**: Initiating motion prior to widget mount stages the playback intent. When the widget mounts and connects its internal VSYNC socket, physical ticking starts cleanly from `0.0` with zero time skips.
+* **Dormancy & Stop Invariant**: If `controller.stop()` is invoked while the widget is dormant (unmounted or offstage), the staged motion is canceled. Upon reactivation, the controller remains idle.
+
+### 8.2 Functional Inline Motion (`composed.animate`)
+```dart
+class InlineRadarView extends StatelessWidget {
+  const InlineRadarView({super.key, required this.controller});
   final DurableAnimationController controller;
 
   @override
@@ -261,13 +290,12 @@ class RadarScannerView extends StatelessWidget {
         turns: ctrl.view,
         child: const RadarSweepImage(),
       ),
-      onActivate: (ctrl) => ctrl.repeat(),
     );
   }
 }
 ```
 
-### 8.2 Surgical Inline Motion with Static Subtree Memoization (`composed.animate.child`)
+### 8.3 Surgical Inline Motion with Static Subtree Memoization (`composed.animate.child`)
 ```dart
 class ExpandableCard extends StatelessWidget {
   const ExpandableCard({super.key, required this.controller});
@@ -294,7 +322,7 @@ class ExpandableCard extends StatelessWidget {
 }
 ```
 
-### 8.3 Coordinated Multi-Element Staggered Orchestration
+### 8.4 Coordinated Multi-Element Staggered Orchestration
 ```dart
 class StaggeredDialog extends StatelessWidget {
   const StaggeredDialog({super.key, required this.controller});
@@ -328,7 +356,7 @@ class StaggeredDialog extends StatelessWidget {
 }
 ```
 
-### 8.4 Passive Reactive Observation via `controller.observe()`
+### 8.5 Passive Reactive Observation via `controller.observe()`
 ```dart
 class AnimationTelemetryWidget extends StatelessWidget {
   const AnimationTelemetryWidget({super.key, required this.controller});
@@ -362,7 +390,7 @@ class AnimationTelemetryWidget extends StatelessWidget {
 5. **Dormant Future Completion Invariant**:
    Motion commands dispatched during dormancy immediately return `TickerFuture.complete()`, staging motion parameters without creating uncollected async suspension leaks.
 6. **Scoped Proxy Isolation Invariant**:
-   Each `composed.animate` boundary operates through an isolated `_ScopedDurableAnimationControllerProxy`. Unmounting an element disposes only its local proxy, leaving sibling observers and the parent controller completely unaffected.
+   Each `composed.animate` and `BloomAnimatedWidget` boundary operates through an isolated `_ScopedDurableAnimationControllerProxy`. Unmounting an element disposes only its local proxy, leaving sibling observers and the parent controller completely unaffected.
 7. **Single VSYNC Authority Invariant**:
    A [DurableAnimationController] governs a single, continuous physical timeline. Subtrees requiring divergent [TickerMode] muting must be decomposed into independent controller instances.
 

@@ -95,6 +95,7 @@ abstract final class BloomTypeChecker {
     // 6. Flutter UI & Widgets
     'BloomWidget',
     'BloomVsyncWidget',
+    'BloomAnimatedWidget',
     'BloomListener',
 
     // 7. Durable Animation Controllers

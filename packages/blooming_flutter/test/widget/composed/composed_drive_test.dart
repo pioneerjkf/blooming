@@ -400,7 +400,7 @@ void main() {
         (tester) async {
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
-      );
+      )..forward();
 
       await tester.pumpWidget(
         Directionality(
@@ -409,7 +409,6 @@ void main() {
             controller,
             (context, via, ctrl) =>
                 Text('Progress: ${(ctrl.value * 100).toInt()}%'),
-            onActivate: (ctrl) => ctrl.forward(),
           ),
         ),
       );
@@ -556,14 +555,12 @@ void main() {
     });
 
     testWidgets(
-        '15. composed.animate triggers onActivate on mount and onDeactivate on unmount',
+        '15. composed.animate enters dormancy on unmount and wakes on remount',
         (tester) async {
-      int activateCount = 0;
-      int deactivateCount = 0;
       final showBloom = BloomController<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
-      );
+      )..forward();
 
       await tester.pumpWidget(
         Directionality(
@@ -574,21 +571,13 @@ void main() {
                     controller,
                     (context, via, ctrl) =>
                         Text('Value: ${(ctrl.value * 100).toInt()}%'),
-                    onActivate: (ctrl) {
-                      activateCount++;
-                      if (!ctrl.isAnimating) ctrl.forward();
-                    },
-                    onDeactivate: (ctrl) {
-                      deactivateCount++;
-                    },
                   )
                 : const Text('Hidden'),
           ),
         ),
       );
 
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(0));
+      expect(controller.isActive, isTrue);
       expect(find.text('Value: 0%'), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 150));
@@ -598,30 +587,26 @@ void main() {
       showBloom.data = false;
       await tester.pumpAndSettle();
 
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(1));
+      expect(controller.isDormant, isTrue);
       expect(find.text('Hidden'), findsOneWidget);
 
       // Remount the wake widget
       showBloom.data = true;
       await tester.pumpAndSettle();
 
-      expect(activateCount, equals(2));
-      expect(deactivateCount, equals(1));
+      expect(controller.isActive, isTrue);
 
       controller.hibernate();
     });
 
     testWidgets(
-        '16. composed.animate inside composed triggers onActivate and onDeactivate properly',
+        '16. composed.animate inside composed renders and tracks dormancy properly',
         (tester) async {
-      int activateCount = 0;
-      int deactivateCount = 0;
       final showBloom = BloomController<bool>(true);
       final titleBloom = BloomController<String>('TitleA');
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
-      );
+      )..forward();
 
       await tester.pumpWidget(
         Directionality(
@@ -635,13 +620,6 @@ void main() {
                       controller,
                       (context, via, ctrl) =>
                           Text('$title: ${(ctrl.value * 100).toInt()}%'),
-                      onActivate: (ctrl) {
-                        activateCount++;
-                        ctrl.forward();
-                      },
-                      onDeactivate: (ctrl) {
-                        deactivateCount++;
-                      },
                     )
                   : const Text('Off');
             },
@@ -649,8 +627,7 @@ void main() {
         ),
       );
 
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(0));
+      expect(controller.isActive, isTrue);
       expect(find.text('TitleA: 0%'), findsOneWidget);
 
       await tester.pump(const Duration(milliseconds: 100));
@@ -659,14 +636,11 @@ void main() {
       titleBloom.data = 'TitleB';
       await tester.pump();
       expect(find.text('TitleB: 50%'), findsOneWidget);
-      // Mutating bloom should not re-trigger activate/deactivate
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(0));
 
       // Unmount
       showBloom.data = false;
       await tester.pumpAndSettle();
-      expect(deactivateCount, equals(1));
+      expect(controller.isDormant, isTrue);
 
       controller.hibernate();
     });
@@ -678,7 +652,7 @@ void main() {
         (tester) async {
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
-      );
+      )..forward();
 
       await tester.pumpWidget(
         Directionality(
@@ -687,7 +661,6 @@ void main() {
             controller,
             (context, via, ctrl) =>
                 Text('Progress: ${(ctrl.value * 100).toInt()}%'),
-            onActivate: (ctrl) => ctrl.forward(),
           ),
         ),
       );
@@ -713,7 +686,7 @@ void main() {
       int dynamicBuilderCount = 0;
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
-      );
+      )..forward();
 
       final staticChild = Builder(
         builder: (context) {
@@ -737,7 +710,6 @@ void main() {
               );
             },
             child: staticChild,
-            onActivate: (ctrl) => ctrl.forward(),
           ),
         ),
       );
@@ -767,7 +739,7 @@ void main() {
       final labelBloom = BloomController<String>('Alpha');
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
-      );
+      )..forward();
 
       await tester.pumpWidget(
         Directionality(
@@ -776,7 +748,6 @@ void main() {
             controller,
             (context, via, ctrl) => Text(
                 '${via(labelBloom.bloom)}: ${(ctrl.value * 100).toInt()}%'),
-            onActivate: (ctrl) => ctrl.forward(),
           ),
         ),
       );
@@ -800,7 +771,7 @@ void main() {
         (tester) async {
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
-      );
+      )..forward();
 
       await tester.pumpWidget(
         Directionality(
@@ -814,7 +785,6 @@ void main() {
               ],
             ),
             child: const Text('Cached Header'),
-            onActivate: (ctrl) => ctrl.forward(),
           ),
         ),
       );
@@ -834,8 +804,6 @@ void main() {
     testWidgets(
         '21. composed.animate unmount/remount dormant and lifecycle safety',
         (tester) async {
-      int activateCount = 0;
-      int deactivateCount = 0;
       final showBloom = BloomController<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
@@ -850,20 +818,13 @@ void main() {
                     controller,
                     (context, via, ctrl) =>
                         Text('Coord: ${ctrl.value.toStringAsFixed(1)}'),
-                    onActivate: (ctrl) {
-                      activateCount++;
-                    },
-                    onDeactivate: (ctrl) {
-                      deactivateCount++;
-                    },
                   )
                 : const Text('Dormant'),
           ),
         ),
       );
 
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(0));
+      expect(controller.isActive, isTrue);
       expect(find.text('Coord: 0.0'), findsOneWidget);
 
       // Start animation to 0.5 (half duration = 150ms)
@@ -877,8 +838,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(1));
+      expect(controller.isDormant, isTrue);
       expect(find.text('Dormant'), findsOneWidget);
       expect(controller.value, equals(0.5)); // Frozen freezes
 
@@ -887,8 +847,7 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(activateCount, equals(2));
-      expect(deactivateCount, equals(1));
+      expect(controller.isActive, isTrue);
       expect(find.text('Coord: 0.5'), findsOneWidget);
 
       controller.hibernate();

@@ -513,7 +513,7 @@ void main() {
     });
 
     testWidgets(
-        '12. controller.animate dynamically resyncs proxy and triggers onDeactivate/onActivate when controller changes',
+        '12. controller.animate dynamically resyncs proxy when controller changes',
         (tester) async {
       final ctrl1 = DurableAnimationController(
           duration: const Duration(milliseconds: 300))
@@ -522,8 +522,6 @@ void main() {
           duration: const Duration(milliseconds: 300))
         ..value = 0.75;
 
-      int activateCount = 0;
-      int deactivateCount = 0;
       final activeCtrlBloom =
           BloomController<DurableAnimationController>(ctrl1);
 
@@ -534,15 +532,11 @@ void main() {
             (context, via) => composed.animate(
               via(activeCtrlBloom.bloom),
               (context, via, ctrl) => Text('Val: ${ctrl.value}'),
-              onActivate: (ctrl) => activateCount++,
-              onDeactivate: (ctrl) => deactivateCount++,
             ),
           ),
         ),
       );
 
-      expect(activateCount, equals(1));
-      expect(deactivateCount, equals(0));
       expect(ctrl1.isActive, isTrue);
       expect(ctrl2.isDormant, isTrue);
       expect(find.text('Val: 0.25'), findsOneWidget);
@@ -551,8 +545,6 @@ void main() {
       activeCtrlBloom.data = ctrl2;
       await tester.pump();
 
-      expect(activateCount, equals(2));
-      expect(deactivateCount, equals(1));
       expect(ctrl1.isDormant, isTrue);
       expect(ctrl2.isActive, isTrue);
       expect(find.text('Val: 0.75'), findsOneWidget);

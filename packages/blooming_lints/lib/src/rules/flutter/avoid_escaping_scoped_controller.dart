@@ -295,12 +295,7 @@ class AvoidEscapingScopedController extends DartLintRule {
           return true;
         }
       }
-      if (current is NamedExpression) {
-        final paramName = current.name.label.name;
-        if (paramName == 'onActivate' || paramName == 'onDeactivate') {
-          return true;
-        }
-      }
+
       if (current is MethodDeclaration || current is FunctionDeclaration) {
         break;
       }

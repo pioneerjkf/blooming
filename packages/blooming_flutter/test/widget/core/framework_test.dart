@@ -602,7 +602,60 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       expect(find.byType(AnimatedVsyncBloomWidget), findsNothing);
     });
+
+    testWidgets(
+        'BloomAnimatedWidget rebuilds on controller tick and tracks Bloom dependencies',
+        (tester) async {
+      final ctrl = DurableAnimationController(
+        duration: const Duration(milliseconds: 300),
+      );
+      final counter = BloomController<int>(0);
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: TestBloomAnimatedWidget(
+            controller: ctrl,
+            counterBloom: counter.bloom,
+          ),
+        ),
+      );
+
+      expect(find.text('Value: 0.0, Count: 0'), findsOneWidget);
+
+      ctrl.value = 0.7;
+      await tester.pump();
+      expect(find.text('Value: 0.7, Count: 0'), findsOneWidget);
+
+      counter.set(99);
+      await tester.pump();
+      expect(find.text('Value: 0.7, Count: 99'), findsOneWidget);
+
+      // Unmount safely
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(find.byType(TestBloomAnimatedWidget), findsNothing);
+    });
   });
+}
+
+base class TestBloomAnimatedWidget extends BloomAnimatedWidget {
+  const TestBloomAnimatedWidget({
+    super.key,
+    required super.controller,
+    required this.counterBloom,
+  });
+
+  final Bloom<int> counterBloom;
+
+  @override
+  Widget build(
+    BuildContext context,
+    BloomVia via,
+    ScopedAnimationController controller,
+  ) {
+    final count = via(counterBloom);
+    return Text('Value: ${controller.value.toStringAsFixed(1)}, Count: $count');
+  }
 }
 
 base class CounterVsyncBloomWidget extends BloomVsyncWidget {

@@ -49,7 +49,7 @@ final textController = managed<TextEditingController>(
 // 🚀 Zero-Disposal Motion: pauses on unmount and resumes cleanly without boilerplate
 final pulse = DurableAnimationController(
   duration: const Duration(milliseconds: 800),
-);
+)..repeat(reverse: true);
 
 // 2. Zero StatefulWidget: BloomWidget unifies forms, 60/120fps motion, and micro-rebuilds
 base class LiveSearchBar extends BloomWidget {
@@ -72,7 +72,6 @@ base class LiveSearchBar extends BloomWidget {
             scale: 1.0 + (ctrl.value * 0.1),
             child: const Icon(Icons.bolt, color: Colors.amber),
           ),
-          onActivate: (ctrl) => ctrl.repeat(reverse: true),
         ),
 
         // C. Surgical micro-rebuild (spamming likes rebuilds ONLY this single Text element)
@@ -98,7 +97,8 @@ base class LiveSearchBar extends BloomWidget {
 │  1. Reactive UI Boundaries (Surgical Micro-Rebuilds)                       │
 │     ├── Base Widgets                                                       │
 │     │    ├── BloomWidget                        (build: (context, via) => ) │
-│     │    └── BloomVsyncWidget                   (build: (ctx, via, vsync))  │
+│     │    ├── BloomVsyncWidget                   (build: (ctx, via, vsync))  │
+│     │    └── BloomAnimatedWidget                (build: (ctx, via, ctrl))   │
 │     ├── Inline Functors (The composed Family)                              │
 │     │    ├── composed                          ((context, via) => Widget)  │
 │     │    │    └── .child / .children           (preserves static subtrees) │
@@ -401,7 +401,8 @@ Eliminates `AnimatedBuilder` and `StatefulWidget` boilerplate by providing direc
 │     ├── composed.vsync                         ((ctx, via, vsync) => W)    │
 │     └── vsync.drive(onTick)                    --> Bloom<T> (Frame ticker)  │
 │                                                                            │
-│  3. Frame-Driven Inline UI Functors (60/120fps Dynamic Motion)             │
+│  3. Frame-Driven Dynamic Motion (60/120fps Dynamic Motion)                 │
+│     ├── BloomAnimatedWidget                     (build: (ctx, via, ctrl))   │
 │     ├── composed.animate                       (ctrl, (ctx, via, c) => W)   │
 │     │    └── .child / .children                (preserves static subtrees) │
 │     └── composed.drive                         ((elapsed) => ..., (ctx, v))│
@@ -431,7 +432,6 @@ class LiveRadarScanner extends StatelessWidget {
         turns: ctrl.view,
         child: const Icon(Icons.radar, size: 72, color: Colors.blueAccent),
       ),
-      onActivate: (ctrl) => ctrl.repeat(),
     );
   }
 }
@@ -542,8 +542,11 @@ final statusWidget = switch (state.phase) {
 
 `blooming_flutter` provides three ergonomic builder patterns tailored for different UI scopes:
 
-### 1. `BloomWidget` & `BloomVsyncWidget`: Class-Based Components
-Best for cohesive feature screens, structured modules, and standard reactive widgets. `BloomVsyncWidget` provides a `TickerProvider` for seamless `DurableAnimationController` integration without `StatefulWidget` boilerplate.
+### 1. `BloomWidget`, `BloomVsyncWidget`, & `BloomAnimatedWidget`: Class-Based Components
+Best for cohesive feature screens, structured modules, and standard reactive widgets.
+* `BloomWidget`: General multi-state reactive domain component.
+* `BloomVsyncWidget`: Injects a raw `TickerProvider` for custom controllers or ticking without `StatefulWidget` boilerplate.
+* `BloomAnimatedWidget`: Zero-boilerplate class-based pairing of `DurableAnimationController` and `BloomVia`. Allocates element vsync on demand and provides an isolated `ScopedAnimationController`.
 
 ```dart
 base class UserProfileCard extends BloomWidget {
@@ -569,6 +572,19 @@ base class AnimatedCard extends BloomVsyncWidget {
   Widget build(BuildContext context, BloomVia via, TickerProvider vsync) {
     // Access vsync directly for animation controllers or bloom.managed ticking
     return Text('Theme: ${via(themeBloom)}');
+  }
+}
+
+base class PulsingBadge extends BloomAnimatedWidget {
+  const PulsingBadge({super.key, required super.controller, required this.badgeCount});
+  final Bloom<int> badgeCount;
+
+  @override
+  Widget build(BuildContext context, BloomVia via, ScopedAnimationController controller) {
+    return Transform.scale(
+      scale: 1.0 + (controller.value * 0.2),
+      child: Text('Badges: ${via(badgeCount)}'),
+    );
   }
 }
 ```

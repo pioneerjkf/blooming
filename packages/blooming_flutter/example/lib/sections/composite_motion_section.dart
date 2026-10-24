@@ -658,111 +658,112 @@ base class _MultiCurveRaceStage extends BloomWidget {
   }
 }
 
-class _CurveTrackRow extends StatelessWidget {
+base class _CurveTrackRow extends BloomAnimatedWidget {
   const _CurveTrackRow({
+    required super.controller,
     required this.track,
-    required this.controller,
   });
 
   final _CurveTrackDef track;
-  final DurableAnimationController controller;
 
   @override
-  Widget build(BuildContext context) {
-    return composed.animate(controller, (context, via, ctrl) {
-      final transformed = track.curve.transform(ctrl.value.clamp(0.0, 1.0));
-      // Clamped for layout bounds, but displayed accurately
-      final posNorm = transformed.clamp(-0.2, 1.2);
+  Widget build(
+    BuildContext context,
+    BloomVia via,
+    ScopedAnimationController ctrl,
+  ) {
+    final transformed = track.curve.transform(ctrl.value.clamp(0.0, 1.0));
+    // Clamped for layout bounds, but displayed accurately
+    final posNorm = transformed.clamp(-0.2, 1.2);
 
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final trackWidth = math.max(30.0, constraints.maxWidth - 160);
-          final knobX = (posNorm * (trackWidth - 24)).clamp(0.0, trackWidth - 24);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final trackWidth = math.max(30.0, constraints.maxWidth - 160);
+        final knobX = (posNorm * (trackWidth - 24)).clamp(0.0, trackWidth - 24);
 
-          return Row(
-            children: [
-              SizedBox(
-                width: 100,
-                child: Text(
-                  track.name,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
+        return Row(
+          children: [
+            SizedBox(
+              width: 100,
+              child: Text(
+                track.name,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              Expanded(
-                child: Container(
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: track.color.withAlpha(25),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: track.color.withAlpha(60)),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      // Finish Line
-                      Positioned(
-                        right: 12,
-                        top: 4,
-                        bottom: 4,
-                        child: Container(
-                          width: 2,
-                          color: track.color.withAlpha(100),
-                        ),
+            ),
+            Expanded(
+              child: Container(
+                height: 28,
+                decoration: BoxDecoration(
+                  color: track.color.withAlpha(25),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: track.color.withAlpha(60)),
+                ),
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    // Finish Line
+                    Positioned(
+                      right: 12,
+                      top: 4,
+                      bottom: 4,
+                      child: Container(
+                        width: 2,
+                        color: track.color.withAlpha(100),
                       ),
-                      // Runner Sphere
-                      Positioned(
-                        left: knobX,
-                        child: Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: track.color,
-                            boxShadow: [
-                              BoxShadow(
-                                color: track.color.withAlpha(120),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                              ),
+                    ),
+                    // Runner Sphere
+                    Positioned(
+                      left: knobX,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: track.color,
+                          boxShadow: [
+                            BoxShadow(
+                              color: track.color.withAlpha(120),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 50,
-                child: Text(
-                  transformed.toStringAsFixed(2),
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.bold,
-                    color: track.color,
-                  ),
+            ),
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 50,
+              child: Text(
+                transformed.toStringAsFixed(2),
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.bold,
+                  color: track.color,
                 ),
               ),
-            ],
-          );
-        },
-      );
-    });
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

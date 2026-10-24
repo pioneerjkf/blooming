@@ -78,7 +78,8 @@ class PreferBloomOverController extends DartLintRule {
     return supertype == 'StatelessWidget' ||
         supertype == 'StatefulWidget' ||
         supertype == 'BloomWidget' ||
-        supertype == 'BloomVsyncWidget';
+        supertype == 'BloomVsyncWidget' ||
+        supertype == 'BloomAnimatedWidget';
   }
 
   /// Returns the static or declared type string of [param] within the given [clazz].

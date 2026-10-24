@@ -276,3 +276,108 @@ base class BloomVsyncElement extends ComponentElement
   @override
   Widget _buildVia(BloomVia via) => widget.build(this, via, this);
 }
+
+// =============================================================================
+// BloomAnimatedWidget & BloomAnimatedElement
+// =============================================================================
+
+/// A reactive widget bound to a [DurableAnimationController] that dynamically tracks
+/// [Bloom] dependencies via [BloomVia] while rebuilding on animation frame ticks.
+///
+/// Seamlessly pairs Bloom's 2-Phase LPDAG engine with element-level [DurableAnimationController]
+/// lifecycle management, eliminating the need to wrap animated subtrees in [StatelessWidget] and `composed.animate`.
+///
+/// Physical tickers are allocated on demand upon mount via an internal vsync socket and automatically
+/// torn down upon unmount.
+///
+/// ## System Architectural Flow
+/// ```text
+/// [ DurableAnimationController Frame Tick ]
+///        │
+///        │ (Socket Tick: markNeedsBuild())
+///        ▼
+/// [ BloomAnimatedElement.performRebuild() ]
+///        │
+///        ▼
+/// [ BloomAnimatedWidget.build(context, via, controller) ]
+/// ```
+///
+/// ## Key Invariants & Architectural Benefits
+/// 1. **Zero Boilerplate Componentization**: Eliminates [StatelessWidget] and `composed.animate` wrapping.
+/// 2. **Immutable Const Contract**: Supports `const` constructors with zero mutable state on the widget instance.
+/// 3. **Element-Scoped Controller Proxy**: The injected [ScopedAnimationController] provides safe access to `.view`
+///    and `.drive`, automatically purged upon unmount to prevent leaks.
+/// 4. **0-Compute Reactive Memoization**: Simultaneously tracks reactive [Bloom] dependencies dynamically via [BloomVia].
+///
+/// ## Examples
+/// ```dart
+/// class MyAnimatedTrack extends BloomAnimatedWidget {
+///   const MyAnimatedTrack({
+///     super.key,
+///     required super.controller,
+///     required this.color,
+///   });
+///
+///   final Color color;
+///
+///   @override
+///   Widget build(BuildContext context, BloomVia via, ScopedAnimationController controller) {
+///     return Transform.scale(
+///       scale: controller.value,
+///       child: Container(color: color),
+///     );
+///   }
+/// }
+/// ```
+abstract base class BloomAnimatedWidget extends Widget {
+  /// Initializes a [BloomAnimatedWidget] with [controller] and an optional [key].
+  const BloomAnimatedWidget({
+    super.key,
+    required this.controller,
+  });
+
+  /// The underlying durable animation controller driving this widget.
+  final DurableAnimationController controller;
+
+  @override
+  BloomAnimatedElement createElement() => BloomAnimatedElement(this);
+
+  /// Describes the part of the user interface represented by this widget, with explicit [BloomVia] tracking
+  /// and an injected [ScopedAnimationController].
+  ///
+  /// * [context]: The active Flutter [BuildContext] representing this widget's location in the element tree.
+  /// * [via]: The injected [BloomVia] tracker used to dynamically and explicitly discover reactive dependencies.
+  /// * [controller]: The element-scoped [ScopedAnimationController] proxy providing safe access to animation properties.
+  ///
+  /// **Requires:**
+  /// * [build] must be a pure, declarative function without mutations or unhandled asynchronous scheduling.
+  ///
+  /// **Ensures:**
+  /// * Returns a [Widget] representing the current animated reactive user interface.
+  @protected
+  Widget build(
+    BuildContext context,
+    BloomVia via,
+    ScopedAnimationController controller,
+  );
+}
+
+/// The element managing both the reactive [RawComputedTerminal<Widget>] and [DurableAnimationController]
+/// lifecycle for a [BloomAnimatedWidget].
+base class BloomAnimatedElement extends ComponentElement
+    with
+        _ReactiveTerminalElementMixin<RawComputedTerminal<Widget>>,
+        _ViaTerminalElementMixin,
+        _DurableVsyncSocketElementMixin {
+  /// Creates a [BloomAnimatedElement] managing [widget].
+  BloomAnimatedElement(BloomAnimatedWidget super.widget);
+
+  @override
+  BloomAnimatedWidget get widget => super.widget as BloomAnimatedWidget;
+
+  @override
+  DurableAnimationController get _controller => widget.controller;
+
+  @override
+  Widget _buildVia(BloomVia via) => widget.build(this, via, _scopedController);
+}

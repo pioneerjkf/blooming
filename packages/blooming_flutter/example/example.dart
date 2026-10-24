@@ -18,7 +18,7 @@
 /// 11. Foundation & Listenable Bridges (toBloom & toListenable)
 /// 12. Adaptive Material & Cupertino Design Proxies
 /// 13. Dual Engine Battle & Unbounded Motion (resume vs catchUp & -1000~+5000)
-/// 14. Tri-Pattern Animation Matrix (composed.animate, ctrl.animate, ctrl.animate.child)
+/// 14. Tri-Pattern Animation Matrix (composed.animate, composed.drive, composed.animate.child)
 /// 15. Composite Motion & Multi-Tween Choreography (Single Master VSYNC)
 /// 16. Frame-Aligned Scheduler & Inline composed.drive
 /// 17. Physics Dynamics & Simulation Flapping Lab (Spring, Gravity, Friction & 30x Stress)

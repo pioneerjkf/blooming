@@ -336,8 +336,6 @@ final class ComposedAnimateFunctor {
   ///
   /// * [controller]: The target durable animation controller.
   /// * [builder]: Reactive builder callback receiving [BuildContext], [BloomVia], and [ScopedAnimationController].
-  /// * [onActivate]: Optional lifecycle callback executed when the controller couples and activates.
-  /// * [onDeactivate]: Optional lifecycle callback executed when the controller unmounts or detaches.
   /// * [key]: Optional widget key.
   ///
   /// **Requires:**
@@ -371,15 +369,11 @@ final class ComposedAnimateFunctor {
     Widget Function(BuildContext context, BloomVia via,
             ScopedAnimationController controller)
         builder, {
-    void Function(ScopedAnimationController controller)? onActivate,
-    void Function(ScopedAnimationController controller)? onDeactivate,
     Key? key,
   }) =>
       _ComposedAnimateWidget(
         controller: controller,
         builder: builder,
-        onActivate: onActivate,
-        onDeactivate: onDeactivate,
         key: key,
       );
 
@@ -391,8 +385,6 @@ final class ComposedAnimateFunctor {
   /// * [controller]: The target durable animation controller.
   /// * [builder]: Reactive builder callback receiving [BuildContext], [BloomVia], [ScopedAnimationController], and [child].
   /// * [child]: The static subtree to preserve across rebuilds.
-  /// * [onActivate]: Optional lifecycle callback executed when the controller couples and activates.
-  /// * [onDeactivate]: Optional lifecycle callback executed when the controller unmounts or detaches.
   /// * [key]: Optional widget key.
   ///
   /// **Requires:**
@@ -416,15 +408,11 @@ final class ComposedAnimateFunctor {
             ScopedAnimationController controller, Widget child)
         builder, {
     required Widget child,
-    void Function(ScopedAnimationController controller)? onActivate,
-    void Function(ScopedAnimationController controller)? onDeactivate,
     Key? key,
   }) =>
       _ComposedAnimateWithChildWidget(
         controller: controller,
         builder: builder,
-        onActivate: onActivate,
-        onDeactivate: onDeactivate,
         key: key,
         child: child,
       );
@@ -434,8 +422,6 @@ final class ComposedAnimateFunctor {
   /// * [controller]: The target durable animation controller.
   /// * [builder]: Reactive builder callback receiving [BuildContext], [BloomVia], [ScopedAnimationController], and [children].
   /// * [children]: The static subtrees to preserve across rebuilds.
-  /// * [onActivate]: Optional lifecycle callback executed when the controller couples and activates.
-  /// * [onDeactivate]: Optional lifecycle callback executed when the controller unmounts or detaches.
   /// * [key]: Optional widget key.
   ///
   /// **Requires:**
@@ -462,15 +448,11 @@ final class ComposedAnimateFunctor {
             ScopedAnimationController controller, List<Widget> children)
         builder, {
     required List<Widget> children,
-    void Function(ScopedAnimationController controller)? onActivate,
-    void Function(ScopedAnimationController controller)? onDeactivate,
     Key? key,
   }) =>
       _ComposedAnimateWithChildrenWidget(
         controller: controller,
         builder: builder,
-        onActivate: onActivate,
-        onDeactivate: onDeactivate,
         key: key,
         children: children,
       );

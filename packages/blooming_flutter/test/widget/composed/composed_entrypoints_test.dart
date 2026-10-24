@@ -193,13 +193,11 @@ void main() {
     );
 
     testWidgets(
-      'composed.animate: supplies context, binds controller lifecycle, fires onActivate/onDeactivate',
+      'composed.animate: supplies context, binds controller lifecycle, enters dormancy on unmount',
       (tester) async {
         final ctrl = DurableAnimationController(
           duration: const Duration(milliseconds: 300),
         );
-        var activatedCount = 0;
-        var deactivatedCount = 0;
         BuildContext? capturedContext;
         ScopedAnimationController? scopedCtrl;
 
@@ -218,8 +216,6 @@ void main() {
                 scopedCtrl = controller;
                 return Text('Anim: ${controller.value.toStringAsFixed(2)}');
               },
-              onActivate: (c) => activatedCount++,
-              onDeactivate: (c) => deactivatedCount++,
             );
           });
         }
@@ -228,14 +224,13 @@ void main() {
 
         expect(capturedContext, isNotNull);
         expect(scopedCtrl, isNotNull);
-        expect(activatedCount, equals(1));
-        expect(deactivatedCount, equals(0));
+        expect(ctrl.isActive, isTrue);
 
-        // Unmount to test deactivate
+        // Unmount to test dormancy
         showWidget.data = false;
         await tester.pump();
 
-        expect(deactivatedCount, equals(1));
+        expect(ctrl.isDormant, isTrue);
       },
     );
 

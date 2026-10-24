@@ -142,16 +142,17 @@ mixin _ReactiveTerminalElementMixin<T extends RawTerminal> on ComponentElement {
 
 ---
 
-## 5. Architectural Comparison: `BloomWidget` vs. `composed` vs. `bloom.build`
+## 5. Architectural Comparison: Reactive Element Modalities
 
-| Evaluation Dimension | `BloomWidget` | `composed` Functor | `bloom.build` Extension |
-| :--- | :--- | :--- | :--- |
-| **Host Element** | `BloomElement` | `_ComposedElement` | `_InlineSingleBloomElement` |
-| **Terminal Sink Type** | `RawViaTerminal<Widget>` | `RawViaTerminal<Widget>` | `RawBloomTerminal<T>` |
-| **Dependency Scope** | Multi-source (`via(a)`, `via(b)`) | Multi-source (`via(a)`, `via(b)`) | 1:1 Direct Single Source |
-| **Memory Allocation** | Widget subclass instance | Anonymous closure capture | `extension type const` 0-Alloc |
-| **Primary Use Case** | Self-contained domain widgets | Inline reactive boundaries in trees | Fine-grained text/icon bindings |
-| **Dormancy Invariant** | Severed on `deactivate()` | Severed on `deactivate()` | Severed on `deactivate()` |
+| Evaluation Dimension | `BloomWidget` | `BloomVsyncWidget` | `BloomAnimatedWidget` | `composed` Functor | `bloom.build` Extension |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Host Element** | `BloomElement` | `BloomVsyncElement` | `BloomAnimatedElement` | `_ComposedElement` | `_InlineSingleBloomElement` |
+| **Terminal Sink Type** | `RawComputedTerminal<Widget>` | `RawComputedTerminal<Widget>` | `RawComputedTerminal<Widget>` | `RawComputedTerminal<Widget>` | `RawBloomTerminal<T>` |
+| **Animation / VSYNC Host** | None | Raw `TickerProvider` | `DurableAnimationController` | Polymorphic via functor variant | None |
+| **Dependency Scope** | Multi-source (`via(a)`, `via(b)`) | Multi-source (`via(a)`, `via(b)`) | Multi-source (`via(a)`, `via(b)`) | Multi-source (`via(a)`, `via(b)`) | 1:1 Direct Single Source |
+| **Memory Allocation** | Widget subclass instance | Widget subclass instance | Widget subclass instance | Anonymous closure capture | `extension type const` 0-Alloc |
+| **Primary Use Case** | Self-contained domain widgets | Custom ticker/animation widgets | Modular durable animated widgets | Inline reactive boundaries | Fine-grained text/icon bindings |
+| **Dormancy Invariant** | Severed on `deactivate()` | Severed on `deactivate()` | Severed on `deactivate()` | Severed on `deactivate()` | Severed on `deactivate()` |
 
 ---
 

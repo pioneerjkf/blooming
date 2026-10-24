@@ -141,6 +141,9 @@ class PulsingRadarDot extends StatelessWidget {
 ### 3. Raw VSYNC Acquisition (`BloomVsyncWidget` & `composed.vsync`)
 When you need direct access to a `TickerProvider` (e.g., to instantiate `AnimationController` or pass to legacy Flutter code) without the overhead of `StatefulWidget` and `SingleTickerProviderStateMixin`, use `BloomVsyncWidget` or `composed.vsync`:
 
+> [!TIP]
+> **Managed Durable Motion**: When animations are governed by a `DurableAnimationController`, prefer `BloomAnimatedWidget` (or `composed.animate`). They automatically host the internal VSYNC socket, manage element dormancy, and inject a leak-immune `ScopedAnimationController`. Reserve `BloomVsyncWidget` and `composed.vsync` for when raw `TickerProvider` handles are strictly needed by legacy or standard Flutter components.
+
 ```dart
 // [Recommended] 1. Class-Based VSYNC Acquisition
 base class AnimatedHeroScreen extends BloomVsyncWidget {

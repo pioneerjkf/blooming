@@ -58,7 +58,7 @@ The application is structured into 18 distinct, self-contained chapters covering
  │
  ├── [Tier 4: Durable Animation & Frame Scheduling 13~16]
  │    ├── 13. Dual Engine Battle & Unbounded Motion (Frozen vs Catch-Up & -1000~+5000)
- │    ├── 14. Tri-Pattern Animation Matrix (composed.animate, ctrl.animate, ctrl.animate.child)
+ │    ├── 14. Tri-Pattern Animation Matrix (composed.animate, composed.drive, composed.animate.child)
  │    ├── 15. Composite Motion & Multi-Tween Choreography (Single Master VSYNC)
  │    └── 16. Frame-Aligned Scheduler & Inline composed.drive
  │
@@ -108,7 +108,7 @@ The application is structured into 18 distinct, self-contained chapters covering
 ```
 
 * **13. Dual Engine Battle & Unbounded Motion (`13_dual_engine_battle`)**: Side-by-side comparison of `Frozen` and `CatchUp` engines with both Planetary Orbit mode and Unbounded Space navigation (`-1000.0` to `+5000.0`). Interactive 3-second simulated dormancy verifies that Frozen preserves exact progress while CatchUp compensates for real-world elapsed time.
-* **14. Tri-Pattern Animation Matrix (`14_tri_pattern_matrix`)**: Validates the 3 canonical pathways to bind external Store controllers to Flutter Vsync (`composed.animate`, `ctrl.animate`, and `ctrl.animate.child`).
+* **14. Tri-Pattern Animation Matrix (`14_tri_pattern_matrix`)**: Validates the 3 canonical pathways to bind external Store controllers to Flutter Vsync (`composed.animate`, `composed.drive`, and `composed.animate.child`).
 * **15. Composite Motion & Multi-Tween Choreography (`15_composite_motion`)**: Demonstrates a single master `DurableAnimationController` orchestrating multiple sub-animations, curved intervals (`Interval`), chained curves (`Tween.chain(CurveTween)`), `TweenSequence` weighted keyframes, and diverse multi-property tweens (`ColorTween`, `BorderRadiusTween`, `Tween<Offset>`, `Tween<double>`) under 1 VSYNC authority without ticker leaks or rebuild overhead.
 * **16. Frame-Aligned Scheduler (`16_frame_scheduler`)**: High-cadence 60fps/120fps frame-tick pipelines via `vsync.drive` and `composed.drive.child` with static child repaint caching.
 

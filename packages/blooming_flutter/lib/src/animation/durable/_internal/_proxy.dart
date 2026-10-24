@@ -294,8 +294,8 @@ final class _DurableVsyncSocketTicker extends Ticker {
 
 mixin _DurableVsyncSocketElementMixin on ComponentElement
     implements _DurableTickerProvider {
-  _AnimatedControllerWidget get _controllerWidget =>
-      widget as _AnimatedControllerWidget;
+  /// The durable animation controller driving this socket element.
+  DurableAnimationController get _controller;
 
   _DurableVsyncSocketTicker? _ticker;
   bool _isDurableVsyncActive = false;
@@ -306,7 +306,16 @@ mixin _DurableVsyncSocketElementMixin on ComponentElement
   @override
   bool get isDurableVsyncActive => _isDurableVsyncActive;
 
-  _ScopedDurableAnimationControllerProxy get proxy => _proxy!;
+  /// The active element-scoped animation controller proxy driving the widget builder.
+  ///
+  /// Guaranteed to be synchronized and non-null during [performRebuild] and widget build passes.
+  ScopedAnimationController get _scopedController {
+    assert(
+      _proxy != null,
+      'ScopedAnimationController was accessed before the element mounted or synchronized.',
+    );
+    return _proxy!;
+  }
 
   void _clearTicker(_DurableVsyncSocketTicker ticker) {
     if (identical(_ticker, ticker)) {
@@ -341,15 +350,12 @@ mixin _DurableVsyncSocketElementMixin on ComponentElement
   }
 
   void _syncController() {
-    final controller = _controllerWidget.controller;
-    if (_proxy case final proxy? when identical(proxy._target, controller)) {
+    final targetController = _controller;
+    if (_proxy case final proxy? when identical(proxy._target, targetController)) {
       return;
     }
-    if (_proxy != null) {
-      _safeCallDeactivate();
-    }
-    _bindProxy(controller);
-    _safeCallActivate();
+    _unbindProxy();
+    _bindProxy(targetController);
   }
 
   void _bindProxy(DurableAnimationController controller) {
@@ -370,40 +376,6 @@ mixin _DurableVsyncSocketElementMixin on ComponentElement
       proxy.dispose();
       proxy._detachVsync(this);
       _proxy = null;
-    }
-  }
-
-  void _safeCallActivate() {
-    final proxy = _proxy;
-    if (proxy == null) return;
-    try {
-      _controllerWidget.onActivate?.call(proxy);
-    } catch (error, stackTrace) {
-      FlutterError.reportError(
-        FlutterErrorDetails(
-          exception: error,
-          stack: stackTrace,
-          library: 'blooming_flutter',
-          context: ErrorDescription('while executing onActivate for $widget'),
-        ),
-      );
-    }
-  }
-
-  void _safeCallDeactivate() {
-    final proxy = _proxy;
-    if (proxy == null) return;
-    try {
-      _controllerWidget.onDeactivate?.call(proxy);
-    } catch (error, stackTrace) {
-      FlutterError.reportError(
-        FlutterErrorDetails(
-          exception: error,
-          stack: stackTrace,
-          library: 'blooming_flutter',
-          context: ErrorDescription('while executing onDeactivate for $widget'),
-        ),
-      );
     }
   }
 
@@ -450,7 +422,6 @@ mixin _DurableVsyncSocketElementMixin on ComponentElement
   @mustCallSuper
   @override
   void deactivate() {
-    _safeCallDeactivate();
     _isDurableVsyncActive = false;
     _ticker?.muted = true;
     _unbindProxy();
@@ -460,7 +431,6 @@ mixin _DurableVsyncSocketElementMixin on ComponentElement
   @mustCallSuper
   @override
   void unmount() {
-    _safeCallDeactivate();
     _isDurableVsyncActive = false;
     _unbindProxy();
     _ticker?.dispose();

@@ -153,6 +153,10 @@ How to select the appropriate reactive UI entry point:
          ▼ (Single Bloom<T> node)         ▼ (2+ nodes or conditional branching)
    bloom.build(...)                 composed(...) or BloomWidget
          │                               │
+         │                               ├─► [ Controller-driven durable motion? ]
+         │                               │    ├─► [ Inline leaf widget? ] ──► composed.animate(...)
+         │                               │    └─► [ Modular component? ] ──► class MyWidget extends BloomAnimatedWidget
+         │                               │
          │                               ├─► [ Inline leaf widget? ] ──► composed((context, via) => ...)
          │                               │
          │                               └─► [ Modular domain component? ] ──► class MyWidget extends BloomWidget
