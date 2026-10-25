@@ -1,3 +1,8 @@
+## 0.1.2
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.1.2.
+- **Assets & Branding**: Aligned vector banner typography and grid guidelines.
+
 ## 0.1.1
 
 - **Assets & Branding**: Updated official high-resolution pub.dev package logo and screenshot assets.
