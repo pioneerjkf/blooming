@@ -28,7 +28,7 @@ base class TextEditingControllerSection extends BloomWidget {
           title: 'Native Flutter TextEditingController + toBloomBy Bridge',
           badge: 'Listenable Bridge',
           description:
-              'Type in the native TextField below or trigger programmatic updates. Flutter manages the UI and IME input buffer natively, while toBloomBy((c) => c.text) bridges the string updates into Bloom reactive graph with zero overhead.',
+              'Type in the native TextField below or trigger programmatic updates. Flutter manages the UI and input buffer natively, while toBloomBy((c) => c.text) bridges the string updates into Bloom reactive graph with zero overhead.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -234,20 +234,11 @@ base class TextEditingControllerSection extends BloomWidget {
               const Divider(height: 24),
               _buildComparisonRow(
                 context,
-                title: 'CJK / Korean IME Composition',
-                badText:
-                    'External state synchronizers that reassign .text during keystrokes break ongoing IME syllable composing ranges.',
-                goodText:
-                    'Native Flutter input pipeline handles IME seamlessly without state interceptors destroying composing spans.',
-              ),
-              const Divider(height: 24),
-              _buildComparisonRow(
-                context,
                 title: 'Lifecycle & Memory Leak',
                 badText:
                     'Requires converting widgets to StatefulWidget to manage controller allocation and dispose() lifecycles.',
                 goodText:
-                    'Managed by Bloom.managed<TextEditingController>() for clean auto-disposal upon unmount and Demand-Driven Dormancy.',
+                    'Demand-Driven Dormancy detaches listeners automatically when observing widget elements unmount.',
               ),
             ],
           ),

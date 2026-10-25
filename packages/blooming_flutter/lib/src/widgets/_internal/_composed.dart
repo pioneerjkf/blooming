@@ -223,7 +223,8 @@ final class _ComposedAnimateElement extends ComponentElement
   DurableAnimationController get _controller => widget.controller;
 
   @override
-  Widget _buildVia(BloomVia via) => widget.builder(this, via, _scopedController);
+  Widget _buildVia(BloomVia via) =>
+      widget.builder(this, via, _scopedController);
 }
 
 /// Internal reactive widget backing `composed.animate.child(...)`.

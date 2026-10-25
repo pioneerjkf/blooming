@@ -99,17 +99,17 @@
     <rect class="badge-rect" x="0" y="-14" width="126" height="22" rx="11" />
     <text class="badge-text" x="63" y="1" text-anchor="middle">BLOOMING CORE</text>
     <text class="meta-label" x="142" y="1">3-STATE ALGEBRAIC MODEL</text>
-    <text class="meta-label" x="884" y="1" text-anchor="end">PURE DART · HIGH-PERFORMANCE · GLITCH-FREE</text>
+    <text class="meta-label" x="884" y="1" text-anchor="end">PURE DART · HIGH-PERFORMANCE</text>
   </g>
 
   <!-- Top Hairline Divider -->
   <line class="grid-line" x1="70" y1="84" x2="954" y2="84" />
 
   <!-- 02. HERO ROW: Core Manifesto (Pure Typography, Peony Petal Accent) -->
-  <text class="sans kw" x="70" y="154" font-size="36" font-weight="500" letter-spacing="-0.01em">Dynamic Graph</text>
-  <text class="sans kw-accent" x="70" y="194" font-size="36" font-weight="500" letter-spacing="-0.01em">Glitch-Free</text>
-  <text class="sans kw" x="70" y="234" font-size="36" font-weight="500" letter-spacing="-0.01em">Managed Lifecycles</text>
-  <text class="sans kw-mint" x="70" y="274" font-size="36" font-weight="500" letter-spacing="-0.01em">Three Clear States</text>
+  <text class="sans kw" x="70" y="145" font-size="36" font-weight="500" letter-spacing="-0.01em">Dynamic Graph</text>
+  <text class="sans kw-accent" x="70" y="191" font-size="36" font-weight="500" letter-spacing="-0.01em">Glitch-Free</text>
+  <text class="sans kw" x="70" y="237" font-size="36" font-weight="500" letter-spacing="-0.01em">Managed Lifecycles</text>
+  <text class="sans kw-mint" x="70" y="283" font-size="36" font-weight="500" letter-spacing="-0.01em">Three Clear States</text>
 
   <!-- RIGHT HERO: .bloom Wordmark with Peony Petal Halo -->
 
@@ -300,6 +300,6 @@
 
   <!-- 04. FOOTER SPECIFICATION -->
   <line class="grid-line" x1="70" y1="782" x2="954" y2="782" />
-  <text class="meta-label" x="70" y="814" font-size="10">BLOOMING CORE · 2-PHASE LPDAG · SUBSCRIBER-DRIVEN DORMANCY · ZERO DEPENDENCY</text>
-  <text class="meta-label" x="954" y="814" font-size="10" text-anchor="end">PURE DART · APACHE 2.0</text>
+  <text class="meta-label" x="70" y="814" font-size="10">2-PHASE LPDAG · SUBSCRIBER-DRIVEN DORMANCY</text>
+  <text class="meta-label" x="954" y="814" font-size="10" text-anchor="end">APACHE 2.0</text>
 </svg>

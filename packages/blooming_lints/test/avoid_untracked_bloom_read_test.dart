@@ -383,7 +383,9 @@ class MyWidget extends BloomWidget {
       expect(visitor.untrackedNodes.length, equals(0));
     });
 
-    test('safely terminates on cyclic and self-referential variable aliases without stack overflow', () {
+    test(
+        'safely terminates on cyclic and self-referential variable aliases without stack overflow',
+        () {
       final unit = parseString(content: '''
 void testFunc() {
   final doubled = computed((via) {
@@ -405,4 +407,3 @@ void testFunc() {
     });
   });
 }
-

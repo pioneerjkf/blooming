@@ -45,7 +45,7 @@ The application is structured into 18 distinct, self-contained chapters covering
  │    └── 04. Scoped State DI (bloom.provide / bloomOf)
  │
  ├── [Tier 2: Real-World App Essentials 05~10]
- │    ├── 05. Standard Form Input & Listenable Bridge (toBloomBy)
+ │    ├── 05. TextEditingController & Listenable Bridge (toBloomBy)
  │    ├── 06. Async UI, SWR & BloomPendingIndicator
  │    ├── 07. Imperative Signals vs State Anti-Pattern (BloomListener)
  │    ├── 08. Scroll Kinematics & 120fps Surgical Micro-Rebuilds
@@ -82,7 +82,7 @@ The application is structured into 18 distinct, self-contained chapters covering
 
 ### 4.2. Real-World App Essentials (Chapters 05 - 10)
 
-* **05. Standard Form Input & Listenable Bridge (`05_text_editing_controller`)**: Direct use of native Flutter `TextEditingController` with zero-overhead `toBloomBy((c) => c.text)` bridge into Bloom reactive graph, Demand-Driven Dormancy, and automated unmount disposal via `Bloom.managed`.
+* **05. TextEditingController & Listenable Bridge (`05_text_editing_controller`)**: Direct use of native Flutter `TextEditingController` with zero-overhead `toBloomBy((c) => c.text)` bridge into Bloom reactive graph, Demand-Driven Dormancy, and automatic unmount listener detachment.
 * **06. Async UI, SWR & BloomPendingIndicator (`06_async_swr_builder`)**: Declarative 4-state asynchronous building (`data`, `loading`, `error`, `empty`), flicker-free Stale-While-Revalidate (SWR) cache retention, surgical linear `BloomPendingIndicator` bound directly to `Bloom<bool>`, and ergonomic `BloomAsyncBuilder.tuple` shorthand with `toBloomTuple()`.
 * **07. Imperative Signals vs State Anti-Pattern (`07_imperative_signals`)**: Transient one-off signals (`BloomSignalController` from `package:blooming`, re-exported by `blooming_flutter`) vs persistent boolean state, showing how `BloomListener` eliminates zombie dialog states upon remount.
 * **08. Scroll Kinematics & 120fps Surgical Micro-Rebuilds (`08_scroll_kinematics`)**: High-frequency scroll tracking via `scrollController.toBloomBy(...)` where a heavy 100-item ListView NEVER rebuilds, and only the lightweight AppBar Opacity updates at 120fps.

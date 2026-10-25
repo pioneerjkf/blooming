@@ -5,7 +5,7 @@
 <h1 align="center">Bloom Flutter</h1>
 
 <p align="center">
-  <strong>High-Performance, Fine-Grained Reactive UI Bindings, Durable Animations, and Form Controllers for Flutter</strong>
+  <strong>High-Performance, Fine-Grained Reactive UI Bindings, Durable Animations, and Listenable Bridges for Flutter</strong>
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 
 ## Overview
 
-**Bloom Flutter** (`package:blooming_flutter`) is the official Flutter reactive UI binding framework for the Bloom state engine. Directly bridging Bloom's **Push-Dirty, Lazy-Pull LPDAG (Lazy Pull Directed Acyclic Graph)** into the Flutter `Widget` and `Element` hierarchy, `blooming_flutter` eliminates coarse-grained subtree rebuilds, ambient context tracking traps, CJK IME composition corruption, and unmount animation state destruction.
+**Bloom Flutter** (`package:blooming_flutter`) is the official Flutter reactive UI binding framework for the Bloom state engine. Directly bridging Bloom's **Push-Dirty, Lazy-Pull LPDAG (Lazy Pull Directed Acyclic Graph)** into the Flutter `Widget` and `Element` hierarchy, `blooming_flutter` eliminates coarse-grained subtree rebuilds, ambient context tracking traps, listener leaks, and unmount animation state destruction.
 
 In traditional Flutter state management architectures, state updates trigger top-down subtree rebuilds across parent and sibling widgets. Even with selective builders, ambient tracking scopes often cause accidental dependencies, memory leaks during unmounts, and screen-flicker during asynchronous revalidations.
 
@@ -36,36 +36,23 @@ In traditional Flutter state management architectures, state updates trigger top
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-// 1. Pure reactive state nodes & managed resources (No Codegen, No Global State Traps)
+// 1. Pure reactive state nodes & controllers (No Codegen, No Global State Traps)
 final likes = BloomController(0);
-
-// 🚀 Managed Flutter TextEditingController: auto-allocated upon mount, disposed upon unmount
-final textController = managed<TextEditingController>(
-  create: (via) => TextEditingController(),
-  dispose: (c) => c.dispose(),
-  graceful: Graceful.microtask,
-);
 
 // 🚀 Zero-Disposal Motion: pauses on unmount and resumes cleanly without boilerplate
 final pulse = DurableAnimationController(
   duration: const Duration(milliseconds: 800),
 )..repeat(reverse: true);
 
-// 2. Zero StatefulWidget: BloomWidget unifies forms, 60/120fps motion, and micro-rebuilds
-base class LiveSearchBar extends BloomWidget {
-  const LiveSearchBar({super.key});
+// 2. Zero StatefulWidget: BloomWidget unifies 60/120fps motion, scoped DI, and micro-rebuilds
+base class LiveMetricCard extends BloomWidget {
+  const LiveMetricCard({super.key});
 
   @override
   Widget build(BuildContext context, BloomVia via) {
     return Column(
       children: [
-        // A. Standard form input (Flutter native IME & caret fidelity via managed lifecycle)
-        TextField(
-          controller: via(textController),
-          decoration: const InputDecoration(hintText: 'Search...'),
-        ),
-
-        // B. 60/120fps inline animation (driven via composed.animate without manual TickerProvider)
+        // A. 60/120fps inline animation (driven via composed.animate without manual TickerProvider)
         composed.animate(
           pulse,
           (context, via, ctrl) => Transform.scale(
@@ -74,7 +61,7 @@ base class LiveSearchBar extends BloomWidget {
           ),
         ),
 
-        // C. Surgical micro-rebuild (spamming likes rebuilds ONLY this single Text element)
+        // B. Surgical micro-rebuild (spamming likes rebuilds ONLY this single Text element)
         composed((context, via) => Text('Likes: ${via(likes.bloom)}')),
 
         IconButton(onPressed: () => likes.data++, icon: const Icon(Icons.favorite)),
@@ -120,9 +107,10 @@ base class LiveSearchBar extends BloomWidget {
 │     │    └── .child / .children           (preserves static subtrees)      │
 │     └── vsync.drive(onTick)               --> Bloom<T> (Frame ticker)       │
 │                                                                            │
-│  3. Form Input & Listenable Interop                                        │
-│     ├── controller.toBloomBy((c) => c.text)   (Demand-Driven bridge)        │
-│     └── managed<TextEditingController>       (Auto-disposed form lifecycle)│
+│  3. Listenable & Platform Interoperability                                 │
+│     ├── listenable.toBloom()                 (ValueListenable 1:1 bridge)  │
+│     ├── listenable.toBloomBy(selector)       (Demand-driven property slice)│
+│     └── bloom.toListenable()                 (Bloom -> Listenable adapter) │
 │                                                                            │
 │  4. Async SWR UI & Progress                                                │
 │     ├── BloomAsyncBuilder<T>                    (bloom, pending, {data, ...})│
@@ -160,7 +148,7 @@ In Flutter applications, balancing granular reactive state, frame-isolated anima
 | **State Mutability Contracts** | Mixed mutable getters/setters on shared object boundaries | **Strict Separation of Concerns** (`Bloom<T>` read-only vs `BloomController<T>`) |
 | **State Snapshot Integrity** | Ad-hoc flags or verbose union/sealed class hierarchies | **Deterministic 3-State FSM** (`Data`, `Empty`, `Error` + `emptyReason`) |
 | **Transient Lifecycle Mooring**| Immediate unmount disposal destroying state continuity | **Native `Graceful` Engine** (Microtask coalescing & `period` TTL mooring) |
-| **East Asian CJK / Form Input** | Custom wrapper controllers breaking IME buffers and causing ping-pong loops | **Native Controller + `toBloomBy`** (Native platform IME fidelity & zero listener leaks) |
+| **Listenable & Platform Interop** | Manual `addListener`/`removeListener` boilerplate with dangling memory leaks | **Zero-Leak Bridges** (`toBloom` / `toBloomBy` with Demand-Driven Dormancy) |
 | **Animation Lifecycle Coupling** | Manual `AnimationController` lifecycle tied to `TickerProviderStateMixin` (state resets or ticker errors on unmount) | **Durable Engine** (Wall-clock `CatchUp` & state `Frozen` without `StatefulWidget`) |
 | **Asynchronous UI Ingestion** | Screen-flashing spinners during background revalidation | **Flicker-Free SWR** (`BloomAsyncBuilder`, stale data preserved on pending) |
 | **Component Hierarchy DI** | `InheritedWidget.updateShouldNotify` triggering wide rebuilds | **Rebuild-Suppressed DI** (`BloomProvider`, pointer-check only, 0-rebuild tunneling) |
@@ -270,34 +258,39 @@ class StockDashboardCard extends StatelessWidget {
 
 ---
 
-### Pillar 2: Form Input & Listenable Interop (`toBloomBy` & `managed`)
+### Pillar 2: Demand-Driven Listenable Bridges (`toBloom` & `toBloomBy`)
 
-In Flutter applications, text inputs and forms belong fundamentally to the platform UI layer. Forcing bidirectional wrapper controllers onto Flutter's `TextField` introduces critical bugs in composition-based languages (Korean, Japanese, Chinese) and risks infinite re-entrant ping-pong notification loops.
+In Flutter applications, numerous native controllers and third-party packages are engineered around Flutter's foundation primitives (`ScrollController`, `ValueNotifier`, `AnimationController`, `ChangeNotifier`). Consuming these in standard Flutter often requires `StatefulWidget` boilerplate with manual `addListener` and `removeListener` hooks. Failing to deregister listeners during element unmount produces insidious memory leaks, ghost notifications, and frame drops.
 
-Bloom solves form inputs through **Native Platform Ownership + Unidirectional Reactive Bridges**:
-1. **Native Flutter Caret & IME Integrity**: Standard `TextEditingController` handles OS typing buffers natively—preventing syllable fragmentation and caret jumping in CJK composition while ensuring seamless ecosystem compatibility with custom formatters.
-2. **Zero-Leak Listenable Bridge (`toBloomBy`)**: The input stream is bridged directly into Bloom's reactive graph on-demand with automatic Demand-Driven Dormancy (listeners are active only when observed by the UI).
-3. **Automated Lifecycle (`Bloom.managed`)**: Controllers are automatically allocated upon widget mount and cleanly disposed upon unmount without requiring `StatefulWidget` boilerplate.
+`blooming_flutter` eliminates this friction through **Subscriber-Driven Inactive Dormancy**:
+1. **Demand-Driven Activation**: Listeners are attached to the `Listenable` ONLY when active UI terminals observe the bridge node, and automatically detached when the UI unmounts or navigates away (0 memory leaks).
+2. **Fine-Grained Property Slicing (`toBloomBy`)**: Extract specific properties (e.g. `scrollController.toBloomBy((c) => c.offset)`) with built-in distinct value filtering to prevent redundant rebuilds.
+3. **Safe Initialization & Fault Containment**: If the selector throws during construction (e.g. accessing controller metrics before clients are attached), the node safely transitions to an Error state without crashing the element tree and self-heals once attached.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                   Standard Bloom Form Input Flow                            │
+│                  Demand-Driven Listenable Bridge Flow                      │
 ├────────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
-│   [ Keyboard Input / IME ]                                                 │
-│              │                                                             │
-│              ▼                                                             │
-│     TextEditingController (Native Flutter UI Layer)                       │
-│              │                                                             │
-│              ▼ .toBloomBy((c) => c.text)                                    │
-│       Bloom<String> (Reactive LPDAG Stream)                                 │
-│              │                                                             │
-│              ├──► computed((via) => via(textBloom).length)                  │
-│              └──► computed.future((via) => api.search(via(textBloom)))      │
+│   [ Multi-Property Controller: ScrollController / ValueNotifier ]          │
 │                                                                            │
-│   [ Demand-Driven Dormancy ]:                                              │
-│   Listener is attached ONLY when active subscribers exist,                 │
-│   and automatically detached when the UI unmounts.                         │
+│   [ Subscriber Connects: terminal.activate() ]                             │
+│          │                                                                 │
+│          ▼                                                                 │
+│   Listenable.addListener(_listen)                                          │
+│          │ (High-frequency notifications: scroll, velocity, state)          │
+│          ▼                                                                 │
+│   select(listenable) ──► Value Changed?                                    │
+│                            │                                               │
+│             ┌──────────────┴─────────────┐                                 │
+│             ▼ (Equal)                    ▼ (Different)                     │
+│          [ DROP ]             Topological Push-Dirty                       │
+│                                                                            │
+│   [ Subscriber Disconnects: terminal.deactivate() ]                        │
+│          │                                                                 │
+│          ▼                                                                 │
+│   Listenable.removeListener(_listen) ──► [ Dormant: 0 Listeners ]          │
+│                                                                            │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -307,40 +300,29 @@ Bloom solves form inputs through **Native Platform Ownership + Unidirectional Re
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-// 1. Native Flutter TextEditingController
-final searchController = TextEditingController();
+base class CollapsibleHeader extends BloomWidget {
+  CollapsibleHeader({required this.scrollController, super.key});
+  final ScrollController scrollController;
 
-// 2. Extract reactive text stream with toBloomBy
-final queryBloom = searchController.toBloomBy((c) => c.text);
-
-// 3. Debounced derived computation
-final searchResults = computed.future<List<String>>((via) async {
-  final query = via(queryBloom.debounce(const Duration(milliseconds: 300)));
-  if (query.isEmpty) return const [];
-  return api.search(query);
-});
-
-// 4. Declarative BloomWidget consumer
-base class SearchForm extends BloomWidget {
-  const SearchForm({super.key});
+  // Extract reactive scroll threshold slice on-demand with distinct filtering:
+  late final isScrolledBloom = scrollController.toBloomBy(
+    (c) => c.hasClients && c.offset > 60.0,
+    distinct: true,
+  );
 
   @override
   Widget build(BuildContext context, BloomVia via) {
-    final resultsState = via.state(searchResults);
+    final isScrolled = via(isScrolledBloom);
 
-    return Column(
-      children: [
-        TextField(
-          controller: searchController,
-          decoration: const InputDecoration(
-            labelText: 'Search',
-            hintText: 'Type freely with native IME fidelity...',
-          ),
-        ),
-        if (resultsState.isPending) const LinearProgressIndicator(),
-        if (resultsState.hasData)
-          for (final item in resultsState.data) ListTile(title: Text(item)),
-      ],
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      height: isScrolled ? 56.0 : 120.0,
+      color: isScrolled ? Colors.indigo : Colors.blueAccent,
+      alignment: Alignment.center,
+      child: Text(
+        isScrolled ? 'Compact Title' : 'Expanded Header',
+        style: const TextStyle(color: Colors.white, fontSize: 18),
+      ),
     );
   }
 }
@@ -767,7 +749,7 @@ import 'package:blooming_flutter/blooming_flutter.dart';
 | **Safe State Inspection** | `BloomSnapshot<T>`, `untracked.state`, `.dataOrNull`, `.dataOrElse(...)` | [`package:blooming`](https://pub.dev/packages/blooming) | Fail-fast snapshot inspection and non-throwing nullable value extraction |
 | **Declarative Effects** | `Effect`, `DebounceEffect`, `ThrottleEffect` | [`package:blooming/effect`](https://pub.dev/packages/blooming) | Non-rendering reactive side-effect sinks and rate-limited async execution |
 | **Surgical Leaf UI** | `composed`, `BloomWidget`, `BloomListener`, `bloom.build` | `package:blooming_flutter` | Zero-overhead reactive boundary elements and surgical micro-rebuild widgets |
-| **Platform & Form Bridges** | `toBloom`, `toBloomBy`, `.toListenable()` | `package:blooming_flutter` | Seamless bidirectional bridging for `TextEditingController`, `Listenable`, and Routers |
+| **Listenable & Platform Bridges** | `toBloom`, `toBloomBy`, `.toListenable()` | `package:blooming_flutter` | Seamless bidirectional bridging for `Listenable`, `ValueListenable`, and Controllers |
 | **Durable Motion & Ticker** | `DurableAnimationController`, `composed.animate`, `composed.drive` | `package:blooming_flutter` | Wall-clock `CatchUp` and `Frozen` motion engines independent of `StatefulWidget` |
 
 ---
@@ -779,13 +761,13 @@ For deep-dive architectural specifications, mathematical invariants, and interna
 ### Flutter Integration Whitepapers
 * [Whitepaper 06: Durable Animations & Wall-Clock Compensation Invariants](doc/foundations/06_durable_animations_and_wall_clock.md)
   * Specification of `DurableAnimationController` (`DurabilityPolicy`), and zero-leak Ticker lifecycle.
-* [Whitepaper 08: Zero-Jump Form Binding & IME Integrity Invariants](doc/foundations/08_form_binding_and_ime_integrity.md)
-  * CJK IME composition protection, cursor jump immunity, and ping-pong re-entrancy mutex shields.
-* [Whitepaper 09: Declarative UI Refresh & Stale-While-Revalidate Patterns](doc/foundations/09_declarative_refresh_and_swr_ui.md)
+* [Whitepaper 08: Declarative UI Refresh & Stale-While-Revalidate Patterns](doc/foundations/08_declarative_refresh_and_swr_ui.md)
   * Zero-flicker background revalidation with `RefreshIndicator` and `.retained()` SWR buffering.
-* [Whitepaper 12: Flutter DevTools Inspection & Diagnostics Architecture](doc/foundations/12_devtools_inspection_and_diagnostics.md)
+* [Whitepaper 10: Listenable Interoperability & Reactive Bridges Specification](doc/foundations/10_listenable_interoperability_and_bridges.md)
+  * Bidirectional `toBloom`, `toBloomBy`, and `toListenable` bridges with Demand-Driven Dormancy.
+* [Whitepaper 11: Flutter DevTools Inspection & Diagnostics Architecture](doc/foundations/11_devtools_inspection_and_diagnostics.md)
   * Native inspection of reactive dependencies via `BloomElement.debugFillProperties`.
-* [**All 15 Foundations Whitepapers Index**](doc/foundations/README.md)
+* [**All 14 Foundations Whitepapers Index**](doc/foundations/README.md)
 
 ### Core Reactive Engine Foundations
 * [Core Whitepaper 01: 2-Phase LPDAG Engine & Glitch-Freedom](https://github.com/pioneerjkf/blooming/blob/main/packages/blooming/doc/foundations/01_lpdag_two_phase_engine_and_glitch_freedom.md)

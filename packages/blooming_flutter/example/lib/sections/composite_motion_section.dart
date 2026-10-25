@@ -335,7 +335,8 @@ base class _OrigamiMorphStage extends BloomWidget {
             ? Tween<double>(begin: -0.22, end: 0.0)
                 .animate(CurvedAnimation(
                   parent: ctrl.view,
-                  curve: const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
+                  curve:
+                      const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
                 ))
                 .value
             : 0.0;
@@ -344,7 +345,8 @@ base class _OrigamiMorphStage extends BloomWidget {
             ? Tween<double>(begin: 0.12, end: 0.0)
                 .animate(CurvedAnimation(
                   parent: ctrl.view,
-                  curve: const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
+                  curve:
+                      const Interval(0.15, 0.55, curve: Curves.easeInOutCubic),
                 ))
                 .value
             : 0.0;
@@ -357,8 +359,8 @@ base class _OrigamiMorphStage extends BloomWidget {
                 )
                     .animate(CurvedAnimation(
                       parent: ctrl.view,
-                      curve:
-                          const Interval(0.30, 0.70, curve: Curves.easeInOutBack),
+                      curve: const Interval(0.30, 0.70,
+                          curve: Curves.easeInOutBack),
                     ))
                     .value ??
                 BorderRadius.circular(16))

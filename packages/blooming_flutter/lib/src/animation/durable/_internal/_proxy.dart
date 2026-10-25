@@ -351,7 +351,8 @@ mixin _DurableVsyncSocketElementMixin on ComponentElement
 
   void _syncController() {
     final targetController = _controller;
-    if (_proxy case final proxy? when identical(proxy._target, targetController)) {
+    if (_proxy case final proxy?
+        when identical(proxy._target, targetController)) {
       return;
     }
     _unbindProxy();
