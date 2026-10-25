@@ -155,6 +155,5 @@ base class DirectBloomWidgetComponent extends BloomWidget {
   final Bloom<int> counter;
 
   @override
-  Widget build(BuildContext context, BloomVia via) =>
-      Text('${via(counter)}');
+  Widget build(BuildContext context, BloomVia via) => Text('${via(counter)}');
 }

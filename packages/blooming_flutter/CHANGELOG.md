@@ -1,3 +1,9 @@
+## 0.1.3
+
+- **Widgets**: Relaxed class modifiers on `BloomWidget`, `BloomVsyncWidget`, and `BloomAnimatedWidget` from `abstract base class` to `abstract class` to allow unconstrained subclassing across library boundaries.
+- **Documentation**: Added comprehensive architectural decision matrix and situational Good/Bad cases for Widget API selection in README and `DurableAnimationController`.
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.1.3`.
+
 ## 0.1.2
 
 - **Components**: Introduced `BloomAnimatedWidget` and `BloomAnimatedElement` for zero-boilerplate class-based durable animations with element-scoped `ScopedAnimationController` proxies.

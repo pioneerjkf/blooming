@@ -119,7 +119,8 @@ class DashboardView extends StatelessWidget {
 
       expect(returnedExpr, isNotNull);
       // Column is NOT a sole composed invocation!
-      expect(PreferBloomWidget.isSoleComposedInvocation(returnedExpr!), isFalse);
+      expect(
+          PreferBloomWidget.isSoleComposedInvocation(returnedExpr!), isFalse);
     });
 
     test('permits StatelessWidget with multiple statements before return', () {

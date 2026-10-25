@@ -136,7 +136,6 @@ final conciseValueAccess = computed((via) => via(count) * 2);
 // 2. Flutter build passes
 // =============================================================================
 
-
 // #case tour/avoid_bloom_creation_in_build/bad
 // State created in build() is discarded and recreated on every frame.
 class CreationInBuild extends StatelessWidget {
@@ -331,8 +330,7 @@ base class DirectBloomWidget extends BloomWidget {
   final Bloom<int> count;
 
   @override
-  Widget build(BuildContext context, BloomVia via) =>
-      Text('${via(count)}');
+  Widget build(BuildContext context, BloomVia via) => Text('${via(count)}');
 }
 
 // #case tour/avoid_escaping_scoped_controller/bad

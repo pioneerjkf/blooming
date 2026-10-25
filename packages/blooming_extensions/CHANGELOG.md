@@ -1,3 +1,8 @@
+## 0.1.3
+
+- **Dependencies**: Bumped `blooming` dependency constraint to `^0.1.3`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.1.3.
+
 ## 0.1.2
 
 - **Dependencies**: Bumped `blooming` dependency constraint to `^0.1.2`.

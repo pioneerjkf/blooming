@@ -1,3 +1,9 @@
+## 0.1.3
+
+- **Rules**: Introduced `prefer_bloom_widget` lint rule detecting redundant `StatelessWidget` wrappers directly returning `composed` or `composed.animate`.
+- **Fixes**: Added `ReplaceStatelessWithBloomWidgetFix` quick fix converting eligible `StatelessWidget` declarations to `BloomWidget` or `BloomAnimatedWidget`.
+- **Documentation**: Updated `prefer_composed_child` docs clarifying boundary vs leaf criteria and architectural guidance.
+
 ## 0.1.2
 
 - **Bug Fix**: Prevented stack overflow crashes on cyclic variable aliases in `avoid_untracked_bloom_read`.
