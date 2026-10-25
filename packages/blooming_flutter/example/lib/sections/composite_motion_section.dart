@@ -872,92 +872,100 @@ base class _ChainedSequenceStage extends BloomWidget {
   Widget build(BuildContext context, BloomVia via) {
     final store = via.of<CompositeMotionStore>(context);
     final masterCtrl = via(store.masterCtrl);
-    return composed.animate(masterCtrl, (context, via, ctrl) {
-      final offset = _orbitOffsetSequence.evaluate(ctrl.view);
-      final color = _orbitColorSequence.evaluate(ctrl.view) ?? Colors.cyan;
-      final scale = _scaleSequence.evaluate(ctrl.view);
-      final angle = ctrl.value * 2 * math.pi;
 
-      return Center(
-        child: SizedBox(
-          height: 180,
-          width: 320,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Perimeter Guide Track
-              Container(
-                width: 200,
-                height: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.grey.withAlpha(40),
-                    style: BorderStyle.solid,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-              // Center Core Pulsar
-              Transform.rotate(
-                angle: -angle * 0.5,
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: color.withAlpha(30),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: color.withAlpha(120)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${(ctrl.value * 100).toInt()}%',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                        fontFamily: 'monospace',
-                      ),
+    return Center(
+      child: SizedBox(
+        height: 180,
+        width: 320,
+        child: composed.animate.child(
+          masterCtrl,
+          (context, via, ctrl, guideTrack) {
+            final offset = _orbitOffsetSequence.evaluate(ctrl.view);
+            final color =
+                _orbitColorSequence.evaluate(ctrl.view) ?? Colors.cyan;
+            final scale = _scaleSequence.evaluate(ctrl.view);
+            final angle = ctrl.value * 2 * math.pi;
+
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // 1. Perimeter Guide Track (Static - cached across 60/120fps frame ticks)
+                guideTrack,
+
+                // 2. Center Core Pulsar (Dynamic Animation)
+                Transform.rotate(
+                  angle: -angle * 0.5,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(30),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color.withAlpha(120)),
                     ),
-                  ),
-                ),
-              ),
-              // Orbiting Satellite Node
-              Transform.translate(
-                offset: offset,
-                child: Transform.rotate(
-                  angle: angle,
-                  child: Transform.scale(
-                    scale: scale,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withAlpha(140),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.satellite_alt_rounded,
-                          color: Colors.white,
-                          size: 18,
+                    child: Center(
+                      child: Text(
+                        '${(ctrl.value * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                          fontFamily: 'monospace',
                         ),
                       ),
                     ),
                   ),
                 ),
+
+                // 3. Orbiting Satellite Node (Dynamic Animation)
+                Transform.translate(
+                  offset: offset,
+                  child: Transform.rotate(
+                    angle: angle,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withAlpha(140),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.satellite_alt_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+          child: Container(
+            width: 200,
+            height: 120,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.grey.withAlpha(40),
+                style: BorderStyle.solid,
+                width: 1.5,
               ),
-            ],
+            ),
           ),
         ),
-      );
-    });
+      ),
+    );
   }
 }
 

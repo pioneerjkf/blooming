@@ -477,11 +477,11 @@ base class DualEngineBattleSectionDemo extends BloomWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.white12),
           ),
-          child: composed.animate(
-            controller,
-            (context, via, ctrl) => Column(
-              children: [
-                Text(
+          child: Column(
+            children: [
+              composed.animate(
+                controller,
+                (context, via, ctrl) => Text(
                   ctrl.value.toStringAsFixed(1),
                   style: TextStyle(
                     fontFamily: 'monospace',
@@ -491,13 +491,13 @@ base class DualEngineBattleSectionDemo extends BloomWidget {
                     letterSpacing: 1.5,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Continuous Infinite Coordinate',
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Continuous Infinite Coordinate',
+                style: TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+            ],
           ),
         ),
       ],

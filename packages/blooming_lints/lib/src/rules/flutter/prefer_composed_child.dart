@@ -45,6 +45,23 @@ part of '../../../blooming_lints.dart';
 /// );
 /// ```
 ///
+/// **GOOD (Pattern 2B: High-Frequency Animation with Static Elements via composed.animate.child):**
+/// ```dart
+/// // When dynamic animation layers over static elements (e.g. guide tracks, background badges),
+/// // pass static subtrees via .child to preserve a clean single Stack without double-nesting:
+/// composed.animate.child(
+///   controller,
+///   (context, via, ctrl, guideTrack) => Stack(
+///     alignment: Alignment.center,
+///     children: [
+///       guideTrack, // Cached across 60/120fps frame ticks
+///       Transform.rotate(angle: ctrl.value * 2 * math.pi, child: ...),
+///     ],
+///   ),
+///   child: const StaticGuideTrack(),
+/// );
+/// ```
+///
 /// **GOOD (Pattern 3: Extract Standalone Const Widget):**
 /// ```dart
 /// // Extract complex static subtrees into a standalone const StatelessWidget:
@@ -52,15 +69,12 @@ part of '../../../blooming_lints.dart';
 ///   const HeavyStaticHeader(), // Fully isolated static StatelessWidget
 ///   composed((context, via) => Text('${via(countBloom)}')), // Surgical leaf rebuild
 /// ]);
-///
-/// // Note: If the entire component is state-driven, extract as a direct BloomWidget instead:
-/// class MyMetricCard extends BloomWidget {
-///   const MyMetricCard({super.key, required this.countBloom});
-///   final Bloom<int> countBloom;
-///   @override
-///   Widget build(BuildContext context, BloomVia via) => Text('${via(countBloom)}');
-/// }
 /// ```
+///
+/// **ANTI-PATTERN WARNING (Over-Engineering with unnecessary StatelessWidget wrappers):**
+/// Avoid wrapping trivial static widgets (like single icons, simple containers) into separate
+/// `StatelessWidget` classes unless they have complex internal state or independent lifecycles.
+/// Use inline `const` or `composed.child` directly instead.
 class PreferComposedChild extends DartLintRule {
   PreferComposedChild() : super(code: _code);
 
@@ -69,13 +83,75 @@ class PreferComposedChild extends DartLintRule {
     problemMessage:
         'Consider isolating non-reactive static subtrees from composed.',
     correctionMessage:
-        'To minimize rebuild overhead, try one of these recommended alternatives depending on your widget tree: '
-        '1) Narrow composed scope to dynamic widgets only (Surgical Rebuild), '
-        '2) pass static subtrees via composed.child / composed.children, '
-        '3) extract static subtrees into separate const widgets, or '
-        '4) extract dedicated reactive components directly as BloomWidget.',
+        'To minimize rebuild overhead, pass static subtrees via composed.child / composed.children, '
+        'or narrow composed scope to dynamic leaf widgets (Surgical Rebuild). '
+        'Avoid extracting trivial static widgets into separate StatelessWidget classes when const inline or .child caching suffices.',
     errorSeverity: DiagnosticSeverity.INFO,
   );
+
+  static const _highFrequencyCode = LintCode(
+    name: 'prefer_composed_child',
+    problemMessage:
+        'High-frequency frame animation closure (\'{0}\') contains static widget subtrees.',
+    correctionMessage:
+        'Pass static subtrees or background tracks via {0}.child or {0}.children to preserve a clean single layout tree without 60/120fps rebuild overhead. '
+        'Avoid extracting trivial static widgets into separate StatelessWidget classes when const inline or .child caching suffices.',
+    errorSeverity: DiagnosticSeverity.INFO,
+  );
+
+  static const _layoutCode = LintCode(
+    name: 'prefer_composed_child',
+    problemMessage:
+        'Static layout container (\'{0}\') inside composed closure is unnecessarily re-evaluated on reactive state changes.',
+    correctionMessage:
+        'Narrow composed scope by keeping the {0} outside and wrapping only dynamic leaf widgets (Surgical Rebuild), '
+        'or pass static sibling subtrees via composed.child / composed.children.',
+    errorSeverity: DiagnosticSeverity.INFO,
+  );
+
+  static const _multiChildLayoutWidgets = {
+    'Column',
+    'Row',
+    'Stack',
+    'Flex',
+    'Wrap',
+    'ListView',
+  };
+
+  static String? _getReturnedLayoutTypeName(FunctionBody body) {
+    Expression? expr;
+    if (body is ExpressionFunctionBody) {
+      expr = body.expression.unParenthesized;
+    } else if (body is BlockFunctionBody) {
+      for (final stmt in body.block.statements) {
+        if (stmt is ReturnStatement && stmt.expression != null) {
+          expr = stmt.expression!.unParenthesized;
+          break;
+        }
+      }
+    }
+    while (expr != null) {
+      if (expr is InstanceCreationExpression) {
+        final typeName = expr.constructorName.type.name.lexeme;
+        if (_multiChildLayoutWidgets.contains(typeName)) {
+          return typeName;
+        }
+        // Unwrap single-child structural wrappers (Center, SizedBox, Padding, DecoratedBox, Container)
+        final args = expr.argumentList.arguments;
+        Expression? childExpr;
+        for (final arg in args) {
+          if (arg is NamedExpression && arg.name.label.name == 'child') {
+            childExpr = arg.expression.unParenthesized;
+            break;
+          }
+        }
+        expr = childExpr;
+      } else {
+        break;
+      }
+    }
+    return null;
+  }
 
   @override
   void run(
@@ -114,7 +190,22 @@ class PreferComposedChild extends DartLintRule {
       final threshold = isHighFrequency ? 1 : 2;
 
       if (visitor.complexityScore >= threshold) {
-        reporter.atNode(node, _code);
+        if (isHighFrequency) {
+          var functorLabel = 'composed';
+          if (functorName.contains('Animate')) {
+            functorLabel = 'composed.animate';
+          } else if (functorName.contains('Drive')) {
+            functorLabel = 'composed.drive';
+          }
+          reporter.atNode(node, _highFrequencyCode, arguments: [functorLabel]);
+        } else {
+          final layoutTypeName = _getReturnedLayoutTypeName(builderFunc.body);
+          if (layoutTypeName != null) {
+            reporter.atNode(node, _layoutCode, arguments: [layoutTypeName]);
+          } else {
+            reporter.atNode(node, _code);
+          }
+        }
       }
     }
 
