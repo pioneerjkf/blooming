@@ -27,7 +27,7 @@ base class BloomShowcaseApp extends BloomWidget {
     // Provide the root ShowcaseStore down the tree (Zero Prop-Drilling)
     return Bloom.constant(store).provide(
       child: MaterialApp(
-        title: 'Bloom Flutter Showcase',
+        title: 'Blooming Flutter Showcase',
         debugShowCheckedModeBanner: false,
         themeMode: themeMode,
         theme: ThemeData(
@@ -89,7 +89,7 @@ base class ShowcaseShell extends BloomWidget {
             ),
             const SizedBox(width: 10),
             const Text(
-              'Bloom Flutter Showcase',
+              'Blooming Flutter Showcase',
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
             const SizedBox(width: 8),

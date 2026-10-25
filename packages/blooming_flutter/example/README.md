@@ -37,7 +37,7 @@ The `blooming_flutter_example` application serves a dual purpose:
 The application is structured into 18 distinct, self-contained chapters covering every aspect of the framework, organized by progressive disclosure:
 
 ```
-[Bloom Flutter Showcase Master Index]
+[Blooming Flutter Showcase Master Index]
  ├── [Tier 1: Core State & Composition 01~04]
  │    ├── 01. BloomWidget & Dynamic Discovery
  │    ├── 02. Inline Functors & Zero-Cost Trees (composed)

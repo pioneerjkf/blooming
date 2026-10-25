@@ -368,7 +368,7 @@ abstract final class BloomTypeChecker {
     'distinct',
     'effect',
 
-    // 2. Bloom Flutter UI render & listener functors
+    // 2. Blooming Flutter UI render & listener functors
     'build',
     'drive',
     'animate',

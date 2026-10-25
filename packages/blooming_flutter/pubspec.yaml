@@ -39,5 +39,5 @@ dev_dependencies:
   blooming_test: ^0.1.4
 
 screenshots:
-  - description: "The Bloom Flutter reactive UI engine logo."
+  - description: "The Blooming Flutter reactive UI engine logo."
     path: screenshots/logo.png

@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/pioneerjkf/blooming/main/packages/blooming_flutter/assets/blooming_flutter_banner_extended_neutral.svg" alt=".blooming_flutter — Fine-Grained Reactive UI Engine for Flutter" width="100%" />
 </p>
 
-<h1 align="center">Bloom Flutter</h1>
+<h1 align="center">Blooming Flutter</h1>
 
 <p align="center">
   <strong>High-Performance, Fine-Grained Reactive UI Bindings, Durable Animations, and Listenable Bridges for Flutter</strong>
@@ -22,7 +22,7 @@
 
 ## Overview
 
-**Bloom Flutter** (`package:blooming_flutter`) is the official Flutter reactive UI binding framework for the Bloom state engine. Directly bridging Bloom's **Push-Dirty, Lazy-Pull LPDAG (Lazy Pull Directed Acyclic Graph)** into the Flutter `Widget` and `Element` hierarchy, `blooming_flutter` eliminates coarse-grained subtree rebuilds, ambient context tracking traps, listener leaks, and unmount animation state destruction.
+**Blooming Flutter** (`package:blooming_flutter`) is the official Flutter reactive UI binding framework for the Bloom state engine. Directly bridging Bloom's **Push-Dirty, Lazy-Pull LPDAG (Lazy Pull Directed Acyclic Graph)** into the Flutter `Widget` and `Element` hierarchy, `blooming_flutter` eliminates coarse-grained subtree rebuilds, ambient context tracking traps, listener leaks, and unmount animation state destruction.
 
 In traditional Flutter state management architectures, state updates trigger top-down subtree rebuilds across parent and sibling widgets. Even with selective builders, ambient tracking scopes often cause accidental dependencies, memory leaks during unmounts, and screen-flicker during asynchronous revalidations.
 
@@ -78,7 +78,7 @@ base class LiveMetricCard extends BloomWidget {
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                    Bloom Flutter Architecture & Taxonomy                    │
+│                  Blooming Flutter Architecture & Taxonomy                  │
 ├────────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
 │  1. Reactive UI Boundaries (Surgical Micro-Rebuilds)                       │
@@ -137,11 +137,11 @@ base class LiveMetricCard extends BloomWidget {
 
 ---
 
-## Architectural Comparison: Conventional Flutter Approaches vs. Bloom Flutter
+## Architectural Comparison: Conventional Flutter Approaches vs. Blooming Flutter
 
 In Flutter applications, balancing granular reactive state, frame-isolated animations, asynchronous queries, and text inputs involves distinct architectural trade-offs across common paradigms (such as `setState`, `ValueListenableBuilder`, or provider selectors):
 
-| Engineering Dimension | Conventional Flutter Trade-offs & Limitations | Bloom Flutter Resolution |
+| Engineering Dimension | Conventional Flutter Trade-offs & Limitations | Blooming Flutter Resolution |
 | :--- | :--- | :--- |
 | **Widget Tree Invalidation** | Naive `setState` cascades subtree rebuilds; `ValueListenableBuilder` or manual selectors require nested boilerplate for multiple dependencies | **Surgical Leaf Micro-Rebuild** (`composed`, parent/sibling rebuild count: 0, flat multi-dependency tracking) |
 | **Reactive Tracking Scopes** | Ambient context or boilerplate wrappers with hidden leaks | **Explicit `BloomVia` Injection** (Zero-ambient, deterministic AST analysis) |

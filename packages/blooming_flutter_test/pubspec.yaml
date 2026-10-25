@@ -1,5 +1,5 @@
 name: blooming_flutter_test
-description: "Unified Flutter widget testing harness and state mocking system for the Bloom Flutter reactive framework."
+description: "Unified Flutter widget testing harness and state mocking system for the Blooming Flutter reactive framework."
 homepage: https://pioneerjkf.dev
 repository: https://github.com/pioneerjkf/blooming
 issue_tracker: https://github.com/pioneerjkf/blooming/issues

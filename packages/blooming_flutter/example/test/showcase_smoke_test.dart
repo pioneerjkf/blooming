@@ -24,7 +24,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Verify initial render (Section 01)
-    expect(find.text('Bloom Flutter Showcase'), findsOneWidget);
+    expect(find.text('Blooming Flutter Showcase'), findsOneWidget);
     expect(find.text('BloomWidget & Dynamic Discovery'), findsWidgets);
 
     final app = tester.widget<BloomShowcaseApp>(find.byType(BloomShowcaseApp));
