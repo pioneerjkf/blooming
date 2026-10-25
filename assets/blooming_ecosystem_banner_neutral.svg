@@ -123,10 +123,10 @@
   <!-- 02. HERO ROW: Core Manifesto (Left) vs .bloom Wordmark (Right)       -->
   <!-- =================================================================== -->
   <!-- Left Manifesto: Space Grotesk Bold (4-Pillar Architecture) -->
-  <text class="sans kw" x="70" y="154" font-size="36" font-weight="500" letter-spacing="-0.01em">Dynamic Graph</text>
-  <text class="sans kw-accent" x="70" y="194" font-size="36" font-weight="500" letter-spacing="-0.01em">Glitch-Free</text>
-  <text class="sans kw" x="70" y="234" font-size="36" font-weight="500" letter-spacing="-0.01em">Managed Lifecycles</text>
-  <text class="sans kw-mint" x="70" y="274" font-size="36" font-weight="500" letter-spacing="-0.01em">Three Clear States</text>
+  <text class="sans kw" x="70" y="145" font-size="36" font-weight="500" letter-spacing="-0.01em">Dynamic Graph</text>
+  <text class="sans kw-accent" x="70" y="191" font-size="36" font-weight="500" letter-spacing="-0.01em">Glitch-Free</text>
+  <text class="sans kw" x="70" y="237" font-size="36" font-weight="500" letter-spacing="-0.01em">Managed Lifecycles</text>
+  <text class="sans kw-mint" x="70" y="283" font-size="36" font-weight="500" letter-spacing="-0.01em">Three Clear States</text>
 
   <!-- Right .bloom Vector Wordmark: Exact Authentic Glyphs -->
   <g transform="translate(514, 258) scale(0.128)">

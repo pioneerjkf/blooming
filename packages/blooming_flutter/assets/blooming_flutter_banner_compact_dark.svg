@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 800" width="1024" height="800" role="img" aria-label="blooming_flutter banner (dark)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 800" width="1024" height="800" role="img" aria-label="blooming_flutter compact banner (dark)">
   <title>blooming_flutter — Fine-Grained Reactive State &amp; Motion for Flutter</title>
-  <desc>Swiss-style architectural banner for blooming_flutter featuring Noto Serif Display glyphs, mathematical grid balance, and official Flutter and .bloom brand marks.</desc>
+  <desc>Compact Swiss-style architectural banner for blooming_flutter featuring Noto Serif Display glyphs, mathematical grid balance, and official Flutter and .bloom brand marks.</desc>
   <defs>
     <!-- Pure Flat Edition - All Gradients Removed -->
   </defs>
@@ -38,6 +38,9 @@
     }
     .kw-accent {
       fill: #FF5277;
+    }
+    .kw-mint {
+      fill: #6EA1C4;
     }
     .kw-paren {
       fill: #5A7B9F;
@@ -81,28 +84,23 @@
   <!-- =================================================================== -->
 
   <!-- [TOP-LEFT]: High-Impact Copy & Core Architectural Value Proposition -->
-  <g transform="translate(70, 130)">
-    <!-- Main Title -->
-    <text class="sans kw" x="0" y="32" font-size="30" font-weight="700" letter-spacing="-0.02em">
-      Fine-Grained Reactive
-    </text>
-    <text class="sans kw-accent" x="0" y="72" font-size="30" font-weight="700" letter-spacing="-0.02em">
-      State &amp; Motion for Flutter
-    </text>
-
-    <!-- Inner Hairline Divider -->
-    <line class="grid-line" x1="0" y1="112" x2="410" y2="112" />
-
+  <g transform="translate(70, 128)">
     <!-- Feature 01 -->
-    <g transform="translate(0, 164)">
-      <text class="sans kw" x="0" y="0" font-size="18.5" font-weight="600">Explicit BloomVia · Deterministic Scope</text>
-      <text class="sans kw-sub" x="0" y="28" font-size="15">Zero ambient context traps · 0 rebuild cascades</text>
+    <g transform="translate(0, 27)">
+      <text class="sans kw" x="0" y="0" font-size="32" font-weight="600">Fine-Grained Reactive</text>
+      <text class="sans kw-mint" x="0" y="40" font-size="22">Glitch-free push-pull graph</text>
     </g>
 
     <!-- Feature 02 -->
-    <g transform="translate(0, 252)">
-      <text class="sans kw" x="0" y="0" font-size="18.5" font-weight="600">BloomProvider · Rebuild Suppression</text>
-      <text class="sans kw-sub" x="0" y="28" font-size="15">0 InheritedWidget rebuild storms · O(1) DI tunneling</text>
+    <g transform="translate(0, 137)">
+      <text class="sans kw" x="0" y="0" font-size="32" font-weight="600">Explicit BloomVia</text>
+      <text class="sans kw-mint" x="0" y="40" font-size="22">Zero ambient context traps</text>
+    </g>
+
+    <!-- Feature 03 -->
+    <g transform="translate(0, 247)">
+      <text class="sans kw" x="0" y="0" font-size="32" font-weight="600">BloomProvider</text>
+      <text class="sans kw-mint" x="0" y="40" font-size="22">0 InheritedWidget rebuild storms</text>
     </g>
   </g>
 
