@@ -57,24 +57,22 @@ class ScopedStateDiStore {
         icon: Icons.account_tree_rounded,
         codeSnippet: '''
 // 1. Parent: Provide state to subtree using bloom.provide()
-final authBloom = BloomController(AuthState(isLoggedIn: true));
+final authController = BloomController(AuthState(isLoggedIn: true));
 
 Widget buildApp() {
-  return authBloom.provide(
+  return authController.bloom.provide(
     child: const UserDashboard(),
   );
 }
 
 // 2. Child: Look up ancestor state reactively without prop drilling
 base class UserDashboard extends BloomWidget {
-  UserDashboard({super.key});
-
-  // Automatically subscribes to ancestor BloomProvider<AuthState>
-  late final authStateBloom = bloomOf<AuthState>();
+  const UserDashboard({super.key});
 
   @override
   Widget build(BuildContext context, BloomVia via) {
-    final auth = via(authStateBloom);
+    // Seamless lookup & reactive tracking via via.of<T>(context)
+    final auth = via.of<AuthState>(context);
     return Text(auth.isLoggedIn ? 'Welcome Back!' : 'Please Sign In');
   }
 }''',
@@ -86,7 +84,7 @@ base class UserDashboard extends BloomWidget {
         roadmapTree: '''
 [Scoped State DI Hierarchy]
  ├── bloom.provide(child: ...) / Bloom.constant(store).provide(...) -> Mounts BloomProvider<T>
- └── bloomOf<T>()                                            -> O(1) ancestor lookup & reactive binding
+ └── via.of<T>(context) / context.bloomOf<T>()               -> O(1) ancestor lookup & reactive binding
 ''',
         builder: () => ScopedStateDiSectionDemo(),
       );

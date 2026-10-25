@@ -1,5 +1,5 @@
 name: blooming_flutter
-description: "Fine-grained reactive UI bindings, durable animations, and form controllers for Flutter powered by Bloom."
+description: "Fine-grained reactive UI bindings, durable animations, and Listenable bridges for Flutter powered by Bloom."
 
 homepage: https://pioneerjkf.dev
 repository: https://github.com/pioneerjkf/blooming

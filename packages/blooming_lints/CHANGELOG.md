@@ -1,3 +1,8 @@
+## 0.1.2
+
+- **Bug Fix**: Prevented stack overflow crashes on cyclic variable aliases in `avoid_untracked_bloom_read`.
+- **Rules**: Extended `avoid_escaping_scoped_controller` and `prefer_bloom_over_controller` to recognize `BloomAnimatedWidget`.
+
 ## 0.1.1
 
 - **Ecosystem**: Synchronized release with Blooming core ecosystem v0.1.1.

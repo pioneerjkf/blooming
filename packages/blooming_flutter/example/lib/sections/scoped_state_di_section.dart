@@ -106,7 +106,7 @@ base class ScopedStateDiSectionDemo extends BloomWidget {
   }
 }
 
-/// Child widget consuming ancestor CartItem state via `bloomOf<CartItem>()`
+/// Child widget consuming ancestor CartItem state via `via.of<CartItem>(context)`
 base class ItemCard extends BloomWidget {
   const ItemCard({
     super.key,

@@ -825,7 +825,7 @@ flutter pub add blooming_flutter
 Import the foundational libraries:
 
 ```dart
-// Primary reactive UI widgets, builders, form controllers, and durable animations
+// Primary reactive UI widgets, builders, durable animations, and Listenable bridges
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 ```

@@ -31,6 +31,8 @@
 /// │                         Flutter Widget Tree Layer                          │
 /// │                                                                            │
 /// │   • BloomWidget                           : Auto-tracked Flutter widgets    │
+/// │   • BloomAnimatedWidget                   : Class-based durable animations  │
+/// │   • BloomProvider                         : Scoped DI with rebuild block    │
 /// │   • composed((context, via) => ...)      : Surgical inline micro-rebuild   │
 /// │   • bloom.build(...)                     : Direct reactive node builders   │
 /// │   • composed.animate                     : 60/120fps frame-isolated motion │

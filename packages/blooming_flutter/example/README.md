@@ -18,10 +18,10 @@ The `blooming_flutter_example` application serves a dual purpose:
 ```
 [ShowcaseStore (Root State Container)]
         │
-        ▼ (store.provide())
+        ▼ (Bloom.constant(store).provide())
 [BloomProvider<ShowcaseStore>] (Injected at Root MaterialApp)
         │
-        ▼ (bloomOf<ShowcaseStore>())
+        ▼ (via.of<ShowcaseStore>(context) / context.bloomOf)
 [ShowcaseShell / Responsive SplitLayout]
    ├── [Left Navigation Drawer] (18 Canonical Chapters)
    └── [Right Master Viewport]
@@ -76,7 +76,7 @@ The application is structured into 18 distinct, self-contained chapters covering
 * **01. BloomWidget & Dynamic Discovery (`01_watch_widget`)**: Demonstrates dynamic dependency tracking via explicit `BloomVia` manifest with 1-Pass Epoch Sweeping. Rebuilds surgically only when accessed Bloom nodes change distinct value (`distinct: true`).
 * **02. Inline Functors (`02_composed_functors`)**: Zero-boilerplate inline reactive widgets via `composed((via) => ...)` without requiring standalone `StatefulWidget` or `BloomWidget` classes. Supports `.context`, `.child`, and `.children` static subtree caching.
 * **03. Direct Value Cascades (`03_bloom_build_tuple`)**: Zero-allocation single-value reactive building via `bloom.build((val) => ...)` and multi-node dynamic discovery via `composed((via) => ...)`.
-* **04. Scoped State DI (`04_scoped_state_di`)**: Hierarchical, type-safe dependency injection via `store.provide(child: ...)` and `bloomOf<T>()`, eliminating prop-drilling across deep widget subtrees.
+* **04. Scoped State DI (`04_scoped_state_di`)**: Hierarchical, type-safe dependency injection via `bloom.provide(child: ...)` and `via.of<T>(context)`, eliminating prop-drilling across deep widget subtrees.
 
 ---
 
