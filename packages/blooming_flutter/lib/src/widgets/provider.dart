@@ -172,6 +172,27 @@ extension BloomProvideExtension<T> on Bloom<T> {
       BloomProvider<T>(key: key, bloom: this, child: child);
 }
 
+/// A convenience extension for converting a [BloomController] into a [BloomProvider].
+extension BloomControllerProvideExtension<T> on BloomController<T> {
+  /// Wraps [child] in a [BloomProvider<T>] providing this controller's reactive [bloom] node.
+  ///
+  /// * [child]: The descendant widget subtree receiving this state.
+  /// * [key]: Optional widget key.
+  ///
+  /// **Requires:**
+  /// * [child] must not be null.
+  ///
+  /// **Ensures:**
+  /// * Returns a [BloomProvider<T>] embedding this controller's reactive [bloom] node.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// counterController.provide(child: const CounterDisplay());
+  /// ```
+  BloomProvider<T> provide({Key? key, required Widget child}) =>
+      bloom.provide(key: key, child: child);
+}
+
 /// Context-aware reactive lookup extensions on [BuildContext] for [BloomProvider].
 extension BloomBuildContextProviderExtension on BuildContext {
   /// Reactively subscribes to an ancestor [BloomProvider] and returns its inner [Bloom<T>] state.

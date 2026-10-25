@@ -159,7 +159,7 @@ In Flutter applications, balancing granular reactive state, frame-isolated anima
 
 ## Core Production Engineering Pillars
 
-`blooming_flutter` addresses five critical architectural constraints and failure modes encountered when scaling Flutter applications to complex production workflows.
+`blooming_flutter` addresses six critical architectural constraints and failure modes encountered when scaling Flutter applications to complex production workflows.
 
 ---
 
@@ -258,7 +258,99 @@ class StockDashboardCard extends StatelessWidget {
 
 ---
 
-### Pillar 2: Demand-Driven Listenable Bridges (`toBloom` & `toBloomBy`)
+### Pillar 2: Rebuild-Suppressed Scoped DI (`BloomProvider` & `via.of<T>`)
+
+Flutter's standard dependency injection mechanism, `InheritedWidget` (and state management packages built upon it), fundamentally couples **scope resolution** with **rebuild invalidation**: whenever state mutates, every descendant widget that looked up the inherited widget via `dependOnInheritedWidgetOfExactType` is scheduled for `markNeedsBuild()`. Localized changes to a single state property inadvertently trigger massive subtree rebuild waves across intermediate layout structures.
+
+`blooming_flutter` completely dissolves this architectural bottleneck with **Rebuild-Suppressed `BloomProvider<T>`**:
+1. **Decoupling Discovery from Invalidation**: `BloomProvider` provisions the immutable reactive `Bloom<T>` reference itself down the element hierarchy. Its `updateShouldNotify` returns `!identical(oldWidget.bloom, bloom)`—ensuring that value mutations within the node yield **zero rebuild cascades** across intermediate widgets (`0-Rebuild Subtree Tunneling`).
+2. **Topological Micro-Targeting**: Descendants observe provided nodes with `via.of<T>(context)` or `context.bloomOf<T>()`. Only the exact leaf element reading the state registers an LPDAG edge, updating surgically while leaving sibling and ancestor layouts completely untouched.
+3. **Exact Type Keying & Null Safety**: Scoped resolution strictly keys on exact reified runtime types (`BloomProvider<T>`), preventing ambiguous subtype collisions, with `via.maybeOf<T>(context)` providing seamless optional fallbacks without runtime crashes.
+
+#### Rebuild Suppression Architecture & Tunneling Flow
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│              BloomProvider Scoped DI & Rebuild Suppression Flow            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│   [ Ancestor Widget Tree ]                                                 │
+│   BloomProvider<UserSession>(bloom: sessionController.bloom)               │
+│        │                                                                   │
+│        ├─► updateShouldNotify: !identical(old.bloom, new.bloom)            │
+│        │   (Node reference stable? ──► Subtree Rebuild Count: ZERO!)       │
+│        │                                                                   │
+│        ▼ (Tunneling through intermediate layout elements)                  │
+│   ┌────────────────────────────────────────────────────────────────────┐   │
+│   │ [ Scaffold ] ──► [ Column ] ──► [ CardWidget ] (0 Rebuilds)        │   │
+│   └──────────────────────────────────┬─────────────────────────────────┘   │
+│                                      ▼                                     │
+│        ┌─────────────────────────────┴─────────────────────────────┐       │
+│        ▼                                                           ▼       │
+│   [ Static Header ] (0 Rebuilds)           composed((ctx, via) {           │
+│   (Does not read session)                    final u = via.of<UserSession>(ctx);
+│                                              return Text(u.name); // LEAF  │
+│                                            })                              │
+│                                                                            │
+│   [ Mutation: sessionController.data = newSession ]                        │
+│        │                                                                   │
+│        ▼                                                                   │
+│   Push-Dirty Pulse ──► Only the leaf Text element rebuilds surgically!     │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Production Code Example
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:blooming_flutter/blooming_flutter.dart';
+
+final authController = BloomController(AuthState(user: 'Alice', token: 'xyz'));
+
+class RootAppShell extends StatelessWidget {
+  const RootAppShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Inject reactive state at root; updateShouldNotify ensures this tree NEVER rebuilds
+    return BloomProvider<AuthState>(
+      bloom: authController.bloom,
+      child: const DashboardView(),
+    );
+  }
+}
+
+class DashboardView extends StatelessWidget {
+  const DashboardView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Dashboard')),
+      body: Column(
+        children: [
+          const ExpensiveHeroChart(), // NEVER rebuilds on auth change
+          const HeavyNavigationRail(), // NEVER rebuilds on auth change
+
+          // Surgical Leaf Tunneling: Subscribes to ancestor BloomProvider<AuthState>
+          composed((context, via) {
+            final auth = via.of<AuthState>(context);
+            return Text('Logged in as: ${auth.user}');
+          }),
+        ],
+      ),
+    );
+  }
+}
+```
+
+> [!TIP]
+> For detailed architectural invariants and exact type lookup guarantees, consult the technical whitepaper [Foundation 05: Scoped State Provision & Rebuild Suppression](doc/foundations/05_scoped_state_and_rebuild_suppression.md).
+
+---
+
+### Pillar 3: Demand-Driven Listenable Bridges (`toBloom` & `toBloomBy`)
 
 In Flutter applications, numerous native controllers and third-party packages are engineered around Flutter's foundation primitives (`ScrollController`, `ValueNotifier`, `AnimationController`, `ChangeNotifier`). Consuming these in standard Flutter often requires `StatefulWidget` boilerplate with manual `addListener` and `removeListener` hooks. Failing to deregister listeners during element unmount produces insidious memory leaks, ghost notifications, and frame drops.
 
@@ -330,7 +422,7 @@ base class CollapsibleHeader extends BloomWidget {
 
 ---
 
-### Pillar 3: Durable Animation Engine (`CatchUp` & `Frozen`)
+### Pillar 4: Durable Animation Engine (`CatchUp` & `Frozen`)
 
 Standard Flutter `AnimationController` instances are bound to the host widget's `SingleTickerProviderStateMixin`. When the widget unmounts (e.g. switching tabs in `BottomNavigationBar`, popping navigation routes, or hiding bottom sheets), active tickers are detached—causing animation progress to reset upon remount or triggering assertion/leak errors if tickers remain active without proper lifecycle handling.
 
@@ -421,7 +513,7 @@ class LiveRadarScanner extends StatelessWidget {
 
 ---
 
-### Pillar 4: Graceful Lifecycle & Mooring (`Graceful.microtask` & `Graceful.period`)
+### Pillar 5: Graceful Lifecycle & Mooring (`Graceful.microtask` & `Graceful.period`)
 
 In standard Flutter reactive architectures, unmounting a widget instantly tears down its listeners or cancels asynchronous streams. This causes severe production defects:
 1. **Unmount-Remount Thrashing**: Re-parenting widgets, swapping tabs, or rapid list scrolling drops subscriber counts to 0 for a single frame, destroying expensive connections and recreating them immediately.
@@ -481,7 +573,7 @@ final searchInputBloom = searchController.toBloomBy(
 
 ---
 
-### Pillar 5: Deterministic 3-State FSM Snapshot (`Data` / `Empty` / `Error`)
+### Pillar 6: Deterministic 3-State FSM Snapshot (`Data` / `Empty` / `Error`)
 
 Ad-hoc state management libraries treat state as either an ambient value or an untyped nullable payload. This causes silent crashes when uninitialized data is read or when errors are silently swallowed.
 

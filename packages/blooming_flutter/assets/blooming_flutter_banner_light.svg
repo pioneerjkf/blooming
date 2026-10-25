@@ -102,8 +102,8 @@
 
     <!-- Feature 02 -->
     <g transform="translate(0, 252)">
-      <text class="sans kw" x="0" y="0" font-size="18.5" font-weight="600">Graceful Mooring · Lifecycle Buffer</text>
-      <text class="sans kw-sub" x="0" y="28" font-size="15">Zero unmount thrashing · Microtask &amp; TTL mooring</text>
+      <text class="sans kw" x="0" y="0" font-size="18.5" font-weight="600">BloomProvider · Rebuild Suppression</text>
+      <text class="sans kw-sub" x="0" y="28" font-size="15">0 InheritedWidget rebuild storms · O(1) DI tunneling</text>
     </g>
   </g>
 

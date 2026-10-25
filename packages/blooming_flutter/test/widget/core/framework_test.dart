@@ -447,6 +447,49 @@ void main() {
         ),
       );
     });
+
+    testWidgets(
+        'bloom.provide and controller.provide wrap child in BloomProvider<T>',
+        (tester) async {
+      final controller = BloomController<String>('controller_data');
+      final directBloom = Bloom.constant('bloom_data');
+
+      // Test controller.provide
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: controller.provide(
+            child: Builder(
+              builder: (context) {
+                expect(
+                  untracked(context.bloomOf<String>()),
+                  equals('controller_data'),
+                );
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Test bloom.provide
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: directBloom.provide(
+            child: Builder(
+              builder: (context) {
+                expect(
+                  untracked(context.bloomOf<String>()),
+                  equals('bloom_data'),
+                );
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+    });
   });
 
   group('Animation & Vsync Lifecycle Tests', () {
