@@ -1,3 +1,9 @@
+## 0.1.4
+
+- **Assets & Branding**: Adjusted bottom padding on extended vector banner assets.
+- **Examples**: Updated showcase sections (`CompositeMotionSection`, `DualEngineBattleSection`) demonstrating `composed.animate.child` static subtree caching and surgical leaf rebuild patterns.
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.1.4`.
+
 ## 0.1.3
 
 - **Widgets**: Relaxed class modifiers on `BloomWidget`, `BloomVsyncWidget`, and `BloomAnimatedWidget` from `abstract base class` to `abstract class` to allow unconstrained subclassing across library boundaries.

@@ -1,3 +1,9 @@
+## 0.1.4
+
+- **Rules**: Differentiated `prefer_composed_child` diagnostics with dedicated messages for high-frequency frame animation closures (`composed.animate`, `composed.drive`) and static layout containers (`Column`, `Row`, `Stack`, `Flex`, `Wrap`, `ListView`).
+- **Rules**: Allowed atomic leaf widgets (e.g., `const Icon`, `const Text`) in interactive buttons (`ElevatedButton`, `FilledButton`, `TextButton`, `IconButton`) without false-positive warnings.
+- **Documentation**: Added comprehensive architectural documentation for `composed.animate.child` static subtree caching across 60/120fps frame ticks and anti-pattern warnings against over-engineering with unnecessary `StatelessWidget` wrappers.
+
 ## 0.1.3
 
 - **Rules**: Introduced `prefer_bloom_widget` lint rule detecting redundant `StatelessWidget` wrappers directly returning `composed` or `composed.animate`.
