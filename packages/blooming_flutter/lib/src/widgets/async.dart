@@ -78,23 +78,27 @@ part of '../../framework.dart';
 /// ```
 ///
 /// ## Examples
-/// ```dart
-/// final (data: userBloom, pending: isPending) = fetchUserProfile().toBloomTuple();
 ///
-/// BloomAsyncBuilder<UserProfile>(
-///   bloom: userBloom,
-///   pending: isPending,
+/// ### 1. Ergonomic Tuple Shorthand (Recommended with `toBloomTuple()` or `retainedTuple()`)
+/// ```dart
+/// BloomAsyncBuilder<UserProfile>.tuple(
+///   fetchUserProfile().toBloomTuple(),
 ///   data: (context, user) => ProfileCard(user: user),
 ///   loading: (context) => const ShimmerPlaceholder(),
 ///   error: (context, error, stack) => ErrorRetryButton(error: error),
 ///   empty: (context) => const EmptyProfileNotice(),
 /// );
+/// ```
 ///
-/// // Or using tuple constructor:
-/// BloomAsyncBuilder<UserProfile>.tuple(
-///   fetchUserProfile().toBloomTuple(),
+/// ### 2. Explicit Primary Constructor (when `bloom` and `pending` are managed independently)
+/// ```dart
+/// BloomAsyncBuilder<UserProfile>(
+///   bloom: userBloom,
+///   pending: isPendingBloom,
 ///   data: (context, user) => ProfileCard(user: user),
 ///   loading: (context) => const ShimmerPlaceholder(),
+///   error: (context, error, stack) => ErrorRetryButton(error: error),
+///   empty: (context) => const EmptyProfileNotice(),
 /// );
 /// ```
 final class BloomAsyncBuilder<T> extends BloomWidget {
@@ -125,13 +129,23 @@ final class BloomAsyncBuilder<T> extends BloomWidget {
     this.preserveDataOnPending = true,
   });
 
-  /// Creates a structured 4-state asynchronous branching widget from a `({Bloom<T> data, Bloom<bool> pending})` record.
+  /// Creates a structured 4-state asynchronous branching widget directly from a
+  /// named record tuple `({Bloom<T> data, Bloom<bool> pending})`.
   ///
-  /// Designed for seamless integration with `toBloomTuple()`.
+  /// Ergonomic shorthand accepting the tuple returned by `toBloomTuple()` or `retainedTuple()`,
+  /// forwarding directly to the primary constructor with zero overhead.
+  ///
+  /// * [tuple]: Named record holding `data` ([Bloom<T>]) and `pending` ([Bloom<bool>]).
+  /// * [data]: Builder callback invoked when valid payload data of type [T] is present.
+  /// * [loading]: Builder callback invoked when the node is in uninitialized or loading state.
+  /// * [error]: Optional builder callback invoked when an error occurs during evaluation.
+  /// * [empty]: Optional builder callback invoked when data is empty or node is explicitly empty.
+  /// * [preserveDataOnPending]: Whether to retain prior valid data during background re-evaluation. Defaults to `true`.
+  /// * [key]: Optional widget key.
   ///
   /// ## Examples
   /// ```dart
-  /// BloomAsyncBuilder.tuple(
+  /// BloomAsyncBuilder<UserProfile>.tuple(
   ///   fetchUserProfile().toBloomTuple(),
   ///   data: (context, user) => ProfileCard(user: user),
   ///   loading: (context) => const ShimmerPlaceholder(),

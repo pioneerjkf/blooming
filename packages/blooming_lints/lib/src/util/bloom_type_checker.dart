@@ -261,6 +261,7 @@ abstract final class BloomTypeChecker {
     'toBloom',
     'toBloomBy',
     'toBloomTuple',
+    'toBloomTriple',
     'toListenable',
   };
 

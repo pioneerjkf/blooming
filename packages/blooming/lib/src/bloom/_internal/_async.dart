@@ -226,6 +226,8 @@ base class _PragueVltava<T> {
   Bloom<bool> get done => _doneController.bloom;
 
   ({Bloom<T> data, Bloom<bool> pending}) get tuple => (data: bloom, pending: pending);
+
+  ({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done}) get triple => (data: bloom, pending: pending, done: done);
 }
 
 /// Formal reactive bridge connecting a native Dart [Stream] to the [Bloom] topology.

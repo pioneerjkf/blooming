@@ -103,6 +103,10 @@ class AsyncSwrBuilderStore {
   Bloom<int> get fetchCount => _fetchCount.bloom;
   Bloom<bool> get pending => _pendingCoupler.bloom;
 
+  /// Retained SWR tuple holding ({data, pending}) directly for BloomAsyncBuilder.tuple.
+  ({Bloom<DemoUser?> data, Bloom<bool> pending}) get userTuple =>
+      (data: userProfile, pending: pending);
+
   void setQuery(String newQuery) {
     _fetchCount.set(_fetchCount.data + 1);
     _query.set(newQuery);
@@ -146,9 +150,9 @@ BloomPendingIndicator(
   color: Colors.indigoAccent,
 );
 
-// 3. BloomAsyncBuilder.tuple shorthand constructor
+// 3. Ergonomic Tuple Shorthand (Directly binds to ({data, pending}))
 BloomAsyncBuilder<DemoUser?>.tuple(
-  (data: store.userProfile, pending: store.pending),
+  store.userTuple,
   preserveDataOnPending: true,
   data: (context, user) => Text('Loaded: \${user?.name}'),
   loading: (context) => const CircularProgressIndicator(),
@@ -160,11 +164,12 @@ BloomAsyncBuilder<DemoUser?>.tuple(
           'Zero-Flicker SWR: Retains previous valid data during background re-evaluation with preserveDataOnPending: true.',
           'BloomPendingIndicator: Surgical 2px~4px linear micro-indicator binding to Bloom<bool> with 0 rebuild to surrounding tree.',
           '4-State Declarative Pattern: Clean separation of data, loading, error, and empty branch states.',
-          'BloomAsyncBuilder.tuple: Direct constructor accepting ({Bloom<T> data, Bloom<bool> pending}) named records.',
+          'Ergonomic Tuple Shorthand: BloomAsyncBuilder.tuple accepts ({Bloom<T> data, Bloom<bool> pending}) directly from toBloomTuple() or retainedTuple().',
         ],
         roadmapTree: '''
 [Bloom Async UI & SWR Pipeline]
  ├── BloomAsyncBuilder<T>(...)               -> Declarative 4-State SWR Builder
+ │    ├── BloomAsyncBuilder.tuple(tuple)     -> Ergonomic named shorthand for ({data, pending})
  │    ├── bloom: Bloom<T>                     -> Primary reactive state node
  │    ├── pending: Bloom<bool>                -> Background mutation / fetch indicator
  │    ├── preserveDataOnPending: true       -> Zero-Flicker stale cache retention
@@ -173,11 +178,9 @@ BloomAsyncBuilder<DemoUser?>.tuple(
  │    ├── error: (context, err, stack) => ...
  │    └── empty: (context) => ...
  │
- ├── BloomPendingIndicator(...)              -> Surgical isolated micro-indicator
- │    ├── target: Bloom<bool>                -> Direct binding with 0 tree rebuild
- │    └── height / color / backgroundColor
- │
- └── BloomAsyncBuilder.tuple(...)            -> ({data, pending}) Named Record Shorthand
+ └── BloomPendingIndicator(...)              -> Surgical isolated micro-indicator
+      ├── target: Bloom<bool>                -> Direct binding with 0 tree rebuild
+      └── height / color / backgroundColor
 ''',
         builder: () => AsyncSwrBuilderSectionDemo(),
       );

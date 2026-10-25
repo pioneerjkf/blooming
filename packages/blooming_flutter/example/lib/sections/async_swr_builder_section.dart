@@ -223,15 +223,15 @@ base class AsyncSwrBuilderSectionDemo extends BloomWidget {
         const SizedBox(height: 16),
 
         // ---------------------------------------------------------------------
-        // Showcase Card 2: BloomAsyncBuilder.tuple Shorthand Constructor
+        // Showcase Card 2: BloomAsyncBuilder.tuple Named Shorthand
         // ---------------------------------------------------------------------
         ShowcaseCard(
-          title: '2. BloomAsyncBuilder.tuple Shorthand Constructor',
+          title: '2. BloomAsyncBuilder.tuple Shorthand',
           badge: 'Tuple Shorthand',
           description:
-              'Seamlessly constructs BloomAsyncBuilder from a ({data, pending}) named record, ideal with toBloomTuple().',
+              'Seamlessly binds to ({data, pending}) named records directly without boilerplate destructuring.',
           child: BloomAsyncBuilder<DemoUser?>.tuple(
-            (data: store.userProfile, pending: store.pending),
+            store.userTuple,
             preserveDataOnPending: isPreserve,
             loading: (context) => const Center(
               child: Padding(

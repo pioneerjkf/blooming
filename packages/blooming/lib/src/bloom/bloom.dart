@@ -531,5 +531,40 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// final swrFeed = remoteFeedBloom.retained(pending: pendingCoupler);
   /// ```
   @pragma('vm:prefer-inline')
-  Bloom<T> retained({BloomCoupler<bool>? pending}) => _RetainedBloom<T>(this, pending);
+  Bloom<T> retained({BloomCoupler<bool>? pending}) {
+    final retained = _RetainedBloom<T>(this);
+    if (pending != null) {
+      pending.couple(_PendingFacetBloom<T>(retained));
+    }
+    return retained;
+  }
+
+  /// Creates a retained node maintaining prior valid data during pending re-evaluations (SWR),
+  /// bundled as a `({Bloom<T> data, Bloom<bool> pending})` record.
+  ///
+  /// Implements the Stale-While-Revalidate pattern by masking intermediate Empty states
+  /// while an upstream asynchronous refresh is in progress, providing both the retained data
+  /// node and the pending progress facet in a single zero-allocation tuple.
+  ///
+  /// ## System Architectural Flow
+  /// ```text
+  /// Upstream:   [Data 1] ───> [Empty (Pending Fetch)] ───> [Data 2]
+  /// Data:       [Data 1] ───> [Data 1 (Retained)]    ───> [Data 2]
+  /// Pending:    (false)  ───> (true)                 ───> (false)
+  /// ```
+  ///
+  /// **Ensures:**
+  /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending})`.
+  /// * Zero [BloomCoupler] overhead: directly wires the internal pending facet to the retained node.
+  /// * Aligns with `toBloomTuple` and seamlessly connects to `BloomAsyncBuilder.tuple(...)` or `BloomAsyncBuilder(bloom: data, pending: pending)`.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final (:data, :pending) = remoteFeedBloom.retainedTuple();
+  /// ```
+  @pragma('vm:prefer-inline')
+  ({Bloom<T> data, Bloom<bool> pending}) retainedTuple() {
+    final retained = _RetainedBloom<T>(this);
+    return (data: retained, pending: _PendingFacetBloom<T>(retained));
+  }
 }

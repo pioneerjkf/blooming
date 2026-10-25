@@ -421,11 +421,7 @@ final class _GracefulBloom<T> extends _StaticUnaryRelay<Bloom<T>>
 base class _RetainedBloom<T> extends _StaticUnaryRelay<Bloom<T>>
     with _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
     implements Bloom<T> {
-  _RetainedBloom(super.source, [BloomCoupler<bool>? pendingCoupler]) {
-    if (pendingCoupler != null) {
-      pendingCoupler.couple(_PendingFacetBloom<T>(this));
-    }
-  }
+  _RetainedBloom(super.source);
 
   _BloomState<T>? _retainedState;
   bool _isPending = false;

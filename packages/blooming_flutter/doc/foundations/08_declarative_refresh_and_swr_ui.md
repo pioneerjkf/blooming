@@ -75,7 +75,7 @@ BloomAsyncBuilder<List<Article>>(
   preserveDataOnPending: true, // Default: Preserves stale cache during refresh
 );
 
-// Or seamlessly via Named Record tuple constructor:
+// Or seamlessly via Named Record tuple shorthand:
 BloomAsyncBuilder<List<Article>>.tuple(
   fetchArticles().toBloomTuple(),
   data: (context, articles) => ArticleListView(articles: articles),

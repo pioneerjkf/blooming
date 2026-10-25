@@ -502,5 +502,67 @@ void main() {
         reason: 'Repeated reads must not bump version',
       );
     });
+
+    test('11.1 retainedTuple() returns ({data, pending}) named record and retains prior data without coupler', () async {
+      final query = BloomController('alpha');
+      Completer<String>? activeCompleter;
+
+      final rawFuture = computed.future((via) {
+        via(query.bloom);
+        final completer = Completer<String>();
+        activeCompleter = completer;
+        return completer.future;
+      });
+
+      // Use retainedTuple directly (zero BloomCoupler allocation)
+      final (:data, :pending) = rawFuture.retainedTuple();
+
+      // Initially empty before first resolution
+      expect(untracked.state(data).isEmpty, isTrue);
+      expect(untracked(pending), isFalse);
+
+      final tData = RawBloomTerminal(data, onInvalidated: () {});
+      final tPending = RawBloomTerminal(pending, onInvalidated: () {});
+      tData.activate();
+      tPending.activate();
+
+      // 1. Resolve first request ('alpha')
+      activeCompleter!.complete('AlphaPayload');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(tData.data, 'AlphaPayload');
+      expect(tPending.data, isFalse);
+
+      // 2. Query changes to 'beta' -> starts background fetch
+      query.data = 'beta';
+      await Future<void>.delayed(Duration.zero);
+
+      // FLICKER-FREE: Prior data retained, pending is true
+      expect(tData.data, 'AlphaPayload');
+      expect(tPending.data, isTrue);
+
+      // 3. Resolve 'beta' request
+      activeCompleter!.complete('BetaPayload');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(tData.data, 'BetaPayload');
+      expect(tPending.data, isFalse);
+
+      tData.deactivate();
+      tPending.deactivate();
+    });
+
+    test('11.2 retainedTuple() handles deactivation and reactivation lifecycle', () {
+      final source = BloomController('Original');
+      final (data: dataBloom, pending: pendingBloom) = source.bloom.retainedTuple();
+
+      expect(untracked(dataBloom), 'Original');
+      expect(untracked(pendingBloom), isFalse);
+
+      source.set('Updated');
+      expect(untracked(dataBloom), 'Updated');
+      expect(untracked(pendingBloom), isFalse);
+    });
   });
 }
+

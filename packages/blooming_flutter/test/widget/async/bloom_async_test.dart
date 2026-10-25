@@ -208,16 +208,17 @@ void main() {
     });
 
     testWidgets(
-        '1.5c BloomAsyncBuilder works with toBloomTuple() tuple constructor',
+        '1.5c BloomAsyncBuilder works with toBloomTuple() destructured records',
         (tester) async {
       final completer = Completer<String>();
-      final tuple = completer.future.toBloomTuple();
+      final (:data, :pending) = completer.future.toBloomTuple();
 
       await tester.pumpWidget(
         Directionality(
           textDirection: TextDirection.ltr,
-          child: BloomAsyncBuilder<String>.tuple(
-            tuple,
+          child: BloomAsyncBuilder<String>(
+            bloom: data,
+            pending: pending,
             data: (context, val) => Text('Result: $val'),
             loading: (context) => const Text('Loading...'),
             empty: (context) => const Text('Empty'),
@@ -622,16 +623,17 @@ void main() {
     });
 
     testWidgets(
-        '3.2 BloomAsyncBuilder.tuple works seamlessly with Future toBloomTuple()',
+        '3.2 BloomAsyncBuilder works seamlessly with Future toBloomTuple()',
         (tester) async {
       final completer = Completer<String>();
-      final tuple = completer.future.toBloomTuple();
+      final (:data, :pending) = completer.future.toBloomTuple();
 
       await tester.pumpWidget(
         Directionality(
           textDirection: TextDirection.ltr,
-          child: BloomAsyncBuilder<String>.tuple(
-            tuple,
+          child: BloomAsyncBuilder<String>(
+            bloom: data,
+            pending: pending,
             data: (context, val) => Text('Data: $val'),
             loading: (context) => const Text('Loading...'),
             error: (context, err, stack) => Text('Error: $err'),
@@ -650,16 +652,17 @@ void main() {
     });
 
     testWidgets(
-        '3.3 BloomAsyncBuilder.tuple works seamlessly with Stream toBloomTuple() without single-subscription conflict',
+        '3.3 BloomAsyncBuilder works seamlessly with Stream toBloomTuple() without single-subscription conflict',
         (tester) async {
       final controller = StreamController<String>();
-      final tuple = controller.stream.toBloomTuple();
+      final (:data, :pending) = controller.stream.toBloomTuple();
 
       await tester.pumpWidget(
         Directionality(
           textDirection: TextDirection.ltr,
-          child: BloomAsyncBuilder<String>.tuple(
-            tuple,
+          child: BloomAsyncBuilder<String>(
+            bloom: data,
+            pending: pending,
             data: (context, val) => Text('Data: $val'),
             loading: (context) => const Text('Loading...'),
             error: (context, err, stack) => Text('Error: $err'),
@@ -680,6 +683,63 @@ void main() {
       await tester.pump(Duration.zero);
 
       expect(find.text('Data: StreamVal2'), findsOneWidget);
+
+      await controller.close();
+    });
+
+    testWidgets(
+        '3.4 BloomAsyncBuilder.tuple works seamlessly with Future toBloomTuple()',
+        (tester) async {
+      final completer = Completer<String>();
+      final tuple = completer.future.toBloomTuple();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BloomAsyncBuilder<String>.tuple(
+            tuple,
+            data: (context, val) => Text('Data: $val'),
+            loading: (context) => const Text('Loading...'),
+            error: (context, err, stack) => Text('Error: $err'),
+          ),
+        ),
+      );
+
+      expect(find.text('Loading...'), findsOneWidget);
+
+      completer.complete('TupleResolved');
+      await tester.pump();
+      await tester.pump(Duration.zero);
+
+      expect(find.text('Data: TupleResolved'), findsOneWidget);
+      expect(find.text('Loading...'), findsNothing);
+    });
+
+    testWidgets(
+        '3.5 BloomAsyncBuilder.tuple works seamlessly with Stream toBloomTuple()',
+        (tester) async {
+      final controller = StreamController<String>();
+      final tuple = controller.stream.toBloomTuple();
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: BloomAsyncBuilder<String>.tuple(
+            tuple,
+            data: (context, val) => Text('Data: $val'),
+            loading: (context) => const Text('Loading...'),
+            error: (context, err, stack) => Text('Error: $err'),
+          ),
+        ),
+      );
+
+      expect(find.text('Loading...'), findsOneWidget);
+
+      controller.add('StreamTuple1');
+      await tester.pump();
+      await tester.pump(Duration.zero);
+
+      expect(find.text('Data: StreamTuple1'), findsOneWidget);
 
       await controller.close();
     });

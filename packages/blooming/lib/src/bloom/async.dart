@@ -284,6 +284,45 @@ extension StreamBloomExtension<T> on Stream<T> {
         equals: equals,
         graceful: graceful,
       ).tuple;
+
+  /// Converts this [Stream] into a triad of reactive nodes: `({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done})`.
+  ///
+  /// * `data`: reflects the latest emitted stream item or error state.
+  /// * `pending`: remains `true` until the first event (data or error) arrives or the stream closes.
+  /// * `done`: transitions to `true` when the stream emits its done event and closes.
+  ///
+  /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
+  /// * [onError]: Optional error recovery callback.
+  /// * [cancelOnError]: If `true`, cancels the subscription on error.
+  /// * [distinct]: When `true`, suppresses duplicate consecutive events.
+  /// * [equals]: Custom equality comparator.
+  /// * [graceful]: Optional graceful deactivation policy.
+  ///
+  /// **Ensures:**
+  /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done})`.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final (:data, :pending, :done) = stockStream.toBloomTriple();
+  /// ```
+  @pragma('vm:prefer-inline')
+  ({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done}) toBloomTriple({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool? cancelOnError,
+    bool distinct = true,
+    bool Function(T previous, T next)? equals,
+    Graceful? graceful,
+  }) =>
+      _StreamBloomBridge.create<T>(
+        this,
+        initialFactory: initialFactory,
+        onError: onError,
+        cancelOnError: cancelOnError,
+        distinct: distinct,
+        equals: equals,
+        graceful: graceful,
+      ).triple;
 }
 
 /// Extension grouping multiple [Stream]s into a reactive list of [Bloom] nodes.

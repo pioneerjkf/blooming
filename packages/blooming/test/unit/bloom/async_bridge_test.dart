@@ -647,6 +647,87 @@ void main() {
         tPending.deactivate();
         await controller.close();
       });
+
+      test('6.6 Stream.toBloomTriple() returns ({data, pending, done}) and tracks full lifecycle', () async {
+        final controller = StreamController<String>();
+        final (:data, :pending, :done) = controller.stream.toBloomTriple();
+
+        final tData = RawBloomTerminal(data, onInvalidated: () {});
+        final tPending = RawBloomTerminal(pending, onInvalidated: () {});
+        final tDone = RawBloomTerminal(done, onInvalidated: () {});
+
+        tData.activate();
+        tPending.activate();
+        tDone.activate();
+
+        // Initial phase: pending=true, done=false, data is empty
+        expect(tPending.data, isTrue);
+        expect(tDone.data, isFalse);
+        expect(untracked.state(data).isEmpty, isTrue);
+
+        // First event: pending=false, done=false, data emitted
+        controller.add('Message 1');
+        await Future<void>.delayed(Duration.zero);
+        expect(tPending.data, isFalse);
+        expect(tDone.data, isFalse);
+        expect(tData.data, 'Message 1');
+
+        // Second event: data updates
+        controller.add('Message 2');
+        await Future<void>.delayed(Duration.zero);
+        expect(tPending.data, isFalse);
+        expect(tDone.data, isFalse);
+        expect(tData.data, 'Message 2');
+
+        // Stream closes: done=true, pending=false
+        await controller.close();
+        await Future<void>.delayed(Duration.zero);
+        expect(tDone.data, isTrue);
+        expect(tPending.data, isFalse);
+        expect(tData.data, 'Message 2');
+
+        tData.deactivate();
+        tPending.deactivate();
+        tDone.deactivate();
+      });
+
+      test('6.7 Stream.toBloomTriple() activates upstream only on data demand and preserves passive pending/done facets', () async {
+        var isSubscribed = false;
+        late final StreamController<String> controller;
+        controller = StreamController<String>(
+          onListen: () => isSubscribed = true,
+          onCancel: () => isSubscribed = false,
+        );
+
+        final (:data, :pending, :done) = controller.stream.toBloomTriple();
+        expect(isSubscribed, isFalse);
+
+        final tData = RawBloomTerminal(data, onInvalidated: () {});
+        final tPending = RawBloomTerminal(pending, onInvalidated: () {});
+        final tDone = RawBloomTerminal(done, onInvalidated: () {});
+
+        // Activating done or pending alone does NOT trigger upstream listen
+        tDone.activate();
+        expect(isSubscribed, isFalse);
+        expect(tDone.data, isFalse);
+
+        tPending.activate();
+        expect(isSubscribed, isFalse);
+        expect(tPending.data, isFalse);
+
+        // Only data activation triggers upstream
+        tData.activate();
+        expect(isSubscribed, isTrue);
+        expect(tPending.data, isTrue);
+
+        // Deactivating data unbinds upstream cleanly even while done and pending are active
+        tData.deactivate();
+        expect(isSubscribed, isFalse);
+
+        tDone.deactivate();
+        tPending.deactivate();
+        await controller.close();
+      });
     });
   });
 }
