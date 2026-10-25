@@ -47,11 +47,19 @@ part of '../../../blooming_lints.dart';
 ///
 /// **GOOD (Pattern 3: Extract Standalone Const Widget):**
 /// ```dart
-/// // Extract complex static subtrees into a standalone const StatelessWidget
-/// composed((context, via) => Column(children: [
-///   const HeavyStaticHeader(),
-///   Text('${via(countBloom)}'),
-/// ]));
+/// // Extract complex static subtrees into a standalone const StatelessWidget:
+/// Column(children: [
+///   const HeavyStaticHeader(), // Fully isolated static StatelessWidget
+///   composed((context, via) => Text('${via(countBloom)}')), // Surgical leaf rebuild
+/// ]);
+///
+/// // Note: If the entire component is state-driven, extract as a direct BloomWidget instead:
+/// class MyMetricCard extends BloomWidget {
+///   const MyMetricCard({super.key, required this.countBloom});
+///   final Bloom<int> countBloom;
+///   @override
+///   Widget build(BuildContext context, BloomVia via) => Text('${via(countBloom)}');
+/// }
 /// ```
 class PreferComposedChild extends DartLintRule {
   PreferComposedChild() : super(code: _code);
@@ -63,8 +71,9 @@ class PreferComposedChild extends DartLintRule {
     correctionMessage:
         'To minimize rebuild overhead, try one of these recommended alternatives depending on your widget tree: '
         '1) Narrow composed scope to dynamic widgets only (Surgical Rebuild), '
-        '2) pass static subtrees via composed.child / composed.children, or '
-        '3) extract them into separate const widgets.',
+        '2) pass static subtrees via composed.child / composed.children, '
+        '3) extract static subtrees into separate const widgets, or '
+        '4) extract dedicated reactive components directly as BloomWidget.',
     errorSeverity: DiagnosticSeverity.INFO,
   );
 

@@ -157,6 +157,52 @@ In Flutter applications, balancing granular reactive state, frame-isolated anima
 
 ---
 
+## Reactive Boundary Selection: Component Boundary (`BloomWidget`) vs. Surgical Leaf (`composed`)
+
+To maximize 60/120fps rendering performance and avoid redundant Element allocations, apply the appropriate reactive boundary according to your component scope:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│             Situational UI Boundary Selection Matrix                   │
+├───────────────────────┬──────────────────────────┬─────────────────────┤
+│ Engineering Context   │ Recommended Entrypoint   │ Element Allocation  │
+├───────────────────────┼──────────────────────────┼─────────────────────┤
+│ 1. Dedicated Component│ BloomWidget              │ 1 Element (Optimal) │
+│    Boundary           │ BloomAnimatedWidget      │                     │
+├───────────────────────┼──────────────────────────┼─────────────────────┤
+│ 2. Surgical Local     │ composed((ctx, via) => ) │ 0 Parent Rebuilds   │
+│    Leaf Rebuild       │                          │ 1 Local Element     │
+├───────────────────────┼──────────────────────────┼─────────────────────┤
+│ 3. 60/120fps Motion + │ composed.animate.child   │ 0 Child Rebuilds    │
+│    Static Subtree     │ composed.drive.child     │ Frame-Isolated Ticks│
+├───────────────────────┼──────────────────────────┼─────────────────────┤
+│ 4. [Anti-Pattern]     │ StatelessWidget {        │ 2 Elements (Wasted  │
+│    1:1 Pure Wrapper   │   build() => composed(); │ Element Overhead)   │
+│                       │ }                        │                     │
+└───────────────────────┴──────────────────────────┴─────────────────────┘
+```
+
+### Situational Decision Flow:
+```text
+[ Defining UI Component ]
+          │
+  [ Is this a dedicated, reusable class component? ]
+          │
+         YES ──────> [ Does the entire component's view depend on reactive state/motion? ]
+          │                   │                                 │
+          │                  YES                                NO (Has fixed outer layout)
+          │                   │                                 │
+          │                   ├─► Animation-driven?             └─► class Comp extends StatelessWidget
+          │                   │    ├─► YES: BloomAnimatedWidget       with internal composed(...) leaves
+          │                   │    └─► NO : BloomWidget
+          │
+          NO (Inline sub-branch inside an existing layout)
+          │
+          └─► composed((context, via) => ...) / composed.child(...)
+```
+
+---
+
 ## Core Production Engineering Pillars
 
 `blooming_flutter` addresses six critical architectural constraints and failure modes encountered when scaling Flutter applications to complex production workflows.
@@ -494,18 +540,18 @@ Eliminates `AnimatedBuilder` and `StatefulWidget` boilerplate by providing direc
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-class LiveRadarScanner extends StatelessWidget {
-  const LiveRadarScanner({super.key, required this.controller});
-  final DurableAnimationController controller;
+base class LiveRadarScanner extends BloomAnimatedWidget {
+  const LiveRadarScanner({super.key, required super.controller});
 
   @override
-  Widget build(BuildContext context) {
-    return composed.animate(
-      controller,
-      (context, via, ctrl) => RotationTransition(
-        turns: ctrl.view,
-        child: const Icon(Icons.radar, size: 72, color: Colors.blueAccent),
-      ),
+  Widget build(
+    BuildContext context,
+    BloomVia via,
+    ScopedAnimationController anim,
+  ) {
+    return RotationTransition(
+      turns: anim.view,
+      child: const Icon(Icons.radar, size: 72, color: Colors.blueAccent),
     );
   }
 }

@@ -102,10 +102,161 @@ enum DurabilityPolicy {
 /// **Warning (Anti-Pattern Prevention):**
 /// - Do NOT create `StatefulWidget` wrappers or `SingleTickerProviderStateMixin` merely to host or dispose
 ///   a [DurableAnimationController]. Hold the controller in stores, view models, or widget fields, and let
-///   `composed.animate` manage ticker allocation.
+///   framework-managed primitives ([BloomAnimatedWidget] or `composed.animate`) manage ticker allocation.
 /// - Do NOT escape [ScopedAnimationController] or its [ScopedAnimationController.view] outside the builder closure.
 ///
-/// **BAD:**
+/// ## Architectural Best Practices: Boundary vs. Local Leaf Animation
+///
+/// When integrating a [DurableAnimationController] with UI widgets, select between
+/// [BloomAnimatedWidget] and `composed.animate` based on the architectural scope:
+///
+/// ### Scenario A: Independent Animated Component Boundary
+/// When creating a dedicated, reusable animated widget whose entire responsibility is
+/// animating its visual representation:
+///
+/// **GOOD (Class-Based Component Boundary):**
+/// ```dart
+/// // [Recommended] Encapsulates animation lifecycle directly with single Element allocation
+/// base class RadarScanner extends BloomAnimatedWidget {
+///   RadarScanner({
+///     super.key,
+///     required DurableAnimationController controller,
+///   }) : super(controller: controller);
+///
+///   @override
+///   Widget build(
+///     BuildContext context,
+///     BloomVia via,
+///     ScopedAnimationController anim,
+///   ) {
+///     return RotationTransition(
+///       turns: anim.view,
+///       child: const Icon(Icons.radar),
+///     );
+///   }
+/// }
+/// ```
+///
+/// **BAD (Redundant 1:1 Wrapping):**
+/// ```dart
+/// // [Anti-Pattern] Unnecessary StatelessWidget wrapper (triggers prefer_bloom_widget lint)
+/// class RadarScanner extends StatelessWidget {
+///   final DurableAnimationController controller;
+///   const RadarScanner({super.key, required this.controller});
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return composed.animate(controller, (context, via, anim) {
+///       return RotationTransition(turns: anim.view, child: const Icon(Icons.radar));
+///     });
+///   }
+/// }
+/// ```
+///
+/// ### Scenario B: Localized Leaf/Subtree Animation inside a Layout
+/// When an animated effect occupies a sub-branch of a composite screen or layout:
+///
+/// **GOOD (Localized Leaf Animation with composed.animate.child):**
+/// ```dart
+/// // [Recommended] Confines 60/120fps ticks strictly to the animated leaf.
+/// // Outer layout, dynamic header, and cached child subtree do NOT rebuild on ticks.
+/// class ExpandableProfileCard extends StatelessWidget {
+///   final String title;
+///   final DurableAnimationController expandController;
+///   const ExpandableProfileCard({
+///     super.key,
+///     required this.title,
+///     required this.expandController,
+///   });
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return Column(
+///       children: [
+///         ProfileHeader(title: title), // Built once, never rebuilt on animation ticks
+///         composed.animate.child(
+///           expandController,
+///           (context, via, anim, child) => SizeTransition(
+///             sizeFactor: anim.view,
+///             child: child,
+///           ),
+///           // Evaluated once here, then cached across all 60/120fps animation ticks:
+///           child: ExpensiveProfileDetails(title: title),
+///         ),
+///       ],
+///     );
+///   }
+/// }
+/// ```
+///
+/// **BAD (Global Layout Rebuild via Blanket BloomAnimatedWidget):**
+/// ```dart
+/// // [Anti-Pattern] Escalating the entire composite layout to BloomAnimatedWidget
+/// // forces ExpandableProfileCard.build() to re-execute on every 120fps tick,
+/// // re-evaluating Column, allocating new child lists, and rebuilding dynamic headers!
+/// base class ExpandableProfileCard extends BloomAnimatedWidget {
+///   final String title;
+///   ExpandableProfileCard({
+///     super.key,
+///     required this.title,
+///     required DurableAnimationController expandController,
+///   }) : super(controller: expandController);
+///
+///   @override
+///   Widget build(
+///     BuildContext context,
+///     BloomVia via,
+///     ScopedAnimationController anim,
+///   ) {
+///     // Entire layout rebuilds 60~120 times per second during animation:
+///     return Column(
+///       children: [
+///         ProfileHeader(title: title), // Rebuilt on every tick because parent re-runs build()!
+///         SizeTransition(
+///           sizeFactor: anim.view,
+///           child: ExpensiveProfileDetails(title: title),
+///         ),
+///       ],
+///     );
+///   }
+/// }
+/// ```
+///
+/// **BAD (Missing Subtree Caching via composed.animate):**
+/// ```dart
+/// // [Anti-Pattern] Inlining a dynamic child subtree directly inside the closure creates
+/// // a new widget instance on every 120fps frame, forcing the child element to rebuild
+/// // (triggers prefer_composed_child lint).
+/// class ExpandableProfileCard extends StatelessWidget {
+///   final String title;
+///   final DurableAnimationController expandController;
+///   const ExpandableProfileCard({
+///     super.key,
+///     required this.title,
+///     required this.expandController,
+///   });
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     return Column(
+///       children: [
+///         ProfileHeader(title: title),
+///         composed.animate(expandController, (context, via, anim) {
+///           // Re-instantiated on every 120fps tick! Use composed.animate.child instead.
+///           return SizeTransition(
+///             sizeFactor: anim.view,
+///             child: ExpensiveProfileDetails(title: title),
+///           );
+///         }),
+///       ],
+///     );
+///   }
+/// }
+/// ```
+///
+/// ### Scenario C: Legacy Ticker Provider Anti-Pattern
+///
+/// **BAD (Manual Ticker Ceremony & Disposal):**
 /// ```dart
 /// // [Anti-Pattern] Manual ticker ceremony, redundant disposal, and escaped view
 /// class _MyWidgetState extends State<MyWidget> with SingleTickerProviderStateMixin {
@@ -122,47 +273,6 @@ enum DurabilityPolicy {
 ///     controller.dispose(); // Burden of manual lifecycle management
 ///     super.dispose();
 ///   }
-/// }
-/// ```
-///
-/// **GOOD:**
-/// ```dart
-/// // [Recommended] Framework-governed durable lifecycle with zero disposal burden
-/// class MyWidget extends StatelessWidget {
-///   MyWidget({super.key});
-///
-///   final controller = DurableAnimationController(
-///     duration: const Duration(milliseconds: 300),
-///   );
-///
-///   @override
-///   Widget build(BuildContext context) {
-///     return composed.animate(
-///       controller,
-///       (context, via, ctrl) => FadeTransition(
-///         opacity: ctrl.view,
-///         child: const Text('Durable Motion'),
-///       ),
-///     );
-///   }
-/// }
-/// ```
-///
-/// ## Examples
-/// ```dart
-/// final panelController = DurableAnimationController(
-///   duration: const Duration(milliseconds: 350),
-/// );
-///
-/// Widget buildPanel(Widget child) {
-///   return composed.animate.child(
-///     panelController,
-///     (context, via, ctrl, c) => SizeTransition(
-///       sizeFactor: ctrl.view,
-///       child: c,
-///     ),
-///     child: child,
-///   );
 /// }
 /// ```
 sealed class DurableAnimationController {

@@ -41,6 +41,9 @@ class GoodCachedBridge extends StatelessWidget {
   const GoodCachedBridge({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      composed((context, via) => Text('${via(cachedBridge)}'));
+  Widget build(BuildContext context) => Row(
+        children: [
+          composed((context, via) => Text('${via(cachedBridge)}')),
+        ],
+      );
 }

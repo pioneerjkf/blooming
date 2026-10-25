@@ -42,8 +42,11 @@ class BadCounterDisplay extends StatelessWidget {
   final BloomController<int> counter;
 
   @override
-  Widget build(BuildContext context) =>
-      composed((context, via) => Text('${via(counter.bloom)}'));
+  Widget build(BuildContext context) => Row(
+        children: [
+          composed((context, via) => Text('${via(counter.bloom)}')),
+        ],
+      );
 }
 
 // #case prefer_bloom_over_controller/bad/vsync-widget-controller-parameter
@@ -128,6 +131,30 @@ class GoodCounterDisplay extends StatelessWidget {
   final Bloom<int> counter;
 
   @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          composed((context, via) => Text('${via(counter)}')),
+        ],
+      );
+}
+
+// #case prefer_bloom_widget/bad/stateless-wraps-composed
+// expect_lint: prefer_bloom_widget
+class RedundantStatelessWrapper extends StatelessWidget {
+  const RedundantStatelessWrapper({super.key, required this.counter});
+  final Bloom<int> counter;
+
+  @override
   Widget build(BuildContext context) =>
       composed((context, via) => Text('${via(counter)}'));
+}
+
+// #case prefer_bloom_widget/good/direct-bloom-widget
+base class DirectBloomWidgetComponent extends BloomWidget {
+  const DirectBloomWidgetComponent({super.key, required this.counter});
+  final Bloom<int> counter;
+
+  @override
+  Widget build(BuildContext context, BloomVia via) =>
+      Text('${via(counter)}');
 }

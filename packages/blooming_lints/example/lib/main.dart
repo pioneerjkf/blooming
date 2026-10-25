@@ -136,13 +136,6 @@ final conciseValueAccess = computed((via) => via(count) * 2);
 // 2. Flutter build passes
 // =============================================================================
 
-class ComposedCounter extends StatelessWidget {
-  const ComposedCounter({super.key});
-
-  @override
-  Widget build(BuildContext context) =>
-      composed((context, via) => Text('${via(count)}'));
-}
 
 // #case tour/avoid_bloom_creation_in_build/bad
 // State created in build() is discarded and recreated on every frame.
@@ -298,8 +291,11 @@ class ControllerConsumer extends StatelessWidget {
   final BloomController<int> counter;
 
   @override
-  Widget build(BuildContext context) =>
-      composed((context, via) => Text('${via(counter.bloom)}'));
+  Widget build(BuildContext context) => Row(
+        children: [
+          composed((context, via) => Text('${via(counter.bloom)}')),
+        ],
+      );
 }
 
 // #case tour/prefer_bloom_over_controller/good
@@ -309,8 +305,34 @@ class BloomConsumer extends StatelessWidget {
   final Bloom<int> count;
 
   @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          composed((context, via) => Text('${via(count)}')),
+        ],
+      );
+}
+
+// #case tour/prefer_bloom_widget/bad
+// Extending StatelessWidget and immediately returning composed creates redundant Element allocations.
+// expect_lint: prefer_bloom_widget
+class RedundantWrapperWidget extends StatelessWidget {
+  const RedundantWrapperWidget({super.key, required this.count});
+  final Bloom<int> count;
+
+  @override
   Widget build(BuildContext context) =>
       composed((context, via) => Text('${via(count)}'));
+}
+
+// #case tour/prefer_bloom_widget/good
+// Extend BloomWidget directly to bind reactive dependencies with a single Element.
+base class DirectBloomWidget extends BloomWidget {
+  const DirectBloomWidget({super.key, required this.count});
+  final Bloom<int> count;
+
+  @override
+  Widget build(BuildContext context, BloomVia via) =>
+      Text('${via(count)}');
 }
 
 // #case tour/avoid_escaping_scoped_controller/bad

@@ -38,10 +38,12 @@ part 'src/rules/flutter/avoid_bloom_creation_in_build.dart';
 part 'src/rules/flutter/deactivate_effect_runner.dart';
 part 'src/rules/flutter/prefer_composed_child.dart';
 part 'src/rules/flutter/prefer_bloom_over_controller.dart';
+part 'src/rules/flutter/prefer_bloom_widget.dart';
 
 // Self-Healing QuickFix parts
 part 'src/fixes/wrap_with_via_fix.dart';
 part 'src/fixes/replace_via_state_data_fix.dart';
+part 'src/fixes/replace_stateless_with_bloom_widget_fix.dart';
 
 /// Entrypoint for the `blooming_lints` custom_lint analyzer plugin.
 PluginBase createPlugin() => _BloomingLinter();
@@ -65,5 +67,6 @@ class _BloomingLinter extends PluginBase {
         DeactivateEffectRunner(),
         PreferComposedChild(),
         PreferBloomOverController(),
+        PreferBloomWidget(),
       ];
 }

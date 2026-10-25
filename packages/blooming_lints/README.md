@@ -46,6 +46,7 @@ Rules safeguarding Flutter widget trees, element lifecycles, and rebuild optimiz
 | **`deactivate_effect_runner`** | Warning | Requires deactivating `EffectRunner` instances held in `State` classes inside `dispose()` to prevent memory leaks. |
 | **`prefer_composed_child`** | Info | Calculates AST subtree complexity to enforce strict isolation of heavy static widget subtrees and high-frequency (e.g. `observe`) animation sources from `composed` closures via `composed.child` caching or const extraction. |
 | **`prefer_bloom_over_controller`** | Info | Recommends accepting read-only `Bloom<T>` instead of mutable `BloomController<T>` in widget constructor parameters to preserve Producer/Consumer separation. |
+| **`prefer_bloom_widget`** | Info | Recommends extending `BloomWidget` or `BloomAnimatedWidget` directly instead of wrapping the entire `build()` method of a `StatelessWidget` with a 1:1 `composed` functor, eliminating double-Element overhead. |
 
 ---
 
