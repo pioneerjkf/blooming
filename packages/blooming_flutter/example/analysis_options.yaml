@@ -1,8 +1,6 @@
 analyzer:
-  plugins:
-    - custom_lint
-  errors:
-    analysis_options_deprecated_plugins: ignore
+#  plugins:
+#    - custom_lint
   exclude:
     - build/**
     - android/**

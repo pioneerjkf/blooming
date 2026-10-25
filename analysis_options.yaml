@@ -1,5 +1,3 @@
 analyzer:
-  plugins:
-    - custom_lint
-  errors:
-    analysis_options_deprecated_plugins: ignore
+  exclude:
+    - build/**
