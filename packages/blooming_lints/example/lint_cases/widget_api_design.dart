@@ -121,6 +121,45 @@ Widget goodSegmentedButtonAtomicControl() =>
           onSelectionChanged: (_) {},
         ));
 
+// #case prefer_composed_child/good/dynamic-action-buttons-with-atomic-icons
+Widget goodDynamicActionButtonsWithAtomicIcons() => composed((context, via) {
+      final isBusy = via(count) > 0;
+      return Row(
+        children: [
+          ElevatedButton.icon(
+            onPressed: isBusy ? null : () {},
+            icon: const Icon(Icons.skip_next, size: 18),
+            label: const Text('Next Step'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {},
+          ),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.play_arrow),
+            onPressed: isBusy ? null : () {},
+          ),
+        ],
+      );
+    });
+
+// #case prefer_composed_child/good/interactive-buttons-with-const-labels
+Widget goodInteractiveButtonsWithConstLabels() => composed((context, via) {
+      final isBusy = via(count) > 0;
+      return Row(
+        children: [
+          ElevatedButton(
+            onPressed: isBusy ? null : () {},
+            child: const Text('Execute'),
+          ),
+          TextButton(
+            onPressed: () {},
+            child: const Text('Cancel'),
+          ),
+        ],
+      );
+    });
+
 // #case prefer_bloom_over_controller/good/bloom-widget-parameter
 class GoodCounterDisplay extends StatelessWidget {
   const GoodCounterDisplay({

@@ -173,6 +173,61 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
     'VerticalDivider',
   };
 
+  /// Atomic leaf widgets that do not host children.
+  static const _atomicLeafWidgets = {
+    'Icon',
+    'Text',
+    'ImageIcon',
+    'SelectableText',
+  };
+
+  /// Common interactive button types that take atomic widgets as labels/icons.
+  static const _interactiveButtonTypes = {
+    'ElevatedButton',
+    'FilledButton',
+    'OutlinedButton',
+    'TextButton',
+    'IconButton',
+    'CupertinoButton',
+  };
+
+  /// Checks whether [node] is an atomic leaf widget passed as a property
+  /// argument (e.g. icon, label, leading) or as a child to an
+  /// interactive button, meaning it is not an isolatable widget subtree.
+  static bool _isNonIsolatablePropertyLeaf(AstNode node, String typeName) {
+    if (!_atomicLeafWidgets.contains(typeName)) {
+      return false;
+    }
+
+    final parent = node.parent;
+    if (parent is NamedExpression) {
+      final paramName = parent.name.label.name;
+      // Property slots other than 'child' and 'body' (e.g. icon, label, leading, trailing, prefixIcon)
+      // cannot be extracted as standalone cached subtrees.
+      if (paramName != 'child' && paramName != 'body') {
+        return true;
+      }
+
+      // If passed to a dynamic (non-const) interactive button as 'child', it is just the button's label.
+      final argList = parent.parent;
+      if (argList is ArgumentList) {
+        final enclosing = argList.parent;
+        if (enclosing is InstanceCreationExpression && !enclosing.isConst) {
+          final enclosingType = enclosing.constructorName.type.name.lexeme;
+          if (_interactiveButtonTypes.contains(enclosingType)) {
+            return true;
+          }
+        } else if (enclosing is MethodInvocation) {
+          final targetName = enclosing.methodName.name;
+          if (_interactiveButtonTypes.contains(targetName)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   /// Common non-widget const value types and styling objects.
   static const _nonWidgetConstTypes = {
     'EdgeInsets',
@@ -289,7 +344,8 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
 
     if (_inConstContext) {
       final baseTypeName = node.constructorName.type.name.lexeme;
-      if (!_trivialLayoutWidgets.contains(baseTypeName)) {
+      if (!_trivialLayoutWidgets.contains(baseTypeName) &&
+          !_isNonIsolatablePropertyLeaf(node, baseTypeName)) {
         // Weight static non-trivial const widgets.
         complexityScore += 1;
       }
@@ -312,12 +368,14 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
         final staticType = node.staticType;
         if (staticType != null) {
           if (FlutterAstUtils.isWidgetType(staticType) &&
-              !_trivialLayoutWidgets.contains(name)) {
+              !_trivialLayoutWidgets.contains(name) &&
+              !_isNonIsolatablePropertyLeaf(node, name)) {
             complexityScore += 1;
           }
         } else {
           if (!_nonWidgetConstTypes.contains(name) &&
-              !_trivialLayoutWidgets.contains(name)) {
+              !_trivialLayoutWidgets.contains(name) &&
+              !_isNonIsolatablePropertyLeaf(node, name)) {
             complexityScore += 1;
           }
         }

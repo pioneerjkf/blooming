@@ -283,6 +283,67 @@ void main() {
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
           isTrue);
     });
+
+    test(
+        'allows dynamic interactive buttons with const icons and labels (ElevatedButton.icon, IconButton)',
+        () {
+      final unit = parseString(content: '''
+void main() {
+  composed((via) => Row(children: [
+    ElevatedButton.icon(
+      onPressed: via(isBusy) ? null : controller.next,
+      icon: const Icon(Icons.skip_next),
+      label: const Text('Next Step'),
+    ),
+    IconButton(
+      icon: const Icon(Icons.close),
+      onPressed: controller.close,
+    ),
+    IconButton.filledTonal(
+      icon: const Icon(Icons.play_arrow),
+      onPressed: controller.play,
+    ),
+  ]));
+}
+''').unit;
+
+      FunctionExpression? composedClosure;
+      unit.visitChildren(_FunctionExpressionVisitor((func) {
+        composedClosure = func;
+      }));
+
+      expect(composedClosure, isNotNull);
+      expect(
+          PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
+          isFalse);
+    });
+
+    test('allows dynamic interactive buttons with const Text child', () {
+      final unit = parseString(content: '''
+void main() {
+  composed((via) => Row(children: [
+    ElevatedButton(
+      onPressed: via(isBusy) ? null : controller.next,
+      child: const Text('Next'),
+    ),
+    TextButton(
+      onPressed: controller.close,
+      child: const Text('Cancel'),
+    ),
+  ]));
+}
+''').unit;
+
+      FunctionExpression? composedClosure;
+      unit.visitChildren(_FunctionExpressionVisitor((func) {
+        composedClosure = func;
+      }));
+
+      expect(composedClosure, isNotNull);
+      expect(
+          PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
+          isFalse);
+    });
   });
 }
 
