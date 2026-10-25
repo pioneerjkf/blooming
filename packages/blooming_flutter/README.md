@@ -120,7 +120,7 @@ base class LiveMetricCard extends BloomWidget {
 │  5. Scoped DI & Context Integrations                                       │
 │     ├── Scoped State DI                                                    │
 │     │    ├── BloomProvider<T>                   (bloom: targetBloom, child)   │
-│     │    ├── bloom.provide / controller.provide (child: Widget)             │
+│     │    ├── bloom.provide                      (child: Widget)             │
 │     │    └── via.of<T>(context) / maybeOf<T>() // Scoped node observation  │
 │     └── Fluent Context Lookup                                              │
 │          ├── via.of<T>(context)                // Scoped BloomProvider read │
