@@ -107,7 +107,7 @@ part of '../../framework.dart';
 ///   }
 /// }
 /// ```
-abstract base class BloomWidget extends Widget {
+abstract class BloomWidget extends Widget {
   const BloomWidget({super.key});
 
   @override
@@ -234,7 +234,7 @@ base class BloomElement extends ComponentElement
 ///   }
 /// }
 /// ```
-abstract base class BloomVsyncWidget extends Widget {
+abstract class BloomVsyncWidget extends Widget {
   /// Initializes a [BloomVsyncWidget] with an optional [key].
   const BloomVsyncWidget({super.key});
 
@@ -329,7 +329,7 @@ base class BloomVsyncElement extends ComponentElement
 ///   }
 /// }
 /// ```
-abstract base class BloomAnimatedWidget extends Widget {
+abstract class BloomAnimatedWidget extends Widget {
   /// Initializes a [BloomAnimatedWidget] with [controller] and an optional [key].
   const BloomAnimatedWidget({
     super.key,
