@@ -19,7 +19,8 @@ final class TpsHeaderBadge extends BloomWidget {
     final pipeline = via.of<OrderBookPipeline>(context);
 
     final measuredTps = via(pipeline.actualTpsBloom);
-    final displayTps = measuredTps > 0 ? measuredTps : via(pipeline.targetTpsBloom);
+    final displayTps =
+        measuredTps > 0 ? measuredTps : via(pipeline.targetTpsBloom);
     final formattedTps = _formatNum(displayTps);
 
     return Container(

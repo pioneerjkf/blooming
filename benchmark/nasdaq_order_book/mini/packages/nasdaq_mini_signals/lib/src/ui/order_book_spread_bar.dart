@@ -15,8 +15,10 @@ class OrderBookSpreadBar extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final snapshot = pipeline.snapshotSignal.value;
     final isPositive = snapshot.priceChange >= 0;
     final changeColor = isPositive ? theme.bidGreen : theme.askRed;

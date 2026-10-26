@@ -35,7 +35,8 @@ enum NasdaqThemeMode {
   swissHerrenmode23('HERRENMODE 1923', 'Petrol Teal & Terracotta'),
   swissElectricViolet('ELECTRIC VIOLET', 'Poster White & Violet Accent'),
   swissairSlate50('SWISSAIR 1950', 'Steel Slate & Swissair Cyan'),
-  swissMidCenturyGeometry('MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
+  swissMidCenturyGeometry(
+      'MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
 
   const NasdaqThemeMode(this.label, this.description);
   final String label;
@@ -783,7 +784,8 @@ class NasdaqThemeData {
 /// Strongly-typed domain store providing reactive Theme state using [ChangeNotifier] and [ValueNotifier].
 class NasdaqThemeStore extends ChangeNotifier {
   NasdaqThemeStore({NasdaqThemeMode initialMode = NasdaqThemeMode.swissLight}) {
-    themeNotifier = ValueNotifier<NasdaqThemeData>(NasdaqThemeData.of(initialMode));
+    themeNotifier =
+        ValueNotifier<NasdaqThemeData>(NasdaqThemeData.of(initialMode));
     isAutoRotatingNotifier = ValueNotifier<bool>(false);
     rotationIntervalIndexNotifier = ValueNotifier<int>(6); // Index 6 = 1000ms
   }
@@ -809,7 +811,8 @@ class NasdaqThemeStore extends ChangeNotifier {
 
   ValueNotifier<NasdaqThemeData> get themeDataSignal => themeNotifier;
   ValueNotifier<bool> get isAutoRotatingSignal => isAutoRotatingNotifier;
-  ValueNotifier<int> get rotationIntervalIndexSignal => rotationIntervalIndexNotifier;
+  ValueNotifier<int> get rotationIntervalIndexSignal =>
+      rotationIntervalIndexNotifier;
 
   Timer? _rotationTimer;
 
@@ -818,7 +821,8 @@ class NasdaqThemeStore extends ChangeNotifier {
 
   bool get isAutoRotating => isAutoRotatingNotifier.value;
   int get rotationIntervalIndex => rotationIntervalIndexNotifier.value;
-  double get currentRotationIntervalMs => rotationIntervalPresetsMs[rotationIntervalIndex];
+  double get currentRotationIntervalMs =>
+      rotationIntervalPresetsMs[rotationIntervalIndex];
 
   void toggleNextTheme() {
     final nextIndex = (mode.index + 1) % NasdaqThemeMode.values.length;
@@ -828,8 +832,8 @@ class NasdaqThemeStore extends ChangeNotifier {
   }
 
   void togglePreviousTheme() {
-    final prevIndex =
-        (mode.index - 1 + NasdaqThemeMode.values.length) % NasdaqThemeMode.values.length;
+    final prevIndex = (mode.index - 1 + NasdaqThemeMode.values.length) %
+        NasdaqThemeMode.values.length;
     final newMode = NasdaqThemeMode.values[prevIndex];
     themeNotifier.value = NasdaqThemeData.of(newMode);
     notifyListeners();
@@ -887,4 +891,3 @@ class NasdaqThemeStore extends ChangeNotifier {
     super.dispose();
   }
 }
-

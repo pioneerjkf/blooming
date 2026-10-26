@@ -61,30 +61,46 @@ class BenchmarkMetricsSnapshot {
 
   /// Exports metrics formatted as a ready-to-publish Medium / GitHub Markdown document.
   String toMediumMarkdown() {
-    final effectiveMemory = memoryRssMb > 0 ? memoryRssMb : (ProcessInfo.currentRss / (1024 * 1024));
+    final effectiveMemory = memoryRssMb > 0
+        ? memoryRssMb
+        : (ProcessInfo.currentRss / (1024 * 1024));
     final buffer = StringBuffer();
     buffer.writeln('### 📊 $frameworkName Benchmark Snapshot ($architecture)');
     buffer.writeln();
     buffer.writeln('- **Generated At**: `${timestamp.toIso8601String()}`');
-    buffer.writeln('- **Runtime Environment**: `${Platform.operatingSystem} ${Platform.operatingSystemVersion}`');
+    buffer.writeln(
+        '- **Runtime Environment**: `${Platform.operatingSystem} ${Platform.operatingSystemVersion}`');
     buffer.writeln('- **Dart SDK**: `${Platform.version.split(' ').first}`');
     buffer.writeln();
-    buffer.writeln('| Metric Category | Measurement | Value | Status / Rating |');
+    buffer
+        .writeln('| Metric Category | Measurement | Value | Status / Rating |');
     buffer.writeln('| :--- | :--- | :--- | :--- |');
-    buffer.writeln('| **Throughput** | Target TPS | `${_formatNum(targetTps)} TPS` | Configured Load |');
-    buffer.writeln('| **Throughput** | Sustained TPS | `${_formatNum(actualTps)} TPS` | **${achievementRate.toStringAsFixed(1)}% Achieved** |');
-    buffer.writeln('| **Throughput** | Total Ingested Ticks | `${_formatNum(totalTicksProcessed)} ticks` | High Frequency Stream |');
-    buffer.writeln('| **UI Latency** | Tick-to-UI Latency | `${latencyMs.toStringAsFixed(2)} ms` | ${latencyMs < 16.6 ? '⚡ Zero Jank (<16.6ms)' : '⚠️ High Latency'} |');
-    buffer.writeln('| **Responsiveness** | Event Loop Lag (Current) | `${eventLoopLagMs.toStringAsFixed(2)} ms` | Main Thread Smoothness |');
-    buffer.writeln('| **Responsiveness** | Event Loop Lag (1s Moving Avg) | `${eventLoopAvg1s.toStringAsFixed(2)} ms` | Sustained Stability |');
-    buffer.writeln('| **Responsiveness** | Event Loop P95 / P99 | `${eventLoopP95.toStringAsFixed(2)} ms / ${eventLoopP99.toStringAsFixed(2)} ms` | Worst-case Jitter |');
-    buffer.writeln('| **Frame Timing** | UI Thread Build Time | `${uiBuildTimeMs.toStringAsFixed(2)} ms` | Localized Fine-Grained Rebuild |');
-    buffer.writeln('| **Frame Timing** | Raster GPU Time | `${rasterTimeMs.toStringAsFixed(2)} ms` | Layer Rasterization |');
-    buffer.writeln('| **Frame Timing** | Jank Frame Rate | `${jankRatePct.toStringAsFixed(1)}%` | ${jankRatePct == 0.0 ? '🏆 Zero-Jank 120Hz' : '⚠️ Frame Drops'} |');
-    buffer.writeln('| **Resource** | Process RSS Memory | `${effectiveMemory.toStringAsFixed(1)} MB` | Memory Footprint & GC Stability |');
+    buffer.writeln(
+        '| **Throughput** | Target TPS | `${_formatNum(targetTps)} TPS` | Configured Load |');
+    buffer.writeln(
+        '| **Throughput** | Sustained TPS | `${_formatNum(actualTps)} TPS` | **${achievementRate.toStringAsFixed(1)}% Achieved** |');
+    buffer.writeln(
+        '| **Throughput** | Total Ingested Ticks | `${_formatNum(totalTicksProcessed)} ticks` | High Frequency Stream |');
+    buffer.writeln(
+        '| **UI Latency** | Tick-to-UI Latency | `${latencyMs.toStringAsFixed(2)} ms` | ${latencyMs < 16.6 ? '⚡ Zero Jank (<16.6ms)' : '⚠️ High Latency'} |');
+    buffer.writeln(
+        '| **Responsiveness** | Event Loop Lag (Current) | `${eventLoopLagMs.toStringAsFixed(2)} ms` | Main Thread Smoothness |');
+    buffer.writeln(
+        '| **Responsiveness** | Event Loop Lag (1s Moving Avg) | `${eventLoopAvg1s.toStringAsFixed(2)} ms` | Sustained Stability |');
+    buffer.writeln(
+        '| **Responsiveness** | Event Loop P95 / P99 | `${eventLoopP95.toStringAsFixed(2)} ms / ${eventLoopP99.toStringAsFixed(2)} ms` | Worst-case Jitter |');
+    buffer.writeln(
+        '| **Frame Timing** | UI Thread Build Time | `${uiBuildTimeMs.toStringAsFixed(2)} ms` | Localized Fine-Grained Rebuild |');
+    buffer.writeln(
+        '| **Frame Timing** | Raster GPU Time | `${rasterTimeMs.toStringAsFixed(2)} ms` | Layer Rasterization |');
+    buffer.writeln(
+        '| **Frame Timing** | Jank Frame Rate | `${jankRatePct.toStringAsFixed(1)}%` | ${jankRatePct == 0.0 ? '🏆 Zero-Jank 120Hz' : '⚠️ Frame Drops'} |');
+    buffer.writeln(
+        '| **Resource** | Process RSS Memory | `${effectiveMemory.toStringAsFixed(1)} MB` | Memory Footprint & GC Stability |');
     buffer.writeln();
     buffer.writeln('> **Key Engineering Takeaway**:');
-    buffer.writeln('> $frameworkName powered by $architecture achieved **${achievementRate.toStringAsFixed(1)}%** of ${_formatNum(targetTps)} TPS with an average event loop lag of **${eventLoopAvg1s.toStringAsFixed(2)} ms** and memory footprint of **${effectiveMemory.toStringAsFixed(1)} MB** without blocking the Flutter UI frame loop.');
+    buffer.writeln(
+        '> $frameworkName powered by $architecture achieved **${achievementRate.toStringAsFixed(1)}%** of ${_formatNum(targetTps)} TPS with an average event loop lag of **${eventLoopAvg1s.toStringAsFixed(2)} ms** and memory footprint of **${effectiveMemory.toStringAsFixed(1)} MB** without blocking the Flutter UI frame loop.');
     buffer.writeln();
     return buffer.toString();
   }
@@ -103,7 +119,8 @@ class BenchmarkMetricsSnapshot {
       'metrics': {
         'target_tps': targetTps,
         'actual_tps': actualTps,
-        'achievement_rate_percent': double.parse(achievementRate.toStringAsFixed(2)),
+        'achievement_rate_percent':
+            double.parse(achievementRate.toStringAsFixed(2)),
         'total_ticks_processed': totalTicksProcessed,
         'tick_latency_ms': double.parse(latencyMs.toStringAsFixed(2)),
         'event_loop_lag': {
@@ -153,7 +170,8 @@ class BenchmarkExportService {
     BenchmarkMetricsSnapshot snapshot,
     NasdaqThemeData theme,
   ) async {
-    final jsonStr = const JsonEncoder.withIndent('  ').convert(snapshot.toJson());
+    final jsonStr =
+        const JsonEncoder.withIndent('  ').convert(snapshot.toJson());
     await Clipboard.setData(ClipboardData(text: jsonStr));
 
     if (context.mounted) {

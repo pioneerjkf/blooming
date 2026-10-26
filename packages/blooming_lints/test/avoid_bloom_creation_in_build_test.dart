@@ -21,12 +21,11 @@ class MyWidget extends StatelessWidget {
 ''').unit;
 
       MethodInvocation? invocation;
-      unit.accept(_MethodInvocationVisitor(
-          'blooming', (node) => invocation = node));
+      unit.accept(
+          _MethodInvocationVisitor('blooming', (node) => invocation = node));
 
       expect(invocation, isNotNull);
-      expect(
-          AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
+      expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
           isTrue);
       expect(FlutterAstUtils.isInsideBuildMethod(invocation!), isTrue);
       expect(
@@ -46,8 +45,8 @@ class MyWidget extends StatelessWidget {
 ''').unit;
 
       MethodInvocation? invocation;
-      unit.accept(_MethodInvocationVisitor(
-          'signal', (node) => invocation = node));
+      unit.accept(
+          _MethodInvocationVisitor('signal', (node) => invocation = node));
 
       expect(invocation, isNotNull);
       expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
@@ -74,8 +73,7 @@ class MyWidget extends StatelessWidget {
           _MethodInvocationVisitor('computed', (node) => invocation = node));
 
       expect(invocation, isNotNull);
-      expect(
-          AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
+      expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
           isTrue);
       expect(FlutterAstUtils.isInsideBuildMethod(invocation!), isTrue);
       expect(
@@ -103,8 +101,7 @@ class MyWidget extends StatelessWidget {
           isFalse);
     });
 
-    test('permits blooming() creation inside event callbacks in build()',
-        () {
+    test('permits blooming() creation inside event callbacks in build()', () {
       final unit = parseString(content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
@@ -119,12 +116,11 @@ class MyWidget extends StatelessWidget {
 ''').unit;
 
       MethodInvocation? invocation;
-      unit.accept(_MethodInvocationVisitor(
-          'blooming', (node) => invocation = node));
+      unit.accept(
+          _MethodInvocationVisitor('blooming', (node) => invocation = node));
 
       expect(invocation, isNotNull);
-      expect(
-          AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
+      expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
           isTrue);
       expect(
           AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(
@@ -143,8 +139,8 @@ class MyState extends State<MyWidget> {
 ''').unit;
 
       MethodInvocation? invocation;
-      unit.accept(_MethodInvocationVisitor(
-          'blooming', (node) => invocation = node));
+      unit.accept(
+          _MethodInvocationVisitor('blooming', (node) => invocation = node));
 
       expect(invocation, isNotNull);
       expect(FlutterAstUtils.isInsideBuildMethod(invocation!), isFalse);
@@ -165,4 +161,3 @@ class _MethodInvocationVisitor extends RecursiveAstVisitor<void> {
     super.visitMethodInvocation(node);
   }
 }
-

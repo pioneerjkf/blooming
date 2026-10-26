@@ -131,8 +131,8 @@ class OrderBookPipeline {
     _actualTpsController = BloomController<int>(0);
     _latencyMsController = BloomController<double>(0.0);
     _eventLoopLagController = BloomController<double>(0.0);
-    _eventLoopHistoryController =
-        RawBloomController<List<double>>(UnmodifiableListView(_eventLoopHistory));
+    _eventLoopHistoryController = RawBloomController<List<double>>(
+        UnmodifiableListView(_eventLoopHistory));
     _eventLoopAvg1sController = BloomController<double>(0.0);
     _eventLoopAvg1sHistoryController = RawBloomController<List<double>>(
       UnmodifiableListView(_eventLoopAvg1sHistory),
@@ -141,15 +141,23 @@ class OrderBookPipeline {
     _eventLoopAvg5sHistoryController = RawBloomController<List<double>>(
       UnmodifiableListView(_eventLoopAvg5sHistory),
     );
-    final initialScrollAnim = Platform.environment['BENCH_SCROLL_ANIM'] != 'false';
-    _isScrollAnimationEnabledController = BloomController<bool>(initialScrollAnim);
+    final initialScrollAnim =
+        Platform.environment['BENCH_SCROLL_ANIM'] != 'false';
+    _isScrollAnimationEnabledController =
+        BloomController<bool>(initialScrollAnim);
 
-    final envSet = int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
-    final envTotalSets = int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
-    final envBench = int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
-    final envTotalBenches = int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
-    final envRun = int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
-    final envTotalRuns = int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
+    final envSet =
+        int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
+    final envTotalSets =
+        int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
+    final envBench =
+        int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
+    final envTotalBenches =
+        int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
+    final envRun =
+        int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
+    final envTotalRuns =
+        int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
     _benchmarkProgressController = BloomController<BenchmarkProgress>(
       BenchmarkProgress(
         currentSet: envSet,
@@ -164,7 +172,8 @@ class OrderBookPipeline {
     // Initialize Stock Selection & Auto-Rotation Controllers
     _selectedStockIndexController = BloomController<int>(0);
     _isAutoRotatingController = BloomController<bool>(false);
-    _rotationIntervalIndexController = BloomController<int>(6); // Default 1000ms
+    _rotationIntervalIndexController =
+        BloomController<int>(6); // Default 1000ms
 
     // Initialize Initial Trade Ticks Sample
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -185,13 +194,18 @@ class OrderBookPipeline {
     for (final stock in stocks) {
       _latestStockPrices[stock.symbol] = stock.basePrice;
       _latestStockChanges[stock.symbol] = stock.priceChangePct;
-      _stockPriceControllers[stock.symbol] = BloomController<double>(stock.basePrice);
-      _stockChangeControllers[stock.symbol] = BloomController<double>(stock.priceChangePct);
+      _stockPriceControllers[stock.symbol] =
+          BloomController<double>(stock.basePrice);
+      _stockChangeControllers[stock.symbol] =
+          BloomController<double>(stock.priceChangePct);
     }
     _latestStockPrices[initialSnapshot.ticker] = initialSnapshot.lastPrice;
-    _latestStockChanges[initialSnapshot.ticker] = initialSnapshot.priceChangePct;
-    _stockPriceControllers[initialSnapshot.ticker]?.set(initialSnapshot.lastPrice);
-    _stockChangeControllers[initialSnapshot.ticker]?.set(initialSnapshot.priceChangePct);
+    _latestStockChanges[initialSnapshot.ticker] =
+        initialSnapshot.priceChangePct;
+    _stockPriceControllers[initialSnapshot.ticker]
+        ?.set(initialSnapshot.lastPrice);
+    _stockChangeControllers[initialSnapshot.ticker]
+        ?.set(initialSnapshot.priceChangePct);
 
     // Initialize Background Isolate Tick Generation Engine
     _isolateEngine = TickIsolateEngine();
@@ -236,9 +250,12 @@ class OrderBookPipeline {
           jankCount++;
         }
       }
-      _lastUiBuildTimeMs = double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
-      _lastRasterTimeMs = double.parse((totalRaster / _recentTimings.length).toStringAsFixed(2));
-      _lastJankRatePct = double.parse(((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
+      _lastUiBuildTimeMs =
+          double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
+      _lastRasterTimeMs = double.parse(
+          (totalRaster / _recentTimings.length).toStringAsFixed(2));
+      _lastJankRatePct = double.parse(
+          ((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
     }
   }
 
@@ -251,9 +268,11 @@ class OrderBookPipeline {
 
   Bloom<List<double>> get priceHistoryBloom => _priceHistoryController.bloom;
 
-  List<Bloom<OrderBookRowData>> get askBlooms => _askControllers.map((c) => c.bloom).toList();
+  List<Bloom<OrderBookRowData>> get askBlooms =>
+      _askControllers.map((c) => c.bloom).toList();
 
-  List<Bloom<OrderBookRowData>> get bidBlooms => _bidControllers.map((c) => c.bloom).toList();
+  List<Bloom<OrderBookRowData>> get bidBlooms =>
+      _bidControllers.map((c) => c.bloom).toList();
 
   Bloom<List<TradeTick>> get tradeTicksBloom => _tradeTicksController.bloom;
 
@@ -261,12 +280,16 @@ class OrderBookPipeline {
   Bloom<int> get targetTpsBloom => _targetTpsController.bloom;
 
   Bloom<bool> get isSimulatingBloom => _isSimulatingController.bloom;
-  Bloom<bool> get isScrollAnimationEnabledBloom => _isScrollAnimationEnabledController.bloom;
+  Bloom<bool> get isScrollAnimationEnabledBloom =>
+      _isScrollAnimationEnabledController.bloom;
   bool get isScrollAnimationEnabled => _isScrollAnimationEnabledController.data;
-  void setScrollAnimationEnabled(bool enabled) => _isScrollAnimationEnabledController.set(enabled);
-  void toggleScrollAnimation() => setScrollAnimationEnabled(!isScrollAnimationEnabled);
+  void setScrollAnimationEnabled(bool enabled) =>
+      _isScrollAnimationEnabledController.set(enabled);
+  void toggleScrollAnimation() =>
+      setScrollAnimationEnabled(!isScrollAnimationEnabled);
 
-  Bloom<BenchmarkProgress> get benchmarkProgressBloom => _benchmarkProgressController.bloom;
+  Bloom<BenchmarkProgress> get benchmarkProgressBloom =>
+      _benchmarkProgressController.bloom;
   BenchmarkProgress get benchmarkProgress => _benchmarkProgressController.data;
   void setBenchmarkProgress({
     required int currentSet,
@@ -292,26 +315,32 @@ class OrderBookPipeline {
 
   Bloom<double> get eventLoopLagBloom => _eventLoopLagController.bloom;
 
-  Bloom<List<double>> get eventLoopHistoryBloom => _eventLoopHistoryController.bloom;
+  Bloom<List<double>> get eventLoopHistoryBloom =>
+      _eventLoopHistoryController.bloom;
 
   Bloom<double> get eventLoopAvg1sBloom => _eventLoopAvg1sController.bloom;
 
-  Bloom<List<double>> get eventLoopAvg1sHistoryBloom => _eventLoopAvg1sHistoryController.bloom;
+  Bloom<List<double>> get eventLoopAvg1sHistoryBloom =>
+      _eventLoopAvg1sHistoryController.bloom;
 
   Bloom<double> get eventLoopAvg5sBloom => _eventLoopAvg5sController.bloom;
 
-  Bloom<List<double>> get eventLoopAvg5sHistoryBloom => _eventLoopAvg5sHistoryController.bloom;
+  Bloom<List<double>> get eventLoopAvg5sHistoryBloom =>
+      _eventLoopAvg5sHistoryController.bloom;
 
   // 5c. Watchlist & Selection Bloom Providers
   Bloom<int> get selectedStockIndexBloom => _selectedStockIndexController.bloom;
 
   Bloom<bool> get isAutoRotatingBloom => _isAutoRotatingController.bloom;
 
-  Bloom<int> get rotationIntervalIndexBloom => _rotationIntervalIndexController.bloom;
+  Bloom<int> get rotationIntervalIndexBloom =>
+      _rotationIntervalIndexController.bloom;
 
-  Bloom<double> stockPriceBloom(String symbol) => _stockPriceControllers[symbol]!.bloom;
+  Bloom<double> stockPriceBloom(String symbol) =>
+      _stockPriceControllers[symbol]!.bloom;
 
-  Bloom<double> stockChangeBloom(String symbol) => _stockChangeControllers[symbol]!.bloom;
+  Bloom<double> stockChangeBloom(String symbol) =>
+      _stockChangeControllers[symbol]!.bloom;
 
   // 5d. Synchronous Data Value Getters
   OrderBookSnapshot get snapshotValue => _snapshotController.data;
@@ -326,7 +355,8 @@ class OrderBookPipeline {
   NasdaqStockItem get selectedStock => stocks[selectedStockIndex];
   bool get isAutoRotating => _isAutoRotatingController.data;
   int get rotationIntervalIndex => _rotationIntervalIndexController.data;
-  double get currentRotationIntervalMs => rotationIntervalPresetsMs[rotationIntervalIndex];
+  double get currentRotationIntervalMs =>
+      rotationIntervalPresetsMs[rotationIntervalIndex];
 
   double getLatestPrice(String symbol, double fallbackBasePrice) =>
       _latestStockPrices[symbol] ?? fallbackBasePrice;
@@ -351,7 +381,8 @@ class OrderBookPipeline {
     _snapshotController.set(newSnapshot);
 
     _priceHistory.clear();
-    _priceHistory.addAll(List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04)));
+    _priceHistory
+        .addAll(List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04)));
     _priceHistoryController.markDirty();
 
     for (int i = 0; i < 25; i++) {
@@ -363,7 +394,8 @@ class OrderBookPipeline {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _tradeTicks.addAll(List.generate(10, (i) {
       return TradeTick(
-        price: double.parse((stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
+        price: double.parse(
+            (stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
         volume: (10 + (i * 3)) * 100,
         isBuy: i % 2 == 0,
         timestampMs: nowMs - (i * 800),
@@ -453,7 +485,8 @@ class OrderBookPipeline {
       final elapsed = nowMs - _lastMeasurementTimestamp;
 
       if (elapsed >= 500) {
-        final currentTps = ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
+        final currentTps =
+            ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
         _actualTpsController.set(currentTps);
 
         final latency = (nowMs - payload.timestampMs).toDouble();
@@ -492,7 +525,8 @@ class OrderBookPipeline {
       // 4. Update overall snapshot & multi-asset watchlist live price ticks
       final currentSnap = _snapshotController.data;
       final activeTicker = currentSnap.ticker;
-      _updateStockPriceState(activeTicker, payload.latestPrice, payload.priceChangePct);
+      _updateStockPriceState(
+          activeTicker, payload.latestPrice, payload.priceChangePct);
 
       for (final stock in stocks) {
         if (stock.symbol == activeTicker) continue;
@@ -501,7 +535,8 @@ class OrderBookPipeline {
           final delta = (_random.nextDouble() - 0.49) * 0.12;
           final newP = double.parse((currentP + delta).toStringAsFixed(2));
           final newChgPct = double.parse(
-            (((newP - stock.basePrice) / stock.basePrice) * 100).toStringAsFixed(2),
+            (((newP - stock.basePrice) / stock.basePrice) * 100)
+                .toStringAsFixed(2),
           );
           _updateStockPriceState(stock.symbol, newP, newChgPct);
         }
@@ -542,7 +577,8 @@ class OrderBookPipeline {
     _eventLoopTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       final scheduledMicros = _eventLoopStopwatch.elapsedMicroseconds;
       Timer.run(() {
-        final elapsedMicros = _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
+        final elapsedMicros =
+            _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
         final lagMs = elapsedMicros / 1000.0;
         lagRecorder.add(lagMs);
 
@@ -561,8 +597,9 @@ class OrderBookPipeline {
         if (_eventLoop1sWindow.length > 30) {
           _eventLoop1sSum -= _eventLoop1sWindow.removeAt(0);
         }
-        final avg1s =
-            _eventLoop1sWindow.isNotEmpty ? _eventLoop1sSum / _eventLoop1sWindow.length : lagMs;
+        final avg1s = _eventLoop1sWindow.isNotEmpty
+            ? _eventLoop1sSum / _eventLoop1sWindow.length
+            : lagMs;
         _eventLoopAvg1sController.set(avg1s);
 
         _eventLoopAvg1sHistory.add(avg1s);
@@ -577,8 +614,9 @@ class OrderBookPipeline {
         if (_eventLoop5sWindow.length > 150) {
           _eventLoop5sSum -= _eventLoop5sWindow.removeAt(0);
         }
-        final avg5s =
-            _eventLoop5sWindow.isNotEmpty ? _eventLoop5sSum / _eventLoop5sWindow.length : lagMs;
+        final avg5s = _eventLoop5sWindow.isNotEmpty
+            ? _eventLoop5sSum / _eventLoop5sWindow.length
+            : lagMs;
         _eventLoopAvg5sController.set(avg5s);
 
         _eventLoopAvg5sHistory.add(avg5s);

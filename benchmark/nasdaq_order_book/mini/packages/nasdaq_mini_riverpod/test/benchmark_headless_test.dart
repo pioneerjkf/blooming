@@ -17,10 +17,14 @@ void main() {
       final durationStr = Platform.environment['BENCH_DURATION'] ?? '2';
       final warmupStr = Platform.environment['BENCH_WARMUP'] ?? '1';
       final scrollAnimStr = Platform.environment['BENCH_SCROLL_ANIM'] ?? 'true';
-      final themeRotStr = Platform.environment['BENCH_THEME_ROTATION'] ?? 'true';
-      final themeIntervalIndexStr = Platform.environment['BENCH_THEME_INTERVAL_INDEX'] ?? '0';
-      final tickerRotStr = Platform.environment['BENCH_TICKER_ROTATION'] ?? 'true';
-      final tickerIntervalIndexStr = Platform.environment['BENCH_TICKER_INTERVAL_INDEX'] ?? '0';
+      final themeRotStr =
+          Platform.environment['BENCH_THEME_ROTATION'] ?? 'true';
+      final themeIntervalIndexStr =
+          Platform.environment['BENCH_THEME_INTERVAL_INDEX'] ?? '0';
+      final tickerRotStr =
+          Platform.environment['BENCH_TICKER_ROTATION'] ?? 'true';
+      final tickerIntervalIndexStr =
+          Platform.environment['BENCH_TICKER_INTERVAL_INDEX'] ?? '0';
 
       final targetTps = int.parse(targetTpsStr);
       final durationSec = int.parse(durationStr);
@@ -71,9 +75,12 @@ void main() {
       container.dispose();
 
       lags.sort();
-      final double? avgLag = lags.isEmpty ? null : lags.reduce((a, b) => a + b) / lags.length;
-      final double? p95Lag = lags.isEmpty ? null : lags[((lags.length - 1) * 0.95).floor()];
-      final double? p99Lag = lags.isEmpty ? null : lags[((lags.length - 1) * 0.99).floor()];
+      final double? avgLag =
+          lags.isEmpty ? null : lags.reduce((a, b) => a + b) / lags.length;
+      final double? p95Lag =
+          lags.isEmpty ? null : lags[((lags.length - 1) * 0.95).floor()];
+      final double? p99Lag =
+          lags.isEmpty ? null : lags[((lags.length - 1) * 0.99).floor()];
 
       final result = {
         'framework': 'Riverpod',
@@ -81,9 +88,12 @@ void main() {
         'target_tps': targetTps,
         'sustained_tps': sustainedTps,
         'total_ticks': actualTicks,
-        'avg_event_loop_lag_ms': avgLag != null ? double.parse(avgLag.toStringAsFixed(2)) : null,
-        'p95_event_loop_lag_ms': p95Lag != null ? double.parse(p95Lag.toStringAsFixed(2)) : null,
-        'p99_event_loop_lag_ms': p99Lag != null ? double.parse(p99Lag.toStringAsFixed(2)) : null,
+        'avg_event_loop_lag_ms':
+            avgLag != null ? double.parse(avgLag.toStringAsFixed(2)) : null,
+        'p95_event_loop_lag_ms':
+            p95Lag != null ? double.parse(p95Lag.toStringAsFixed(2)) : null,
+        'p99_event_loop_lag_ms':
+            p99Lag != null ? double.parse(p99Lag.toStringAsFixed(2)) : null,
         'latency_ms': double.parse(latency.toStringAsFixed(2)),
         'memory_rss_mb': double.parse(memoryRssMb.toStringAsFixed(1)),
         'scroll_animation': enableScrollAnim,

@@ -40,7 +40,8 @@ class LagRecorder {
     if (_count == 0) {
       return {'count': 0, 'dropped': _dropped};
     }
-    final sorted = Float64List.sublistView(_samples, 0, _count).toList()..sort();
+    final sorted = Float64List.sublistView(_samples, 0, _count).toList()
+      ..sort();
     double sum = 0;
     for (final v in sorted) {
       sum += v;

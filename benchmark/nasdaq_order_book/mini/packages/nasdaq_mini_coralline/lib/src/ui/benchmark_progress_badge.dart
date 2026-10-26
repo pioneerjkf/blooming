@@ -19,7 +19,8 @@ final class BenchmarkProgressBadge extends BuildComponent
   BenchmarkProgressBadge();
 
   late final Coral<NasdaqThemeData> themeCoral = coralOf<NasdaqThemeData>();
-  late final Coral<BenchmarkProgress> _progressCoral = benchmarkProgressCoralOf();
+  late final Coral<BenchmarkProgress> _progressCoral =
+      benchmarkProgressCoralOf();
 
   @override
   Iterable<CoralNode> manifest() => [

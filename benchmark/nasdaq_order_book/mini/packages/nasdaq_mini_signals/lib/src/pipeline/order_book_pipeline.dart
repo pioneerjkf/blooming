@@ -81,12 +81,16 @@ class OrderBookPipeline {
 
   ReadonlySignal<int> get targetTpsSignal => _targetTpsSignal;
   ReadonlySignal<bool> get isSimulatingSignal => _isSimulatingSignal;
-  ReadonlySignal<bool> get isScrollAnimationEnabledSignal => _isScrollAnimationEnabledSignal;
+  ReadonlySignal<bool> get isScrollAnimationEnabledSignal =>
+      _isScrollAnimationEnabledSignal;
   bool get isScrollAnimationEnabled => _isScrollAnimationEnabledSignal.value;
-  void setScrollAnimationEnabled(bool enabled) => _isScrollAnimationEnabledSignal.value = enabled;
-  void toggleScrollAnimation() => setScrollAnimationEnabled(!isScrollAnimationEnabled);
+  void setScrollAnimationEnabled(bool enabled) =>
+      _isScrollAnimationEnabledSignal.value = enabled;
+  void toggleScrollAnimation() =>
+      setScrollAnimationEnabled(!isScrollAnimationEnabled);
 
-  ReadonlySignal<BenchmarkProgress> get benchmarkProgressSignal => _benchmarkProgressSignal;
+  ReadonlySignal<BenchmarkProgress> get benchmarkProgressSignal =>
+      _benchmarkProgressSignal;
   BenchmarkProgress get benchmarkProgress => _benchmarkProgressSignal.value;
   void setBenchmarkProgress({
     required int currentSet,
@@ -109,17 +113,23 @@ class OrderBookPipeline {
   ReadonlySignal<int> get actualTpsSignal => _actualTpsSignal;
   ReadonlySignal<double> get latencyMsSignal => _latencyMsSignal;
   ReadonlySignal<double> get eventLoopLagSignal => _eventLoopLagSignal;
-  ReadonlySignal<List<double>> get eventLoopHistorySignal => _eventLoopHistorySignal;
+  ReadonlySignal<List<double>> get eventLoopHistorySignal =>
+      _eventLoopHistorySignal;
   ReadonlySignal<double> get eventLoopAvg1sSignal => _eventLoopAvg1sSignal;
-  ReadonlySignal<List<double>> get eventLoopAvg1sHistorySignal => _eventLoopAvg1sHistorySignal;
+  ReadonlySignal<List<double>> get eventLoopAvg1sHistorySignal =>
+      _eventLoopAvg1sHistorySignal;
   ReadonlySignal<double> get eventLoopAvg5sSignal => _eventLoopAvg5sSignal;
-  ReadonlySignal<List<double>> get eventLoopAvg5sHistorySignal => _eventLoopAvg5sHistorySignal;
+  ReadonlySignal<List<double>> get eventLoopAvg5sHistorySignal =>
+      _eventLoopAvg5sHistorySignal;
 
   ReadonlySignal<int> get selectedStockIndexSignal => _selectedStockIndexSignal;
   ReadonlySignal<bool> get isAutoRotatingSignal => _isAutoRotatingSignal;
-  ReadonlySignal<int> get rotationIntervalIndexSignal => _rotationIntervalIndexSignal;
-  Map<String, ReadonlySignal<double>> get stockPriceSignals => _stockPriceSignals;
-  Map<String, ReadonlySignal<double>> get stockChangeSignals => _stockChangeSignals;
+  ReadonlySignal<int> get rotationIntervalIndexSignal =>
+      _rotationIntervalIndexSignal;
+  Map<String, ReadonlySignal<double>> get stockPriceSignals =>
+      _stockPriceSignals;
+  Map<String, ReadonlySignal<double>> get stockChangeSignals =>
+      _stockChangeSignals;
 
   // ===========================================================================
   // 3. INTERNAL PRIVATE FIELDS & ENGINE DRIVERS
@@ -160,7 +170,8 @@ class OrderBookPipeline {
     _priceHistory = List.generate(40, (i) {
       return initialSnapshot.lastPrice - ((39 - i) * 0.04);
     });
-    _priceHistorySignal = signal<List<double>>(UnmodifiableListView(_priceHistory));
+    _priceHistorySignal =
+        signal<List<double>>(UnmodifiableListView(_priceHistory));
 
     // Initialize 25 Ask & 25 Bid Fine-Grained Reactive Row Signals
     _askSignals = List.generate(25, (i) {
@@ -190,12 +201,18 @@ class OrderBookPipeline {
       UnmodifiableListView(_eventLoopAvg5sHistory),
     );
 
-    final envSet = int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
-    final envTotalSets = int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
-    final envBench = int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
-    final envTotalBenches = int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
-    final envRun = int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
-    final envTotalRuns = int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
+    final envSet =
+        int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
+    final envTotalSets =
+        int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
+    final envBench =
+        int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
+    final envTotalBenches =
+        int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
+    final envRun =
+        int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
+    final envTotalRuns =
+        int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
     _benchmarkProgressSignal = signal<BenchmarkProgress>(
       BenchmarkProgress(
         currentSet: envSet,
@@ -224,7 +241,8 @@ class OrderBookPipeline {
         timestampMs: nowMs - (i * 800),
       );
     }));
-    _tradeTicksSignal = signal<List<TradeTick>>(UnmodifiableListView(_tradeTicks));
+    _tradeTicksSignal =
+        signal<List<TradeTick>>(UnmodifiableListView(_tradeTicks));
 
     // Initialize Multi-Asset Watchlist Price Signals
     for (final stock in stocks) {
@@ -234,9 +252,12 @@ class OrderBookPipeline {
       _stockChangeSignals[stock.symbol] = signal<double>(stock.priceChangePct);
     }
     _latestStockPrices[initialSnapshot.ticker] = initialSnapshot.lastPrice;
-    _latestStockChanges[initialSnapshot.ticker] = initialSnapshot.priceChangePct;
-    _stockPriceSignals[initialSnapshot.ticker]?.value = initialSnapshot.lastPrice;
-    _stockChangeSignals[initialSnapshot.ticker]?.value = initialSnapshot.priceChangePct;
+    _latestStockChanges[initialSnapshot.ticker] =
+        initialSnapshot.priceChangePct;
+    _stockPriceSignals[initialSnapshot.ticker]?.value =
+        initialSnapshot.lastPrice;
+    _stockChangeSignals[initialSnapshot.ticker]?.value =
+        initialSnapshot.priceChangePct;
 
     _isolateEngine = TickIsolateEngine();
 
@@ -280,9 +301,12 @@ class OrderBookPipeline {
           jankCount++;
         }
       }
-      _lastUiBuildTimeMs = double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
-      _lastRasterTimeMs = double.parse((totalRaster / _recentTimings.length).toStringAsFixed(2));
-      _lastJankRatePct = double.parse(((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
+      _lastUiBuildTimeMs =
+          double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
+      _lastRasterTimeMs = double.parse(
+          (totalRaster / _recentTimings.length).toStringAsFixed(2));
+      _lastJankRatePct = double.parse(
+          ((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
     }
   }
 
@@ -294,7 +318,8 @@ class OrderBookPipeline {
   NasdaqStockItem get selectedStock => stocks[selectedStockIndex];
   bool get isAutoRotating => _isAutoRotatingSignal.value;
   int get rotationIntervalIndex => _rotationIntervalIndexSignal.value;
-  double get currentRotationIntervalMs => rotationIntervalPresetsMs[rotationIntervalIndex];
+  double get currentRotationIntervalMs =>
+      rotationIntervalPresetsMs[rotationIntervalIndex];
 
   double getLatestPrice(String symbol, double fallbackBasePrice) =>
       _latestStockPrices[symbol] ?? fallbackBasePrice;
@@ -316,13 +341,15 @@ class OrderBookPipeline {
       basePrice: stock.basePrice,
     );
 
-    _priceHistory = List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04));
+    _priceHistory =
+        List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04));
 
     _tradeTicks.clear();
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _tradeTicks.addAll(List.generate(10, (i) {
       return TradeTick(
-        price: double.parse((stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
+        price: double.parse(
+            (stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
         volume: (10 + (i * 3)) * 100,
         isBuy: i % 2 == 0,
         timestampMs: nowMs - (i * 800),
@@ -426,7 +453,8 @@ class OrderBookPipeline {
 
     batch(() {
       if (elapsed >= 500) {
-        final currentTps = ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
+        final currentTps =
+            ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
         _actualTpsSignal.value = currentTps;
 
         final latency = (nowMs - payload.timestampMs).toDouble();
@@ -468,7 +496,8 @@ class OrderBookPipeline {
       // 4. Update overall snapshot signal & multi-asset watchlist live price ticks
       final currentSnap = _snapshotSignal.value;
       final activeTicker = currentSnap.ticker;
-      _updateStockPriceState(activeTicker, payload.latestPrice, payload.priceChangePct);
+      _updateStockPriceState(
+          activeTicker, payload.latestPrice, payload.priceChangePct);
 
       for (final stock in stocks) {
         if (stock.symbol == activeTicker) continue;
@@ -477,7 +506,8 @@ class OrderBookPipeline {
           final delta = (_random.nextDouble() - 0.49) * 0.12;
           final newP = double.parse((currentP + delta).toStringAsFixed(2));
           final newChgPct = double.parse(
-            (((newP - stock.basePrice) / stock.basePrice) * 100).toStringAsFixed(2),
+            (((newP - stock.basePrice) / stock.basePrice) * 100)
+                .toStringAsFixed(2),
           );
           _updateStockPriceState(stock.symbol, newP, newChgPct);
         }
@@ -518,7 +548,8 @@ class OrderBookPipeline {
     _eventLoopTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       final scheduledMicros = _eventLoopStopwatch.elapsedMicroseconds;
       Timer.run(() {
-        final elapsedMicros = _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
+        final elapsedMicros =
+            _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
         final lagMs = elapsedMicros / 1000.0;
         lagRecorder.add(lagMs);
 
@@ -530,7 +561,8 @@ class OrderBookPipeline {
           if (_eventLoopHistory.length > 40) {
             _eventLoopHistory.removeAt(0);
           }
-          _eventLoopHistorySignal.value = UnmodifiableListView(_eventLoopHistory);
+          _eventLoopHistorySignal.value =
+              UnmodifiableListView(_eventLoopHistory);
 
           // 2. 1-Second Moving Average (Cyan Line Chart)
           _eventLoop1sWindow.add(lagMs);
@@ -538,15 +570,17 @@ class OrderBookPipeline {
           if (_eventLoop1sWindow.length > 30) {
             _eventLoop1sSum -= _eventLoop1sWindow.removeAt(0);
           }
-          final avg1s =
-              _eventLoop1sWindow.isNotEmpty ? _eventLoop1sSum / _eventLoop1sWindow.length : lagMs;
+          final avg1s = _eventLoop1sWindow.isNotEmpty
+              ? _eventLoop1sSum / _eventLoop1sWindow.length
+              : lagMs;
           _eventLoopAvg1sSignal.value = avg1s;
 
           _eventLoopAvg1sHistory.add(avg1s);
           if (_eventLoopAvg1sHistory.length > 40) {
             _eventLoopAvg1sHistory.removeAt(0);
           }
-          _eventLoopAvg1sHistorySignal.value = UnmodifiableListView(_eventLoopAvg1sHistory);
+          _eventLoopAvg1sHistorySignal.value =
+              UnmodifiableListView(_eventLoopAvg1sHistory);
 
           // 3. 5-Second Moving Average (Pink Line Chart)
           _eventLoop5sWindow.add(lagMs);
@@ -554,15 +588,17 @@ class OrderBookPipeline {
           if (_eventLoop5sWindow.length > 150) {
             _eventLoop5sSum -= _eventLoop5sWindow.removeAt(0);
           }
-          final avg5s =
-              _eventLoop5sWindow.isNotEmpty ? _eventLoop5sSum / _eventLoop5sWindow.length : lagMs;
+          final avg5s = _eventLoop5sWindow.isNotEmpty
+              ? _eventLoop5sSum / _eventLoop5sWindow.length
+              : lagMs;
           _eventLoopAvg5sSignal.value = avg5s;
 
           _eventLoopAvg5sHistory.add(avg5s);
           if (_eventLoopAvg5sHistory.length > 40) {
             _eventLoopAvg5sHistory.removeAt(0);
           }
-          _eventLoopAvg5sHistorySignal.value = UnmodifiableListView(_eventLoopAvg5sHistory);
+          _eventLoopAvg5sHistorySignal.value =
+              UnmodifiableListView(_eventLoopAvg5sHistory);
         });
       });
     });

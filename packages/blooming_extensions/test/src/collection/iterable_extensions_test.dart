@@ -6,8 +6,8 @@ void main() {
     test(
         'firstWhereOrNull, lastWhereOrNull, singleWhereOrNull search elements reactively',
         () {
-      final controller = blooming<List<String>>(
-          ['apple', 'banana', 'apricot', 'cherry']);
+      final controller =
+          blooming<List<String>>(['apple', 'banana', 'apricot', 'cherry']);
 
       final firstA =
           controller.bloom.elements.firstWhereOrNull((e) => e.startsWith('a'));

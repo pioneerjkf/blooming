@@ -27,7 +27,8 @@ class OrderBookView extends StatefulWidget {
   State<OrderBookView> createState() => _OrderBookViewState();
 }
 
-class _OrderBookViewState extends State<OrderBookView> with SingleTickerProviderStateMixin {
+class _OrderBookViewState extends State<OrderBookView>
+    with SingleTickerProviderStateMixin {
   late final ValueNotifier<double> _localAnimOffsetNotifier;
   Ticker? _ticker;
   double _elapsedSeconds = 0.0;
@@ -56,9 +57,11 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
     super.didChangeDependencies();
     final pipeline = NasdaqBenchmarkScope.of(context).pipeline;
     if (_subscribedPipeline != pipeline) {
-      _subscribedPipeline?.isScrollAnimationEnabledNotifier.removeListener(_onScrollAnimChanged);
+      _subscribedPipeline?.isScrollAnimationEnabledNotifier
+          .removeListener(_onScrollAnimChanged);
       _subscribedPipeline = pipeline;
-      _subscribedPipeline?.isScrollAnimationEnabledNotifier.addListener(_onScrollAnimChanged);
+      _subscribedPipeline?.isScrollAnimationEnabledNotifier
+          .addListener(_onScrollAnimChanged);
       _onScrollAnimChanged();
     }
   }
@@ -81,7 +84,8 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
 
   @override
   void dispose() {
-    _subscribedPipeline?.isScrollAnimationEnabledNotifier.removeListener(_onScrollAnimChanged);
+    _subscribedPipeline?.isScrollAnimationEnabledNotifier
+        .removeListener(_onScrollAnimChanged);
     _ticker?.stop();
     _ticker?.dispose();
     _localAnimOffsetNotifier.dispose();
@@ -137,11 +141,16 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                         GestureDetector(
                           onTap: () => pipeline.toggleScrollAnimation(),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1.5),
                             decoration: BoxDecoration(
-                              color: isAnimEnabled ? theme.chipBg : theme.cardBackground,
+                              color: isAnimEnabled
+                                  ? theme.chipBg
+                                  : theme.cardBackground,
                               border: Border.all(
-                                color: isAnimEnabled ? theme.bidGreen : theme.chipBorder,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.chipBorder,
                                 width: 1.0,
                               ),
                             ),
@@ -153,7 +162,9 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                                   height: 5,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                    color: isAnimEnabled
+                                        ? theme.bidGreen
+                                        : theme.textMuted,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
@@ -162,7 +173,9 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                                   style: TextStyle(
                                     fontSize: 8.5,
                                     fontWeight: FontWeight.w800,
-                                    color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                    color: isAnimEnabled
+                                        ? theme.bidGreen
+                                        : theme.textMuted,
                                     letterSpacing: 0.6,
                                     fontFamily: 'monospace',
                                   ),

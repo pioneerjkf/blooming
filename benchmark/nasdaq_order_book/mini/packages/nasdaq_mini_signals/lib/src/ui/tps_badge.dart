@@ -15,8 +15,10 @@ class TpsHeaderBadge extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final measuredTps = pipeline.actualTpsSignal.value;
     final targetTps = pipeline.targetTpsSignal.value;
     final displayTps = measuredTps > 0 ? measuredTps : targetTps;

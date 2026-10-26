@@ -273,11 +273,14 @@ class _EventLoopBarChartPainter extends CustomPainter {
 
     textPainter1ms.paint(
       canvas,
-      Offset(size.width - textPainter1ms.width - 1, y1ms - (textPainter1ms.height / 2)),
+      Offset(size.width - textPainter1ms.width - 1,
+          y1ms - (textPainter1ms.height / 2)),
     );
 
     // 2. Draw MAX Indicator Line & Label (Left/Top)
-    final yMax = size.height - (peakVal / maxVal).clamp(0.0, 1.0) * (size.height - 6.0) - 3.0;
+    final yMax = size.height -
+        (peakVal / maxVal).clamp(0.0, 1.0) * (size.height - 6.0) -
+        3.0;
     final maxLinePaint = Paint()
       ..color = accentColor.withValues(alpha: 0.4)
       ..strokeWidth = 0.8
@@ -307,7 +310,8 @@ class _EventLoopBarChartPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
 
-    final maxLabelY = (yMax - textPainterMax.height - 1).clamp(0.0, size.height - textPainterMax.height);
+    final maxLabelY = (yMax - textPainterMax.height - 1)
+        .clamp(0.0, size.height - textPainterMax.height);
     textPainterMax.paint(canvas, Offset(2, maxLabelY));
 
     // 3. Draw rolling bars
@@ -401,11 +405,14 @@ class _EventLoopLineChartPainter extends CustomPainter {
 
     textPainter1ms.paint(
       canvas,
-      Offset(size.width - textPainter1ms.width - 1, y1ms - (textPainter1ms.height / 2)),
+      Offset(size.width - textPainter1ms.width - 1,
+          y1ms - (textPainter1ms.height / 2)),
     );
 
     // 2. Draw MAX Indicator Line & Label (Left/Top)
-    final yMax = size.height - (peakVal / maxVal).clamp(0.0, 1.0) * (size.height - 6.0) - 3.0;
+    final yMax = size.height -
+        (peakVal / maxVal).clamp(0.0, 1.0) * (size.height - 6.0) -
+        3.0;
     final maxLinePaint = Paint()
       ..color = lineColor.withValues(alpha: 0.4)
       ..strokeWidth = 0.8
@@ -435,7 +442,8 @@ class _EventLoopLineChartPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
 
-    final maxLabelY = (yMax - textPainterMax.height - 1).clamp(0.0, size.height - textPainterMax.height);
+    final maxLabelY = (yMax - textPainterMax.height - 1)
+        .clamp(0.0, size.height - textPainterMax.height);
     textPainterMax.paint(canvas, Offset(2, maxLabelY));
 
     // 3. Draw smooth curve line & gradient fill
@@ -465,8 +473,10 @@ class _EventLoopLineChartPainter extends CustomPainter {
         final controlX2 = p0.dx + (p1.dx - p0.dx) / 2;
         final controlY2 = p1.dy;
 
-        linePath.cubicTo(controlX1, controlY1, controlX2, controlY2, p1.dx, p1.dy);
-        fillPath.cubicTo(controlX1, controlY1, controlX2, controlY2, p1.dx, p1.dy);
+        linePath.cubicTo(
+            controlX1, controlY1, controlX2, controlY2, p1.dx, p1.dy);
+        fillPath.cubicTo(
+            controlX1, controlY1, controlX2, controlY2, p1.dx, p1.dy);
       }
 
       fillPath.lineTo(points.last.dx, size.height);

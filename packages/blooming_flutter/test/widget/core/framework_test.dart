@@ -399,8 +399,7 @@ void main() {
         'bloomOf<T>() requires exact type match and fails on supertype unless explicitly provided',
         (tester) async {
       final childBloom =
-          blooming<_TestChildClass>(_TestChildClass('exact_payload'))
-              .bloom;
+          blooming<_TestChildClass>(_TestChildClass('exact_payload')).bloom;
 
       // 1. Provided as BloomProvider<_TestChildClass>
       await tester.pumpWidget(

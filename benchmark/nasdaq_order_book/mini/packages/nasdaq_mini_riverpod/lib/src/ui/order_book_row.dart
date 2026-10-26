@@ -24,7 +24,8 @@ class OrderBookRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = ref.watch(themeDataProvider);
-    final data = ref.watch(isAsk ? askRowProvider(index) : bidRowProvider(index));
+    final data =
+        ref.watch(isAsk ? askRowProvider(index) : bidRowProvider(index));
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final isRecentFlash = (nowMs - data.flashTimestampMs) < 90;
 
@@ -32,9 +33,13 @@ class OrderBookRow extends ConsumerWidget {
     Color flashOverlayColor = Colors.transparent;
     if (isRecentFlash) {
       if (data.isAsk) {
-        flashOverlayColor = data.flashType == FlashType.up ? theme.flashDownGlow : theme.askRedBg;
+        flashOverlayColor = data.flashType == FlashType.up
+            ? theme.flashDownGlow
+            : theme.askRedBg;
       } else {
-        flashOverlayColor = data.flashType == FlashType.up ? theme.flashUpGlow : theme.bidGreenBg;
+        flashOverlayColor = data.flashType == FlashType.up
+            ? theme.flashUpGlow
+            : theme.bidGreenBg;
       }
     }
 

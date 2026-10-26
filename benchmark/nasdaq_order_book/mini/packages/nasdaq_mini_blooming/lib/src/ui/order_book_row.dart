@@ -25,7 +25,8 @@ final class OrderBookRow extends BloomWidget {
   Widget build(BuildContext context, BloomVia via) {
     final theme = via.of<NasdaqThemeData>(context);
     final pipeline = via.of<OrderBookPipeline>(context);
-    final rowBloom = isAsk ? pipeline.askBlooms[index] : pipeline.bidBlooms[index];
+    final rowBloom =
+        isAsk ? pipeline.askBlooms[index] : pipeline.bidBlooms[index];
     final data = via(rowBloom);
 
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -35,9 +36,13 @@ final class OrderBookRow extends BloomWidget {
     Color flashOverlayColor = Colors.transparent;
     if (isRecentFlash) {
       if (data.isAsk) {
-        flashOverlayColor = data.flashType == FlashType.up ? theme.flashDownGlow : theme.askRedBg;
+        flashOverlayColor = data.flashType == FlashType.up
+            ? theme.flashDownGlow
+            : theme.askRedBg;
       } else {
-        flashOverlayColor = data.flashType == FlashType.up ? theme.flashUpGlow : theme.bidGreenBg;
+        flashOverlayColor = data.flashType == FlashType.up
+            ? theme.flashUpGlow
+            : theme.bidGreenBg;
       }
     }
 

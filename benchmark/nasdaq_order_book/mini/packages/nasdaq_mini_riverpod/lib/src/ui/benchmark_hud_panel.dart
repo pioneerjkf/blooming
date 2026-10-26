@@ -104,9 +104,11 @@ class BenchmarkHudPanel extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Text('005 ', style: theme.swissIndexLabel.copyWith(fontSize: 9)),
+                  Text('005 ',
+                      style: theme.swissIndexLabel.copyWith(fontSize: 9)),
                   Text('BENCHMARK HUD',
-                      style: theme.swissHeader.copyWith(fontSize: 11, letterSpacing: 1.0)),
+                      style: theme.swissHeader
+                          .copyWith(fontSize: 11, letterSpacing: 1.0)),
                 ],
               ),
               Text(
@@ -152,7 +154,8 @@ class BenchmarkHudPanel extends ConsumerWidget {
             children: [
               Text(
                 'TARGET TPS',
-                style: theme.volumeStyle.copyWith(color: theme.textPrimary, fontSize: 9.5),
+                style: theme.volumeStyle
+                    .copyWith(color: theme.textPrimary, fontSize: 9.5),
               ),
               Text(
                 _formatNum(targetTps),
@@ -172,7 +175,8 @@ class BenchmarkHudPanel extends ConsumerWidget {
               thumbColor: theme.textPrimary,
               overlayColor: theme.textPrimary.withValues(alpha: 0.1),
               trackHeight: 3.5,
-              thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 6.0),
+              thumbShape:
+                  const SwissRectSliderThumbShape(enabledThumbRadius: 6.0),
             ),
             child: SizedBox(
               height: 22,
@@ -181,7 +185,8 @@ class BenchmarkHudPanel extends ConsumerWidget {
                 min: 0,
                 max: (BenchmarkHudPanel.tpsPresets.length - 1).toDouble(),
                 divisions: BenchmarkHudPanel.tpsPresets.length - 1,
-                label: '${_formatNum(BenchmarkHudPanel.tpsPresets[currentIndex])} TPS',
+                label:
+                    '${_formatNum(BenchmarkHudPanel.tpsPresets[currentIndex])} TPS',
                 onChanged: (val) {
                   final newTps = BenchmarkHudPanel.tpsPresets[val.round()];
                   pipeline.setTargetTps(newTps);
@@ -221,8 +226,10 @@ class BenchmarkHudPanel extends ConsumerWidget {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isSimulating ? theme.askRed : theme.chipBg,
-                      foregroundColor: isSimulating ? Colors.white : theme.chipText,
+                      backgroundColor:
+                          isSimulating ? theme.askRed : theme.chipBg,
+                      foregroundColor:
+                          isSimulating ? Colors.white : theme.chipText,
                       padding: EdgeInsets.zero,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -342,7 +349,8 @@ class SwissRectSliderThumbShape extends SliderComponentShape {
   final Color? thumbColor;
 
   @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) => Size.fromRadius(enabledThumbRadius);
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
+      Size.fromRadius(enabledThumbRadius);
 
   @override
   void paint(

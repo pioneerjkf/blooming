@@ -8,7 +8,6 @@ part of '../framework.dart';
 // Reactive Iterable & Collection Operators
 // =============================================================================
 
-
 /// Core aggregation extension for [Bloom] holding any [Iterable] collection.
 extension BloomIterableComputationExtension<T> on Bloom<Iterable<T>> {
   /// Reduces multiple inbound elements into a reactive [Bloom<R>].

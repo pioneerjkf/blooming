@@ -12,18 +12,25 @@ class TargetTpsNotifier extends Notifier<int> {
   void set(int value) => state = value;
 }
 
-final targetTpsProvider = NotifierProvider<TargetTpsNotifier, int>(TargetTpsNotifier.new);
+final targetTpsProvider =
+    NotifierProvider<TargetTpsNotifier, int>(TargetTpsNotifier.new);
 
 /// Benchmark Progress Notifier
 class BenchmarkProgressNotifier extends Notifier<BenchmarkProgress> {
   @override
   BenchmarkProgress build() {
-    final envSet = int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
-    final envTotalSets = int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
-    final envBench = int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
-    final envTotalBenches = int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
-    final envRun = int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
-    final envTotalRuns = int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
+    final envSet =
+        int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
+    final envTotalSets =
+        int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
+    final envBench =
+        int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
+    final envTotalBenches =
+        int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
+    final envRun =
+        int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
+    final envTotalRuns =
+        int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
     return BenchmarkProgress(
       currentSet: envSet,
       totalSets: envTotalSets,
@@ -38,7 +45,8 @@ class BenchmarkProgressNotifier extends Notifier<BenchmarkProgress> {
 }
 
 final benchmarkProgressProvider =
-    NotifierProvider<BenchmarkProgressNotifier, BenchmarkProgress>(BenchmarkProgressNotifier.new);
+    NotifierProvider<BenchmarkProgressNotifier, BenchmarkProgress>(
+        BenchmarkProgressNotifier.new);
 
 /// Simulation Active Notifier
 class IsSimulatingNotifier extends Notifier<bool> {
@@ -59,7 +67,8 @@ class ActualTpsNotifier extends Notifier<int> {
   void set(int value) => state = value;
 }
 
-final actualTpsProvider = NotifierProvider<ActualTpsNotifier, int>(ActualTpsNotifier.new);
+final actualTpsProvider =
+    NotifierProvider<ActualTpsNotifier, int>(ActualTpsNotifier.new);
 
 /// Latency Notifier (ms)
 class LatencyMsNotifier extends Notifier<double> {
@@ -69,7 +78,8 @@ class LatencyMsNotifier extends Notifier<double> {
   void set(double value) => state = value;
 }
 
-final latencyMsProvider = NotifierProvider<LatencyMsNotifier, double>(LatencyMsNotifier.new);
+final latencyMsProvider =
+    NotifierProvider<LatencyMsNotifier, double>(LatencyMsNotifier.new);
 
 /// Event Loop Lag Notifier (ms)
 class EventLoopLagNotifier extends Notifier<double> {
@@ -91,7 +101,8 @@ class EventLoopHistoryNotifier extends Notifier<List<double>> {
 }
 
 final eventLoopHistoryProvider =
-    NotifierProvider<EventLoopHistoryNotifier, List<double>>(EventLoopHistoryNotifier.new);
+    NotifierProvider<EventLoopHistoryNotifier, List<double>>(
+        EventLoopHistoryNotifier.new);
 
 /// Event Loop 1s Moving Average Notifier (ms)
 class EventLoopAvg1sNotifier extends Notifier<double> {
@@ -101,8 +112,8 @@ class EventLoopAvg1sNotifier extends Notifier<double> {
   void set(double value) => state = value;
 }
 
-final eventLoopAvg1sProvider =
-    NotifierProvider<EventLoopAvg1sNotifier, double>(EventLoopAvg1sNotifier.new);
+final eventLoopAvg1sProvider = NotifierProvider<EventLoopAvg1sNotifier, double>(
+    EventLoopAvg1sNotifier.new);
 
 /// Event Loop 1s Average History Notifier (40 samples)
 class EventLoopAvg1sHistoryNotifier extends Notifier<List<double>> {
@@ -124,8 +135,8 @@ class EventLoopAvg5sNotifier extends Notifier<double> {
   void set(double value) => state = value;
 }
 
-final eventLoopAvg5sProvider =
-    NotifierProvider<EventLoopAvg5sNotifier, double>(EventLoopAvg5sNotifier.new);
+final eventLoopAvg5sProvider = NotifierProvider<EventLoopAvg5sNotifier, double>(
+    EventLoopAvg5sNotifier.new);
 
 /// Event Loop 5s Average History Notifier (40 samples)
 class EventLoopAvg5sHistoryNotifier extends Notifier<List<double>> {
@@ -148,7 +159,8 @@ class SelectedStockIndexNotifier extends Notifier<int> {
 }
 
 final selectedStockIndexProvider =
-    NotifierProvider<SelectedStockIndexNotifier, int>(SelectedStockIndexNotifier.new);
+    NotifierProvider<SelectedStockIndexNotifier, int>(
+        SelectedStockIndexNotifier.new);
 
 /// Stock Auto Rotation Interval Index Notifier (0..9)
 class StockRotationIntervalIndexNotifier extends Notifier<int> {
@@ -171,7 +183,8 @@ class StockAutoRotatingNotifier extends Notifier<bool> {
 }
 
 final stockAutoRotatingProvider =
-    NotifierProvider<StockAutoRotatingNotifier, bool>(StockAutoRotatingNotifier.new);
+    NotifierProvider<StockAutoRotatingNotifier, bool>(
+        StockAutoRotatingNotifier.new);
 
 /// Rolling Price History Notifier (Sparkline Chart)
 class PriceHistoryNotifier extends Notifier<List<double>> {
@@ -185,7 +198,8 @@ class PriceHistoryNotifier extends Notifier<List<double>> {
 }
 
 final priceHistoryProvider =
-    NotifierProvider<PriceHistoryNotifier, List<double>>(PriceHistoryNotifier.new);
+    NotifierProvider<PriceHistoryNotifier, List<double>>(
+        PriceHistoryNotifier.new);
 
 /// Executed Recent Trade Ticks Notifier
 class TradeTicksNotifier extends Notifier<List<TradeTick>> {
@@ -206,7 +220,8 @@ class TradeTicksNotifier extends Notifier<List<TradeTick>> {
 }
 
 final tradeTicksProvider =
-    NotifierProvider<TradeTicksNotifier, List<TradeTick>>(TradeTicksNotifier.new);
+    NotifierProvider<TradeTicksNotifier, List<TradeTick>>(
+        TradeTicksNotifier.new);
 
 /// Full Order Book Snapshot Notifier
 class SnapshotNotifier extends Notifier<OrderBookSnapshot> {
@@ -234,7 +249,8 @@ class AskRowNotifier extends Notifier<OrderBookRowData> {
 }
 
 final askRowProvider =
-    NotifierProvider.family<AskRowNotifier, OrderBookRowData, int>(AskRowNotifier.new);
+    NotifierProvider.family<AskRowNotifier, OrderBookRowData, int>(
+        AskRowNotifier.new);
 
 /// Fine-Grained Bid Row Notifier (0..24)
 class BidRowNotifier extends Notifier<OrderBookRowData> {
@@ -251,7 +267,8 @@ class BidRowNotifier extends Notifier<OrderBookRowData> {
 }
 
 final bidRowProvider =
-    NotifierProvider.family<BidRowNotifier, OrderBookRowData, int>(BidRowNotifier.new);
+    NotifierProvider.family<BidRowNotifier, OrderBookRowData, int>(
+        BidRowNotifier.new);
 
 /// Stock Price Notifier by Symbol (Family)
 class StockPriceNotifier extends Notifier<double> {
@@ -277,7 +294,8 @@ class StockPriceNotifier extends Notifier<double> {
 }
 
 final stockPriceProvider =
-    NotifierProvider.family<StockPriceNotifier, double, String>(StockPriceNotifier.new);
+    NotifierProvider.family<StockPriceNotifier, double, String>(
+        StockPriceNotifier.new);
 
 /// Stock Price Change % Notifier by Symbol (Family)
 class StockChangeNotifier extends Notifier<double> {
@@ -303,7 +321,8 @@ class StockChangeNotifier extends Notifier<double> {
 }
 
 final stockChangeProvider =
-    NotifierProvider.family<StockChangeNotifier, double, String>(StockChangeNotifier.new);
+    NotifierProvider.family<StockChangeNotifier, double, String>(
+        StockChangeNotifier.new);
 
 /// Animation Offset Progress Notifier (0.0 .. 1.0)
 class AnimOffsetNotifier extends Notifier<double> {
@@ -328,4 +347,5 @@ class ScrollAnimationEnabledNotifier extends Notifier<bool> {
 }
 
 final scrollAnimationEnabledProvider =
-    NotifierProvider<ScrollAnimationEnabledNotifier, bool>(ScrollAnimationEnabledNotifier.new);
+    NotifierProvider<ScrollAnimationEnabledNotifier, bool>(
+        ScrollAnimationEnabledNotifier.new);

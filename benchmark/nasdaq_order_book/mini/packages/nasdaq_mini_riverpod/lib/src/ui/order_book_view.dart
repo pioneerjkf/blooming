@@ -66,13 +66,20 @@ class OrderBookView extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
-                      onTap: () => ref.read(scrollAnimationEnabledProvider.notifier).toggle(),
+                      onTap: () => ref
+                          .read(scrollAnimationEnabledProvider.notifier)
+                          .toggle(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: isAnimEnabled ? theme.chipBg : theme.cardBackground,
+                          color: isAnimEnabled
+                              ? theme.chipBg
+                              : theme.cardBackground,
                           border: Border.all(
-                            color: isAnimEnabled ? theme.bidGreen : theme.chipBorder,
+                            color: isAnimEnabled
+                                ? theme.bidGreen
+                                : theme.chipBorder,
                             width: 1.0,
                           ),
                         ),
@@ -84,7 +91,9 @@ class OrderBookView extends ConsumerWidget {
                               height: 5,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.textMuted,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -93,7 +102,9 @@ class OrderBookView extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w800,
-                                color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.textMuted,
                                 letterSpacing: 0.6,
                                 fontFamily: 'monospace',
                               ),

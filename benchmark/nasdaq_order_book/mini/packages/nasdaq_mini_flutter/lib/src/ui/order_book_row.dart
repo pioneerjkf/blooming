@@ -23,7 +23,8 @@ class OrderBookRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeScope.of(context);
     final pipeline = NasdaqBenchmarkScope.pipelineOf(context);
-    final rowNotifier = isAsk ? pipeline.askNotifiers[index] : pipeline.bidNotifiers[index];
+    final rowNotifier =
+        isAsk ? pipeline.askNotifiers[index] : pipeline.bidNotifiers[index];
 
     return ValueListenableBuilder<OrderBookRowData>(
       valueListenable: rowNotifier,
@@ -35,11 +36,13 @@ class OrderBookRow extends StatelessWidget {
         Color flashOverlayColor = Colors.transparent;
         if (isRecentFlash) {
           if (data.isAsk) {
-            flashOverlayColor =
-                data.flashType == FlashType.up ? theme.flashDownGlow : theme.askRedBg;
+            flashOverlayColor = data.flashType == FlashType.up
+                ? theme.flashDownGlow
+                : theme.askRedBg;
           } else {
-            flashOverlayColor =
-                data.flashType == FlashType.up ? theme.flashUpGlow : theme.bidGreenBg;
+            flashOverlayColor = data.flashType == FlashType.up
+                ? theme.flashUpGlow
+                : theme.bidGreenBg;
           }
         }
 

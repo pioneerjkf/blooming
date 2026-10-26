@@ -522,8 +522,7 @@ void main() {
           duration: const Duration(milliseconds: 300))
         ..value = 0.75;
 
-      final activeCtrlBloom =
-          blooming<DurableAnimationController>(ctrl1);
+      final activeCtrlBloom = blooming<DurableAnimationController>(ctrl1);
 
       await tester.pumpWidget(
         Directionality(

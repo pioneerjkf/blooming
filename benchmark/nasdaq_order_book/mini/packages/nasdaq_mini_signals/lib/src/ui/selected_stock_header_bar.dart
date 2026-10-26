@@ -15,8 +15,10 @@ class SelectedStockHeaderBar extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final stockIndex = pipeline.selectedStockIndexSignal.value;
     final stock = pipeline.stocks[stockIndex];
     final snapshot = pipeline.snapshotSignal.value;

@@ -36,7 +36,8 @@ enum NasdaqThemeMode {
   swissHerrenmode23('HERRENMODE 1923', 'Petrol Teal & Terracotta'),
   swissElectricViolet('ELECTRIC VIOLET', 'Poster White & Violet Accent'),
   swissairSlate50('SWISSAIR 1950', 'Steel Slate & Swissair Cyan'),
-  swissMidCenturyGeometry('MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
+  swissMidCenturyGeometry(
+      'MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
 
   const NasdaqThemeMode(this.label, this.description);
   final String label;
@@ -810,7 +811,8 @@ class NasdaqThemeStore {
 
   ReadonlySignal<NasdaqThemeData> get themeDataSignal => _themeDataSignal;
   ReadonlySignal<bool> get isAutoRotatingSignal => _isAutoRotatingSignal;
-  ReadonlySignal<int> get rotationIntervalIndexSignal => _rotationIntervalIndexSignal;
+  ReadonlySignal<int> get rotationIntervalIndexSignal =>
+      _rotationIntervalIndexSignal;
 
   Timer? _rotationTimer;
 
@@ -819,7 +821,8 @@ class NasdaqThemeStore {
 
   bool get isAutoRotating => _isAutoRotatingSignal.value;
   int get rotationIntervalIndex => _rotationIntervalIndexSignal.value;
-  double get currentRotationIntervalMs => rotationIntervalPresetsMs[rotationIntervalIndex];
+  double get currentRotationIntervalMs =>
+      rotationIntervalPresetsMs[rotationIntervalIndex];
 
   void toggleNextTheme() {
     final nextIndex = (mode.index + 1) % NasdaqThemeMode.values.length;
@@ -828,8 +831,8 @@ class NasdaqThemeStore {
   }
 
   void togglePreviousTheme() {
-    final prevIndex =
-        (mode.index - 1 + NasdaqThemeMode.values.length) % NasdaqThemeMode.values.length;
+    final prevIndex = (mode.index - 1 + NasdaqThemeMode.values.length) %
+        NasdaqThemeMode.values.length;
     final newMode = NasdaqThemeMode.values[prevIndex];
     _themeDataSignal.value = NasdaqThemeData.of(newMode);
   }

@@ -55,9 +55,12 @@ void main(List<String> args) async {
   container.dispose();
 
   lags.sort();
-  final double? avgLag = lags.isEmpty ? null : lags.reduce((a, b) => a + b) / lags.length;
-  final double? p95Lag = lags.isEmpty ? null : lags[((lags.length - 1) * 0.95).floor()];
-  final double? p99Lag = lags.isEmpty ? null : lags[((lags.length - 1) * 0.99).floor()];
+  final double? avgLag =
+      lags.isEmpty ? null : lags.reduce((a, b) => a + b) / lags.length;
+  final double? p95Lag =
+      lags.isEmpty ? null : lags[((lags.length - 1) * 0.95).floor()];
+  final double? p99Lag =
+      lags.isEmpty ? null : lags[((lags.length - 1) * 0.99).floor()];
 
   final result = {
     'framework': 'Riverpod',
@@ -65,9 +68,12 @@ void main(List<String> args) async {
     'target_tps': targetTps,
     'sustained_tps': sustainedTps,
     'total_ticks': actualTicks,
-    'avg_event_loop_lag_ms': avgLag != null ? double.parse(avgLag.toStringAsFixed(2)) : null,
-    'p95_event_loop_lag_ms': p95Lag != null ? double.parse(p95Lag.toStringAsFixed(2)) : null,
-    'p99_event_loop_lag_ms': p99Lag != null ? double.parse(p99Lag.toStringAsFixed(2)) : null,
+    'avg_event_loop_lag_ms':
+        avgLag != null ? double.parse(avgLag.toStringAsFixed(2)) : null,
+    'p95_event_loop_lag_ms':
+        p95Lag != null ? double.parse(p95Lag.toStringAsFixed(2)) : null,
+    'p99_event_loop_lag_ms':
+        p99Lag != null ? double.parse(p99Lag.toStringAsFixed(2)) : null,
     'latency_ms': double.parse(latency.toStringAsFixed(2)),
     'duration_sec': durationSec,
   };

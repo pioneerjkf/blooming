@@ -51,4 +51,3 @@ part 'src/foundation/_internal/_change_notifier.dart';
 // Framework Scheduler
 part 'src/scheduler/ticker.dart';
 part 'src/scheduler/_internal/_ticker.dart';
-

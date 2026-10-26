@@ -56,22 +56,31 @@ class OrderBookPipeline {
           jankCount++;
         }
       }
-      _lastUiBuildTimeMs = double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
-      _lastRasterTimeMs = double.parse((totalRaster / _recentTimings.length).toStringAsFixed(2));
-      _lastJankRatePct =
-          double.parse(((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
+      _lastUiBuildTimeMs =
+          double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
+      _lastRasterTimeMs = double.parse(
+          (totalRaster / _recentTimings.length).toStringAsFixed(2));
+      _lastJankRatePct = double.parse(
+          ((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
     }
   }
 
   int get actualTpsValue => (ref.read(actualTpsProvider) as int?) ?? 0;
-  OrderBookSnapshot get snapshotValue => (ref.read(snapshotProvider) as OrderBookSnapshot);
-  double get eventLoopLagValue => (ref.read(eventLoopLagProvider) as double?) ?? 0.0;
+  OrderBookSnapshot get snapshotValue =>
+      (ref.read(snapshotProvider) as OrderBookSnapshot);
+  double get eventLoopLagValue =>
+      (ref.read(eventLoopLagProvider) as double?) ?? 0.0;
   double get latencyMsValue => (ref.read(latencyMsProvider) as double?) ?? 0.0;
-  bool get isScrollAnimationEnabled => (ref.read(scrollAnimationEnabledProvider) as bool?) ?? true;
-  void setScrollAnimationEnabled(bool enabled) => ref.read(scrollAnimationEnabledProvider.notifier).set(enabled);
-  void toggleScrollAnimation() => ref.read(scrollAnimationEnabledProvider.notifier).toggle();
+  bool get isScrollAnimationEnabled =>
+      (ref.read(scrollAnimationEnabledProvider) as bool?) ?? true;
+  void setScrollAnimationEnabled(bool enabled) =>
+      ref.read(scrollAnimationEnabledProvider.notifier).set(enabled);
+  void toggleScrollAnimation() =>
+      ref.read(scrollAnimationEnabledProvider.notifier).toggle();
 
-  BenchmarkProgress get benchmarkProgress => (ref.read(benchmarkProgressProvider) as BenchmarkProgress?) ?? const BenchmarkProgress();
+  BenchmarkProgress get benchmarkProgress =>
+      (ref.read(benchmarkProgressProvider) as BenchmarkProgress?) ??
+      const BenchmarkProgress();
   void setBenchmarkProgress({
     required int currentSet,
     required int totalSets,
@@ -81,15 +90,15 @@ class OrderBookPipeline {
     int totalRuns = 1,
   }) {
     ref.read(benchmarkProgressProvider.notifier).set(
-      BenchmarkProgress(
-        currentSet: currentSet,
-        totalSets: totalSets,
-        currentBench: currentBench,
-        totalBenches: totalBenches,
-        currentRun: currentRun,
-        totalRuns: totalRuns,
-      ),
-    );
+          BenchmarkProgress(
+            currentSet: currentSet,
+            totalSets: totalSets,
+            currentBench: currentBench,
+            totalBenches: totalBenches,
+            currentRun: currentRun,
+            totalRuns: totalRuns,
+          ),
+        );
   }
 
   final dynamic ref;
@@ -135,7 +144,8 @@ class OrderBookPipeline {
 
   void _initWatchlistState() {
     final initialSnap = ref.read(snapshotProvider);
-    _priceHistory = List.generate(40, (i) => initialSnap.lastPrice - ((39 - i) * 0.04));
+    _priceHistory =
+        List.generate(40, (i) => initialSnap.lastPrice - ((39 - i) * 0.04));
 
     for (final stock in stocks) {
       _latestStockPrices[stock.symbol] = stock.basePrice;
@@ -161,8 +171,11 @@ class OrderBookPipeline {
     );
     ref.read(snapshotProvider.notifier).set(newSnapshot);
 
-    _priceHistory = List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04));
-    ref.read(priceHistoryProvider.notifier).set(UnmodifiableListView(_priceHistory));
+    _priceHistory =
+        List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04));
+    ref
+        .read(priceHistoryProvider.notifier)
+        .set(UnmodifiableListView(_priceHistory));
 
     for (int i = 0; i < 25; i++) {
       ref.read(askRowProvider(i).notifier).set(newSnapshot.asks[i]);
@@ -173,13 +186,16 @@ class OrderBookPipeline {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _tradeTicks.addAll(List.generate(10, (i) {
       return TradeTick(
-        price: double.parse((stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
+        price: double.parse(
+            (stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
         volume: (10 + (i * 3)) * 100,
         isBuy: i % 2 == 0,
         timestampMs: nowMs - (i * 800),
       );
     }));
-    ref.read(tradeTicksProvider.notifier).set(UnmodifiableListView(_tradeTicks));
+    ref
+        .read(tradeTicksProvider.notifier)
+        .set(UnmodifiableListView(_tradeTicks));
 
     _isolateEngine.setStockPrice(stock.basePrice);
   }
@@ -264,7 +280,8 @@ class OrderBookPipeline {
     final elapsed = nowMs - _lastMeasurementTimestamp;
 
     if (elapsed >= 500) {
-      final currentTps = ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
+      final currentTps =
+          ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
       ref.read(actualTpsProvider.notifier).set(currentTps);
 
       final latency = (nowMs - payload.timestampMs).toDouble();
@@ -279,7 +296,9 @@ class OrderBookPipeline {
     if (_priceHistory.length > 50) {
       _priceHistory.removeAt(0);
     }
-    ref.read(priceHistoryProvider.notifier).set(UnmodifiableListView(_priceHistory));
+    ref
+        .read(priceHistoryProvider.notifier)
+        .set(UnmodifiableListView(_priceHistory));
 
     // 1b. Update trade ticks list
     if (payload.recentTrades.isNotEmpty) {
@@ -287,7 +306,9 @@ class OrderBookPipeline {
       if (_tradeTicks.length > 40) {
         _tradeTicks.removeRange(40, _tradeTicks.length);
       }
-      ref.read(tradeTicksProvider.notifier).set(UnmodifiableListView(_tradeTicks));
+      ref
+          .read(tradeTicksProvider.notifier)
+          .set(UnmodifiableListView(_tradeTicks));
     }
 
     // 2. Update 25 Asks fine-grained row providers
@@ -303,7 +324,8 @@ class OrderBookPipeline {
     // 4. Update overall snapshot & multi-asset watchlist live price ticks
     final currentSnap = ref.read(snapshotProvider);
     final activeTicker = currentSnap.ticker;
-    _updateStockPriceState(activeTicker, payload.latestPrice, payload.priceChangePct);
+    _updateStockPriceState(
+        activeTicker, payload.latestPrice, payload.priceChangePct);
 
     for (final stock in stocks) {
       if (stock.symbol == activeTicker) continue;
@@ -312,7 +334,8 @@ class OrderBookPipeline {
         final delta = (_random.nextDouble() - 0.49) * 0.12;
         final newP = double.parse((currentP + delta).toStringAsFixed(2));
         final newChgPct = double.parse(
-          (((newP - stock.basePrice) / stock.basePrice) * 100).toStringAsFixed(2),
+          (((newP - stock.basePrice) / stock.basePrice) * 100)
+              .toStringAsFixed(2),
         );
         _updateStockPriceState(stock.symbol, newP, newChgPct);
       }
@@ -348,7 +371,8 @@ class OrderBookPipeline {
     _eventLoopTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       final scheduledMicros = _eventLoopStopwatch.elapsedMicroseconds;
       Timer.run(() {
-        final elapsedMicros = _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
+        final elapsedMicros =
+            _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
         final lagMs = elapsedMicros / 1000.0;
         lagRecorder.add(lagMs);
 
@@ -359,7 +383,9 @@ class OrderBookPipeline {
         if (_eventLoopHistory.length > 40) {
           _eventLoopHistory.removeAt(0);
         }
-        ref.read(eventLoopHistoryProvider.notifier).set(UnmodifiableListView(_eventLoopHistory));
+        ref
+            .read(eventLoopHistoryProvider.notifier)
+            .set(UnmodifiableListView(_eventLoopHistory));
 
         // 2. 1-Second Moving Average (Cyan Line Chart)
         _eventLoop1sWindow.add(lagMs);
@@ -367,8 +393,9 @@ class OrderBookPipeline {
         if (_eventLoop1sWindow.length > 30) {
           _eventLoop1sSum -= _eventLoop1sWindow.removeAt(0);
         }
-        final avg1s =
-            _eventLoop1sWindow.isNotEmpty ? _eventLoop1sSum / _eventLoop1sWindow.length : lagMs;
+        final avg1s = _eventLoop1sWindow.isNotEmpty
+            ? _eventLoop1sSum / _eventLoop1sWindow.length
+            : lagMs;
         ref.read(eventLoopAvg1sProvider.notifier).set(avg1s);
 
         _eventLoopAvg1sHistory.add(avg1s);
@@ -385,8 +412,9 @@ class OrderBookPipeline {
         if (_eventLoop5sWindow.length > 150) {
           _eventLoop5sSum -= _eventLoop5sWindow.removeAt(0);
         }
-        final avg5s =
-            _eventLoop5sWindow.isNotEmpty ? _eventLoop5sSum / _eventLoop5sWindow.length : lagMs;
+        final avg5s = _eventLoop5sWindow.isNotEmpty
+            ? _eventLoop5sSum / _eventLoop5sWindow.length
+            : lagMs;
         ref.read(eventLoopAvg5sProvider.notifier).set(avg5s);
 
         _eventLoopAvg5sHistory.add(avg5s);

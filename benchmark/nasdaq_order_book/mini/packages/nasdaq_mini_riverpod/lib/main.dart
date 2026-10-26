@@ -58,10 +58,12 @@ class NasdaqBenchmarkRootScreen extends ConsumerStatefulWidget {
   final OrderBookPipeline? pipeline;
 
   @override
-  ConsumerState<NasdaqBenchmarkRootScreen> createState() => _NasdaqBenchmarkRootScreenState();
+  ConsumerState<NasdaqBenchmarkRootScreen> createState() =>
+      _NasdaqBenchmarkRootScreenState();
 }
 
-class _NasdaqBenchmarkRootScreenState extends ConsumerState<NasdaqBenchmarkRootScreen>
+class _NasdaqBenchmarkRootScreenState
+    extends ConsumerState<NasdaqBenchmarkRootScreen>
     with SingleTickerProviderStateMixin {
   late final OrderBookPipeline _pipeline;
 
@@ -88,7 +90,8 @@ class _NasdaqBenchmarkRootScreenState extends ConsumerState<NasdaqBenchmarkRootS
 
     _ticker = createTicker((elapsed) {
       _elapsedSeconds = elapsed.inMicroseconds / 1000000.0;
-      final normalizedProgress = (sin((_elapsedSeconds / 10.0) * 2 * pi - (pi / 2)) + 1.0) / 2.0;
+      final normalizedProgress =
+          (sin((_elapsedSeconds / 10.0) * 2 * pi - (pi / 2)) + 1.0) / 2.0;
       ref.read(animOffsetProvider.notifier).set(normalizedProgress);
     });
 
@@ -142,141 +145,144 @@ class _NasdaqBenchmarkRootScreenState extends ConsumerState<NasdaqBenchmarkRootS
                       // Framework Brand Header Bar (Top-Left: Framework Name in Large Swiss Typography) (1060px)
                       Container(
                         width: 1060,
-                        padding: const EdgeInsets.only(left: 4, right: 4, bottom: 14),
+                        padding: const EdgeInsets.only(
+                            left: 4, right: 4, bottom: 14),
                         child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'RIVERPOD',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
-                        color: theme.textPrimary,
-                        letterSpacing: -0.5,
-                        height: 1.0,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: theme.chipBg,
-                          border: Border.all(color: theme.chipBorder, width: 1.0),
-                        ),
-                        child: Text(
-                          'STATE MANAGEMENT',
-                          style: TextStyle(
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w800,
-                            color: theme.chipText,
-                            letterSpacing: 1.2,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        '// PROVIDER GRAPH',
-                        style: TextStyle(
-                          fontSize: 9.0,
-                          fontWeight: FontWeight.w800,
-                          color: theme.textAccent,
-                          letterSpacing: 1.2,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 3),
-                      child: Text(
-                        'NASDAQ 50-LEVEL ORDER BOOK BENCHMARK',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w700,
-                          color: theme.textMuted,
-                          letterSpacing: 1.0,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Top Theme Auto-Rotation Control Header Bar (1060px)
-              const ThemeRotationBar(),
-
-              const SizedBox(height: 3),
-
-              // Swiss Editorial Hero Title Header: Giant "000" + Bold Metadata Header (1060px)
-              Container(
-                width: 1060,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Giant Asymmetric Index "000"
-                    Text(
-                      '000',
-                      style: theme.swissGiantNumber,
-                    ),
-                    const SizedBox(width: 10),
-                    // Title & Coordinates Sub-Metadata (Googleplex, Mountain View, CA)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'NASDAQ ORDER BOOK',
-                            style: theme.swissHeader,
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            '37°25\'19.1" N 122°05\'02.6" W',
-                            style: TextStyle(
-                              fontSize: 9.0,
-                              color: theme.textMuted,
-                              letterSpacing: 0.6,
-                              fontFamily: 'monospace',
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'RIVERPOD',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w600,
+                                color: theme.textPrimary,
+                                letterSpacing: -0.5,
+                                height: 1.0,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 1),
-                          Row(
-                            children: [
-                              Text(
-                                'ENGINE. TPS. REPEAT. (RIVERPOD)',
+                            const SizedBox(width: 10),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: theme.chipBg,
+                                  border: Border.all(
+                                      color: theme.chipBorder, width: 1.0),
+                                ),
+                                child: Text(
+                                  'STATE MANAGEMENT',
+                                  style: TextStyle(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: theme.chipText,
+                                    letterSpacing: 1.2,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
+                              child: Text(
+                                '// PROVIDER GRAPH',
+                                style: TextStyle(
+                                  fontSize: 9.0,
+                                  fontWeight: FontWeight.w800,
+                                  color: theme.textAccent,
+                                  letterSpacing: 1.2,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
+                              child: Text(
+                                'NASDAQ 50-LEVEL ORDER BOOK BENCHMARK',
                                 style: TextStyle(
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w700,
-                                  color: theme.textSecondary,
-                                  letterSpacing: 0.8,
+                                  color: theme.textMuted,
+                                  letterSpacing: 1.0,
+                                  fontFamily: 'monospace',
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    // Right Stamp Badges (TPS Live & Benchmark Progress)
-                    const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TpsHeaderBadge(),
-                        SizedBox(width: 8),
-                        BenchmarkProgressBadge(),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: 5),
+                      // Top Theme Auto-Rotation Control Header Bar (1060px)
+                      const ThemeRotationBar(),
+
+                      const SizedBox(height: 3),
+
+                      // Swiss Editorial Hero Title Header: Giant "000" + Bold Metadata Header (1060px)
+                      Container(
+                        width: 1060,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Giant Asymmetric Index "000"
+                            Text(
+                              '000',
+                              style: theme.swissGiantNumber,
+                            ),
+                            const SizedBox(width: 10),
+                            // Title & Coordinates Sub-Metadata (Googleplex, Mountain View, CA)
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'NASDAQ ORDER BOOK',
+                                    style: theme.swissHeader,
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    '37°25\'19.1" N 122°05\'02.6" W',
+                                    style: TextStyle(
+                                      fontSize: 9.0,
+                                      color: theme.textMuted,
+                                      letterSpacing: 0.6,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'ENGINE. TPS. REPEAT. (RIVERPOD)',
+                                        style: TextStyle(
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.textSecondary,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Right Stamp Badges (TPS Live & Benchmark Progress)
+                            const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TpsHeaderBadge(),
+                                SizedBox(width: 8),
+                                BenchmarkProgressBadge(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 5),
 
                       // Main Benchmark Layout (3-Column Swiss Dashboard matching 1060px width, 502px height)
                       Row(

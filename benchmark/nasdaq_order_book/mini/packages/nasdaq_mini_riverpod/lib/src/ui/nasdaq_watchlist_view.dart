@@ -22,7 +22,8 @@ class NasdaqWatchlistView extends ConsumerStatefulWidget {
   final OrderBookPipeline pipeline;
 
   @override
-  ConsumerState<NasdaqWatchlistView> createState() => _NasdaqWatchlistViewState();
+  ConsumerState<NasdaqWatchlistView> createState() =>
+      _NasdaqWatchlistViewState();
 }
 
 class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
@@ -52,7 +53,8 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
     final theme = ref.watch(themeDataProvider);
     final isAutoRotating = ref.watch(stockAutoRotatingProvider);
     final intervalIndex = ref.watch(stockRotationIntervalIndexProvider);
-    final intervalMs = OrderBookPipeline.rotationIntervalPresetsMs[intervalIndex];
+    final intervalMs =
+        OrderBookPipeline.rotationIntervalPresetsMs[intervalIndex];
     final selectedIndex = ref.watch(selectedStockIndexProvider);
     final stocks = widget.pipeline.stocks;
 
@@ -83,16 +85,19 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
               children: [
                 Row(
                   children: [
-                    Text('001 ', style: theme.swissIndexLabel.copyWith(fontSize: 9)),
+                    Text('001 ',
+                        style: theme.swissIndexLabel.copyWith(fontSize: 9)),
                     Text(
                       'NASDAQ WATCHLIST',
-                      style: theme.swissHeader.copyWith(fontSize: 10.5, letterSpacing: 0.8),
+                      style: theme.swissHeader
+                          .copyWith(fontSize: 10.5, letterSpacing: 0.8),
                     ),
                   ],
                 ),
                 // Auto rotation status indicator
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                   decoration: BoxDecoration(
                     color: isAutoRotating ? theme.bidGreenBg : theme.chipBg,
                     border: Border.all(
@@ -106,7 +111,8 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
                       Container(
                         width: 5,
                         height: 5,
-                        color: isAutoRotating ? theme.bidGreen : theme.textMuted,
+                        color:
+                            isAutoRotating ? theme.bidGreen : theme.textMuted,
                       ),
                       const SizedBox(width: 3),
                       Text(
@@ -114,7 +120,8 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
                         style: TextStyle(
                           fontSize: 7.5,
                           fontWeight: FontWeight.w900,
-                          color: isAutoRotating ? theme.bidGreen : theme.chipText,
+                          color:
+                              isAutoRotating ? theme.bidGreen : theme.chipText,
                           fontFamily: 'monospace',
                         ),
                       ),
@@ -137,7 +144,8 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
                   children: [
                     Text(
                       'ROTATION INTERVAL',
-                      style: theme.volumeStyle.copyWith(color: theme.textMuted, fontSize: 8.5),
+                      style: theme.volumeStyle
+                          .copyWith(color: theme.textMuted, fontSize: 8.5),
                     ),
                     Text(
                       _formatMs(intervalMs),
@@ -158,15 +166,20 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
                     thumbColor: theme.textPrimary,
                     overlayColor: theme.textPrimary.withValues(alpha: 0.1),
                     trackHeight: 3.0,
-                    thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 5.5),
+                    thumbShape: const SwissRectSliderThumbShape(
+                        enabledThumbRadius: 5.5),
                   ),
                   child: SizedBox(
                     height: 18,
                     child: Slider(
                       value: intervalIndex.toDouble(),
                       min: 0,
-                      max: (OrderBookPipeline.rotationIntervalPresetsMs.length - 1).toDouble(),
-                      divisions: OrderBookPipeline.rotationIntervalPresetsMs.length - 1,
+                      max: (OrderBookPipeline.rotationIntervalPresetsMs.length -
+                              1)
+                          .toDouble(),
+                      divisions:
+                          OrderBookPipeline.rotationIntervalPresetsMs.length -
+                              1,
                       onChanged: (val) {
                         widget.pipeline.setRotationIntervalIndex(val.round());
                       },
@@ -181,14 +194,17 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
                   child: ElevatedButton(
                     onPressed: widget.pipeline.toggleAutoRotation,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isAutoRotating ? theme.askRed : theme.chipBg,
-                      foregroundColor: isAutoRotating ? Colors.white : theme.chipText,
+                      backgroundColor:
+                          isAutoRotating ? theme.askRed : theme.chipBg,
+                      foregroundColor:
+                          isAutoRotating ? Colors.white : theme.chipText,
                       padding: EdgeInsets.zero,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.zero,
                         side: BorderSide(
-                          color: isAutoRotating ? theme.askRed : theme.chipBorder,
+                          color:
+                              isAutoRotating ? theme.askRed : theme.chipBorder,
                           width: 1.0,
                         ),
                       ),
@@ -216,8 +232,10 @@ class _NasdaqWatchlistViewState extends ConsumerState<NasdaqWatchlistView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('TICKER / NAME', style: theme.volumeStyle.copyWith(fontSize: 8.5)),
-                Text('PRICE / CHG', style: theme.volumeStyle.copyWith(fontSize: 8.5)),
+                Text('TICKER / NAME',
+                    style: theme.volumeStyle.copyWith(fontSize: 8.5)),
+                Text('PRICE / CHG',
+                    style: theme.volumeStyle.copyWith(fontSize: 8.5)),
               ],
             ),
           ),
@@ -290,7 +308,9 @@ class _NasdaqStockTile extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? theme.textAccent.withValues(alpha: 0.12) : Colors.transparent,
+          color: isSelected
+              ? theme.textAccent.withValues(alpha: 0.12)
+              : Colors.transparent,
           border: isSelected
               ? Border(
                   left: BorderSide(
@@ -314,7 +334,8 @@ class _NasdaqStockTile extends ConsumerWidget {
                         stock.symbol,
                         style: TextStyle(
                           fontSize: 10.5,
-                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                          fontWeight:
+                              isSelected ? FontWeight.w900 : FontWeight.w700,
                           color: theme.textPrimary,
                           fontFamily: 'monospace',
                         ),

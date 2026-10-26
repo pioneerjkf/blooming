@@ -69,7 +69,8 @@ class EventLoopRightPanel extends StatelessWidget {
               ]),
               builder: (context, _) {
                 final avg1s = pipeline.eventLoopAvg1sNotifier.value;
-                final avg1sHistory = pipeline.eventLoopAvg1sHistoryNotifier.value;
+                final avg1sHistory =
+                    pipeline.eventLoopAvg1sHistoryNotifier.value;
 
                 return _EventLoopMetricCard(
                   theme: theme,
@@ -101,7 +102,8 @@ class EventLoopRightPanel extends StatelessWidget {
               ]),
               builder: (context, _) {
                 final avg5s = pipeline.eventLoopAvg5sNotifier.value;
-                final avg5sHistory = pipeline.eventLoopAvg5sHistoryNotifier.value;
+                final avg5sHistory =
+                    pipeline.eventLoopAvg5sHistoryNotifier.value;
 
                 return _EventLoopMetricCard(
                   theme: theme,
@@ -171,10 +173,12 @@ class _EventLoopMetricCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text('$index ', style: theme.swissIndexLabel.copyWith(fontSize: 8.5)),
+                  Text('$index ',
+                      style: theme.swissIndexLabel.copyWith(fontSize: 8.5)),
                   Text(
                     title,
-                    style: theme.swissHeader.copyWith(fontSize: 10, letterSpacing: 0.8),
+                    style: theme.swissHeader
+                        .copyWith(fontSize: 10, letterSpacing: 0.8),
                   ),
                 ],
               ),
@@ -265,9 +269,12 @@ class _EventLoopBarChartPainter extends CustomPainter {
       ..strokeWidth = 0.5;
 
     // Draw horizontal reference lines (at 25%, 50%, 75%)
-    canvas.drawLine(Offset(0, size.height * 0.25), Offset(size.width, size.height * 0.25), gridPaint);
-    canvas.drawLine(Offset(0, size.height * 0.50), Offset(size.width, size.height * 0.50), gridPaint);
-    canvas.drawLine(Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.25),
+        Offset(size.width, size.height * 0.25), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.50),
+        Offset(size.width, size.height * 0.50), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.75),
+        Offset(size.width, size.height * 0.75), gridPaint);
 
     final count = history.length;
     final barWidth = (size.width / count) * 0.75;
@@ -315,7 +322,9 @@ class _EventLoopLineChartPainter extends CustomPainter {
   Color? _cachedShaderColor;
 
   Shader _getShader(Size size) {
-    if (_cachedShader == null || _cachedShaderSize != size || _cachedShaderColor != lineColor) {
+    if (_cachedShader == null ||
+        _cachedShaderSize != size ||
+        _cachedShaderColor != lineColor) {
       _cachedShaderSize = size;
       _cachedShaderColor = lineColor;
       _cachedShader = LinearGradient(
@@ -345,9 +354,12 @@ class _EventLoopLineChartPainter extends CustomPainter {
       ..color = theme.gridLine.withValues(alpha: 0.5)
       ..strokeWidth = 0.5;
 
-    canvas.drawLine(Offset(0, size.height * 0.25), Offset(size.width, size.height * 0.25), gridPaint);
-    canvas.drawLine(Offset(0, size.height * 0.50), Offset(size.width, size.height * 0.50), gridPaint);
-    canvas.drawLine(Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.25),
+        Offset(size.width, size.height * 0.25), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.50),
+        Offset(size.width, size.height * 0.50), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.75),
+        Offset(size.width, size.height * 0.75), gridPaint);
 
     final count = history.length;
     if (count < 2) return;

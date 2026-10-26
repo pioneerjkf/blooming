@@ -287,8 +287,7 @@ void main() {
     group('4. Direct Convenience Getters & Snapshot Symmetry', () {
       test('4.1 Convenience getters delegate directly to underlying bloom', () {
         final source = blooming('Active');
-        final comp =
-            _FullPricingComputation(blooming(10).bloom, blooming(2).bloom, blooming(1).bloom);
+        final comp = _FullPricingComputation(blooming(10).bloom, blooming(2).bloom, blooming(1).bloom);
 
         expect(comp.data, 9);
         expect(comp.dataOrNull, 9);

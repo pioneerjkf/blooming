@@ -79,13 +79,15 @@ class TickIsolateEngine {
     if (isRunning) return;
 
     if (kIsWeb) {
-      _startWebSimulation(targetTps: targetTps, onBatchReceived: onBatchReceived);
+      _startWebSimulation(
+          targetTps: targetTps, onBatchReceived: onBatchReceived);
       return;
     }
 
     final receivePort = ReceivePort();
     _receivePort = receivePort;
-    final isolate = await Isolate.spawn(_isolateEntryPoint, receivePort.sendPort);
+    final isolate =
+        await Isolate.spawn(_isolateEntryPoint, receivePort.sendPort);
     _isolate = isolate;
 
     final Completer<SendPort> handshakeCompleter = Completer();
@@ -160,7 +162,9 @@ class TickIsolateEngine {
       final isThin = (i % 4 == 0);
       return isWall
           ? 1800000 + random.nextInt(1500000)
-          : (isThin ? 5000 + random.nextInt(20000) : 80000 + random.nextInt(400000));
+          : (isThin
+              ? 5000 + random.nextInt(20000)
+              : 80000 + random.nextInt(400000));
     });
 
     final bidBaseVols = List<int>.generate(25, (i) {
@@ -168,7 +172,9 @@ class TickIsolateEngine {
       final isThin = (i % 3 == 1);
       return isWall
           ? 1650000 + random.nextInt(1600000)
-          : (isThin ? 6000 + random.nextInt(25000) : 70000 + random.nextInt(450000));
+          : (isThin
+              ? 6000 + random.nextInt(25000)
+              : 70000 + random.nextInt(450000));
     });
 
     final askNoises = List<double>.filled(25, 0.0);
@@ -199,7 +205,8 @@ class TickIsolateEngine {
     });
 
     const intervalMs = 16;
-    _webTimer = Timer.periodic(const Duration(milliseconds: intervalMs), (timer) {
+    _webTimer =
+        Timer.periodic(const Duration(milliseconds: intervalMs), (timer) {
       if (!_isWebRunning) return;
 
       final ticksPerInterval = _webTargetTps / (1000.0 / intervalMs);
@@ -247,8 +254,10 @@ class TickIsolateEngine {
         final deltaBid = (random.nextDouble() - 0.49) * 0.08;
         bidNoises[bidIdx] = (bidNoises[bidIdx] + deltaBid).clamp(-0.5, 0.7);
 
-        final newAskVol = max(100, (askBaseVols[askIdx] * (1.0 + askNoises[askIdx])).round());
-        final newBidVol = max(100, (bidBaseVols[bidIdx] * (1.0 + bidNoises[bidIdx])).round());
+        final newAskVol =
+            max(100, (askBaseVols[askIdx] * (1.0 + askNoises[askIdx])).round());
+        final newBidVol =
+            max(100, (bidBaseVols[bidIdx] * (1.0 + bidNoises[bidIdx])).round());
 
         asks[askIdx] = asks[askIdx].copyWith(
           volume: newAskVol,
@@ -285,11 +294,13 @@ class TickIsolateEngine {
       final maxVol = max(maxAskVol, maxBidVol);
 
       final updatedAsks = List<OrderBookRowData>.generate(25, (i) {
-        return asks[i].copyWith(volumeRatio: (asks[i].volume / maxVol).clamp(0.05, 1.0));
+        return asks[i]
+            .copyWith(volumeRatio: (asks[i].volume / maxVol).clamp(0.05, 1.0));
       });
 
       final updatedBids = List<OrderBookRowData>.generate(25, (i) {
-        return bids[i].copyWith(volumeRatio: (bids[i].volume / maxVol).clamp(0.05, 1.0));
+        return bids[i]
+            .copyWith(volumeRatio: (bids[i].volume / maxVol).clamp(0.05, 1.0));
       });
 
       final priceChange = currentPrice - openPrice;
@@ -337,7 +348,9 @@ void _isolateEntryPoint(SendPort mainSendPort) {
     final isThin = (i % 4 == 0);
     return isWall
         ? 1800000 + random.nextInt(1500000)
-        : (isThin ? 5000 + random.nextInt(20000) : 80000 + random.nextInt(400000));
+        : (isThin
+            ? 5000 + random.nextInt(20000)
+            : 80000 + random.nextInt(400000));
   });
 
   final bidBaseVols = List<int>.generate(25, (i) {
@@ -345,7 +358,9 @@ void _isolateEntryPoint(SendPort mainSendPort) {
     final isThin = (i % 3 == 1);
     return isWall
         ? 1650000 + random.nextInt(1600000)
-        : (isThin ? 6000 + random.nextInt(25000) : 70000 + random.nextInt(450000));
+        : (isThin
+            ? 6000 + random.nextInt(25000)
+            : 70000 + random.nextInt(450000));
   });
 
   final askNoises = List<double>.filled(25, 0.0);
@@ -384,7 +399,8 @@ void _isolateEntryPoint(SendPort mainSendPort) {
     const intervalMs = 1;
     final ticksPerInterval = targetTps / (1000.0 / intervalMs);
 
-    simulationTimer = Timer.periodic(const Duration(milliseconds: intervalMs), (timer) {
+    simulationTimer =
+        Timer.periodic(const Duration(milliseconds: intervalMs), (timer) {
       tickAccumulator += ticksPerInterval;
       if (tickAccumulator < 1.0) return;
 
@@ -433,8 +449,10 @@ void _isolateEntryPoint(SendPort mainSendPort) {
         final deltaBid = (random.nextDouble() - 0.49) * 0.08;
         bidNoises[bidIdx] = (bidNoises[bidIdx] + deltaBid).clamp(-0.5, 0.7);
 
-        final newAskVol = max(100, (askBaseVols[askIdx] * (1.0 + askNoises[askIdx])).round());
-        final newBidVol = max(100, (bidBaseVols[bidIdx] * (1.0 + bidNoises[bidIdx])).round());
+        final newAskVol =
+            max(100, (askBaseVols[askIdx] * (1.0 + askNoises[askIdx])).round());
+        final newBidVol =
+            max(100, (bidBaseVols[bidIdx] * (1.0 + bidNoises[bidIdx])).round());
 
         asks[askIdx] = asks[askIdx].copyWith(
           volume: newAskVol,

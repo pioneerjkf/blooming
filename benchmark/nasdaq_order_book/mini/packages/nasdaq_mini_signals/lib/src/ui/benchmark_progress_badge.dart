@@ -15,8 +15,10 @@ class BenchmarkProgressBadge extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final progress = pipeline.benchmarkProgressSignal.value;
 
     return Container(

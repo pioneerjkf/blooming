@@ -155,9 +155,11 @@ class ThemeRotationBar extends StatelessWidget {
                               activeTrackColor: theme.textPrimary,
                               inactiveTrackColor: theme.gridLine,
                               thumbColor: theme.textPrimary,
-                              overlayColor: theme.textPrimary.withValues(alpha: 0.1),
+                              overlayColor:
+                                  theme.textPrimary.withValues(alpha: 0.1),
                               trackHeight: 3.0,
-                              thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 5.5),
+                              thumbShape: const SwissRectSliderThumbShape(
+                                  enabledThumbRadius: 5.5),
                             ),
                             child: SizedBox(
                               width: 120,
@@ -165,10 +167,16 @@ class ThemeRotationBar extends StatelessWidget {
                               child: Slider(
                                 value: intervalIndex.toDouble(),
                                 min: 0,
-                                max: (NasdaqThemeStore.rotationIntervalPresetsMs.length - 1).toDouble(),
-                                divisions: NasdaqThemeStore.rotationIntervalPresetsMs.length - 1,
+                                max: (NasdaqThemeStore
+                                            .rotationIntervalPresetsMs.length -
+                                        1)
+                                    .toDouble(),
+                                divisions: NasdaqThemeStore
+                                        .rotationIntervalPresetsMs.length -
+                                    1,
                                 onChanged: (val) {
-                                  themeStore.setRotationIntervalIndex(val.round());
+                                  themeStore
+                                      .setRotationIntervalIndex(val.round());
                                 },
                               ),
                             ),
@@ -192,7 +200,8 @@ class ThemeRotationBar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 8.5,
                             fontWeight: FontWeight.w900,
-                            color: isAutoRotating ? Colors.white : theme.chipText,
+                            color:
+                                isAutoRotating ? Colors.white : theme.chipText,
                             fontFamily: 'monospace',
                             letterSpacing: 0.6,
                           ),

@@ -35,11 +35,14 @@ void main() {
         pipeline.startSimulation();
         return 'OK';
       } else if (message?.startsWith('set_scroll_anim:') == true) {
-        final enabled = message!.substring('set_scroll_anim:'.length).toLowerCase() == 'true';
+        final enabled =
+            message!.substring('set_scroll_anim:'.length).toLowerCase() ==
+                'true';
         pipeline.setScrollAnimationEnabled(enabled);
         return 'OK';
       } else if (message?.startsWith('set_theme_rotation:') == true) {
-        final parts = message!.substring('set_theme_rotation:'.length).split(':');
+        final parts =
+            message!.substring('set_theme_rotation:'.length).split(':');
         final enabled = parts[0].toLowerCase() == 'true';
         if (parts.length > 1) {
           final intervalIndex = int.tryParse(parts[1]);
@@ -54,7 +57,8 @@ void main() {
         }
         return 'OK';
       } else if (message?.startsWith('set_ticker_rotation:') == true) {
-        final parts = message!.substring('set_ticker_rotation:'.length).split(':');
+        final parts =
+            message!.substring('set_ticker_rotation:'.length).split(':');
         final enabled = parts[0].toLowerCase() == 'true';
         if (parts.length > 1) {
           final intervalIndex = int.tryParse(parts[1]);

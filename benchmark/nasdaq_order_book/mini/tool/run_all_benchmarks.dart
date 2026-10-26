@@ -278,7 +278,8 @@ void main(List<String> args) async {
     } else if (arg.startsWith('--theme-interval=') ||
         arg.startsWith('--theme-interval-ms=')) {
       final val = arg.split('=').last;
-      themeIntervalIndex = _resolveIntervalIndex(val, rotationIntervalPresetsMs);
+      themeIntervalIndex =
+          _resolveIntervalIndex(val, rotationIntervalPresetsMs);
     } else if (arg.startsWith('--theme-interval-index=')) {
       themeIntervalIndex = int.parse(arg.split('=').last)
           .clamp(0, rotationIntervalPresetsMs.length - 1);
@@ -303,7 +304,8 @@ void main(List<String> args) async {
         arg.startsWith('--watchlist-interval=') ||
         arg.startsWith('--stock-interval=')) {
       final val = arg.split('=').last;
-      tickerIntervalIndex = _resolveIntervalIndex(val, rotationIntervalPresetsMs);
+      tickerIntervalIndex =
+          _resolveIntervalIndex(val, rotationIntervalPresetsMs);
     } else if (arg.startsWith('--ticker-interval-index=') ||
         arg.startsWith('--watchlist-interval-index=') ||
         arg.startsWith('--stock-interval-index=')) {
@@ -676,8 +678,8 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
     themeIntervalIndex:
         (data['theme_interval_index'] as num?)?.toInt() ?? themeIntervalIndex,
     tickerRotation: (data['ticker_rotation'] as bool?) ?? tickerRotation,
-    tickerIntervalIndex: (data['ticker_interval_index'] as num?)?.toInt() ??
-        tickerIntervalIndex,
+    tickerIntervalIndex:
+        (data['ticker_interval_index'] as num?)?.toInt() ?? tickerIntervalIndex,
     setIndex: setIndex,
   );
 }
@@ -722,7 +724,8 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
     );
   } catch (e) {
     stdout.writeln('\n⚠️ Transient Flutter Driver error on ${target.name}: $e');
-    stdout.writeln('🔄 Retrying benchmark run for ${target.name} once after 3s cooldown...');
+    stdout.writeln(
+        '🔄 Retrying benchmark run for ${target.name} once after 3s cooldown...');
     await Future.delayed(const Duration(seconds: 3));
     return await _runFlutterDriverBenchmarkAttempt(
       target: target,
@@ -877,8 +880,8 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
     themeIntervalIndex:
         (data['theme_interval_index'] as num?)?.toInt() ?? themeIntervalIndex,
     tickerRotation: (data['ticker_rotation'] as bool?) ?? tickerRotation,
-    tickerIntervalIndex: (data['ticker_interval_index'] as num?)?.toInt() ??
-        tickerIntervalIndex,
+    tickerIntervalIndex:
+        (data['ticker_interval_index'] as num?)?.toInt() ?? tickerIntervalIndex,
     setIndex: setIndex,
   );
 }

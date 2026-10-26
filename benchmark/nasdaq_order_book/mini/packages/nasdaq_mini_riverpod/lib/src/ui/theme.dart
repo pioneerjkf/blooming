@@ -33,7 +33,8 @@ enum NasdaqThemeMode {
   swissHerrenmode23('HERRENMODE 1923', 'Petrol Teal & Terracotta'),
   swissElectricViolet('ELECTRIC VIOLET', 'Poster White & Violet Accent'),
   swissairSlate50('SWISSAIR 1950', 'Steel Slate & Swissair Cyan'),
-  swissMidCenturyGeometry('MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
+  swissMidCenturyGeometry(
+      'MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
 
   const NasdaqThemeMode(this.label, this.description);
   final String label;

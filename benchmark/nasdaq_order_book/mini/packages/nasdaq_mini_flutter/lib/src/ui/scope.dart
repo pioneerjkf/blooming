@@ -17,13 +17,16 @@ class NasdaqBenchmarkScope extends InheritedWidget {
   final OrderBookPipeline pipeline;
 
   static NasdaqBenchmarkScope of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<NasdaqBenchmarkScope>();
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<NasdaqBenchmarkScope>();
     assert(scope != null, 'No NasdaqBenchmarkScope found in context');
     return scope!;
   }
 
-  static OrderBookPipeline pipelineOf(BuildContext context) => of(context).pipeline;
-  static NasdaqThemeStore themeStoreOf(BuildContext context) => of(context).themeStore;
+  static OrderBookPipeline pipelineOf(BuildContext context) =>
+      of(context).pipeline;
+  static NasdaqThemeStore themeStoreOf(BuildContext context) =>
+      of(context).themeStore;
 
   @override
   bool updateShouldNotify(NasdaqBenchmarkScope oldWidget) {

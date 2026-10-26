@@ -104,7 +104,9 @@ class _PriceChartPainter extends CustomPainter {
   Color? _cachedShaderColor;
 
   Shader _getShader(Size size) {
-    if (_cachedShader == null || _cachedShaderSize != size || _cachedShaderColor != lineColor) {
+    if (_cachedShader == null ||
+        _cachedShaderSize != size ||
+        _cachedShaderColor != lineColor) {
       _cachedShaderSize = size;
       _cachedShaderColor = lineColor;
       _cachedShader = LinearGradient(

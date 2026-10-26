@@ -249,12 +249,12 @@ class _EventLoopBarChartPainter extends CustomPainter {
       ..strokeWidth = 0.5;
 
     // Draw horizontal reference lines (at 25%, 50%, 75%)
-    canvas.drawLine(
-        Offset(0, size.height * 0.25), Offset(size.width, size.height * 0.25), gridPaint);
-    canvas.drawLine(
-        Offset(0, size.height * 0.50), Offset(size.width, size.height * 0.50), gridPaint);
-    canvas.drawLine(
-        Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.25),
+        Offset(size.width, size.height * 0.25), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.50),
+        Offset(size.width, size.height * 0.50), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.75),
+        Offset(size.width, size.height * 0.75), gridPaint);
 
     final count = history.length;
     final barWidth = (size.width / count) * 0.75;
@@ -298,7 +298,9 @@ class _EventLoopLineChartPainter extends CustomPainter {
   Color? _cachedShaderColor;
 
   Shader _getShader(Size size) {
-    if (_cachedShader == null || _cachedShaderSize != size || _cachedShaderColor != lineColor) {
+    if (_cachedShader == null ||
+        _cachedShaderSize != size ||
+        _cachedShaderColor != lineColor) {
       _cachedShaderSize = size;
       _cachedShaderColor = lineColor;
       _cachedShader = LinearGradient(
@@ -328,12 +330,12 @@ class _EventLoopLineChartPainter extends CustomPainter {
       ..color = theme.gridLine.withValues(alpha: 0.5)
       ..strokeWidth = 0.5;
 
-    canvas.drawLine(
-        Offset(0, size.height * 0.25), Offset(size.width, size.height * 0.25), gridPaint);
-    canvas.drawLine(
-        Offset(0, size.height * 0.50), Offset(size.width, size.height * 0.50), gridPaint);
-    canvas.drawLine(
-        Offset(0, size.height * 0.75), Offset(size.width, size.height * 0.75), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.25),
+        Offset(size.width, size.height * 0.25), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.50),
+        Offset(size.width, size.height * 0.50), gridPaint);
+    canvas.drawLine(Offset(0, size.height * 0.75),
+        Offset(size.width, size.height * 0.75), gridPaint);
 
     final count = history.length;
     if (count < 2) return;

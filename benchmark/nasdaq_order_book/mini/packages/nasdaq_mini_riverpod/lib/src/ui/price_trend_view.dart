@@ -110,8 +110,10 @@ class _PriceChartPainter extends CustomPainter {
     // Draw horizontal grid lines
     final midY = size.height / 2;
     canvas.drawLine(Offset(0, midY), Offset(size.width, midY), gridPaint);
-    canvas.drawLine(Offset(0, midY / 2), Offset(size.width, midY / 2), gridPaint);
-    canvas.drawLine(Offset(0, midY + midY / 2), Offset(size.width, midY + midY / 2), gridPaint);
+    canvas.drawLine(
+        Offset(0, midY / 2), Offset(size.width, midY / 2), gridPaint);
+    canvas.drawLine(Offset(0, midY + midY / 2),
+        Offset(size.width, midY + midY / 2), gridPaint);
 
     double minP = history.reduce(min);
     double maxP = history.reduce(max);

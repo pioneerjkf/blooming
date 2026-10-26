@@ -15,8 +15,10 @@ class RecentTradesView extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final trades = pipeline.tradeTicksSignal.value;
 
     return Container(
@@ -42,16 +44,19 @@ class RecentTradesView extends SignalWidget {
               children: [
                 Row(
                   children: [
-                    Text('004 ', style: theme.swissIndexLabel.copyWith(fontSize: 9)),
+                    Text('004 ',
+                        style: theme.swissIndexLabel.copyWith(fontSize: 9)),
                     Text(
                       'RECENT TRADES',
-                      style: theme.swissHeader.copyWith(fontSize: 11, letterSpacing: 1.0),
+                      style: theme.swissHeader
+                          .copyWith(fontSize: 11, letterSpacing: 1.0),
                     ),
                   ],
                 ),
                 Text(
                   'TICKS',
-                  style: theme.volumeStyle.copyWith(fontSize: 8.5, letterSpacing: 0.6),
+                  style: theme.volumeStyle
+                      .copyWith(fontSize: 8.5, letterSpacing: 0.6),
                 ),
               ],
             ),
@@ -67,7 +72,8 @@ class RecentTradesView extends SignalWidget {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text('TIME', style: theme.volumeStyle.copyWith(fontSize: 8.5)),
+                  child: Text('TIME',
+                      style: theme.volumeStyle.copyWith(fontSize: 8.5)),
                 ),
                 Expanded(
                   flex: 3,
@@ -137,8 +143,10 @@ class _TradeTickTile extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final trades = pipeline.tradeTicksSignal.value;
     final tick = index < trades.length ? trades[index] : null;
 

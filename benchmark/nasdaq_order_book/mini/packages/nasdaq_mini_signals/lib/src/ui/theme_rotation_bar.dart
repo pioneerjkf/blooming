@@ -15,8 +15,10 @@ class ThemeRotationBar extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeStore = SignalProvider.of<Signal<NasdaqThemeStore>>(context)!.value;
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final themeStore =
+        SignalProvider.of<Signal<NasdaqThemeStore>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
     final isAutoRotating = themeStore.isAutoRotatingSignal.value;
     final intervalIndex = themeStore.rotationIntervalIndexSignal.value;
     final intervalMs = themeStore.currentRotationIntervalMs;
@@ -151,9 +153,11 @@ class ThemeRotationBar extends SignalWidget {
                           activeTrackColor: theme.textPrimary,
                           inactiveTrackColor: theme.gridLine,
                           thumbColor: theme.textPrimary,
-                          overlayColor: theme.textPrimary.withValues(alpha: 0.1),
+                          overlayColor:
+                              theme.textPrimary.withValues(alpha: 0.1),
                           trackHeight: 3.0,
-                          thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 5.5),
+                          thumbShape: const SwissRectSliderThumbShape(
+                              enabledThumbRadius: 5.5),
                         ),
                         child: SizedBox(
                           width: 120,
@@ -161,8 +165,13 @@ class ThemeRotationBar extends SignalWidget {
                           child: Slider(
                             value: intervalIndex.toDouble(),
                             min: 0,
-                            max: (NasdaqThemeStore.rotationIntervalPresetsMs.length - 1).toDouble(),
-                            divisions: NasdaqThemeStore.rotationIntervalPresetsMs.length - 1,
+                            max: (NasdaqThemeStore
+                                        .rotationIntervalPresetsMs.length -
+                                    1)
+                                .toDouble(),
+                            divisions: NasdaqThemeStore
+                                    .rotationIntervalPresetsMs.length -
+                                1,
                             onChanged: (val) {
                               themeStore.setRotationIntervalIndex(val.round());
                             },

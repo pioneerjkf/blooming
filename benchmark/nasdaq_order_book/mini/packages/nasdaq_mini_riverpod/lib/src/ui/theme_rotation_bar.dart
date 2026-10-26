@@ -18,7 +18,8 @@ class ThemeRotationBar extends ConsumerWidget {
     final theme = ref.watch(themeDataProvider);
     final isAutoRotating = ref.watch(themeAutoRotatingProvider);
     final intervalIndex = ref.watch(themeRotationIntervalIndexProvider);
-    final intervalMs = NasdaqThemeStore.rotationIntervalPresetsMs[intervalIndex];
+    final intervalMs =
+        NasdaqThemeStore.rotationIntervalPresetsMs[intervalIndex];
 
     return Container(
       width: 1060,
@@ -96,7 +97,8 @@ class ThemeRotationBar extends ConsumerWidget {
 
                 // 2. Previous Theme Arrow Button
                 InkWell(
-                  onTap: () => ref.read(themeModeProvider.notifier).togglePrevious(),
+                  onTap: () =>
+                      ref.read(themeModeProvider.notifier).togglePrevious(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9),
                     alignment: Alignment.center,
@@ -114,7 +116,8 @@ class ThemeRotationBar extends ConsumerWidget {
 
                 // 3. Next Theme Arrow Button
                 InkWell(
-                  onTap: () => ref.read(themeModeProvider.notifier).toggleNext(),
+                  onTap: () =>
+                      ref.read(themeModeProvider.notifier).toggleNext(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9),
                     alignment: Alignment.center,
@@ -150,9 +153,11 @@ class ThemeRotationBar extends ConsumerWidget {
                           activeTrackColor: theme.textPrimary,
                           inactiveTrackColor: theme.gridLine,
                           thumbColor: theme.textPrimary,
-                          overlayColor: theme.textPrimary.withValues(alpha: 0.1),
+                          overlayColor:
+                              theme.textPrimary.withValues(alpha: 0.1),
                           trackHeight: 3.0,
-                          thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 5.5),
+                          thumbShape: const SwissRectSliderThumbShape(
+                              enabledThumbRadius: 5.5),
                         ),
                         child: SizedBox(
                           width: 120,
@@ -160,11 +165,17 @@ class ThemeRotationBar extends ConsumerWidget {
                           child: Slider(
                             value: intervalIndex.toDouble(),
                             min: 0,
-                            max: (NasdaqThemeStore.rotationIntervalPresetsMs.length - 1).toDouble(),
-                            divisions: NasdaqThemeStore.rotationIntervalPresetsMs.length - 1,
+                            max: (NasdaqThemeStore
+                                        .rotationIntervalPresetsMs.length -
+                                    1)
+                                .toDouble(),
+                            divisions: NasdaqThemeStore
+                                    .rotationIntervalPresetsMs.length -
+                                1,
                             onChanged: (val) {
                               ref
-                                  .read(themeRotationIntervalIndexProvider.notifier)
+                                  .read(themeRotationIntervalIndexProvider
+                                      .notifier)
                                   .set(val.round());
                             },
                           ),
@@ -179,7 +190,8 @@ class ThemeRotationBar extends ConsumerWidget {
 
                 // 5. Rotation Toggle Action Button
                 InkWell(
-                  onTap: () => ref.read(themeAutoRotatingProvider.notifier).toggle(),
+                  onTap: () =>
+                      ref.read(themeAutoRotatingProvider.notifier).toggle(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     alignment: Alignment.center,

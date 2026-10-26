@@ -65,11 +65,16 @@ final class OrderBookView extends BloomWidget {
                     GestureDetector(
                       onTap: () => pipeline.toggleScrollAnimation(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: isAnimEnabled ? theme.chipBg : theme.cardBackground,
+                          color: isAnimEnabled
+                              ? theme.chipBg
+                              : theme.cardBackground,
                           border: Border.all(
-                            color: isAnimEnabled ? theme.bidGreen : theme.chipBorder,
+                            color: isAnimEnabled
+                                ? theme.bidGreen
+                                : theme.chipBorder,
                             width: 1.0,
                           ),
                         ),
@@ -81,7 +86,9 @@ final class OrderBookView extends BloomWidget {
                               height: 5,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.textMuted,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -90,7 +97,9 @@ final class OrderBookView extends BloomWidget {
                               style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w800,
-                                color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.textMuted,
                                 letterSpacing: 0.6,
                                 fontFamily: 'monospace',
                               ),
@@ -135,8 +144,10 @@ final class OrderBookView extends BloomWidget {
                   child: isAnimEnabled
                       ? composed.drive<double>(
                           (elapsed) {
-                            final elapsedSeconds = elapsed.inMicroseconds / 1000000.0;
-                            return (sin((elapsedSeconds / 10.0) * 2 * pi - (pi / 2)) +
+                            final elapsedSeconds =
+                                elapsed.inMicroseconds / 1000000.0;
+                            return (sin((elapsedSeconds / 10.0) * 2 * pi -
+                                        (pi / 2)) +
                                     1.0) /
                                 2.0;
                           },

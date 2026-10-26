@@ -37,7 +37,8 @@ enum NasdaqThemeMode {
   swissHerrenmode23('HERRENMODE 1923', 'Petrol Teal & Terracotta'),
   swissElectricViolet('ELECTRIC VIOLET', 'Poster White & Violet Accent'),
   swissairSlate50('SWISSAIR 1950', 'Steel Slate & Swissair Cyan'),
-  swissMidCenturyGeometry('MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
+  swissMidCenturyGeometry(
+      'MID-CENTURY GEOMETRY', 'Midnight Navy, Peach & Terracotta');
 
   const NasdaqThemeMode(this.label, this.description);
   final String label;
@@ -807,7 +808,8 @@ final class NasdaqThemeStore {
   ];
 
   final BloomController<NasdaqThemeData> _controller;
-  final BloomController<bool> _isAutoRotatingController = BloomController<bool>(false);
+  final BloomController<bool> _isAutoRotatingController =
+      BloomController<bool>(false);
   final BloomController<int> _rotationIntervalIndexController =
       BloomController<int>(6); // Index 6 = 1000ms
 
@@ -819,11 +821,13 @@ final class NasdaqThemeStore {
   NasdaqThemeMode get mode => current.mode;
 
   Bloom<bool> get isAutoRotatingBloom => _isAutoRotatingController.bloom;
-  Bloom<int> get rotationIntervalIndexBloom => _rotationIntervalIndexController.bloom;
+  Bloom<int> get rotationIntervalIndexBloom =>
+      _rotationIntervalIndexController.bloom;
 
   bool get isAutoRotating => _isAutoRotatingController.data;
   int get rotationIntervalIndex => _rotationIntervalIndexController.data;
-  double get currentRotationIntervalMs => rotationIntervalPresetsMs[rotationIntervalIndex];
+  double get currentRotationIntervalMs =>
+      rotationIntervalPresetsMs[rotationIntervalIndex];
 
   void toggleNextTheme() {
     final nextIndex = (mode.index + 1) % NasdaqThemeMode.values.length;
@@ -832,8 +836,8 @@ final class NasdaqThemeStore {
   }
 
   void togglePreviousTheme() {
-    final prevIndex =
-        (mode.index - 1 + NasdaqThemeMode.values.length) % NasdaqThemeMode.values.length;
+    final prevIndex = (mode.index - 1 + NasdaqThemeMode.values.length) %
+        NasdaqThemeMode.values.length;
     final newMode = NasdaqThemeMode.values[prevIndex];
     _controller.set(NasdaqThemeData.of(newMode));
   }

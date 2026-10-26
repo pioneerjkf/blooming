@@ -44,8 +44,10 @@ class _NasdaqWatchlistViewState extends State<NasdaqWatchlistView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final isAutoRotating = pipeline.isAutoRotatingSignal.value;
     final intervalIndex = pipeline.rotationIntervalIndexSignal.value;
     final intervalMs = pipeline.currentRotationIntervalMs;
@@ -57,185 +59,201 @@ class _NasdaqWatchlistViewState extends State<NasdaqWatchlistView> {
     });
 
     return Container(
-        width: 240,
-        height: 502,
-        decoration: BoxDecoration(
-          color: theme.cardBackground,
-          border: Border.all(
-            color: theme.surfaceBorder,
-            width: 1.0,
-            strokeAlign: BorderSide.strokeAlignInside,
-          ),
+      width: 240,
+      height: 502,
+      decoration: BoxDecoration(
+        color: theme.cardBackground,
+        border: Border.all(
+          color: theme.surfaceBorder,
+          width: 1.0,
+          strokeAlign: BorderSide.strokeAlignInside,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Swiss Section Title Bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              color: theme.background,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text('001 ', style: theme.swissIndexLabel.copyWith(fontSize: 9)),
-                      Text(
-                        'NASDAQ WATCHLIST',
-                        style: theme.swissHeader.copyWith(fontSize: 10.5, letterSpacing: 0.8),
-                      ),
-                    ],
-                  ),
-                  // Auto rotation status indicator
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: isAutoRotating ? theme.bidGreenBg : theme.chipBg,
-                      border: Border.all(
-                        color: isAutoRotating ? theme.bidGreen : theme.gridLine,
-                        width: 0.8,
-                      ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Swiss Section Title Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: theme.background,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text('001 ',
+                        style: theme.swissIndexLabel.copyWith(fontSize: 9)),
+                    Text(
+                      'NASDAQ WATCHLIST',
+                      style: theme.swissHeader
+                          .copyWith(fontSize: 10.5, letterSpacing: 0.8),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          color: isAutoRotating ? theme.bidGreen : theme.textMuted,
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          isAutoRotating ? 'AUTO' : 'PAUSE',
-                          style: TextStyle(
-                            fontSize: 7.5,
-                            fontWeight: FontWeight.w900,
-                            color: isAutoRotating ? theme.bidGreen : theme.chipText,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ],
+                  ],
+                ),
+                // Auto rotation status indicator
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: isAutoRotating ? theme.bidGreenBg : theme.chipBg,
+                    border: Border.all(
+                      color: isAutoRotating ? theme.bidGreen : theme.gridLine,
+                      width: 0.8,
                     ),
                   ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: theme.surfaceBorder),
-
-            // 2. Watchlist Controls Bar (Interval Slider & Toggle Button)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              color: theme.cardBackground,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'ROTATION INTERVAL',
-                        style: theme.volumeStyle.copyWith(color: theme.textMuted, fontSize: 8.5),
+                      Container(
+                        width: 5,
+                        height: 5,
+                        color:
+                            isAutoRotating ? theme.bidGreen : theme.textMuted,
                       ),
+                      const SizedBox(width: 3),
                       Text(
-                        _formatMs(intervalMs),
+                        isAutoRotating ? 'AUTO' : 'PAUSE',
                         style: TextStyle(
-                          fontSize: 8.5,
+                          fontSize: 7.5,
                           fontWeight: FontWeight.w900,
-                          color: theme.bidGreen,
+                          color:
+                              isAutoRotating ? theme.bidGreen : theme.chipText,
                           fontFamily: 'monospace',
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  SliderTheme(
-                    data: SliderThemeData(
-                      activeTrackColor: theme.textPrimary,
-                      inactiveTrackColor: theme.gridLine,
-                      thumbColor: theme.textPrimary,
-                      overlayColor: theme.textPrimary.withValues(alpha: 0.1),
-                      trackHeight: 3.0,
-                      thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 5.5),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: theme.surfaceBorder),
+
+          // 2. Watchlist Controls Bar (Interval Slider & Toggle Button)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: theme.cardBackground,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'ROTATION INTERVAL',
+                      style: theme.volumeStyle
+                          .copyWith(color: theme.textMuted, fontSize: 8.5),
                     ),
-                    child: SizedBox(
-                      height: 18,
-                      child: Slider(
-                        value: intervalIndex.toDouble(),
-                        min: 0,
-                        max: (OrderBookPipeline.rotationIntervalPresetsMs.length - 1).toDouble(),
-                        divisions: OrderBookPipeline.rotationIntervalPresetsMs.length - 1,
-                        onChanged: (val) {
-                          pipeline.setRotationIntervalIndex(val.round());
-                        },
+                    Text(
+                      _formatMs(intervalMs),
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        color: theme.bidGreen,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                SliderTheme(
+                  data: SliderThemeData(
+                    activeTrackColor: theme.textPrimary,
+                    inactiveTrackColor: theme.gridLine,
+                    thumbColor: theme.textPrimary,
+                    overlayColor: theme.textPrimary.withValues(alpha: 0.1),
+                    trackHeight: 3.0,
+                    thumbShape: const SwissRectSliderThumbShape(
+                        enabledThumbRadius: 5.5),
+                  ),
+                  child: SizedBox(
+                    height: 18,
+                    child: Slider(
+                      value: intervalIndex.toDouble(),
+                      min: 0,
+                      max: (OrderBookPipeline.rotationIntervalPresetsMs.length -
+                              1)
+                          .toDouble(),
+                      divisions:
+                          OrderBookPipeline.rotationIntervalPresetsMs.length -
+                              1,
+                      onChanged: (val) {
+                        pipeline.setRotationIntervalIndex(val.round());
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Unified Swiss Action Toggle Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 24,
+                  child: ElevatedButton(
+                    onPressed: pipeline.toggleAutoRotation,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isAutoRotating ? theme.askRed : theme.chipBg,
+                      foregroundColor:
+                          isAutoRotating ? Colors.white : theme.chipText,
+                      padding: EdgeInsets.zero,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero,
+                        side: BorderSide(
+                          color:
+                              isAutoRotating ? theme.askRed : theme.chipBorder,
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      isAutoRotating ? 'STOP ROTATION' : 'START ROTATION',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 8.5,
+                        letterSpacing: 0.8,
+                        fontFamily: 'monospace',
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  // Unified Swiss Action Toggle Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 24,
-                    child: ElevatedButton(
-                      onPressed: pipeline.toggleAutoRotation,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isAutoRotating ? theme.askRed : theme.chipBg,
-                        foregroundColor: isAutoRotating ? Colors.white : theme.chipText,
-                        padding: EdgeInsets.zero,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.zero,
-                          side: BorderSide(
-                            color: isAutoRotating ? theme.askRed : theme.chipBorder,
-                            width: 1.0,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        isAutoRotating ? 'STOP ROTATION' : 'START ROTATION',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 8.5,
-                          letterSpacing: 0.8,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: theme.gridLine),
-
-            // 3. Stock List Column Headers
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              color: theme.background,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('TICKER / NAME', style: theme.volumeStyle.copyWith(fontSize: 8.5)),
-                  Text('PRICE / CHG', style: theme.volumeStyle.copyWith(fontSize: 8.5)),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: theme.gridLine),
-
-            // 4. 100 Stocks Vertical ListView
-            Expanded(
-              child: ListView.separated(
-                controller: scrollController,
-                itemCount: stocks.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  color: theme.gridLine.withValues(alpha: 0.3),
                 ),
-                itemBuilder: (context, index) => _NasdaqStockTile(
-                  index: index,
-                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: theme.gridLine),
+
+          // 3. Stock List Column Headers
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            color: theme.background,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('TICKER / NAME',
+                    style: theme.volumeStyle.copyWith(fontSize: 8.5)),
+                Text('PRICE / CHG',
+                    style: theme.volumeStyle.copyWith(fontSize: 8.5)),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: theme.gridLine),
+
+          // 4. 100 Stocks Vertical ListView
+          Expanded(
+            child: ListView.separated(
+              controller: scrollController,
+              itemCount: stocks.length,
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                color: theme.gridLine.withValues(alpha: 0.3),
+              ),
+              itemBuilder: (context, index) => _NasdaqStockTile(
+                index: index,
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatMs(double ms) {
@@ -262,8 +280,10 @@ class _NasdaqStockTile extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final stock = pipeline.stocks[index];
     final isSelected = pipeline.selectedStockIndexSignal.value == index;
 
@@ -272,7 +292,9 @@ class _NasdaqStockTile extends SignalWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? theme.textAccent.withValues(alpha: 0.12) : Colors.transparent,
+          color: isSelected
+              ? theme.textAccent.withValues(alpha: 0.12)
+              : Colors.transparent,
           border: isSelected
               ? Border(
                   left: BorderSide(
@@ -296,7 +318,8 @@ class _NasdaqStockTile extends SignalWidget {
                         stock.symbol,
                         style: TextStyle(
                           fontSize: 10.5,
-                          fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                          fontWeight:
+                              isSelected ? FontWeight.w900 : FontWeight.w700,
                           color: theme.textPrimary,
                           fontFamily: 'monospace',
                         ),
@@ -353,8 +376,10 @@ class _NasdaqStockPriceText extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final stockSymbol = pipeline.stocks[index].symbol;
     final priceSignal = pipeline.stockPriceSignals[stockSymbol];
     final currentPrice = priceSignal?.value ?? pipeline.stocks[index].basePrice;
@@ -382,11 +407,14 @@ class _NasdaqStockChangeText extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final stockSymbol = pipeline.stocks[index].symbol;
     final changeSignal = pipeline.stockChangeSignals[stockSymbol];
-    final priceChangePct = changeSignal?.value ?? pipeline.stocks[index].priceChangePct;
+    final priceChangePct =
+        changeSignal?.value ?? pipeline.stocks[index].priceChangePct;
     final isPositive = priceChangePct >= 0;
     final changeColor = isPositive ? theme.bidGreen : theme.askRed;
 

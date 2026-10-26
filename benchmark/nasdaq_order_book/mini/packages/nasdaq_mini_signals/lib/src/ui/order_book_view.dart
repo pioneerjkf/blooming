@@ -27,7 +27,8 @@ class OrderBookView extends SignalStatefulWidget {
   State<OrderBookView> createState() => _OrderBookViewState();
 }
 
-class _OrderBookViewState extends State<OrderBookView> with SingleTickerProviderStateMixin {
+class _OrderBookViewState extends State<OrderBookView>
+    with SingleTickerProviderStateMixin {
   late final Signal<double> _localAnimOffsetSignal;
   Ticker? _ticker;
   double _elapsedSeconds = 0.0;
@@ -71,9 +72,12 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)?.value;
-    final isAnimEnabled = pipeline?.isScrollAnimationEnabledSignal.value ?? true;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)?.value;
+    final isAnimEnabled =
+        pipeline?.isScrollAnimationEnabledSignal.value ?? true;
     final effectiveAnimOffset = _resolveAnimOffset(context);
 
     return Container(
@@ -109,11 +113,16 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                       GestureDetector(
                         onTap: () => pipeline.toggleScrollAnimation(),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
-                            color: isAnimEnabled ? theme.chipBg : theme.cardBackground,
+                            color: isAnimEnabled
+                                ? theme.chipBg
+                                : theme.cardBackground,
                             border: Border.all(
-                              color: isAnimEnabled ? theme.bidGreen : theme.chipBorder,
+                              color: isAnimEnabled
+                                  ? theme.bidGreen
+                                  : theme.chipBorder,
                               width: 1.0,
                             ),
                           ),
@@ -125,7 +134,9 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                                 height: 5,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                  color: isAnimEnabled
+                                      ? theme.bidGreen
+                                      : theme.textMuted,
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -134,7 +145,9 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                                 style: TextStyle(
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w800,
-                                  color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                  color: isAnimEnabled
+                                      ? theme.bidGreen
+                                      : theme.textMuted,
                                   letterSpacing: 0.6,
                                   fontFamily: 'monospace',
                                 ),
@@ -147,7 +160,8 @@ class _OrderBookViewState extends State<OrderBookView> with SingleTickerProvider
                     ],
                     Text(
                       '50 LEVELS',
-                      style: theme.volumeStyle.copyWith(fontSize: 9.5, letterSpacing: 0.8),
+                      style: theme.volumeStyle
+                          .copyWith(fontSize: 9.5, letterSpacing: 0.8),
                     ),
                   ],
                 ),

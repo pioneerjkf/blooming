@@ -151,9 +151,11 @@ final class ThemeRotationBar extends BloomWidget {
                           activeTrackColor: theme.textPrimary,
                           inactiveTrackColor: theme.gridLine,
                           thumbColor: theme.textPrimary,
-                          overlayColor: theme.textPrimary.withValues(alpha: 0.1),
+                          overlayColor:
+                              theme.textPrimary.withValues(alpha: 0.1),
                           trackHeight: 3.0,
-                          thumbShape: const SwissRectSliderThumbShape(enabledThumbRadius: 5.5),
+                          thumbShape: const SwissRectSliderThumbShape(
+                              enabledThumbRadius: 5.5),
                         ),
                         child: SizedBox(
                           width: 120,
@@ -161,10 +163,16 @@ final class ThemeRotationBar extends BloomWidget {
                           child: Slider(
                             value: intervalIndex.toDouble(),
                             min: 0,
-                            max: (NasdaqThemeStore.rotationIntervalPresetsMs.length - 1).toDouble(),
-                            divisions: NasdaqThemeStore.rotationIntervalPresetsMs.length - 1,
+                            max: (NasdaqThemeStore
+                                        .rotationIntervalPresetsMs.length -
+                                    1)
+                                .toDouble(),
+                            divisions: NasdaqThemeStore
+                                    .rotationIntervalPresetsMs.length -
+                                1,
                             onChanged: (val) {
-                              effectiveThemeStore.setRotationIntervalIndex(val.round());
+                              effectiveThemeStore
+                                  .setRotationIntervalIndex(val.round());
                             },
                           ),
                         ),

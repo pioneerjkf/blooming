@@ -23,9 +23,12 @@ class OrderBookRow extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
-    final rowSignal = isAsk ? pipeline.askSignals[index] : pipeline.bidSignals[index];
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final rowSignal =
+        isAsk ? pipeline.askSignals[index] : pipeline.bidSignals[index];
     final data = rowSignal.value;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final isRecentFlash = (nowMs - data.flashTimestampMs) < 90;
@@ -34,11 +37,13 @@ class OrderBookRow extends SignalWidget {
     Color flashOverlayColor = Colors.transparent;
     if (isRecentFlash) {
       if (data.isAsk) {
-        flashOverlayColor =
-            data.flashType == FlashType.up ? theme.flashDownGlow : theme.askRedBg;
+        flashOverlayColor = data.flashType == FlashType.up
+            ? theme.flashDownGlow
+            : theme.askRedBg;
       } else {
-        flashOverlayColor =
-            data.flashType == FlashType.up ? theme.flashUpGlow : theme.bidGreenBg;
+        flashOverlayColor = data.flashType == FlashType.up
+            ? theme.flashUpGlow
+            : theme.bidGreenBg;
       }
     }
 

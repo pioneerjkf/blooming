@@ -83,7 +83,8 @@ final class OrderBookView extends BuildComponent
   }).toWidget();
 
   @override
-  Iterable<CoralNode> manifest() => [themeCoral, _isScrollAnimationEnabledCoral];
+  Iterable<CoralNode> manifest() =>
+      [themeCoral, _isScrollAnimationEnabledCoral];
 
   @override
   Widget build() {
@@ -131,13 +132,19 @@ final class OrderBookView extends BuildComponent
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
-                      onTap: () => pipelineCoralOf().data.toggleScrollAnimation(),
+                      onTap: () =>
+                          pipelineCoralOf().data.toggleScrollAnimation(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1.5),
                         decoration: BoxDecoration(
-                          color: isAnimEnabled ? theme.chipBg : theme.cardBackground,
+                          color: isAnimEnabled
+                              ? theme.chipBg
+                              : theme.cardBackground,
                           border: Border.all(
-                            color: isAnimEnabled ? theme.bidGreen : theme.chipBorder,
+                            color: isAnimEnabled
+                                ? theme.bidGreen
+                                : theme.chipBorder,
                             width: 1.0,
                           ),
                         ),
@@ -149,7 +156,9 @@ final class OrderBookView extends BuildComponent
                               height: 5,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.textMuted,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -158,7 +167,9 @@ final class OrderBookView extends BuildComponent
                               style: TextStyle(
                                 fontSize: 8.5,
                                 fontWeight: FontWeight.w800,
-                                color: isAnimEnabled ? theme.bidGreen : theme.textMuted,
+                                color: isAnimEnabled
+                                    ? theme.bidGreen
+                                    : theme.textMuted,
                                 letterSpacing: 0.6,
                                 fontFamily: 'monospace',
                               ),

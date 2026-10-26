@@ -158,16 +158,23 @@ class OrderBookPipeline {
       broadcast: true,
       distinct: false,
     );
-    final initialScrollAnim = Platform.environment['BENCH_SCROLL_ANIM'] != 'false';
+    final initialScrollAnim =
+        Platform.environment['BENCH_SCROLL_ANIM'] != 'false';
     _isScrollAnimationEnabledController =
         CoralController<bool>(initialScrollAnim, broadcast: true);
 
-    final envSet = int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
-    final envTotalSets = int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
-    final envBench = int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
-    final envTotalBenches = int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
-    final envRun = int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
-    final envTotalRuns = int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
+    final envSet =
+        int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
+    final envTotalSets =
+        int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '') ?? 1;
+    final envBench =
+        int.tryParse(Platform.environment['BENCH_TARGET_INDEX'] ?? '') ?? 1;
+    final envTotalBenches =
+        int.tryParse(Platform.environment['BENCH_TOTAL_TARGETS'] ?? '') ?? 1;
+    final envRun =
+        int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
+    final envTotalRuns =
+        int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
     _benchmarkProgressController = CoralController<BenchmarkProgress>(
       BenchmarkProgress(
         currentSet: envSet,
@@ -183,7 +190,8 @@ class OrderBookPipeline {
     // Initialize Stock Selection & Auto-Rotation Controllers
     _selectedStockIndexController = CoralController<int>(0, broadcast: true);
     _isAutoRotatingController = CoralController<bool>(false, broadcast: true);
-    _rotationIntervalIndexController = CoralController<int>(6, broadcast: true); // Default 1000ms
+    _rotationIntervalIndexController =
+        CoralController<int>(6, broadcast: true); // Default 1000ms
 
     // Initialize Initial Trade Ticks Sample
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -217,9 +225,12 @@ class OrderBookPipeline {
       );
     }
     _latestStockPrices[initialSnapshot.ticker] = initialSnapshot.lastPrice;
-    _latestStockChanges[initialSnapshot.ticker] = initialSnapshot.priceChangePct;
-    _stockPriceControllers[initialSnapshot.ticker]?.set(initialSnapshot.lastPrice);
-    _stockChangeControllers[initialSnapshot.ticker]?.set(initialSnapshot.priceChangePct);
+    _latestStockChanges[initialSnapshot.ticker] =
+        initialSnapshot.priceChangePct;
+    _stockPriceControllers[initialSnapshot.ticker]
+        ?.set(initialSnapshot.lastPrice);
+    _stockChangeControllers[initialSnapshot.ticker]
+        ?.set(initialSnapshot.priceChangePct);
 
     // Initialize Background Isolate Tick Generation Engine
     _isolateEngine = TickIsolateEngine();
@@ -264,9 +275,12 @@ class OrderBookPipeline {
           jankCount++;
         }
       }
-      _lastUiBuildTimeMs = double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
-      _lastRasterTimeMs = double.parse((totalRaster / _recentTimings.length).toStringAsFixed(2));
-      _lastJankRatePct = double.parse(((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
+      _lastUiBuildTimeMs =
+          double.parse((totalBuild / _recentTimings.length).toStringAsFixed(2));
+      _lastRasterTimeMs = double.parse(
+          (totalRaster / _recentTimings.length).toStringAsFixed(2));
+      _lastJankRatePct = double.parse(
+          ((jankCount / _recentTimings.length) * 100.0).toStringAsFixed(1));
     }
   }
 
@@ -275,17 +289,21 @@ class OrderBookPipeline {
   // ===========================================================================
 
   // 5a. Order Book CoralProviders
-  CoralProvider<OrderBookSnapshot> get snapshotProvider => _snapshotController.provider;
-  CoralProvider<List<double>> get priceHistoryProvider => _priceHistoryController.provider;
+  CoralProvider<OrderBookSnapshot> get snapshotProvider =>
+      _snapshotController.provider;
+  CoralProvider<List<double>> get priceHistoryProvider =>
+      _priceHistoryController.provider;
   List<CoralProvider<OrderBookRowData>> get askProviders =>
       _askControllers.map((c) => c.provider).toList();
   List<CoralProvider<OrderBookRowData>> get bidProviders =>
       _bidControllers.map((c) => c.provider).toList();
-  CoralProvider<List<TradeTick>> get tradeTicksProvider => _tradeTicksController.provider;
+  CoralProvider<List<TradeTick>> get tradeTicksProvider =>
+      _tradeTicksController.provider;
 
   // 5b. Benchmark Metrics CoralProviders
   CoralProvider<int> get targetTpsProvider => _targetTpsController.provider;
-  CoralProvider<bool> get isSimulatingProvider => _isSimulatingController.provider;
+  CoralProvider<bool> get isSimulatingProvider =>
+      _isSimulatingController.provider;
   CoralProvider<bool> get isScrollAnimationEnabledProvider =>
       _isScrollAnimationEnabledController.provider;
   bool get isScrollAnimationEnabled => _isScrollAnimationEnabledController.data;
@@ -313,22 +331,29 @@ class OrderBookPipeline {
       totalRuns: totalRuns,
     ));
   }
+
   CoralProvider<int> get actualTpsProvider => _actualTpsController.provider;
   CoralProvider<double> get latencyMsProvider => _latencyMsController.provider;
-  CoralProvider<double> get eventLoopLagProvider => _eventLoopLagController.provider;
+  CoralProvider<double> get eventLoopLagProvider =>
+      _eventLoopLagController.provider;
   CoralProvider<List<double>> get eventLoopHistoryProvider =>
       _eventLoopHistoryController.provider;
-  CoralProvider<double> get eventLoopAvg1sProvider => _eventLoopAvg1sController.provider;
+  CoralProvider<double> get eventLoopAvg1sProvider =>
+      _eventLoopAvg1sController.provider;
   CoralProvider<List<double>> get eventLoopAvg1sHistoryProvider =>
       _eventLoopAvg1sHistoryController.provider;
-  CoralProvider<double> get eventLoopAvg5sProvider => _eventLoopAvg5sController.provider;
+  CoralProvider<double> get eventLoopAvg5sProvider =>
+      _eventLoopAvg5sController.provider;
   CoralProvider<List<double>> get eventLoopAvg5sHistoryProvider =>
       _eventLoopAvg5sHistoryController.provider;
 
   // 5c. Watchlist & Selection CoralProviders
-  CoralProvider<int> get selectedStockIndexProvider => _selectedStockIndexController.provider;
-  CoralProvider<bool> get isAutoRotatingProvider => _isAutoRotatingController.provider;
-  CoralProvider<int> get rotationIntervalIndexProvider => _rotationIntervalIndexController.provider;
+  CoralProvider<int> get selectedStockIndexProvider =>
+      _selectedStockIndexController.provider;
+  CoralProvider<bool> get isAutoRotatingProvider =>
+      _isAutoRotatingController.provider;
+  CoralProvider<int> get rotationIntervalIndexProvider =>
+      _rotationIntervalIndexController.provider;
 
   CoralProvider<double> stockPriceProvider(String symbol) =>
       _stockPriceControllers[symbol]!.provider;
@@ -350,7 +375,8 @@ class OrderBookPipeline {
   NasdaqStockItem get selectedStock => stocks[selectedStockIndex];
   bool get isAutoRotating => _isAutoRotatingController.data;
   int get rotationIntervalIndex => _rotationIntervalIndexController.data;
-  double get currentRotationIntervalMs => rotationIntervalPresetsMs[rotationIntervalIndex];
+  double get currentRotationIntervalMs =>
+      rotationIntervalPresetsMs[rotationIntervalIndex];
 
   double getLatestPrice(String symbol, double fallbackBasePrice) =>
       _latestStockPrices[symbol] ?? fallbackBasePrice;
@@ -374,7 +400,8 @@ class OrderBookPipeline {
     );
     _snapshotController.set(newSnapshot);
 
-    _priceHistory = List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04));
+    _priceHistory =
+        List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04));
     _priceHistoryController.set(List.unmodifiable(_priceHistory));
 
     for (int i = 0; i < 25; i++) {
@@ -386,7 +413,8 @@ class OrderBookPipeline {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     _tradeTicks.addAll(List.generate(10, (i) {
       return TradeTick(
-        price: double.parse((stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
+        price: double.parse(
+            (stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
         volume: (10 + (i * 3)) * 100,
         isBuy: i % 2 == 0,
         timestampMs: nowMs - (i * 800),
@@ -475,7 +503,8 @@ class OrderBookPipeline {
     final elapsed = nowMs - _lastMeasurementTimestamp;
 
     if (elapsed >= 500) {
-      final currentTps = ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
+      final currentTps =
+          ((_totalTicksSinceMeasurement * 1000) / elapsed).round();
       _actualTpsController.set(currentTps);
 
       final latency = (nowMs - payload.timestampMs).toDouble();
@@ -514,7 +543,8 @@ class OrderBookPipeline {
     // 4. Update overall snapshot coral & multi-asset watchlist live price ticks
     final currentSnap = _snapshotController.data;
     final activeTicker = currentSnap.ticker;
-    _updateStockPriceState(activeTicker, payload.latestPrice, payload.priceChangePct);
+    _updateStockPriceState(
+        activeTicker, payload.latestPrice, payload.priceChangePct);
 
     for (final stock in stocks) {
       if (stock.symbol == activeTicker) continue;
@@ -523,7 +553,8 @@ class OrderBookPipeline {
         final delta = (_random.nextDouble() - 0.49) * 0.12;
         final newP = double.parse((currentP + delta).toStringAsFixed(2));
         final newChgPct = double.parse(
-          (((newP - stock.basePrice) / stock.basePrice) * 100).toStringAsFixed(2),
+          (((newP - stock.basePrice) / stock.basePrice) * 100)
+              .toStringAsFixed(2),
         );
         _updateStockPriceState(stock.symbol, newP, newChgPct);
       }
@@ -563,7 +594,8 @@ class OrderBookPipeline {
     _eventLoopTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       final scheduledMicros = _eventLoopStopwatch.elapsedMicroseconds;
       Timer.run(() {
-        final elapsedMicros = _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
+        final elapsedMicros =
+            _eventLoopStopwatch.elapsedMicroseconds - scheduledMicros;
         final lagMs = elapsedMicros / 1000.0;
         lagRecorder.add(lagMs);
 
@@ -582,8 +614,9 @@ class OrderBookPipeline {
         if (_eventLoop1sWindow.length > 30) {
           _eventLoop1sSum -= _eventLoop1sWindow.removeAt(0);
         }
-        final avg1s =
-            _eventLoop1sWindow.isNotEmpty ? _eventLoop1sSum / _eventLoop1sWindow.length : lagMs;
+        final avg1s = _eventLoop1sWindow.isNotEmpty
+            ? _eventLoop1sSum / _eventLoop1sWindow.length
+            : lagMs;
         _eventLoopAvg1sController.set(avg1s);
 
         _eventLoopAvg1sHistory.add(avg1s);
@@ -598,8 +631,9 @@ class OrderBookPipeline {
         if (_eventLoop5sWindow.length > 150) {
           _eventLoop5sSum -= _eventLoop5sWindow.removeAt(0);
         }
-        final avg5s =
-            _eventLoop5sWindow.isNotEmpty ? _eventLoop5sSum / _eventLoop5sWindow.length : lagMs;
+        final avg5s = _eventLoop5sWindow.isNotEmpty
+            ? _eventLoop5sSum / _eventLoop5sWindow.length
+            : lagMs;
         _eventLoopAvg5sController.set(avg5s);
 
         _eventLoopAvg5sHistory.add(avg5s);
@@ -658,9 +692,11 @@ base mixin OrderBookPipelineAware on CorallineBuildContextAware {
       pipelineProvider.cascade((p) => p.tradeTicksProvider.coral);
 
   // Benchmark Metrics
-  Coral<int> targetTpsCoralOf() => pipelineProvider.cascade((p) => p.targetTpsProvider.coral);
+  Coral<int> targetTpsCoralOf() =>
+      pipelineProvider.cascade((p) => p.targetTpsProvider.coral);
 
-  Coral<int> actualTpsCoralOf() => pipelineProvider.cascade((p) => p.actualTpsProvider.coral);
+  Coral<int> actualTpsCoralOf() =>
+      pipelineProvider.cascade((p) => p.actualTpsProvider.coral);
 
   Coral<bool> isSimulatingCoralOf() =>
       pipelineProvider.cascade((p) => p.isSimulatingProvider.coral);
@@ -671,7 +707,8 @@ base mixin OrderBookPipelineAware on CorallineBuildContextAware {
   Coral<BenchmarkProgress> benchmarkProgressCoralOf() =>
       pipelineProvider.cascade((p) => p.benchmarkProgressProvider.coral);
 
-  Coral<double> latencyMsCoralOf() => pipelineProvider.cascade((p) => p.latencyMsProvider.coral);
+  Coral<double> latencyMsCoralOf() =>
+      pipelineProvider.cascade((p) => p.latencyMsProvider.coral);
 
   Coral<double> eventLoopLagCoralOf() =>
       pipelineProvider.cascade((p) => p.eventLoopLagProvider.coral);

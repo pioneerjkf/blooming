@@ -17,8 +17,10 @@ class PriceTrendView extends SignalWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
-    final pipeline = SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
+    final theme =
+        SignalProvider.of<ReadonlySignal<NasdaqThemeData>>(context)!.value;
+    final pipeline =
+        SignalProvider.of<Signal<OrderBookPipeline>>(context)!.value;
     final history = pipeline.priceHistorySignal.value;
     final snapshot = pipeline.snapshotSignal.value;
     final isPositive = snapshot.priceChange >= 0;
@@ -104,7 +106,9 @@ class _PriceChartPainter extends CustomPainter {
   Color? _cachedShaderColor;
 
   Shader _getShader(Size size) {
-    if (_cachedShader == null || _cachedShaderSize != size || _cachedShaderColor != lineColor) {
+    if (_cachedShader == null ||
+        _cachedShaderSize != size ||
+        _cachedShaderColor != lineColor) {
       _cachedShaderSize = size;
       _cachedShaderColor = lineColor;
       _cachedShader = LinearGradient(

@@ -18,8 +18,8 @@ class ThemeModeNotifier extends Notifier<NasdaqThemeMode> {
   }
 
   void togglePrevious() {
-    final prevIndex =
-        (state.index - 1 + NasdaqThemeMode.values.length) % NasdaqThemeMode.values.length;
+    final prevIndex = (state.index - 1 + NasdaqThemeMode.values.length) %
+        NasdaqThemeMode.values.length;
     state = NasdaqThemeMode.values[prevIndex];
   }
 }
@@ -39,7 +39,8 @@ class ThemeRotationIntervalIndexNotifier extends Notifier<int> {
   int build() => 6; // Default 1000ms (preset index 6)
 
   void set(int index) {
-    final clamped = index.clamp(0, NasdaqThemeStore.rotationIntervalPresetsMs.length - 1);
+    final clamped =
+        index.clamp(0, NasdaqThemeStore.rotationIntervalPresetsMs.length - 1);
     state = clamped;
     ref.read(themeAutoRotatingProvider.notifier).restartTimerIfActive();
   }
@@ -81,7 +82,8 @@ class ThemeAutoRotatingNotifier extends Notifier<bool> {
   void _startTimer() {
     _stopTimer();
     final intervalIndex = ref.read(themeRotationIntervalIndexProvider);
-    final intervalMs = NasdaqThemeStore.rotationIntervalPresetsMs[intervalIndex];
+    final intervalMs =
+        NasdaqThemeStore.rotationIntervalPresetsMs[intervalIndex];
     _timer = Timer.periodic(
       Duration(microseconds: (intervalMs * 1000).round()),
       (_) {
@@ -97,4 +99,5 @@ class ThemeAutoRotatingNotifier extends Notifier<bool> {
 }
 
 final themeAutoRotatingProvider =
-    NotifierProvider<ThemeAutoRotatingNotifier, bool>(ThemeAutoRotatingNotifier.new);
+    NotifierProvider<ThemeAutoRotatingNotifier, bool>(
+        ThemeAutoRotatingNotifier.new);
