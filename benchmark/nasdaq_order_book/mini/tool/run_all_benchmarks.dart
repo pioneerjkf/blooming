@@ -310,6 +310,7 @@ void main(List<String> args) async {
         );
       }
       print('');
+      await Future.delayed(const Duration(milliseconds: 1000));
     }
   }
 
@@ -537,8 +538,58 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
   );
 }
 
-/// Executes Flutter Driver with real Windows GPU window
+/// Executes Flutter Driver with real desktop GPU window with automatic single retry on transient OS/driver failure
 Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
+  required BenchmarkTarget target,
+  required String targetDir,
+  required int targetTps,
+  required int durationSec,
+  required int warmupSec,
+  bool scrollAnimation = true,
+  int setIndex = 1,
+  int setsCount = 1,
+  int targetIndex = 1,
+  int totalTargets = 1,
+  int runIndex = 1,
+  int totalRuns = 1,
+}) async {
+  try {
+    return await _runFlutterDriverBenchmarkAttempt(
+      target: target,
+      targetDir: targetDir,
+      targetTps: targetTps,
+      durationSec: durationSec,
+      warmupSec: warmupSec,
+      scrollAnimation: scrollAnimation,
+      setIndex: setIndex,
+      setsCount: setsCount,
+      targetIndex: targetIndex,
+      totalTargets: totalTargets,
+      runIndex: runIndex,
+      totalRuns: totalRuns,
+    );
+  } catch (e) {
+    stdout.writeln('\n⚠️ Transient Flutter Driver error on ${target.name}: $e');
+    stdout.writeln('🔄 Retrying benchmark run for ${target.name} once after 3s cooldown...');
+    await Future.delayed(const Duration(seconds: 3));
+    return await _runFlutterDriverBenchmarkAttempt(
+      target: target,
+      targetDir: targetDir,
+      targetTps: targetTps,
+      durationSec: durationSec,
+      warmupSec: warmupSec,
+      scrollAnimation: scrollAnimation,
+      setIndex: setIndex,
+      setsCount: setsCount,
+      targetIndex: targetIndex,
+      totalTargets: totalTargets,
+      runIndex: runIndex,
+      totalRuns: totalRuns,
+    );
+  }
+}
+
+Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
   required BenchmarkTarget target,
   required String targetDir,
   required int targetTps,

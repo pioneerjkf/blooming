@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/pioneerjkf/blooming/main/packages/blooming/assets/blooming_core_banner_neutral.svg" alt=".bloom — 2-Phase LPDAG Reactive State Engine" width="100%" />
 </p>
 
-<h1 align="center">Bloom</h1>
+<h1 align="center">Blooming</h1>
 
 <p align="center">
   <strong>High-Performance, Glitch-Free 2-Phase LPDAG Reactive State & Computation Engine for Dart</strong>
