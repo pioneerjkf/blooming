@@ -788,7 +788,7 @@ class NasdaqThemeData {
 /// Injected into Flutter element tree via [InheritedBloom<NasdaqThemeData>].
 final class NasdaqThemeStore {
   NasdaqThemeStore({NasdaqThemeMode initialMode = NasdaqThemeMode.swissLight})
-      : _controller = blooming<NasdaqThemeData>(
+      : _controller = BloomController<NasdaqThemeData>(
           NasdaqThemeData.of(initialMode),
         );
 
@@ -807,9 +807,9 @@ final class NasdaqThemeStore {
   ];
 
   final BloomController<NasdaqThemeData> _controller;
-  final BloomController<bool> _isAutoRotatingController = blooming<bool>(false);
+  final BloomController<bool> _isAutoRotatingController = BloomController<bool>(false);
   final BloomController<int> _rotationIntervalIndexController =
-      blooming<int>(6); // Index 6 = 1000ms
+      BloomController<int>(6); // Index 6 = 1000ms
 
   Timer? _rotationTimer;
 

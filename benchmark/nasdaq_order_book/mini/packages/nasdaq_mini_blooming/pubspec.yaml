@@ -25,12 +25,3 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-dependency_overrides:
-  blooming:
-    path: ../../../../../packages/blooming
-  blooming_flutter:
-    path: ../../../../../packages/blooming_flutter
-  blooming_lints:
-    path: ../../../../../packages/blooming_lints
-
-

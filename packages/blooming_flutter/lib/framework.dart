@@ -13,39 +13,42 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:blooming/blooming.dart';
+import 'package:blooming/effect.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'package:blooming/blooming.dart';
-import 'package:blooming/effect.dart';
 
 export 'package:blooming/blooming.dart';
 export 'package:blooming/effect.dart';
 
 // Framework Widgets
-part 'src/widgets/_internal/_framework.dart';
-part 'src/widgets/_internal/_composed.dart';
-part 'src/widgets/_internal/_inline.dart';
-part 'src/widgets/_internal/_listener.dart';
+part 'src/widgets/async.dart';
 part 'src/widgets/composed.dart';
 part 'src/widgets/framework.dart';
 part 'src/widgets/inline.dart';
-part 'src/widgets/async.dart';
 part 'src/widgets/listener.dart';
 part 'src/widgets/provider.dart';
+part 'src/widgets/_internal/_composed.dart';
+part 'src/widgets/_internal/_framework.dart';
+part 'src/widgets/_internal/_inline.dart';
+part 'src/widgets/_internal/_listener.dart';
 
 // Framework Animation
 part 'src/animation/durable/controller.dart';
-part 'src/animation/durable/_internal/_proxy.dart';
-part 'src/animation/durable/_internal/_staged_motion.dart';
-part 'src/animation/durable/_internal/_simulation.dart';
-part 'src/animation/durable/_internal/_delegate.dart';
 part 'src/animation/durable/_internal/_controller.dart';
+part 'src/animation/durable/_internal/_delegate.dart';
 part 'src/animation/durable/_internal/_mixin.dart';
+part 'src/animation/durable/_internal/_proxy.dart';
+part 'src/animation/durable/_internal/_simulation.dart';
+part 'src/animation/durable/_internal/_staged_motion.dart';
 
-// Framework Foundation & Scheduler
+// Framework Foundation
 part 'src/foundation/change_notifier.dart';
 part 'src/foundation/_internal/_change_notifier.dart';
-part 'src/scheduler/_internal/_ticker.dart';
+
+// Framework Scheduler
 part 'src/scheduler/ticker.dart';
+part 'src/scheduler/_internal/_ticker.dart';
+
