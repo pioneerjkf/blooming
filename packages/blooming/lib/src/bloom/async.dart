@@ -262,6 +262,11 @@ extension StreamBloomExtension<T> on Stream<T> {
   /// **Ensures:**
   /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending})`.
   ///
+  /// **Invariants & Lifecycle (Passive Facet):**
+  /// * The underlying [Stream] subscription is strictly driven by downstream observation
+  ///   of the `data` node. Observing `pending` alone will NOT trigger stream subscription,
+  ///   preserving Command-Query Separation (CQS) and preventing unintended premature I/O.
+  ///
   /// ## Examples
   /// ```dart
   /// final (:data, :pending) = stockStream.toBloomTuple();
@@ -300,6 +305,13 @@ extension StreamBloomExtension<T> on Stream<T> {
   ///
   /// **Ensures:**
   /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done})`.
+  ///
+  /// **Invariants & Lifecycle (Passive Facets):**
+  /// * The underlying [Stream] subscription is strictly driven by downstream observation
+  ///   of the `data` node.
+  /// * `pending` and `done` are passive projection facets; observing `pending` or `done`
+  ///   alone without observing `data` will NOT trigger stream subscription, preserving
+  ///   Command-Query Separation (CQS) and preventing unintended premature I/O.
   ///
   /// ## Examples
   /// ```dart

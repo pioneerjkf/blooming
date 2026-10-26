@@ -117,7 +117,11 @@ class BloomEmptyExtractionException extends BloomSnapshotExtractionException {
       try {
         safeReason = emptyReason.toString();
       } catch (e) {
-        safeReason = '<Unprintable emptyReason: $e>';
+        try {
+          safeReason = '<Unprintable emptyReason: $e>';
+        } catch (_) {
+          safeReason = '<Unprintable emptyReason>';
+        }
       }
       buffer
         ..writeln('\n======================================')
@@ -187,11 +191,19 @@ class BloomErrorExtractionException extends BloomSnapshotExtractionException {
     try {
       buffer.writeln('$error');
     } catch (e) {
-      buffer.writeln('<Unprintable error: $e>');
+      try {
+        buffer.writeln('<Unprintable error: $e>');
+      } catch (_) {
+        buffer.writeln('<Unprintable error>');
+      }
     }
     if (stackTrace != StackTrace.empty) {
       buffer.writeln('\nORIGINAL STACK TRACE:');
-      buffer.writeln('$stackTrace');
+      try {
+        buffer.writeln('$stackTrace');
+      } catch (_) {
+        buffer.writeln('<Unprintable stackTrace>');
+      }
     }
     buffer
       ..writeln('======================================\n')

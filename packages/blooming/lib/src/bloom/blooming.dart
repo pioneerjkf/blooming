@@ -80,13 +80,13 @@ final class BloomingFunctor {
   BloomingRawFunctor get raw => const BloomingRawFunctor._();
 
   /// Sub-functor for transactional reactive list state producers ([BloomDraftController]).
-  BloomingListFunctor get list => const BloomingListFunctor();
+  BloomingListFunctor get list => const BloomingListFunctor._();
 
   /// Sub-functor for transactional reactive set state producers ([BloomDraftController]).
-  BloomingSetFunctor get set => const BloomingSetFunctor();
+  BloomingSetFunctor get set => const BloomingSetFunctor._();
 
   /// Sub-functor for transactional reactive map state producers ([BloomDraftController]).
-  BloomingMapFunctor get map => const BloomingMapFunctor();
+  BloomingMapFunctor get map => const BloomingMapFunctor._();
 
   /// Sub-functor for discrete event notification signals ([BloomSignalController]).
   BloomingSignalFunctor get signal => const BloomingSignalFunctor._();
@@ -331,8 +331,7 @@ final class BloomingRawFunctor {
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingListFunctor {
-  /// Const constructor for [BloomingFunctor.list].
-  const BloomingListFunctor();
+  const BloomingListFunctor._();
 
   /// Creates a [BloomDraftController] initialized with [data].
   ///
@@ -398,8 +397,7 @@ final class BloomingListFunctor {
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingSetFunctor {
-  /// Const constructor for [BloomingFunctor.set].
-  const BloomingSetFunctor();
+  const BloomingSetFunctor._();
 
   /// Creates a [BloomDraftController] initialized with [data].
   ///
@@ -465,8 +463,7 @@ final class BloomingSetFunctor {
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingMapFunctor {
-  /// Const constructor for [BloomingFunctor.map].
-  const BloomingMapFunctor();
+  const BloomingMapFunctor._();
 
   /// Creates a [BloomDraftController] initialized with [data].
   ///

@@ -27,6 +27,27 @@ final class _ThrowingReason {
   String toString() => throw StateError('Boom in emptyReason.toString()');
 }
 
+final class _DoubleThrowingReason {
+  const _DoubleThrowingReason();
+
+  @override
+  String toString() => throw const _DoubleThrowingPayload();
+}
+
+final class _DoubleThrowingPayload {
+  const _DoubleThrowingPayload();
+
+  @override
+  String toString() => throw StateError('Boom in secondary toString()');
+}
+
+final class _DoubleThrowingError {
+  const _DoubleThrowingError();
+
+  @override
+  String toString() => throw const _DoubleThrowingPayload();
+}
+
 void main() {
   group('Bloom Core, Controller, Snapshot & Operators Unit Tests', () {
     // =========================================================================
@@ -188,6 +209,38 @@ void main() {
 
         final formattedSnapshotMsg = snapshotEx.toString();
         expect(formattedSnapshotMsg, contains('<Unprintable emptyReason: Bad state: Boom in emptyReason.toString()>'));
+      });
+
+      test('1.3.2b Robustness: Double-fault where thrown error also throws in toString is safely contained', () {
+        const doubleFaultReason = _DoubleThrowingReason();
+        const snapshot = BloomSnapshot<int>.empty(doubleFaultReason);
+
+        late BloomSnapshotExtractionException snapshotEx;
+        expect(() {
+          try {
+            snapshot.data;
+          } on BloomSnapshotExtractionException catch (e) {
+            snapshotEx = e;
+            rethrow;
+          }
+        }, throwsA(isA<BloomSnapshotExtractionException>()));
+
+        // Must NOT crash despite double fault
+        final msg = snapshotEx.toString();
+        expect(msg, contains('<Unprintable emptyReason>'));
+        expect(msg, contains('[AI / Developer Action Guide]'));
+
+        // Test double-fault error in BloomErrorExtractionException
+        const doubleFaultError = _DoubleThrowingError();
+        final errorEx = BloomErrorExtractionException('TestDetails', error: doubleFaultError);
+        final errorMsg = errorEx.toString();
+        expect(errorMsg, contains('<Unprintable error>'));
+
+        // Single fault displays diagnostic cause
+        const singleFaultError = _ThrowingReason();
+        final singleErrorEx = BloomErrorExtractionException('TestDetails', error: singleFaultError);
+        final singleErrorMsg = singleErrorEx.toString();
+        expect(singleErrorMsg, contains('<Unprintable error: Bad state: Boom in emptyReason.toString()>'));
       });
 
       test('1.3.3 Type separation: BloomEmptyExtractionException vs BloomErrorExtractionException selective catching',
