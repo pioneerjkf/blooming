@@ -18,15 +18,15 @@ Unlike scalar primitives (integers, strings, booleans), collection data structur
    Sequences like `list.add()`, `list.removeAt()`, and `list[0] = ...` emit individual invalidation pulses, overloading downstream LPDAG graphs with redundant recomputations.
 
 The Bloom Framework resolves these challenges through three architectural pillars:
-- **Transactional Collection Controllers ([`BloomDraftController`](../../lib/src/bloom/collection.dart))**: Collapses batch modifications into single atomic pulses while enforcing immutable snapshots.
-- **Keyed Cache Divergence ([`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L455))**: Preserves ViewModel and widget state across list reordering, sorting, and pagination.
-- **Defensive Element-Wise Projections ([`BloomIterableElements`](../../lib/src/bloom/elements.dart#L169)) & Higher-Order Aggregations ([`BloomIterableBloomExtension`](../../lib/src/bloom/collection.dart#L301))**: Exposes surgical element subscriptions and multi-node reactive folding.
+- **Transactional Collection Controllers ([`BloomDraftController`](../../lib/src/bloom/draft.dart#L68))**: Collapses batch modifications into single atomic pulses while enforcing immutable snapshots.
+- **Keyed Cache Divergence ([`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L471))**: Preserves ViewModel and widget state across list reordering, sorting, and pagination.
+- **Defensive Element-Wise Projections ([`BloomIterableElements`](../../lib/src/bloom/elements.dart#L171)) & Higher-Order Aggregations ([`BloomIterableBloomExtension`](../../lib/src/bloom/collection.dart#L24))**: Exposes surgical element subscriptions and multi-node reactive folding.
 
 ---
 
 ## 2. Transactional Collection Controllers: The Controller Triad
 
-Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` via [`BloomDraftController<C>`](../../lib/src/bloom/collection.dart). Each controller is backed by an internal entry node ([`_ListEntry`](../../lib/src/bloom/_internal/_collection.dart#L51), [`_SetEntry`](../../lib/src/bloom/_internal/_collection.dart#L72), [`_MapEntry`](../../lib/src/bloom/_internal/_collection.dart#L93)) extending `_DistinctEntry<T>` with built-in shallow equality checking.
+Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` via [`BloomDraftController<C>`](../../lib/src/bloom/draft.dart#L68). Each controller is backed by an internal entry node ([`_ListEntry`](../../lib/src/bloom/_internal/_draft.dart#L51), [`_SetEntry`](../../lib/src/bloom/_internal/_draft.dart#L72), [`_MapEntry`](../../lib/src/bloom/_internal/_draft.dart#L93)) extending `_DistinctEntry<T>` with built-in shallow equality checking.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -51,17 +51,17 @@ Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` vi
 
 ### 2.1 The Collection Controller Subtypes
 
-1. **List Controller ([`BloomDraftController<List<T>>`](../../lib/src/bloom/collection.dart), via `blooming.list`)**:
+1. **List Controller ([`BloomDraftController<List<T>>`](../../lib/src/bloom/draft.dart#L68), via `blooming.list`)**:
    - Manages ordered sequences of elements.
-   - Enforces immutability by wrapping all committed data in [`List.unmodifiable`](../../lib/src/bloom/_internal/_collection.dart#L55).
+   - Enforces immutability by wrapping all committed data in [`List.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart#L55).
    - Default equality comparator: `_listEquals<T>` (checks length and index-wise equality).
-2. **Set Controller ([`BloomDraftController<Set<E>>`](../../lib/src/bloom/collection.dart), via `blooming.set`)**:
+2. **Set Controller ([`BloomDraftController<Set<E>>`](../../lib/src/bloom/draft.dart#L68), via `blooming.set`)**:
    - Manages unique sets of elements.
-   - Enforces immutability by wrapping all committed data in [`Set.unmodifiable`](../../lib/src/bloom/_internal/_collection.dart#L76).
+   - Enforces immutability by wrapping all committed data in [`Set.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart#L76).
    - Default equality comparator: `_setEquals<E>` (checks length and member containment).
-3. **Map Controller ([`BloomDraftController<Map<K, V>>`](../../lib/src/bloom/collection.dart), via `blooming.map`)**:
+3. **Map Controller ([`BloomDraftController<Map<K, V>>`](../../lib/src/bloom/draft.dart#L68), via `blooming.map`)**:
    - Manages key-value dictionaries.
-   - Enforces immutability by wrapping all committed data in [`Map.unmodifiable`](../../lib/src/bloom/_internal/_collection.dart#L97).
+   - Enforces immutability by wrapping all committed data in [`Map.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart#L97).
    - Default equality comparator: `_mapEquals<K, V>` (checks length, key existence, and value equality).
 
 ### 2.2 Mutation Modalities
@@ -123,7 +123,7 @@ final matrix = blooming.list<List<int>>(
 
 > [!WARNING]
 > **Anti-Pattern Warning: In-Place Mutation of `.data`**  
-> Direct mutations such as `controller.data.add(...)` or `controller.data['key'] = value` throw [`UnsupportedError`](../../lib/src/bloom/collection.dart#L38) because `.data` returns an unmodifiable view. Always use `edit()` or assign via `.set()`.
+> Direct mutations such as `controller.data.add(...)` or `controller.data['key'] = value` throw [`UnsupportedError`](../../lib/src/bloom/draft.dart#L35) because `.data` returns an unmodifiable view. Always use `edit()` or assign via `.set()`.
 
 ---
 
@@ -131,7 +131,7 @@ final matrix = blooming.list<List<int>>(
 
 When mapping collections of domain models into expensive presentation objects (e.g. ViewModels, animations, stateful UI controllers), simple `map()` operations recreate every object whenever the collection updates.
 
-The Bloom Framework provides **Keyed Cache Mapping** via [`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L455), implemented by [`_KeyedMapBloom<E, K, T>`](../../lib/src/bloom/_internal/_elements.dart#L7).
+The Bloom Framework provides **Keyed Cache Mapping** via [`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L471), implemented by [`_KeyedMapBloom<E, K, T>`](../../lib/src/bloom/_internal/_elements.dart#L7).
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -272,7 +272,7 @@ final timeoutBloom = config.bloom.elements['timeout'].distinct();
 
 ## 5. Higher-Order Reactive Collection Composition: `Bloom<Iterable<Bloom<T>>>`
 
-When working with dynamic collections where each item is itself an independent reactive node (`Bloom<T>`), the framework provides higher-order folding and aggregation operators via [`BloomIterableBloomExtension<T>`](../../lib/src/bloom/collection.dart#L301).
+When working with dynamic collections where each item is itself an independent reactive node (`Bloom<T>`), the framework provides higher-order folding and aggregation operators via [`BloomIterableBloomExtension<T>`](../../lib/src/bloom/collection.dart#L24).
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -313,7 +313,7 @@ When working with dynamic collections where each item is itself an independent r
    final flags = blooming.list([flag1.bloom, flag2.bloom]);
    final anyActive = flags.bloom.any((active) => active);
    ```
-4. **Convenience Payload Accessors ([`BloomStateCollectionPayloadExtension`](../../lib/src/bloom/collection.dart#L358))**:
+4. **Convenience Payload Accessors ([`BloomStateCollectionPayloadExtension`](../../lib/src/bloom/collection.dart#L111))**:
    Extract raw data synchronously from collections of `BloomState`:
    ```dart
    final states = <Bloom<int>>[c1.bloom, c2.bloom];
