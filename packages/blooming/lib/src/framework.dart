@@ -64,10 +64,11 @@ part 'engine/_internal/_via.dart';
 // 2. [Bloom Domain] (Reactive State, Nodes, Dynamic Triad & Controllers)
 // =============================================================================
 part 'bloom/async.dart';
+part 'bloom/bloom.dart';
+part 'bloom/blooming.dart';
 part 'bloom/collection.dart';
 part 'bloom/computed.dart';
 part 'bloom/controller.dart';
-part 'bloom/blooming.dart';
 part 'bloom/coupler.dart';
 part 'bloom/draft.dart';
 part 'bloom/elements.dart';
@@ -79,8 +80,8 @@ part 'bloom/snapshot.dart';
 part 'bloom/state.dart';
 part 'bloom/switched.dart';
 part 'bloom/untracked.dart';
-part 'bloom/bloom.dart';
 part 'bloom/_internal/_async.dart';
+part 'bloom/_internal/_bloom.dart';
 part 'bloom/_internal/_computed.dart';
 part 'bloom/_internal/_controller.dart';
 part 'bloom/_internal/_coupler.dart';
@@ -95,7 +96,6 @@ part 'bloom/_internal/_snapshot.dart';
 part 'bloom/_internal/_state.dart';
 part 'bloom/_internal/_switched.dart';
 part 'bloom/_internal/_untracked.dart';
-part 'bloom/_internal/_bloom.dart';
 
 // =============================================================================
 // 3. [Effect Domain] (Side-Effects & Temporal Limiters)
