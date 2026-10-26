@@ -43,11 +43,7 @@ void main() {
           isTrue);
       expect(BloomTypeChecker.isControllerOrCouplerType('RawBloomController'),
           isTrue);
-      expect(BloomTypeChecker.isControllerOrCouplerType('BloomListController'),
-          isTrue);
-      expect(BloomTypeChecker.isControllerOrCouplerType('BloomSetController'),
-          isTrue);
-      expect(BloomTypeChecker.isControllerOrCouplerType('BloomMapController'),
+      expect(BloomTypeChecker.isControllerOrCouplerType('BloomDraftController'),
           isTrue);
       expect(
           BloomTypeChecker.isControllerOrCouplerType('BloomCoupler'), isTrue);

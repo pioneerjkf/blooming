@@ -67,9 +67,7 @@ class AvoidBloomCreationInBuild extends DartLintRule {
   static const _controllerAndTerminalConstructors = {
     'BloomController',
     'RawBloomController',
-    'BloomListController',
-    'BloomSetController',
-    'BloomMapController',
+    'BloomDraftController',
     'BloomCoupler',
     'BloomSignal',
     'BloomSignalController',

@@ -67,9 +67,7 @@ abstract final class BloomTypeChecker {
     // 2. Producers & Controllers
     'BloomController',
     'RawBloomController',
-    'BloomListController',
-    'BloomSetController',
-    'BloomMapController',
+    'BloomDraftController',
     'BloomCoupler',
     'BloomSignalController',
 
@@ -222,9 +220,7 @@ abstract final class BloomTypeChecker {
   static const _coreControllerTypes = {
     'BloomController',
     'RawBloomController',
-    'BloomListController',
-    'BloomSetController',
-    'BloomMapController',
+    'BloomDraftController',
     'BloomCoupler',
     'BloomSignalController',
   };

@@ -105,7 +105,7 @@ void main() {
       test('3.1 Standard BloomListController initialization and set mutation', () {
         final bloom1 = BloomController<int>(10);
         final bloom2 = BloomController<int>(20);
-        final controller = BloomListController<Bloom<int>>([bloom1.bloom, bloom2.bloom]);
+        final controller = blooming.list<Bloom<int>>([bloom1.bloom, bloom2.bloom]);
 
         expect(controller.hasData, isTrue);
         expect(controller.data.length, equals(2));
@@ -120,7 +120,7 @@ void main() {
       });
 
       test('3.2 BloomListController.late initialization and delayed set', () {
-        final controller = BloomListController<Bloom<int>>.late();
+        final controller = blooming.list.late<Bloom<int>>();
 
         expect(controller.isEmpty, isTrue);
         expect(controller.hasData, isFalse);
@@ -135,7 +135,7 @@ void main() {
       });
 
       test('3.3 BloomListController setGuarded, setError, and empty', () {
-        final controller = BloomListController<Bloom<int>>.late();
+        final controller = blooming.list.late<Bloom<int>>();
 
         controller.setGuarded(() => throw Exception('Calculation error'));
         expect(controller.hasError, isTrue);
@@ -161,7 +161,7 @@ void main() {
           () {
         final a = Bloom.constant(1);
         final b = Bloom.constant(2);
-        final group = BloomListController([a, b]);
+        final group = blooming.list([a, b]);
 
         int dirtyCount = 0;
         final terminal = RawBloomTerminal(group.bloom, onInvalidated: () => dirtyCount++);
@@ -186,7 +186,7 @@ void main() {
 
       test('3.5 Bloom node list data guarantees unmodifiable list', () {
         final a = Bloom.constant(1);
-        final group = BloomListController([a]);
+        final group = blooming.list([a]);
 
         expect(() => (group.data as dynamic).add(Bloom.constant(2)), throwsUnsupportedError);
       });
@@ -195,7 +195,7 @@ void main() {
         final a = Bloom.constant(1);
         final b = Bloom.constant(2);
         final c = Bloom.constant(3);
-        final group = BloomListController([a]);
+        final group = blooming.list([a]);
 
         int dirtyCount = 0;
         final terminal = RawBloomTerminal(group.bloom, onInvalidated: () => dirtyCount++);
@@ -231,7 +231,7 @@ void main() {
       });
 
       test('3.7 BloomListController.late handles set and setGuarded safely', () {
-        final group = BloomListController<Bloom<int>>.late();
+        final group = blooming.list.late<Bloom<int>>();
         expect(group.isEmpty, isTrue);
 
         final a = Bloom.constant(10);
@@ -247,8 +247,8 @@ void main() {
         expect(group.data, [a]);
       });
 
-      test('3.8 BloomListController<int> manages primitive value lists with distinct shallow equality', () {
-        final group = BloomListController<int>([1, 2, 3]);
+      test('3.8 BloomDraftController<List<int>> manages primitive value lists with distinct shallow equality', () {
+        final group = blooming.list<int>([1, 2, 3]);
         expect(group.hasData, isTrue);
         expect(group.data, [1, 2, 3]);
 
@@ -318,7 +318,7 @@ void main() {
       test('4.3 computed conditionally returns a value based on group elements', () {
         final c1 = BloomController<int>(10);
         final c2 = BloomController<int>(20);
-        final group = BloomListController([c1.bloom, c2.bloom]);
+        final group = blooming.list([c1.bloom, c2.bloom]);
 
         final converged = computed((via) {
           final sum = via(group.bloom).fold<int>(0, (acc, g) => acc + via(g));
@@ -476,7 +476,7 @@ void main() {
         final g2 = BloomController<String>('Item 2');
         final g3 = BloomController<String>('Item 3');
 
-        final groupController = BloomListController<Bloom<String>>([g1.bloom, g2.bloom]);
+        final groupController = blooming.list<Bloom<String>>([g1.bloom, g2.bloom]);
         int dirtyCount = 0;
         final complexTerminal = RawBloomTerminal(groupController.bloom.combine(), onInvalidated: () => dirtyCount++);
 
@@ -571,7 +571,7 @@ void main() {
       test('5.6 BloomListController downstream pipeline integration via computed', () {
         final c1 = BloomController<int>(10);
         final c2 = BloomController<int>(20);
-        final groupController = BloomListController<Bloom<int>>([c1.bloom, c2.bloom]);
+        final groupController = blooming.list<Bloom<int>>([c1.bloom, c2.bloom]);
 
         final sumBloom = computed(
           (via) => via(groupController.bloom).fold<int>(0, (int sum, item) => sum + via(item)),
@@ -602,7 +602,7 @@ void main() {
         final c4 = BloomController<double>(3.14);
         final c5 = BloomController<int>(50);
 
-        final group = BloomListController<Bloom<dynamic>>([c1.bloom, c2.bloom, c3.bloom, c4.bloom, c5.bloom]);
+        final group = blooming.list<Bloom<dynamic>>([c1.bloom, c2.bloom, c3.bloom, c4.bloom, c5.bloom]);
         expect(group.hasData, isTrue);
         expect(group.data.length, 5);
 

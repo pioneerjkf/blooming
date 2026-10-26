@@ -42,9 +42,7 @@ class PreferBloomOverController extends DartLintRule {
   static const _targetControllerTypes = {
     'BloomController',
     'RawBloomController',
-    'BloomListController',
-    'BloomSetController',
-    'BloomMapController',
+    'BloomDraftController',
     'BloomCoupler',
   };
 

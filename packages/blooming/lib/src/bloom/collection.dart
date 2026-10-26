@@ -8,284 +8,102 @@ part of '../framework.dart';
 // Reactive Collection Controllers (List, Set, Map)
 // =============================================================================
 
-/// Producer controller managing a reactive collection of elements ([List<T>]).
+/// Producer controller managing a reactive collection state with transactional draft edits.
 ///
 /// Combines zero-overhead immutable replacement ([set], [data]) with
 /// transactional draft edits ([edit], [editGuarded]).
 ///
+/// Modifying elements inside an [edit] closure guarantees that changes are
+/// compared via equality, frozen into an unmodifiable collection, and
+/// committed in at most one downstream Push-Dirty pulse.
+///
 /// ## System Architectural Flow
 /// ```text
-/// [BloomListController] ──> .edit((draft) { draft.add(item); })
-///                                  │
-///                                  ▼ (Compares Equality with Previous)
-///                       [Modified? ── Yes ──> Freezes List.unmodifiable & Push-Dirty (1 Pulse)]
-///                                  └── No   ──> No-Op (Zero Downstream Recomputations)
+/// [BloomDraftController] ──> .edit((draft) { draft.add(item); })
+///                                    │
+///                                    ▼ (Compares Equality with Previous)
+///                         [Modified? ── Yes ──> Freezes Unmodifiable & Push-Dirty (1 Pulse)]
+///                                    └── No   ──> No-Op (Zero Downstream Recomputations)
 /// ```
 ///
 /// ## Architectural Benefits
 /// 1. **Atomic Draft Transactions**: Edits are applied to an isolated draft buffer and committed in a single pulse.
 /// 2. **Deep/Shallow Equality Guarding**: Suppresses downstream notifications if the draft results in no net changes.
-/// 3. **Immutability Enforcement**: The underlying payload is stored as [List.unmodifiable] to prevent external mutation leaks.
+/// 3. **Immutability Enforcement**: The underlying payload is stored as unmodifiable collections to prevent mutation leaks.
 ///
 /// **Warning (Anti-Pattern Prevention):**
 /// - Do NOT attempt to mutate `.data` in-place directly (e.g. `controller.data.add(...)`), as `.data` returns an
-///   unmodifiable list and throws an [UnsupportedError]. Always use [edit] or assign a new list via `.data = [...]`.
+///   unmodifiable collection and throws an [UnsupportedError]. Always use [edit] or assign a new collection via [set].
 ///
 /// **BAD:**
 /// ```dart
-/// // [Anti-Pattern] Mutating unmodifiable list directly throws UnsupportedError
-/// final listCtrl = BloomListController<int>([1, 2]);
+/// // [Anti-Pattern] Mutating unmodifiable collection directly throws UnsupportedError
+/// final listCtrl = blooming.list([1, 2]);
 /// listCtrl.data.add(3); // Throws UnsupportedError!
 /// ```
 ///
 /// **GOOD:**
 /// ```dart
 /// // [Recommended] Use transactional edit to safely mutate draft and commit
-/// final listCtrl = BloomListController<int>([1, 2]);
+/// final listCtrl = blooming.list([1, 2]);
 /// listCtrl.edit((draft) => draft.add(3)); // Commits atomically as immutable list
 /// ```
 ///
 /// ## Examples
 /// ```dart
-/// final numbers = BloomListController<int>([1, 2, 3]);
+/// // Primary: construct via blooming functor
+/// final numbers = blooming.list([1, 2, 3]);
 /// numbers.edit((draft) {
 ///   draft.add(4);
 ///   draft.remove(1);
 /// });
 /// print(numbers.data); // [2, 3, 4]
-/// ```
-abstract base class BloomListController<T> implements BloomController<List<T>> {
-  /// Creates a [BloomListController] initialized with [data].
-  ///
-  /// * [data]: The initial collection elements to populate this controller with.
-  /// * [equals]: Optional custom equality comparator (e.g. for nested collections or deep comparison).
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomListController<T>] initialized in the Data state with an unmodifiable list.
-  factory BloomListController(
-    Iterable<T> data, {
-    bool Function(List<T> previous, List<T> next)? equals,
-  }) = _BloomListControllerImpl<T>;
-
-  /// Creates an uninitialized (Empty) [BloomListController].
-  ///
-  /// * [equals]: Optional custom equality comparator.
-  ///
-  /// **Ensures:**
-  /// * Returns an empty [BloomListController<T>] awaiting initial assignment.
-  factory BloomListController.late({
-    bool Function(List<T> previous, List<T> next)? equals,
-  }) = _BloomListControllerImpl<T>.late;
-
-  /// Creates a [BloomListController] in an Error state.
-  ///
-  /// * [error]: The caught failure or exception object.
-  /// * [stackTrace]: Optional stack trace associated with the failure.
-  /// * [equals]: Optional custom equality comparator.
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomListController<T>] initialized in the Error state.
-  factory BloomListController.error(
-    Object error, {
-    StackTrace? stackTrace,
-    bool Function(List<T> previous, List<T> next)? equals,
-  }) = _BloomListControllerImpl<T>.error;
-
-  /// Edits the current collection in-place via a temporary draft buffer.
-  ///
-  /// The [recipe] callback receives a mutable copy of the current list.
-  /// Upon completion, changes are compared via equality (`equals` or `_listEquals`).
-  /// If modified, the new collection is frozen as an unmodifiable list and
-  /// commits at most one Push-Dirty invalidation downstream.
-  void edit(void Function(List<T> draft) recipe);
-
-  /// Safely executes [recipe] on a temporary draft buffer and commits modifications,
-  /// or catches any thrown exceptions and transitions this controller to an error state.
-  void editGuarded(void Function(List<T> draft) recipe);
-
-  @override
-  Bloom<List<T>> get bloom;
-}
-
-/// Producer controller managing a reactive set of unique elements ([Set<E>]).
 ///
-/// Combines zero-overhead immutable replacement ([set], [data]) with
-/// transactional draft edits ([edit], [editGuarded]).
-///
-/// ## System Architectural Flow
-/// ```text
-/// [BloomSetController] ──> .edit((draft) { draft.add(item); })
-///                                 │
-///                                 ▼ (Compares Equality with Previous)
-///                      [Modified? ── Yes ──> Freezes Set.unmodifiable & Push-Dirty (1 Pulse)]
-///                                 └── No   ──> No-Op (Zero Downstream Recomputations)
-/// ```
-///
-/// **Warning (Anti-Pattern Prevention):**
-/// - Do NOT attempt to mutate `.data` in-place directly; always use [edit] or assign a new set.
-///
-/// **BAD:**
-/// ```dart
-/// // [Anti-Pattern] In-place mutation throws UnsupportedError on unmodifiable set
-/// final setCtrl = BloomSetController<String>({'a'});
-/// setCtrl.data.add('b'); // Throws UnsupportedError!
-/// ```
-///
-/// **GOOD:**
-/// ```dart
-/// // [Recommended] Use edit to safely mutate draft
-/// final setCtrl = BloomSetController<String>({'a'});
-/// setCtrl.edit((draft) => draft.add('b'));
-/// ```
-///
-/// ## Examples
-/// ```dart
-/// final tags = BloomSetController<String>({'flutter', 'dart'});
+/// // Direct namespace construction
+/// final tags = BloomDraftController.set({'flutter', 'dart'});
 /// tags.edit((draft) => draft.add('reactive'));
-/// print(tags.data); // {'flutter', 'dart', 'reactive'}
-/// ```
-abstract base class BloomSetController<E> implements BloomController<Set<E>> {
-  /// Creates a [BloomSetController] initialized with [data].
-  ///
-  /// * [data]: The initial set elements to populate this controller with.
-  /// * [equals]: Optional custom equality comparator (e.g. for nested collections).
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomSetController<E>] initialized in the Data state with an unmodifiable set.
-  factory BloomSetController(
-    Iterable<E> data, {
-    bool Function(Set<E> previous, Set<E> next)? equals,
-  }) = _BloomSetControllerImpl<E>;
-
-  /// Creates an uninitialized (Empty) [BloomSetController].
-  ///
-  /// * [equals]: Optional custom equality comparator.
-  ///
-  /// **Ensures:**
-  /// * Returns an empty [BloomSetController<E>] awaiting initial assignment.
-  factory BloomSetController.late({
-    bool Function(Set<E> previous, Set<E> next)? equals,
-  }) = _BloomSetControllerImpl<E>.late;
-
-  /// Creates a [BloomSetController] in an Error state.
-  ///
-  /// * [error]: The caught failure or exception object.
-  /// * [stackTrace]: Optional stack trace associated with the failure.
-  /// * [equals]: Optional custom equality comparator.
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomSetController<E>] initialized in the Error state.
-  factory BloomSetController.error(
-    Object error, {
-    StackTrace? stackTrace,
-    bool Function(Set<E> previous, Set<E> next)? equals,
-  }) = _BloomSetControllerImpl<E>.error;
-
-  /// Edits the current set in-place via a temporary draft buffer.
-  ///
-  /// The [recipe] callback receives a mutable copy of the current set.
-  /// Upon completion, changes are compared via equality (`equals` or `_setEquals`).
-  /// If modified, the new collection is frozen as an unmodifiable set and
-  /// commits at most one Push-Dirty invalidation downstream.
-  void edit(void Function(Set<E> draft) recipe);
-
-  /// Safely executes [recipe] on a temporary draft buffer and commits modifications,
-  /// or catches any thrown exceptions and transitions this controller to an error state.
-  void editGuarded(void Function(Set<E> draft) recipe);
-
-  @override
-  Bloom<Set<E>> get bloom;
-}
-
-/// Producer controller managing a reactive key-value dictionary ([Map<K, V>]).
 ///
-/// Combines zero-overhead immutable replacement ([set], [data]) with
-/// transactional draft edits ([edit], [editGuarded]).
-///
-/// ## System Architectural Flow
-/// ```text
-/// [BloomMapController] ──> .edit((draft) { draft[key] = value; })
-///                                 │
-///                                 ▼ (Compares Equality with Previous)
-///                      [Modified? ── Yes ──> Freezes Map.unmodifiable & Push-Dirty (1 Pulse)]
-///                                 └── No   ──> No-Op (Zero Downstream Recomputations)
-/// ```
-///
-/// **Warning (Anti-Pattern Prevention):**
-/// - Do NOT attempt to mutate `.data` in-place directly; always use [edit] or assign a new map.
-///
-/// **BAD:**
-/// ```dart
-/// // [Anti-Pattern] In-place mutation throws UnsupportedError on unmodifiable map
-/// final mapCtrl = BloomMapController<String, int>({'a': 1});
-/// mapCtrl.data['b'] = 2; // Throws UnsupportedError!
-/// ```
-///
-/// **GOOD:**
-/// ```dart
-/// // [Recommended] Use edit to safely mutate draft
-/// final mapCtrl = BloomMapController<String, int>({'a': 1});
-/// mapCtrl.edit((draft) => draft['b'] = 2);
-/// ```
-///
-/// ## Examples
-/// ```dart
-/// final scores = BloomMapController<String, int>({'Alice': 90});
+/// final scores = BloomDraftController.map({'Alice': 90});
 /// scores.edit((draft) => draft['Bob'] = 85);
-/// print(scores.data); // {'Alice': 90, 'Bob': 85}
 /// ```
-abstract base class BloomMapController<K, V> implements BloomController<Map<K, V>> {
-  /// Creates a [BloomMapController] initialized with [data].
+abstract base class BloomDraftController<C> implements BloomController<C> {
+  /// Edits the current state in-place via a temporary draft buffer.
   ///
-  /// * [data]: The initial key-value map to populate this controller with.
-  /// * [equals]: Optional custom equality comparator (e.g. for nested collections).
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomMapController<K, V>] initialized in the Data state with an unmodifiable map.
-  factory BloomMapController(
-    Map<K, V> data, {
-    bool Function(Map<K, V> previous, Map<K, V> next)? equals,
-  }) = _BloomMapControllerImpl<K, V>;
-
-  /// Creates an uninitialized (Empty) [BloomMapController].
-  ///
-  /// * [equals]: Optional custom equality comparator.
-  ///
-  /// **Ensures:**
-  /// * Returns an empty [BloomMapController<K, V>] awaiting initial assignment.
-  factory BloomMapController.late({
-    bool Function(Map<K, V> previous, Map<K, V> next)? equals,
-  }) = _BloomMapControllerImpl<K, V>.late;
-
-  /// Creates a [BloomMapController] in an Error state.
-  ///
-  /// * [error]: The caught failure or exception object.
-  /// * [stackTrace]: Optional stack trace associated with the failure.
-  /// * [equals]: Optional custom equality comparator.
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomMapController<K, V>] initialized in the Error state.
-  factory BloomMapController.error(
-    Object error, {
-    StackTrace? stackTrace,
-    bool Function(Map<K, V> previous, Map<K, V> next)? equals,
-  }) = _BloomMapControllerImpl<K, V>.error;
-
-  /// Edits the current map in-place via a temporary draft buffer.
-  ///
-  /// The [recipe] callback receives a mutable copy of the current map.
-  /// Upon completion, changes are compared via equality (`equals` or `_mapEquals`).
-  /// If modified, the new collection is frozen as an unmodifiable map and
+  /// The [recipe] callback receives a mutable copy of the current collection.
+  /// Upon completion, changes are compared via equality (`equals` or collection-specific equality).
+  /// If modified, the new collection is frozen as an unmodifiable collection and
   /// commits at most one Push-Dirty invalidation downstream.
-  void edit(void Function(Map<K, V> draft) recipe);
+  void edit(void Function(C draft) recipe);
 
   /// Safely executes [recipe] on a temporary draft buffer and commits modifications,
   /// or catches any thrown exceptions and transitions this controller to an error state.
-  void editGuarded(void Function(Map<K, V> draft) recipe);
+  void editGuarded(void Function(C draft) recipe);
 
   @override
-  Bloom<Map<K, V>> get bloom;
+  Bloom<C> get bloom;
+
+  // ===========================================================================
+  // Namespace Functors
+  // ===========================================================================
+
+  /// Sub-functor managing transactional reactive list state producers.
+  static const list = BloomingListFunctor();
+
+  /// Alias for [list] adhering to standard collection naming.
+  static const listOf = BloomingListFunctor();
+
+  /// Sub-functor managing transactional reactive set state producers.
+  ///
+  /// Named `setOf` to prevent colliding with inherited instance method [BloomController.set].
+  static const setOf = BloomingSetFunctor();
+
+  /// Sub-functor managing transactional reactive map state producers.
+  static const map = BloomingMapFunctor();
+
+  /// Alias for [map] adhering to standard collection naming.
+  static const mapOf = BloomingMapFunctor();
 }
+
 
 // =============================================================================
 // Reactive Iterable & Collection Operators

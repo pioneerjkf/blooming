@@ -174,15 +174,15 @@ Rather than directly invoking disparate controller constructors, state producers
 │    │     ├── .late(...)    ──> Uninitialized raw state                     │
 │    │     └── .error(...)   ──> Pre-faulted raw state                       │
 │    │                                                                       │
-│    ├── .list(...)          ──> Transactional list (BloomListController)    │
+│    ├── .list(...)          ──> Transactional list (BloomDraftController)   │
 │    │     ├── .late(...)    ──> Uninitialized reactive list                 │
 │    │     └── .error(...)   ──> Pre-faulted reactive list                   │
 │    │                                                                       │
-│    ├── .set(...)           ──> Transactional set (BloomSetController)      │
+│    ├── .set(...)           ──> Transactional set (BloomDraftController)    │
 │    │     ├── .late(...)    ──> Uninitialized reactive set                  │
 │    │     └── .error(...)   ──> Pre-faulted reactive set                    │
 │    │                                                                       │
-│    ├── .map(...)           ──> Transactional map (BloomMapController)      │
+│    ├── .map(...)           ──> Transactional map (BloomDraftController)    │
 │    │     ├── .late(...)    ──> Uninitialized reactive map                  │
 │    │     └── .error(...)   ──> Pre-faulted reactive map                    │
 │    │                                                                       │
@@ -197,9 +197,9 @@ Rather than directly invoking disparate controller constructors, state producers
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Scalar (Distinct)** | `blooming(0)` | `blooming.late<int>()` | `blooming.error<int>(e)` | `BloomController<T>` | Primitive & domain values with distinct dirty suppression. |
 | **Raw (No distinct)** | `blooming.raw('data')` | `blooming.raw.late<String>()` | `blooming.raw.error<String>(e)` | `RawBloomController<T>` | Ultra-hot paths, buffers, mutable objects with manual `.markDirty()`. |
-| **Reactive List** | `blooming.list([1, 2])` | `blooming.list.late<int>()` | `blooming.list.error<int>(e)` | `BloomListController<T>` | Immutable lists with atomic transactional `.edit((draft) => ...)`. |
-| **Reactive Set** | `blooming.set({'a'})` | `blooming.set.late<String>()` | `blooming.set.error<String>(e)` | `BloomSetController<E>` | Unique element sets with atomic transactional `.edit((draft) => ...)`. |
-| **Reactive Map** | `blooming.map({'k': 'v'})` | `blooming.map.late<K, V>()` | `blooming.map.error<K, V>(e)` | `BloomMapController<K, V>` | Key-value dictionaries with atomic transactional `.edit((draft) => ...)`. |
+| **Reactive List** | `blooming.list([1, 2])` | `blooming.list.late<int>()` | `blooming.list.error<int>(e)` | `BloomDraftController<List<T>>` | Immutable lists with atomic transactional `.edit((draft) => ...)`. |
+| **Reactive Set** | `blooming.set({'a'})` | `blooming.set.late<String>()` | `blooming.set.error<String>(e)` | `BloomDraftController<Set<E>>` | Unique element sets with atomic transactional `.edit((draft) => ...)`. |
+| **Reactive Map** | `blooming.map({'k': 'v'})` | `blooming.map.late<K, V>()` | `blooming.map.error<K, V>(e)` | `BloomDraftController<Map<K, V>>` | Key-value dictionaries with atomic transactional `.edit((draft) => ...)`. |
 | **Event Signal** | `blooming.signal()` | — | — | `BloomSignalController` | Discrete void notifications emitting version ticks on `.emit()`. |
 
 #### Idiomatic Usage Examples
@@ -232,7 +232,7 @@ refreshTrigger.emit(); // Emits monotonically increasing version tick
 #### Strict Separation of Producer and Consumer
 
 Bloom enforces strict **Has-a encapsulation** between state mutation and state observation:
-- State creation functors (`blooming(...)`) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomListController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete constructors (`BloomController(...)`) remain fully accessible for direct object-oriented instantiation.
+- State creation functors (`blooming(...)`) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomDraftController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete constructors (`BloomController(...)`) remain fully accessible for direct object-oriented instantiation.
 - Downstream UI widgets and derivations only receive **Consumer Handles** (`Bloom<T>`) exposed via `.bloom`.
 
 ```dart
@@ -506,20 +506,20 @@ refreshTrigger.emit();
 
 ---
 
-### 6. Reactive Collections & Atomic Drafts (`BloomListController`)
+### 6. Reactive Collections & Atomic Drafts (`BloomDraftController`)
 
-Bloom provides specialized reactive collection controllers (`BloomListController`, `BloomSetController`, `BloomMapController`) featuring Immer-style isolated draft buffers and automatic immutability freezing:
+Bloom provides specialized reactive draft collection controllers (`BloomDraftController`) featuring transactional isolated draft buffers and automatic immutability freezing:
 
 ```text
-[BloomListController] ──> .edit((draft) { draft.add(item); })
+[BloomDraftController] ──> .edit((draft) { draft.add(item); })
                                  │
                                  ▼ (Equality Guard: Previous vs Next)
-                      [Modified? ── Yes ──> Freezes List.unmodifiable & Push-Dirty (1 Pulse)]
+                      [Modified? ── Yes ──> Freezes Unmodifiable & Push-Dirty (1 Pulse)]
                                  └── No   ──> No-Op (Zero Downstream Recomputations)
 ```
 
 ```dart
-final todoList = blooming.list<TodoItem>([]); // or BloomListController<TodoItem>([])
+final todoList = blooming.list<TodoItem>([]); // or BloomDraftController.list<TodoItem>([])
 
 // 1. Atomic Draft Transaction: batches multiple operations into at most 1 invalidation pulse
 todoList.edit((draft) {
@@ -751,9 +751,7 @@ To understand the mathematical and architectural foundations of Bloom's LPDAG en
 | `Graceful` / `graceful` | Lifecycle | Deactivation buffering policy (microtask deferral & time-based mooring). |
 | `Effect` / `EffectRunner` | Effects | Dynamic side-effect execution pipeline with debounce/throttle support. |
 | `BloomSnapshot<T>` | Contract | Immutable three-state container (`data`, `empty`, `error`). |
-| `BloomListController<T>` | Collection | List state producer supporting transactional batch edits (`edit`). |
-| `BloomSetController<E>` | Collection | Set state producer supporting transactional batch edits (`edit`). |
-| `BloomMapController<K, V>` | Collection | Map state producer supporting transactional batch edits (`edit`). |
+| `BloomDraftController<C>` | Collection | Transactional draft state producer supporting batch edits (`edit`). |
 | `RawBloomTerminal<T>` | Low-Level | Low-level consumer sink for building custom UI framework integrations. |
 
 ---

@@ -153,7 +153,7 @@ void main() {
           () {
         final c1 = BloomController<int>(1);
         final c2 = BloomController<int>(2);
-        final group = BloomListController([c1.bloom, c2.bloom]);
+        final group = blooming.list([c1.bloom, c2.bloom]);
 
         var invalidateCount = 0;
         final terminal = RawBloomTerminal(group.bloom, onInvalidated: () => invalidateCount++);
@@ -172,7 +172,7 @@ void main() {
       test('BloomListController & downstream pipeline: construction does not fire spurious invalidations', () {
         final c1 = BloomController<int>(10);
         final c2 = BloomController<int>(20);
-        final groupCtrl = BloomListController([c1.bloom, c2.bloom]);
+        final groupCtrl = blooming.list([c1.bloom, c2.bloom]);
 
         // Downstream aggregation
         final sumBloom = computed((via) => via(groupCtrl.bloom).fold<int>(0, (int sum, item) => sum + via(item)));

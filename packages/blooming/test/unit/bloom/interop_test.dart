@@ -78,7 +78,7 @@ void main() {
       final a = BloomController(10);
       final b = BloomController(20);
 
-      final group = BloomListController([a.bloom, b.bloom]);
+      final group = blooming.list([a.bloom, b.bloom]);
       expect(group.data.map((g) => untracked(g)).toList(), [10, 20]);
 
       a.data = 100;
@@ -622,14 +622,14 @@ void main() {
       final rs2 = group1;
       final rs3 = group2;
 
-      final writableGroup = BloomListController([bloom1]);
+      final writableGroup = blooming.list([bloom1]);
       final groupView = writableGroup.bloom;
 
       expect(identical(rs1, rs2), isTrue);
       expect(identical(rs1, rs3), isFalse);
       expect(identical(writableGroup, groupView), isFalse);
       expect(identical(writableGroup, rs1), isFalse);
-      expect(() => (writableGroup.bloom as dynamic) as BloomListController, throwsA(isA<TypeError>()));
+      expect(() => (writableGroup.bloom as dynamic) as BloomDraftController, throwsA(isA<TypeError>()));
     });
   });
 }

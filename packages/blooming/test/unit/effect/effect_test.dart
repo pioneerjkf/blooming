@@ -204,7 +204,7 @@ void main() {
     test('7. Heterogeneous tuple containing Bloom and Bloom list', () async {
       final g1 = BloomController<int>(10);
       final g2 = BloomController<int>(20);
-      final groupCtrl = BloomListController([g1.bloom, g2.bloom]);
+      final groupCtrl = blooming.list([g1.bloom, g2.bloom]);
       final g3 = BloomController<int>(30);
 
       var runs = 0;
@@ -314,7 +314,7 @@ void main() {
     test('11. Effect.unary attached to Bloom list triggers on composite mutations', () async {
       final a = BloomController<int>(1);
       final b = BloomController<int>(2);
-      final groupCtrl = BloomListController([a.bloom, b.bloom]);
+      final groupCtrl = blooming.list([a.bloom, b.bloom]);
 
       var runs = 0;
       final effect = Effect.unary(groupCtrl.bloom, () {

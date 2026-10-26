@@ -317,7 +317,7 @@ void main() {
       });
 
       test('5.3 BloomListController.error starts in error state and recovers on set', () {
-        final controller = BloomListController<Bloom<int>>.error('GroupError');
+        final controller = blooming.list.error<Bloom<int>>('GroupError');
 
         expect(controller.snapshot.hasError, isTrue);
         expect(controller.snapshot.hasData, isFalse);
@@ -370,7 +370,7 @@ void main() {
     // =========================================================================
     group('7. BloomListController Fallback & Exception Containment', () {
       test('7.1 BloomListController.late starts empty and recovers with data assignment', () {
-        final controller = BloomListController<Bloom<int>>.late();
+        final controller = blooming.list.late<Bloom<int>>();
 
         expect(controller.snapshot.isEmpty, isTrue);
         expect(controller.snapshot.hasData, isFalse);
@@ -382,7 +382,7 @@ void main() {
       });
 
       test('7.2 BloomListController.setGuarded catches exception and isolates failure to error state', () {
-        final controller = BloomListController<Bloom<int>>([Bloom.constant(10)]);
+        final controller = blooming.list<Bloom<int>>([Bloom.constant(10)]);
 
         controller.setGuarded(() {
           throw FormatException('Invalid nodes generation');
@@ -393,7 +393,7 @@ void main() {
       });
 
       test('7.3 BloomListController.error initializes in error state and fails fast on data access', () {
-        final controller = BloomListController<Bloom<int>>.error(StateError('Group failed'));
+        final controller = blooming.list.error<Bloom<int>>(StateError('Group failed'));
 
         expect(controller.snapshot.hasError, isTrue);
         expect(controller.snapshot.error, isA<StateError>());
@@ -401,7 +401,7 @@ void main() {
       });
 
       test('7.4 BloomListController.error recovers to valid state on subsequent data assignment', () {
-        final controller = BloomListController<Bloom<int>>.error('OriginalError');
+        final controller = blooming.list.error<Bloom<int>>('OriginalError');
 
         expect(controller.snapshot.hasError, isTrue);
 
@@ -417,7 +417,7 @@ void main() {
     // =========================================================================
     group('9. BloomListController Dynamic Aggregation & Exception Containment', () {
       test('9.1 dynamic aggregation collapses data into bloom normally with fallbacks provided', () {
-        final controller = BloomListController<Bloom<int>>([Bloom.constant(10), Bloom.constant(20)]);
+        final controller = blooming.list<Bloom<int>>([Bloom.constant(10), Bloom.constant(20)]);
         final converged = computed((via) {
           if (via.state(controller.bloom).hasError) return -1;
           if (via.state(controller.bloom).isEmpty) return 0;
@@ -432,7 +432,7 @@ void main() {
       });
 
       test('9.2 dynamic aggregation handles empty upstream bloom list', () {
-        final controller = BloomListController<Bloom<int>>.late();
+        final controller = blooming.list.late<Bloom<int>>();
         final converged = computed((via) {
           if (via.state(controller.bloom).hasError) return -1;
           if (via.state(controller.bloom).isEmpty) return 100;
@@ -450,7 +450,7 @@ void main() {
       });
 
       test('9.3 dynamic aggregation handles error or throwing callback', () {
-        final controller = BloomListController<Bloom<int>>.error('GroupExploded');
+        final controller = blooming.list.error<Bloom<int>>('GroupExploded');
         final converged = computed((via) {
           if (via.state(controller.bloom).hasError) return 555;
           return via(controller.bloom).map((g) => via(g)).reduce((a, b) => a + b);
@@ -460,7 +460,7 @@ void main() {
         expect(untracked(converged), equals(555));
 
         // When callback throws
-        final liveController = BloomListController<Bloom<int>>([Bloom.constant(1)]);
+        final liveController = blooming.list<Bloom<int>>([Bloom.constant(1)]);
         final throwingConverged = computed((via) {
           if (via(liveController.bloom).isNotEmpty) throw FormatException('Converge parse error');
           return 888;
@@ -471,7 +471,7 @@ void main() {
       });
 
       test('9.4 dynamic aggregation with throwing isolates to error state without crashing', () {
-        final controller = BloomListController<Bloom<int>>.late();
+        final controller = blooming.list.late<Bloom<int>>();
         final converged = computed((via) {
           if (via.state(controller.bloom).isEmpty) throw 'onEmptyThrows';
           return 1;

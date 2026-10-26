@@ -18,7 +18,7 @@ Unlike scalar primitives (integers, strings, booleans), collection data structur
    Sequences like `list.add()`, `list.removeAt()`, and `list[0] = ...` emit individual invalidation pulses, overloading downstream LPDAG graphs with redundant recomputations.
 
 The Bloom Framework resolves these challenges through three architectural pillars:
-- **Transactional Collection Controllers ([`BloomListController`](../../lib/src/bloom/collection.dart), [`BloomSetController`](../../lib/src/bloom/collection.dart), [`BloomMapController`](../../lib/src/bloom/collection.dart))**: Collapses batch modifications into single atomic pulses while enforcing immutable snapshots.
+- **Transactional Collection Controllers ([`BloomDraftController`](../../lib/src/bloom/collection.dart))**: Collapses batch modifications into single atomic pulses while enforcing immutable snapshots.
 - **Keyed Cache Divergence ([`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L455))**: Preserves ViewModel and widget state across list reordering, sorting, and pagination.
 - **Defensive Element-Wise Projections ([`BloomIterableElements`](../../lib/src/bloom/elements.dart#L169)) & Higher-Order Aggregations ([`BloomIterableBloomExtension`](../../lib/src/bloom/collection.dart#L301))**: Exposes surgical element subscriptions and multi-node reactive folding.
 
@@ -26,7 +26,7 @@ The Bloom Framework resolves these challenges through three architectural pillar
 
 ## 2. Transactional Collection Controllers: The Controller Triad
 
-Bloom Framework provides specialized controllers for `List`, `Set`, and `Map`. Each controller is backed by an internal entry node ([`_ListEntry`](../../lib/src/bloom/_internal/_collection.dart#L51), [`_SetEntry`](../../lib/src/bloom/_internal/_collection.dart#L72), [`_MapEntry`](../../lib/src/bloom/_internal/_collection.dart#L93)) extending `_DistinctEntry<T>` with built-in shallow equality checking.
+Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` via [`BloomDraftController<C>`](../../lib/src/bloom/collection.dart). Each controller is backed by an internal entry node ([`_ListEntry`](../../lib/src/bloom/_internal/_collection.dart#L51), [`_SetEntry`](../../lib/src/bloom/_internal/_collection.dart#L72), [`_MapEntry`](../../lib/src/bloom/_internal/_collection.dart#L93)) extending `_DistinctEntry<T>` with built-in shallow equality checking.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -49,17 +49,17 @@ Bloom Framework provides specialized controllers for `List`, `Set`, and `Map`. E
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 The Controller Triad
+### 2.1 The Collection Controller Subtypes
 
-1. **[`BloomListController<T>`](../../lib/src/bloom/collection.dart#L57)**:
+1. **List Controller ([`BloomDraftController<List<T>>`](../../lib/src/bloom/collection.dart), via `blooming.list`)**:
    - Manages ordered sequences of elements.
    - Enforces immutability by wrapping all committed data in [`List.unmodifiable`](../../lib/src/bloom/_internal/_collection.dart#L55).
    - Default equality comparator: `_listEquals<T>` (checks length and index-wise equality).
-2. **[`BloomSetController<E>`](../../lib/src/bloom/collection.dart#L147)**:
+2. **Set Controller ([`BloomDraftController<Set<E>>`](../../lib/src/bloom/collection.dart), via `blooming.set`)**:
    - Manages unique sets of elements.
    - Enforces immutability by wrapping all committed data in [`Set.unmodifiable`](../../lib/src/bloom/_internal/_collection.dart#L76).
    - Default equality comparator: `_setEquals<E>` (checks length and member containment).
-3. **[`BloomMapController<K, V>`](../../lib/src/bloom/collection.dart#L237)**:
+3. **Map Controller ([`BloomDraftController<Map<K, V>>`](../../lib/src/bloom/collection.dart), via `blooming.map`)**:
    - Manages key-value dictionaries.
    - Enforces immutability by wrapping all committed data in [`Map.unmodifiable`](../../lib/src/bloom/_internal/_collection.dart#L97).
    - Default equality comparator: `_mapEquals<K, V>` (checks length, key existence, and value equality).
@@ -71,7 +71,7 @@ All collection controllers support three distinct mutation pathways:
 #### Mode 1: Immutable Replacement (`.set(data)`, `.data = data`)
 Assigning a new collection directly replaces the payload. If the new collection contains identical elements according to the comparator, the push-dirty pulse is suppressed:
 ```dart
-final listCtrl = BloomListController<int>([1, 2, 3]);
+final listCtrl = blooming.list<int>([1, 2, 3]);
 
 listCtrl.set([1, 2, 3]); // Zero dirty pulses emitted (shallow equality short-circuit)!
 listCtrl.data = [1, 2, 4]; // Exactly 1 dirty pulse emitted.
@@ -80,7 +80,7 @@ listCtrl.data = [1, 2, 4]; // Exactly 1 dirty pulse emitted.
 #### Mode 2: Transactional Draft (`.edit((draft) => ...)`)
 The `edit()` method passes an isolated mutable copy of the current data to a recipe callback:
 ```dart
-final todoList = BloomListController<TodoItem>([]);
+final todoList = blooming.list<TodoItem>([]);
 
 todoList.edit((draft) {
   draft.add(TodoItem(id: '1', title: 'Author spec'));
@@ -115,7 +115,7 @@ bool deepMatrixEquals(List<List<int>> a, List<List<int>> b) {
   return true;
 }
 
-final matrix = BloomListController<List<int>>(
+final matrix = blooming.list<List<int>>(
   [[1, 2], [3, 4]],
   equals: deepMatrixEquals,
 );
@@ -199,7 +199,7 @@ final Map<K, T> _internalCache = {};
 ### 3.2 Production Usage Example
 
 ```dart
-final users = BloomListController<User>([
+final users = blooming.list<User>([
   User(id: 'u1', name: 'Alice'),
   User(id: 'u2', name: 'Bob'),
 ]);
@@ -297,20 +297,20 @@ When working with dynamic collections where each item is itself an independent r
    ```dart
    final c1 = BloomController(1);
    final c2 = BloomController(2);
-   final group = BloomListController([c1.bloom, c2.bloom]);
+   final group = blooming.list([c1.bloom, c2.bloom]);
 
    final combinedBloom = group.bloom.combine(); // Bloom<List<int>> holding [1, 2]
    ```
 2. **`.sum()`**:
    Aggregates numeric nodes into their mathematical sum:
    ```dart
-   final prices = BloomListController<Bloom<double>>([priceA.bloom, priceB.bloom]);
+   final prices = blooming.list<Bloom<double>>([priceA.bloom, priceB.bloom]);
    final total = prices.bloom.sum(); // Bloom<double> holding current sum
    ```
 3. **`.fold()` / `.reduce()`**:
    Accumulates reactive member values into a single scalar result:
    ```dart
-   final flags = BloomListController([flag1.bloom, flag2.bloom]);
+   final flags = blooming.list([flag1.bloom, flag2.bloom]);
    final anyActive = flags.bloom.any((active) => active);
    ```
 4. **Convenience Payload Accessors ([`BloomStateCollectionPayloadExtension`](../../lib/src/bloom/collection.dart#L358))**:
@@ -345,7 +345,7 @@ When working with dynamic collections where each item is itself an independent r
 2. **Deterministic UI State Preservation**:  
    Keyed mapping (`.keyed.map()`) anchors local component state (focus, text selection, animations) to invariant domain keys rather than shifting list indices.
 3. **Zero Notification Avalanches**:  
-   Batch modifications in `BloomListController`, `BloomSetController`, and `BloomMapController` execute inside an isolated draft buffer and commit in a single graph pulse.
+   Batch modifications in `BloomDraftController` execute inside an isolated draft buffer and commit in a single graph pulse.
 4. **Defensive Immutability by Default**:  
    Every collection returned across the reactive boundary is frozen as an unmodifiable collection, preventing mutation leaks while preserving reference sharing.
 5. **Orthogonal Compositional Scalability**:  

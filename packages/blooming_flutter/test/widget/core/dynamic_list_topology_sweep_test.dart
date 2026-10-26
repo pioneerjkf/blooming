@@ -83,7 +83,7 @@ void main() {
         final w4 = BloomController<int>(40);
 
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int buildCount = 0;
         int lastSum = -1;
@@ -163,7 +163,7 @@ void main() {
         final w3 = BloomController<int>(3);
 
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -224,11 +224,11 @@ void main() {
 
         final a1 = BloomController<int>(10);
         final a2 = BloomController<int>(20);
-        final listA = BloomListController<Bloom<int>>([a1.bloom, a2.bloom]);
+        final listA = blooming.list<Bloom<int>>([a1.bloom, a2.bloom]);
 
         final b1 = BloomController<int>(100);
         final b2 = BloomController<int>(200);
-        final listB = BloomListController<Bloom<int>>([b1.bloom, b2.bloom]);
+        final listB = blooming.list<Bloom<int>>([b1.bloom, b2.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -287,7 +287,7 @@ void main() {
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int composedBuildCount = 0;
 
@@ -355,7 +355,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int composedBuildCount = 0;
         int staticChildBuildCount = 0;
@@ -427,7 +427,7 @@ void main() {
             (i) =>
                 BloomController<int>((i + 1) * 10)); // [10, 20, 30, 40, 50, 60]
         final listController =
-            BloomListController<Bloom<int>>([pool[0].bloom, pool[1].bloom]);
+            blooming.list<Bloom<int>>([pool[0].bloom, pool[1].bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -502,7 +502,7 @@ void main() {
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -551,7 +551,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -610,7 +610,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final listController =
-            BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+            blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -684,7 +684,7 @@ void main() {
         final w2 = BloomController<String>('Item2');
         final w3 = BloomController<String>('Item3');
         final listController =
-            BloomListController<Bloom<String>>([w1.bloom, w2.bloom, w3.bloom]);
+            blooming.list<Bloom<String>>([w1.bloom, w2.bloom, w3.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(
@@ -762,7 +762,7 @@ void main() {
         final controllers = [cA, cB, cC];
 
         final listController =
-            BloomListController<Bloom<int>>([cA.bloom, cB.bloom]);
+            blooming.list<Bloom<int>>([cA.bloom, cB.bloom]);
 
         int buildCount = 0;
         await tester.pumpWidget(

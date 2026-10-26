@@ -12,8 +12,8 @@ part of '../framework.dart';
 ///
 /// Serves as the primary unified ergonomic entry point for creating distinct-filtered
 /// state producers ([BloomController]), high-throughput raw producers ([RawBloomController]),
-/// transactional reactive collections ([BloomListController], [BloomSetController],
-/// and [BloomMapController]), and discrete event triggers ([BloomSignalController]).
+/// transactional reactive collections ([BloomDraftController]),
+/// and discrete event triggers ([BloomSignalController]).
 ///
 /// ## System Architectural Flow
 /// ```text
@@ -42,15 +42,15 @@ part of '../framework.dart';
 ///   ├─ .raw(...)              ──> Unfiltered high-throughput state ([RawBloomController])
 ///   │    ├─ .late(...)        ──> Uninitialized raw state ([RawBloomController.late])
 ///   │    └─ .error(...)       ──> Pre-faulted raw state ([RawBloomController.error])
-///   ├─ .list(...)             ──> Transactional reactive list ([BloomListController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive list ([BloomListController.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive list ([BloomListController.error])
-///   ├─ .set(...)              ──> Transactional reactive set ([BloomSetController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive set ([BloomSetController.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive set ([BloomSetController.error])
-///   ├─ .map(...)              ──> Transactional reactive map ([BloomMapController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive map ([BloomMapController.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive map ([BloomMapController.error])
+///   ├─ .list(...)             ──> Transactional reactive list ([BloomDraftController])
+///   │    ├─ .late(...)        ──> Uninitialized reactive list ([BloomDraftController.list.late])
+///   │    └─ .error(...)       ──> Pre-faulted reactive list ([BloomDraftController.list.error])
+///   ├─ .set(...)              ──> Transactional reactive set ([BloomDraftController])
+///   │    ├─ .late(...)        ──> Uninitialized reactive set ([BloomDraftController.set.late])
+///   │    └─ .error(...)       ──> Pre-faulted reactive set ([BloomDraftController.set.error])
+///   ├─ .map(...)              ──> Transactional reactive map ([BloomDraftController])
+///   │    ├─ .late(...)        ──> Uninitialized reactive map ([BloomDraftController.map.late])
+///   │    └─ .error(...)       ──> Pre-faulted reactive map ([BloomDraftController.map.error])
 ///   └─ .signal(...)           ──> Discrete event notification signal ([BloomSignalController])
 /// ```
 ///
@@ -79,14 +79,14 @@ final class BloomingFunctor {
   /// Sub-functor for unfiltered high-throughput state producers ([RawBloomController]).
   BloomingRawFunctor get raw => const BloomingRawFunctor._();
 
-  /// Sub-functor for transactional reactive list state producers ([BloomListController]).
-  BloomingListFunctor get list => const BloomingListFunctor._();
+  /// Sub-functor for transactional reactive list state producers ([BloomDraftController]).
+  BloomingListFunctor get list => const BloomingListFunctor();
 
-  /// Sub-functor for transactional reactive set state producers ([BloomSetController]).
-  BloomingSetFunctor get set => const BloomingSetFunctor._();
+  /// Sub-functor for transactional reactive set state producers ([BloomDraftController]).
+  BloomingSetFunctor get set => const BloomingSetFunctor();
 
-  /// Sub-functor for transactional reactive map state producers ([BloomMapController]).
-  BloomingMapFunctor get map => const BloomingMapFunctor._();
+  /// Sub-functor for transactional reactive map state producers ([BloomDraftController]).
+  BloomingMapFunctor get map => const BloomingMapFunctor();
 
   /// Sub-functor for discrete event notification signals ([BloomSignalController]).
   BloomingSignalFunctor get signal => const BloomingSignalFunctor._();
@@ -325,62 +325,63 @@ final class BloomingRawFunctor {
 // Sub-Functor: blooming.list
 // =============================================================================
 
-/// Sub-functor managing transactional reactive list state producers ([BloomListController]).
+/// Sub-functor managing transactional reactive list state producers ([BloomDraftController]).
 ///
 /// Provides transactional draft `.edit((draft) => ...)` editing and
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingListFunctor {
-  const BloomingListFunctor._();
+  /// Const constructor for top-level blooming and [BloomDraftController.list].
+  const BloomingListFunctor();
 
-  /// Creates a [BloomListController] initialized with [data].
+  /// Creates a [BloomDraftController] initialized with [data].
   ///
   /// Freezes [data] into an unmodifiable list to enforce transactional immutability.
-  /// Mutate elements strictly via [BloomListController.edit].
+  /// Mutate elements strictly via [BloomDraftController.edit].
   ///
   /// * [data]: The initial collection elements to populate this controller with.
   /// * [equals]: Optional custom equality comparator (e.g. for nested collections).
   ///
   /// **Ensures:**
-  /// * Returns a [BloomListController] initialized in the Data state with an unmodifiable list.
+  /// * Returns a [BloomDraftController] initialized in the Data state with an unmodifiable list.
   ///
   /// **Throws:**
-  /// * Attempting to mutate [BloomListController.data] directly throws [UnsupportedError].
-  ///   Always apply modifications inside a [BloomListController.edit] draft.
+  /// * Attempting to mutate [BloomDraftController.data] directly throws [UnsupportedError].
+  ///   Always apply modifications inside a [BloomDraftController.edit] draft.
   @pragma('vm:prefer-inline')
-  BloomListController<T> call<T>(
+  BloomDraftController<List<T>> call<T>(
     Iterable<T> data, {
     bool Function(List<T> previous, List<T> next)? equals,
   }) =>
-      BloomListController<T>(data, equals: equals);
+      _BloomListControllerImpl<T>(data, equals: equals);
 
-  /// Creates an uninitialized (Empty) [BloomListController].
+  /// Creates an uninitialized (Empty) [BloomDraftController] for lists.
   ///
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns an empty [BloomListController] awaiting initial assignment.
+  /// * Returns an empty [BloomDraftController] awaiting initial assignment.
   @pragma('vm:prefer-inline')
-  BloomListController<T> late<T>({
+  BloomDraftController<List<T>> late<T>({
     bool Function(List<T> previous, List<T> next)? equals,
   }) =>
-      BloomListController<T>.late(equals: equals);
+      _BloomListControllerImpl<T>.late(equals: equals);
 
-  /// Creates a [BloomListController] in an Error state.
+  /// Creates a [BloomDraftController] for lists in an Error state.
   ///
   /// * [error]: The caught failure or exception object.
   /// * [stackTrace]: Optional stack trace associated with the failure.
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns a [BloomListController] initialized in the Error state.
+  /// * Returns a [BloomDraftController] initialized in the Error state.
   @pragma('vm:prefer-inline')
-  BloomListController<T> error<T>(
+  BloomDraftController<List<T>> error<T>(
     Object error, {
     StackTrace? stackTrace,
     bool Function(List<T> previous, List<T> next)? equals,
   }) =>
-      BloomListController<T>.error(
+      _BloomListControllerImpl<T>.error(
         error,
         stackTrace: stackTrace,
         equals: equals,
@@ -391,62 +392,63 @@ final class BloomingListFunctor {
 // Sub-Functor: blooming.set
 // =============================================================================
 
-/// Sub-functor managing transactional reactive set state producers ([BloomSetController]).
+/// Sub-functor managing transactional reactive set state producers ([BloomDraftController]).
 ///
 /// Provides transactional draft `.edit((draft) => ...)` editing and
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingSetFunctor {
-  const BloomingSetFunctor._();
+  /// Const constructor for top-level blooming and [BloomDraftController.set].
+  const BloomingSetFunctor();
 
-  /// Creates a [BloomSetController] initialized with [data].
+  /// Creates a [BloomDraftController] initialized with [data].
   ///
   /// Freezes [data] into an unmodifiable set to enforce transactional immutability.
-  /// Mutate elements strictly via [BloomSetController.edit].
+  /// Mutate elements strictly via [BloomDraftController.edit].
   ///
   /// * [data]: The initial set elements to populate this controller with.
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns a [BloomSetController] initialized in the Data state with an unmodifiable set.
+  /// * Returns a [BloomDraftController] initialized in the Data state with an unmodifiable set.
   ///
   /// **Throws:**
-  /// * Attempting to mutate [BloomSetController.data] directly throws [UnsupportedError].
-  ///   Always apply modifications inside a [BloomSetController.edit] draft.
+  /// * Attempting to mutate [BloomDraftController.data] directly throws [UnsupportedError].
+  ///   Always apply modifications inside a [BloomDraftController.edit] draft.
   @pragma('vm:prefer-inline')
-  BloomSetController<E> call<E>(
+  BloomDraftController<Set<E>> call<E>(
     Iterable<E> data, {
     bool Function(Set<E> previous, Set<E> next)? equals,
   }) =>
-      BloomSetController<E>(data, equals: equals);
+      _BloomSetControllerImpl<E>(data, equals: equals);
 
-  /// Creates an uninitialized (Empty) [BloomSetController].
+  /// Creates an uninitialized (Empty) [BloomDraftController] for sets.
   ///
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns an empty [BloomSetController] awaiting initial assignment.
+  /// * Returns an empty [BloomDraftController] awaiting initial assignment.
   @pragma('vm:prefer-inline')
-  BloomSetController<E> late<E>({
+  BloomDraftController<Set<E>> late<E>({
     bool Function(Set<E> previous, Set<E> next)? equals,
   }) =>
-      BloomSetController<E>.late(equals: equals);
+      _BloomSetControllerImpl<E>.late(equals: equals);
 
-  /// Creates a [BloomSetController] in an Error state.
+  /// Creates a [BloomDraftController] for sets in an Error state.
   ///
   /// * [error]: The caught failure or exception object.
   /// * [stackTrace]: Optional stack trace associated with the failure.
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns a [BloomSetController] initialized in the Error state.
+  /// * Returns a [BloomDraftController] initialized in the Error state.
   @pragma('vm:prefer-inline')
-  BloomSetController<E> error<E>(
+  BloomDraftController<Set<E>> error<E>(
     Object error, {
     StackTrace? stackTrace,
     bool Function(Set<E> previous, Set<E> next)? equals,
   }) =>
-      BloomSetController<E>.error(
+      _BloomSetControllerImpl<E>.error(
         error,
         stackTrace: stackTrace,
         equals: equals,
@@ -457,62 +459,63 @@ final class BloomingSetFunctor {
 // Sub-Functor: blooming.map
 // =============================================================================
 
-/// Sub-functor managing transactional reactive map state producers ([BloomMapController]).
+/// Sub-functor managing transactional reactive map state producers ([BloomDraftController]).
 ///
 /// Provides transactional draft `.edit((draft) => ...)` editing and
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingMapFunctor {
-  const BloomingMapFunctor._();
+  /// Const constructor for top-level blooming and [BloomDraftController.map].
+  const BloomingMapFunctor();
 
-  /// Creates a [BloomMapController] initialized with [data].
+  /// Creates a [BloomDraftController] initialized with [data].
   ///
   /// Freezes [data] into an unmodifiable map to enforce transactional immutability.
-  /// Mutate key-value pairs strictly via [BloomMapController.edit].
+  /// Mutate key-value pairs strictly via [BloomDraftController.edit].
   ///
   /// * [data]: The initial key-value map to populate this controller with.
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns a [BloomMapController] initialized in the Data state with an unmodifiable map.
+  /// * Returns a [BloomDraftController] initialized in the Data state with an unmodifiable map.
   ///
   /// **Throws:**
-  /// * Attempting to mutate [BloomMapController.data] directly throws [UnsupportedError].
-  ///   Always apply modifications inside a [BloomMapController.edit] draft.
+  /// * Attempting to mutate [BloomDraftController.data] directly throws [UnsupportedError].
+  ///   Always apply modifications inside a [BloomDraftController.edit] draft.
   @pragma('vm:prefer-inline')
-  BloomMapController<K, V> call<K, V>(
+  BloomDraftController<Map<K, V>> call<K, V>(
     Map<K, V> data, {
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,
   }) =>
-      BloomMapController<K, V>(data, equals: equals);
+      _BloomMapControllerImpl<K, V>(data, equals: equals);
 
-  /// Creates an uninitialized (Empty) [BloomMapController].
+  /// Creates an uninitialized (Empty) [BloomDraftController] for maps.
   ///
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns an empty [BloomMapController] awaiting initial assignment.
+  /// * Returns an empty [BloomDraftController] awaiting initial assignment.
   @pragma('vm:prefer-inline')
-  BloomMapController<K, V> late<K, V>({
+  BloomDraftController<Map<K, V>> late<K, V>({
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,
   }) =>
-      BloomMapController<K, V>.late(equals: equals);
+      _BloomMapControllerImpl<K, V>.late(equals: equals);
 
-  /// Creates a [BloomMapController] in an Error state.
+  /// Creates a [BloomDraftController] for maps in an Error state.
   ///
   /// * [error]: The caught failure or exception object.
   /// * [stackTrace]: Optional stack trace associated with the failure.
   /// * [equals]: Optional custom equality comparator.
   ///
   /// **Ensures:**
-  /// * Returns a [BloomMapController] initialized in the Error state.
+  /// * Returns a [BloomDraftController] initialized in the Error state.
   @pragma('vm:prefer-inline')
-  BloomMapController<K, V> error<K, V>(
+  BloomDraftController<Map<K, V>> error<K, V>(
     Object error, {
     StackTrace? stackTrace,
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,
   }) =>
-      BloomMapController<K, V>.error(
+      _BloomMapControllerImpl<K, V>.error(
         error,
         stackTrace: stackTrace,
         equals: equals,

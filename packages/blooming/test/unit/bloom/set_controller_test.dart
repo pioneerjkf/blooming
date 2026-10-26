@@ -12,7 +12,7 @@ void main() {
     // =========================================================================
     group('1. Instantiation & Factory Constructors', () {
       test('1.1 BloomSetController default factory creates unmodifiable set', () {
-        final controller = BloomSetController<int>({1, 2, 3});
+        final controller = blooming.set<int>({1, 2, 3});
 
         expect(controller.hasData, isTrue);
         expect(controller.data, equals({1, 2, 3}));
@@ -23,14 +23,14 @@ void main() {
       });
 
       test('1.2 BloomSetController empty explicit initialization', () {
-        final controller = BloomSetController<String>({});
+        final controller = blooming.set<String>({});
 
         expect(controller.hasData, isTrue);
         expect(controller.data, isEmpty);
       });
 
       test('1.3 BloomSetController.late initialization', () {
-        final controller = BloomSetController<int>.late();
+        final controller = blooming.set.late<int>();
 
         expect(controller.isEmpty, isTrue);
         expect(controller.hasData, isFalse);
@@ -42,7 +42,7 @@ void main() {
       });
 
       test('1.4 BloomSetController.error initialization', () {
-        final controller = BloomSetController<int>.error('Failed to load set');
+        final controller = blooming.set.error<int>('Failed to load set');
 
         expect(controller.hasError, isTrue);
         expect(controller.hasData, isFalse);
@@ -55,7 +55,7 @@ void main() {
     // =========================================================================
     group('2. Immutable Whole Replacement (.set, .data =)', () {
       test('2.1 Whole replacement updates payload and notifies downstream', () {
-        final controller = BloomSetController<int>({1, 2});
+        final controller = blooming.set<int>({1, 2});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -76,7 +76,7 @@ void main() {
       });
 
       test('2.2 _setEquals suppresses redundant Push-Dirty pulses on identical elements', () {
-        final controller = BloomSetController<int>({1, 2, 3});
+        final controller = blooming.set<int>({1, 2, 3});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -103,7 +103,7 @@ void main() {
     // =========================================================================
     group('3. Transactional Draft Edit (.edit)', () {
       test('3.1 Single draft modification applies atomically and freezes result', () {
-        final controller = BloomSetController<String>({'alpha'});
+        final controller = blooming.set<String>({'alpha'});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -122,7 +122,7 @@ void main() {
       });
 
       test('3.2 Multiple operations inside edit emit AT MOST 1 dirty pulse (Atomic Commit)', () {
-        final controller = BloomSetController<int>({5, 3, 1});
+        final controller = blooming.set<int>({5, 3, 1});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -142,7 +142,7 @@ void main() {
       });
 
       test('3.3 No-op edit suppresses Push-Dirty pulse completely', () {
-        final controller = BloomSetController<int>({10, 20});
+        final controller = blooming.set<int>({10, 20});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -159,7 +159,7 @@ void main() {
       });
 
       test('3.4 edit on late() controller starts with empty set', () {
-        final controller = BloomSetController<int>.late();
+        final controller = blooming.set.late<int>();
         expect(controller.isEmpty, isTrue);
 
         controller.edit((draft) {
@@ -171,7 +171,7 @@ void main() {
       });
 
       test('3.5 edit on error controller transitions to valid data', () {
-        final controller = BloomSetController<int>.error('Initial error');
+        final controller = blooming.set.error<int>('Initial error');
         expect(controller.hasError, isTrue);
 
         controller.edit((draft) {
@@ -183,7 +183,7 @@ void main() {
       });
 
       test('3.6 edit failure preserves original state and rethrows (Atomicity / Rollback)', () {
-        final controller = BloomSetController<int>({1, 2, 3});
+        final controller = blooming.set<int>({1, 2, 3});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -206,7 +206,7 @@ void main() {
       });
 
       test('3.7 editGuarded successfully updates payload and notifies', () {
-        final controller = BloomSetController<String>({'a'});
+        final controller = blooming.set<String>({'a'});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -224,7 +224,7 @@ void main() {
       });
 
       test('3.8 editGuarded catches exception and safely transitions to error state', () {
-        final controller = BloomSetController<int>({10, 20});
+        final controller = blooming.set<int>({10, 20});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -251,7 +251,7 @@ void main() {
     // =========================================================================
     group('4. Downstream Pipeline & ComputedBloom Integration', () {
       test('4.1 ComputedBloom seamlessly tracks BloomSetController edits', () {
-        final tags = BloomSetController<String>({'tag1'});
+        final tags = blooming.set<String>({'tag1'});
         final count = computed((via) => via(tags.bloom).length);
         final containsTag2 = computed((via) => via(tags.bloom).contains('tag2'));
 
@@ -288,7 +288,7 @@ void main() {
       }
 
       test('5.1 Custom equals suppresses dirty pulses when nested sets are equal', () {
-        final controller = BloomSetController<Set<int>>(
+        final controller = blooming.set<Set<int>>(
           {
             {1, 2},
           },
@@ -313,7 +313,7 @@ void main() {
       });
 
       test('5.2 BloomSetController.late propagates custom equals comparator', () {
-        final controller = BloomSetController<Set<int>>.late(
+        final controller = blooming.set.late<Set<int>>(
           equals: deepSetEquals,
         );
 

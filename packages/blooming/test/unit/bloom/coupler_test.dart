@@ -317,8 +317,8 @@ void main() {
       });
 
       test('3.5 BloomCoupler<List<T>> subscriber isolation on couple', () {
-        final groupA = BloomListController([Bloom.constant(1)]);
-        final groupB = BloomListController([Bloom.constant(2)]);
+        final groupA = blooming.list([Bloom.constant(1)]);
+        final groupB = blooming.list([Bloom.constant(2)]);
 
         int groupANotify = 0;
         int couplerNotify = 0;

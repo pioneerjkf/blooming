@@ -34,7 +34,7 @@ void main() {
         final w3 = BloomController<int>(30);
         final w4 = BloomController<int>(40);
 
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         // downstream computed watching both the list and each inner bloom
         final sumComputed = computed((via) {
@@ -100,7 +100,7 @@ void main() {
         final w2 = BloomController<int>(2);
         final w3 = BloomController<int>(3);
 
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
         final formulaComputed = computed((via) {
           final list = via(listController.bloom);
@@ -136,7 +136,7 @@ void main() {
         final w1 = BloomController<int>(100);
         final w2 = BloomController<int>(200);
 
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         final sumComputed = computed((via) {
           final list = via(listController.bloom);
@@ -178,7 +178,7 @@ void main() {
       test('1.4 Multi-cycle pseudo-random churn with active vs evicted edge validation', () {
         final pool = List.generate(8, (i) => BloomController<int>((i + 1) * 10));
 
-        final listController = BloomListController<Bloom<int>>([pool[0].bloom, pool[1].bloom, pool[2].bloom]);
+        final listController = blooming.list<Bloom<int>>([pool[0].bloom, pool[1].bloom, pool[2].bloom]);
 
         final sumComputed = computed((via) {
           final list = via(listController.bloom);
@@ -243,12 +243,12 @@ void main() {
 
         final listA1 = BloomController<int>(10);
         final listA2 = BloomController<int>(20);
-        final listControllerA = BloomListController<Bloom<int>>([listA1.bloom, listA2.bloom]);
+        final listControllerA = blooming.list<Bloom<int>>([listA1.bloom, listA2.bloom]);
 
         final listB1 = BloomController<int>(100);
         final listB2 = BloomController<int>(200);
         final listB3 = BloomController<int>(300);
-        final listControllerB = BloomListController<Bloom<int>>([listB1.bloom, listB2.bloom, listB3.bloom]);
+        final listControllerB = blooming.list<Bloom<int>>([listB1.bloom, listB2.bloom, listB3.bloom]);
 
         final switchedPipeline = switched<int>((via) {
           final isA = via(mode.bloom);
@@ -313,7 +313,7 @@ void main() {
         final w1 = BloomController<String>('One');
         final w2 = BloomController<String>('Two');
 
-        final listController = BloomListController<Bloom<String>>([w0.bloom, w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<String>>([w0.bloom, w1.bloom, w2.bloom]);
         final fallback = BloomController<String>('FALLBACK');
 
         final dynamicItemSwitched = switched<String>((via) {
@@ -378,7 +378,7 @@ void main() {
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
 
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int createCount = 0;
         int updateCount = 0;
@@ -474,7 +474,7 @@ void main() {
       test('3.2 Re-creation semantics under dynamic collection list clearing', () {
         final w1 = BloomController<int>(5);
         final w2 = BloomController<int>(10);
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int createCount = 0;
         int disposeCount = 0;
@@ -532,7 +532,7 @@ void main() {
         final c1 = BloomController<int>(10);
         final c2 = BloomController<int>(20);
         final c3 = BloomController<int>(30);
-        final listController = BloomListController<Bloom<int>>([c1.bloom, c2.bloom]);
+        final listController = blooming.list<Bloom<int>>([c1.bloom, c2.bloom]);
 
         // 1. computed aggregates dynamic list
         final listSum = computed((via) {
@@ -615,7 +615,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         final sumComputed = computed((via) {
           final list = via(listController.bloom);
@@ -662,11 +662,11 @@ void main() {
 
         final a1 = BloomController<int>(1);
         final a2 = BloomController<int>(2);
-        final listA = BloomListController<Bloom<int>>([a1.bloom, a2.bloom]);
+        final listA = blooming.list<Bloom<int>>([a1.bloom, a2.bloom]);
 
         final b1 = BloomController<int>(100);
         final b2 = BloomController<int>(200);
-        final listB = BloomListController<Bloom<int>>([b1.bloom, b2.bloom]);
+        final listB = blooming.list<Bloom<int>>([b1.bloom, b2.bloom]);
 
         final activeBranchSum = switched<int>((via) {
           final isA = via(branch.bloom);
@@ -711,7 +711,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int updateCalls = 0;
         final managedWorker = managed<_TestWorkerResource>(
@@ -828,7 +828,7 @@ void main() {
 
       test('5.5 Concurrent async mutations under Future.wait: DAG converges to strictly active nodes', () async {
         final pool = List.generate(5, (i) => BloomController<int>(i * 10)); // [0, 10, 20, 30, 40]
-        final listController = BloomListController<Bloom<int>>([pool[0].bloom, pool[1].bloom]);
+        final listController = blooming.list<Bloom<int>>([pool[0].bloom, pool[1].bloom]);
 
         final sumComputed = computed((via) {
           final list = via(listController.bloom);
@@ -888,7 +888,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
         // Resilient computed aggregator handling valid, empty, and error gracefully
         final resilientSum = computed<int>((via) {
@@ -957,7 +957,7 @@ void main() {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
         final w3 = BloomController<int>(30);
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
         final unhandledSum = computed<int>((via) {
           final list = via(listController.bloom);
@@ -1000,7 +1000,7 @@ void main() {
       test('6.3 Outer BloomListController itself transitioning Valid -> Empty -> Error -> Valid', () {
         final w1 = BloomController<int>(10);
         final w2 = BloomController<int>(20);
-        final listController = BloomListController<Bloom<int>>([w1.bloom, w2.bloom]);
+        final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         final downstream = computed<String>((via) {
           final state = via.state(listController.bloom);
@@ -1052,7 +1052,7 @@ void main() {
         final w2 = BloomController<int>(30);
         final w3 = BloomController<int>(40);
 
-        final listController = BloomListController<Bloom<int>>([w0.bloom, w1.bloom, w2.bloom, w3.bloom]);
+        final listController = blooming.list<Bloom<int>>([w0.bloom, w1.bloom, w2.bloom, w3.bloom]);
 
         final earlyReturnPipeline = computed<String>((via) {
           final list = via(listController.bloom);
@@ -1115,7 +1115,7 @@ void main() {
         final n0 = BloomController<int>(10);
         final n1 = BloomController<int>(20);
         final n2 = BloomController<int>(30);
-        final listController = BloomListController<Bloom<int>>([n0.bloom, n1.bloom, n2.bloom]);
+        final listController = blooming.list<Bloom<int>>([n0.bloom, n1.bloom, n2.bloom]);
 
         final multiBranchPipeline = computed<String>((via) {
           final list = via(listController.bloom);
@@ -1207,7 +1207,7 @@ void main() {
         final cC = BloomController<int>(3);
         final controllers = [cA, cB, cC];
 
-        final listController = BloomListController<Bloom<int>>([cA.bloom, cB.bloom]);
+        final listController = blooming.list<Bloom<int>>([cA.bloom, cB.bloom]);
 
         // Downstream computed leniently sums active valid nodes and formats counts
         final matrixComputed = computed<(int sum, int validCount, int errorCount, int emptyCount)>((via) {

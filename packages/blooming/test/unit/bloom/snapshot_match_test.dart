@@ -170,7 +170,7 @@ void main() {
   // ─────────────────────────────────────────────
   group('BloomListController switch (phase) on live node', () {
     test('valid group → data branch', () {
-      final c = BloomListController([BloomController(1).bloom, BloomController(2).bloom]);
+      final c = blooming.list([BloomController(1).bloom, BloomController(2).bloom]);
       final res = switch (c.phase) {
         BloomPhase.valid => c.data.length,
         BloomPhase.empty => 0,
@@ -180,7 +180,7 @@ void main() {
     });
 
     test('empty group → empty branch', () {
-      final c = BloomListController<Bloom<int>>.late();
+      final c = blooming.list.late<Bloom<int>>();
       final res = switch (c.phase) {
         BloomPhase.valid => c.data.length,
         BloomPhase.empty => -99,
@@ -190,7 +190,7 @@ void main() {
     });
 
     test('error group → error branch', () {
-      final c = BloomListController<Bloom<int>>.late();
+      final c = blooming.list.late<Bloom<int>>();
       c.setError(Exception('x'));
       final res = switch (c.phase) {
         BloomPhase.valid => c.data.length,

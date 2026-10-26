@@ -12,7 +12,7 @@ void main() {
     // =========================================================================
     group('1. Instantiation & Factory Constructors', () {
       test('1.1 BloomListController default factory creates unmodifiable list', () {
-        final controller = BloomListController<int>([1, 2, 3]);
+        final controller = blooming.list<int>([1, 2, 3]);
 
         expect(controller.hasData, isTrue);
         expect(controller.data, equals([1, 2, 3]));
@@ -23,14 +23,14 @@ void main() {
       });
 
       test('1.2 BloomListController empty explicit initialization', () {
-        final controller = BloomListController<String>([]);
+        final controller = blooming.list<String>([]);
 
         expect(controller.hasData, isTrue);
         expect(controller.data, isEmpty);
       });
 
       test('1.3 BloomListController.late initialization', () {
-        final controller = BloomListController<int>.late();
+        final controller = blooming.list.late<int>();
 
         expect(controller.isEmpty, isTrue);
         expect(controller.hasData, isFalse);
@@ -42,7 +42,7 @@ void main() {
       });
 
       test('1.4 BloomListController.error initialization', () {
-        final controller = BloomListController<int>.error('Failed to load list');
+        final controller = blooming.list.error<int>('Failed to load list');
 
         expect(controller.hasError, isTrue);
         expect(controller.hasData, isFalse);
@@ -55,7 +55,7 @@ void main() {
     // =========================================================================
     group('2. Method 1: Immutable Whole Replacement (.set, .data =)', () {
       test('2.1 Whole replacement updates payload and notifies downstream', () {
-        final controller = BloomListController<int>([1, 2]);
+        final controller = blooming.list<int>([1, 2]);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -76,7 +76,7 @@ void main() {
       });
 
       test('2.2 _listEquals suppresses redundant Push-Dirty pulses on identical elements', () {
-        final controller = BloomListController<int>([1, 2, 3]);
+        final controller = blooming.list<int>([1, 2, 3]);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -103,7 +103,7 @@ void main() {
     // =========================================================================
     group('3. Method 3: Transactional Draft Edit (.edit)', () {
       test('3.1 Single draft modification applies atomically and freezes result', () {
-        final controller = BloomListController<String>(['alpha']);
+        final controller = blooming.list<String>(['alpha']);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -122,7 +122,7 @@ void main() {
       });
 
       test('3.2 Multiple operations inside edit emit AT MOST 1 dirty pulse (Atomic Commit)', () {
-        final controller = BloomListController<int>([5, 3, 1]);
+        final controller = blooming.list<int>([5, 3, 1]);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -143,7 +143,7 @@ void main() {
       });
 
       test('3.3 No-op edit suppresses Push-Dirty pulse completely', () {
-        final controller = BloomListController<int>([10, 20]);
+        final controller = blooming.list<int>([10, 20]);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -163,7 +163,7 @@ void main() {
       });
 
       test('3.4 edit on late() controller starts with empty list', () {
-        final controller = BloomListController<int>.late();
+        final controller = blooming.list.late<int>();
         expect(controller.isEmpty, isTrue);
 
         controller.edit((draft) {
@@ -175,7 +175,7 @@ void main() {
       });
 
       test('3.5 edit on error controller transitions to valid data', () {
-        final controller = BloomListController<int>.error('Initial error');
+        final controller = blooming.list.error<int>('Initial error');
         expect(controller.hasError, isTrue);
 
         controller.edit((draft) {
@@ -188,7 +188,7 @@ void main() {
       });
 
       test('3.6 edit failure preserves original state and rethrows (Atomicity / Rollback)', () {
-        final controller = BloomListController<int>([1, 2, 3]);
+        final controller = blooming.list<int>([1, 2, 3]);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -211,7 +211,7 @@ void main() {
       });
 
       test('3.7 editGuarded successfully updates payload and notifies', () {
-        final controller = BloomListController<String>(['a']);
+        final controller = blooming.list<String>(['a']);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -229,7 +229,7 @@ void main() {
       });
 
       test('3.8 editGuarded catches exception and safely transitions to error state', () {
-        final controller = BloomListController<int>([10, 20]);
+        final controller = blooming.list<int>([10, 20]);
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -256,7 +256,7 @@ void main() {
     // =========================================================================
     group('4. Downstream Pipeline & ComputedBloom Integration', () {
       test('4.1 ComputedBloom seamlessly tracks BloomListController edits', () {
-        final todos = BloomListController<String>(['task1']);
+        final todos = blooming.list<String>(['task1']);
         final count = computed((via) => via(todos.bloom).length);
         final joined = computed((via) => via(todos.bloom).join(', '));
 
@@ -304,7 +304,7 @@ void main() {
       }
 
       test('5.1 Custom equals suppresses dirty pulses when nested contents are equal', () {
-        final matrix = BloomListController<List<int>>(
+        final matrix = blooming.list<List<int>>(
           [
             [1, 2],
             [3, 4],
@@ -335,7 +335,7 @@ void main() {
       });
 
       test('5.2 BloomListController.late propagates custom equals comparator', () {
-        final matrix = BloomListController<List<int>>.late(
+        final matrix = blooming.list.late<List<int>>(
           equals: deepListEquals,
         );
 

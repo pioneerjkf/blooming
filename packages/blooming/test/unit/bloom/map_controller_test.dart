@@ -12,7 +12,7 @@ void main() {
     // =========================================================================
     group('1. Instantiation & Factory Constructors', () {
       test('1.1 BloomMapController default factory creates unmodifiable map', () {
-        final controller = BloomMapController<String, int>({'a': 1, 'b': 2});
+        final controller = blooming.map<String, int>({'a': 1, 'b': 2});
 
         expect(controller.hasData, isTrue);
         expect(controller.data, equals({'a': 1, 'b': 2}));
@@ -23,14 +23,14 @@ void main() {
       });
 
       test('1.2 BloomMapController empty explicit initialization', () {
-        final controller = BloomMapController<String, int>({});
+        final controller = blooming.map<String, int>({});
 
         expect(controller.hasData, isTrue);
         expect(controller.data, isEmpty);
       });
 
       test('1.3 BloomMapController.late initialization', () {
-        final controller = BloomMapController<String, int>.late();
+        final controller = blooming.map.late<String, int>();
 
         expect(controller.isEmpty, isTrue);
         expect(controller.hasData, isFalse);
@@ -42,7 +42,7 @@ void main() {
       });
 
       test('1.4 BloomMapController.error initialization', () {
-        final controller = BloomMapController<String, int>.error('Failed to load map');
+        final controller = blooming.map.error<String, int>('Failed to load map');
 
         expect(controller.hasError, isTrue);
         expect(controller.hasData, isFalse);
@@ -55,7 +55,7 @@ void main() {
     // =========================================================================
     group('2. Immutable Whole Replacement (.set, .data =)', () {
       test('2.1 Whole replacement updates payload and notifies downstream', () {
-        final controller = BloomMapController<String, int>({'a': 1});
+        final controller = blooming.map<String, int>({'a': 1});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -76,7 +76,7 @@ void main() {
       });
 
       test('2.2 _mapEquals suppresses redundant Push-Dirty pulses on identical entries', () {
-        final controller = BloomMapController<String, int>({'a': 1, 'b': 2});
+        final controller = blooming.map<String, int>({'a': 1, 'b': 2});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -107,7 +107,7 @@ void main() {
     // =========================================================================
     group('3. Transactional Draft Edit (.edit)', () {
       test('3.1 Single draft modification applies atomically and freezes result', () {
-        final controller = BloomMapController<String, String>({'theme': 'light'});
+        final controller = blooming.map<String, String>({'theme': 'light'});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -126,7 +126,7 @@ void main() {
       });
 
       test('3.2 Multiple operations inside edit emit AT MOST 1 dirty pulse (Atomic Commit)', () {
-        final controller = BloomMapController<String, int>({'k1': 1, 'k2': 2});
+        final controller = blooming.map<String, int>({'k1': 1, 'k2': 2});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -146,7 +146,7 @@ void main() {
       });
 
       test('3.3 No-op edit suppresses Push-Dirty pulse completely', () {
-        final controller = BloomMapController<String, int>({'x': 10});
+        final controller = blooming.map<String, int>({'x': 10});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -163,7 +163,7 @@ void main() {
       });
 
       test('3.4 edit on late() controller starts with empty map', () {
-        final controller = BloomMapController<String, int>.late();
+        final controller = blooming.map.late<String, int>();
         expect(controller.isEmpty, isTrue);
 
         controller.edit((draft) {
@@ -175,7 +175,7 @@ void main() {
       });
 
       test('3.5 edit on error controller transitions to valid data', () {
-        final controller = BloomMapController<String, int>.error('Initial error');
+        final controller = blooming.map.error<String, int>('Initial error');
         expect(controller.hasError, isTrue);
 
         controller.edit((draft) {
@@ -187,7 +187,7 @@ void main() {
       });
 
       test('3.6 edit failure preserves original state and rethrows (Atomicity / Rollback)', () {
-        final controller = BloomMapController<String, int>({'a': 1, 'b': 2});
+        final controller = blooming.map<String, int>({'a': 1, 'b': 2});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -210,7 +210,7 @@ void main() {
       });
 
       test('3.7 editGuarded successfully updates payload and notifies', () {
-        final controller = BloomMapController<String, String>({'lang': 'en'});
+        final controller = blooming.map<String, String>({'lang': 'en'});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -228,7 +228,7 @@ void main() {
       });
 
       test('3.8 editGuarded catches exception and safely transitions to error state', () {
-        final controller = BloomMapController<String, int>({'x': 10});
+        final controller = blooming.map<String, int>({'x': 10});
         var notifyCount = 0;
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           notifyCount++;
@@ -255,7 +255,7 @@ void main() {
     // =========================================================================
     group('4. Downstream Pipeline & ComputedBloom Integration', () {
       test('4.1 ComputedBloom seamlessly tracks BloomMapController edits', () {
-        final store = BloomMapController<String, int>({'apple': 3});
+        final store = blooming.map<String, int>({'apple': 3});
         final totalFruits = computed((via) => via(store.bloom).values.fold(0, (a, b) => a + b));
         final hasBanana = computed((via) => via(store.bloom).containsKey('banana'));
 
@@ -297,7 +297,7 @@ void main() {
       }
 
       test('5.1 Custom equals suppresses dirty pulses when nested maps are equal', () {
-        final controller = BloomMapController<String, List<int>>(
+        final controller = blooming.map<String, List<int>>(
           {
             'nums': [1, 2],
           },
@@ -322,7 +322,7 @@ void main() {
       });
 
       test('5.2 BloomMapController.late propagates custom equals comparator', () {
-        final controller = BloomMapController<String, List<int>>.late(
+        final controller = blooming.map.late<String, List<int>>(
           equals: deepMapEquals,
         );
 
