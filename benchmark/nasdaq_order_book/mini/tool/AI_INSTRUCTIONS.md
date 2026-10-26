@@ -28,7 +28,13 @@ First, present the configuration parameters (or the recommended presets) below, 
 6. **Order Book Scroll Animation (`--scroll-anim` / `--no-scroll-anim`)**:
    - Recommended Default: `true` (`--scroll-anim`, Dynamic VSync Animation with oscillating sinusoidal viewport scroll)
    - Static Center Viewport: `false` (`--no-scroll-anim`)
-7. **Execution Mode (`--mode=<drive|subprocess>`)**:
+7. **Theme Auto-Rotation (`--theme-rotation` / `--no-theme-rotation`, `--theme-interval=<ms|s>`)**:
+   - Recommended Default: `true` (`--theme-rotation`), Interval: `8.33ms` (Index 0, 120Hz continuous theme switching stress test)
+   - Alternatives: `16.67ms` (60Hz), `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `3s` or Disabled (`--no-theme-rotation`)
+8. **Watchlist Ticker Auto-Rotation (`--ticker-rotation` / `--no-ticker-rotation`, `--ticker-interval=<ms|s>`)**:
+   - Recommended Default: `true` (`--ticker-rotation`), Interval: `8.33ms` (Index 0, 120Hz rapid symbol selection & order book swap)
+   - Alternatives: `16.67ms` (60Hz), `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `3s` or Disabled (`--no-ticker-rotation`)
+9. **Execution Mode (`--mode=<drive|subprocess>`)**:
    - Recommended Default: `drive` (Flutter Driver mode on real desktop window with GPU/VSync frame timings)
    - Headless Isolate: `subprocess` (Fast pure isolate pipeline)
 
@@ -41,14 +47,14 @@ Once the parameters are confirmed with the user (or when executing with the stan
 ### 1. Recommended Official Multi-Set Benchmark (Default Configuration)
 ```bash
 cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=1000000000 --duration=30 --warmup=5 --sets=10 --shuffle --scroll-anim --mode=drive
+dart run tool/run_all_benchmarks.dart --tps=1000000000 --duration=30 --warmup=5 --sets=10 --shuffle --scroll-anim --theme-rotation --theme-interval=8.33ms --ticker-rotation --ticker-interval=8.33ms --mode=drive
 ```
 *(Note: Because the script defaults in `run_all_benchmarks.dart` match these exact parameters, `dart run tool/run_all_benchmarks.dart` executes the same standard configuration).*
 
 ### 2. Fast Smoke Test (CI / Quick Sanity Check)
 ```bash
 cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=100000 --duration=3 --warmup=1 --sets=1 --no-scroll-anim
+dart run tool/run_all_benchmarks.dart --tps=100000 --duration=3 --warmup=1 --sets=1 --no-scroll-anim --no-theme-rotation --no-ticker-rotation
 ```
 
 ---

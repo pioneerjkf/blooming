@@ -36,7 +36,7 @@ final themeDataProvider = Provider<NasdaqThemeData>((ref) {
 /// Theme Rotation Interval Index Notifier (0..9)
 class ThemeRotationIntervalIndexNotifier extends Notifier<int> {
   @override
-  int build() => 5; // Default 1000ms (preset index 5)
+  int build() => 6; // Default 1000ms (preset index 6)
 
   void set(int index) {
     final clamped = index.clamp(0, NasdaqThemeStore.rotationIntervalPresetsMs.length - 1);

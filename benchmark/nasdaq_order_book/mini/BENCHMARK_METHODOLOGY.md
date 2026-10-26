@@ -11,6 +11,10 @@ This document outlines **what and how the benchmark measures, and what it delibe
 - Each framework is executed on a native desktop window via `flutter drive --profile` (measurements reflect `--profile` mode and may differ from Release/AOT runtime characteristics).
 - A benchmark "set" executes each of the 5 implementations once. With the `--shuffle` flag enabled, the execution order is randomized for each set to mitigate order bias caused by OS caching and thermal throttling.
 - Each run discards a `warmup` window and records metrics strictly within the active `duration` window.
+- **Dynamic UI Stress Factors (Configurable & Enabled by Default)**:
+  - **Order Book Scroll Animation** (`--scroll-anim` / `--no-scroll-anim`): Continuous VSync sinusoidal oscillation of the 50-level order book viewport.
+  - **Theme Auto-Rotation** (`--theme-rotation` / `--no-theme-rotation`, `--theme-interval=<val>`): Automated high-frequency theme switching (default 8.33ms / 120Hz display refresh cycle) evaluating full-tree style cache invalidation and redraw overhead.
+  - **Watchlist Ticker Auto-Rotation** (`--ticker-rotation` / `--no-ticker-rotation`, `--ticker-interval=<val>`): Automated high-frequency stock selection rotation (default 8.33ms / 120Hz) evaluating pipeline re-subscription and order book state swapping overhead.
 
 ---
 
@@ -110,7 +114,7 @@ Run the driver suite from the mini application root:
 
 ```bash
 cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=1000000000 --duration=30 --warmup=5 --sets=10 --shuffle --scroll-anim --mode=drive
+dart run tool/run_all_benchmarks.dart --tps=1000000000 --duration=30 --warmup=5 --sets=10 --shuffle --scroll-anim --theme-rotation --theme-interval=8.33ms --ticker-rotation --ticker-interval=8.33ms --mode=drive
 ```
 
 Results will be generated in `results/<YYYYMMDD_HHMMSS_SEQ>/`:

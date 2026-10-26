@@ -785,11 +785,12 @@ class NasdaqThemeStore extends ChangeNotifier {
   NasdaqThemeStore({NasdaqThemeMode initialMode = NasdaqThemeMode.swissLight}) {
     themeNotifier = ValueNotifier<NasdaqThemeData>(NasdaqThemeData.of(initialMode));
     isAutoRotatingNotifier = ValueNotifier<bool>(false);
-    rotationIntervalIndexNotifier = ValueNotifier<int>(5); // Index 5 = 1000ms
+    rotationIntervalIndexNotifier = ValueNotifier<int>(6); // Index 6 = 1000ms
   }
 
   /// Preset interval options in milliseconds for theme auto-rotation.
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,

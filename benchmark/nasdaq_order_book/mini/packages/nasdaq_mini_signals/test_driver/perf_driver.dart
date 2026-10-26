@@ -9,12 +9,20 @@ void main() async {
   final targetTpsStr = Platform.environment['BENCH_TPS'] ?? '100000';
   final durationStr = Platform.environment['BENCH_DURATION'] ?? '3';
   final warmupStr = Platform.environment['BENCH_WARMUP'] ?? '1';
+  final scrollAnimStr = Platform.environment['BENCH_SCROLL_ANIM'] ?? 'true';
+  final themeRotStr = Platform.environment['BENCH_THEME_ROTATION'] ?? 'true';
+  final themeIntervalIndexStr = Platform.environment['BENCH_THEME_INTERVAL_INDEX'] ?? '0';
+  final tickerRotStr = Platform.environment['BENCH_TICKER_ROTATION'] ?? 'true';
+  final tickerIntervalIndexStr = Platform.environment['BENCH_TICKER_INTERVAL_INDEX'] ?? '0';
 
   final targetTps = int.parse(targetTpsStr);
   final durationSec = int.parse(durationStr);
   final warmupSec = int.parse(warmupStr);
-  final scrollAnimStr = Platform.environment['BENCH_SCROLL_ANIM'] ?? 'true';
   final enableScrollAnim = scrollAnimStr.toLowerCase() == 'true';
+  final enableThemeRotation = themeRotStr.toLowerCase() == 'true';
+  final themeIntervalIndex = int.tryParse(themeIntervalIndexStr) ?? 0;
+  final enableTickerRotation = tickerRotStr.toLowerCase() == 'true';
+  final tickerIntervalIndex = int.tryParse(tickerIntervalIndexStr) ?? 0;
 
   final setIndex = int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '1') ?? 1;
   final totalSets = int.tryParse(Platform.environment['BENCH_TOTAL_SETS'] ?? '1') ?? 1;
@@ -29,6 +37,8 @@ void main() async {
 
     await driver.requestData('set_progress:$setIndex:$totalSets:$targetIndex:$totalTargets:$runIndex:$totalRuns');
     await driver.requestData('set_scroll_anim:$enableScrollAnim');
+    await driver.requestData('set_theme_rotation:$enableThemeRotation:$themeIntervalIndex');
+    await driver.requestData('set_ticker_rotation:$enableTickerRotation:$tickerIntervalIndex');
     await driver.requestData('set_tps:$targetTps');
     await Future.delayed(Duration(seconds: warmupSec));
 
@@ -102,6 +112,8 @@ void main() async {
       'jank_rate_pct': double.parse(effectiveJankRate.toStringAsFixed(2)),
       'memory_rss_mb': (pipelineMetrics['memory_rss_mb'] as num).toDouble(),
       'scroll_animation': enableScrollAnim,
+      'theme_rotation': enableThemeRotation,
+      'ticker_rotation': enableTickerRotation,
       'duration_sec': durationSec,
     };
 

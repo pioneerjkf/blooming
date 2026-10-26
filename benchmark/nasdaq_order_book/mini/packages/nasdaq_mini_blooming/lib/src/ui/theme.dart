@@ -793,6 +793,7 @@ final class NasdaqThemeStore {
         );
 
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,
@@ -808,7 +809,7 @@ final class NasdaqThemeStore {
   final BloomController<NasdaqThemeData> _controller;
   final BloomController<bool> _isAutoRotatingController = BloomController<bool>(false);
   final BloomController<int> _rotationIntervalIndexController =
-      BloomController<int>(5); // Index 5 = 1000ms
+      BloomController<int>(6); // Index 6 = 1000ms
 
   Timer? _rotationTimer;
 

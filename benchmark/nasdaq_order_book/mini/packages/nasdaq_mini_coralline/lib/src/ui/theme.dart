@@ -791,6 +791,7 @@ final class NasdaqThemeStore {
         );
 
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,
@@ -807,7 +808,7 @@ final class NasdaqThemeStore {
   final CoralController<bool> _isAutoRotatingController =
       CoralController<bool>(false, broadcast: true);
   final CoralController<int> _rotationIntervalIndexController =
-      CoralController<int>(5, broadcast: true); // Index 5 = 1000ms
+      CoralController<int>(6, broadcast: true); // Index 6 = 1000ms
 
   Timer? _rotationTimer;
 

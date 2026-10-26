@@ -786,11 +786,12 @@ class NasdaqThemeStore {
   NasdaqThemeStore({NasdaqThemeMode initialMode = NasdaqThemeMode.swissLight}) {
     _themeDataSignal = signal<NasdaqThemeData>(NasdaqThemeData.of(initialMode));
     _isAutoRotatingSignal = signal<bool>(false);
-    _rotationIntervalIndexSignal = signal<int>(5); // Index 5 = 1000ms
+    _rotationIntervalIndexSignal = signal<int>(6); // Index 6 = 1000ms
   }
 
   /// Preset interval options in milliseconds for theme auto-rotation.
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,

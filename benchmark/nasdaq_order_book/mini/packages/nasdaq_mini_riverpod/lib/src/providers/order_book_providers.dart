@@ -153,7 +153,7 @@ final selectedStockIndexProvider =
 /// Stock Auto Rotation Interval Index Notifier (0..9)
 class StockRotationIntervalIndexNotifier extends Notifier<int> {
   @override
-  int build() => 5; // Default 1000ms
+  int build() => 6; // Default 1000ms
 
   void set(int value) => state = value;
 }

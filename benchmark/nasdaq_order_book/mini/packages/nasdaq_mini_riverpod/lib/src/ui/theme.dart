@@ -780,6 +780,7 @@ class NasdaqThemeData {
 
 abstract final class NasdaqThemeStore {
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,

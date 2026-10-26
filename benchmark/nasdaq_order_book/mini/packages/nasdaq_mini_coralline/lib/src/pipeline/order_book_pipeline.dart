@@ -25,6 +25,7 @@ class OrderBookPipeline {
 
   /// Preset interval options in milliseconds for theme/stock auto-rotation.
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,
@@ -182,7 +183,7 @@ class OrderBookPipeline {
     // Initialize Stock Selection & Auto-Rotation Controllers
     _selectedStockIndexController = CoralController<int>(0, broadcast: true);
     _isAutoRotatingController = CoralController<bool>(false, broadcast: true);
-    _rotationIntervalIndexController = CoralController<int>(5, broadcast: true); // Default 1000ms
+    _rotationIntervalIndexController = CoralController<int>(6, broadcast: true); // Default 1000ms
 
     // Initialize Initial Trade Ticks Sample
     final nowMs = DateTime.now().millisecondsSinceEpoch;

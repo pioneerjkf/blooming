@@ -24,6 +24,7 @@ class OrderBookPipeline {
 
   /// Preset interval options in milliseconds for theme/stock auto-rotation.
   static const List<double> rotationIntervalPresetsMs = [
+    8.33,
     16.67,
     50,
     100,
@@ -161,7 +162,7 @@ class OrderBookPipeline {
     // Watchlist selection notifiers
     selectedStockIndexNotifier = ValueNotifier<int>(0);
     isAutoRotatingNotifier = ValueNotifier<bool>(false);
-    rotationIntervalIndexNotifier = ValueNotifier<int>(5); // Default 1000ms
+    rotationIntervalIndexNotifier = ValueNotifier<int>(6); // Default 1000ms
 
     // Initial Trade Ticks Sample
     final nowMs = DateTime.now().millisecondsSinceEpoch;

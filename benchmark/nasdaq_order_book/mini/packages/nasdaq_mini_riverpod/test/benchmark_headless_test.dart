@@ -17,15 +17,27 @@ void main() {
       final durationStr = Platform.environment['BENCH_DURATION'] ?? '2';
       final warmupStr = Platform.environment['BENCH_WARMUP'] ?? '1';
       final scrollAnimStr = Platform.environment['BENCH_SCROLL_ANIM'] ?? 'true';
+      final themeRotStr = Platform.environment['BENCH_THEME_ROTATION'] ?? 'true';
+      final themeIntervalIndexStr = Platform.environment['BENCH_THEME_INTERVAL_INDEX'] ?? '0';
+      final tickerRotStr = Platform.environment['BENCH_TICKER_ROTATION'] ?? 'true';
+      final tickerIntervalIndexStr = Platform.environment['BENCH_TICKER_INTERVAL_INDEX'] ?? '0';
 
       final targetTps = int.parse(targetTpsStr);
       final durationSec = int.parse(durationStr);
       final warmupSec = int.parse(warmupStr);
       final enableScrollAnim = scrollAnimStr.toLowerCase() == 'true';
+      final enableThemeRotation = themeRotStr.toLowerCase() == 'true';
+      final themeIntervalIndex = int.tryParse(themeIntervalIndexStr) ?? 0;
+      final enableTickerRotation = tickerRotStr.toLowerCase() == 'true';
+      final tickerIntervalIndex = int.tryParse(tickerIntervalIndexStr) ?? 0;
 
       final container = ProviderContainer();
       final pipeline = OrderBookPipeline(container);
       pipeline.setTargetTps(targetTps);
+      if (enableTickerRotation) {
+        pipeline.setRotationIntervalIndex(tickerIntervalIndex);
+        pipeline.startAutoRotation();
+      }
       pipeline.startSimulation();
 
       // 1. Warmup stage
@@ -51,6 +63,9 @@ void main() {
       final latency = container.read(latencyMsProvider);
       final memoryRssMb = ProcessInfo.currentRss / (1024 * 1024);
 
+      if (enableTickerRotation) {
+        pipeline.stopAutoRotation();
+      }
       pipeline.dispose();
       await Future.delayed(const Duration(milliseconds: 50));
       container.dispose();
@@ -72,6 +87,10 @@ void main() {
         'latency_ms': double.parse(latency.toStringAsFixed(2)),
         'memory_rss_mb': double.parse(memoryRssMb.toStringAsFixed(1)),
         'scroll_animation': enableScrollAnim,
+        'theme_rotation': enableThemeRotation,
+        'theme_interval_index': themeIntervalIndex,
+        'ticker_rotation': enableTickerRotation,
+        'ticker_interval_index': tickerIntervalIndex,
         'duration_sec': durationSec,
       };
 

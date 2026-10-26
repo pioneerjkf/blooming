@@ -59,6 +59,58 @@ const List<BenchmarkTarget> benchmarkTargets = [
   ),
 ];
 
+/// Preset interval options in milliseconds matching all benchmark packages
+const List<double> rotationIntervalPresetsMs = [
+  8.33,
+  16.67,
+  50,
+  100,
+  250,
+  500,
+  1000,
+  2000,
+  3000,
+  5000,
+  10000,
+];
+
+String _formatInterval(double ms) {
+  if (ms >= 1000) {
+    final s = ms / 1000;
+    return '${s % 1 == 0 ? s.toInt() : s.toStringAsFixed(1)}s';
+  }
+  return '${ms % 1 == 0 ? ms.toInt() : ms.toStringAsFixed(2)}ms';
+}
+
+int _resolveIntervalIndex(String input, List<double> presets) {
+  final asInt = int.tryParse(input.trim());
+  if (asInt != null && asInt >= 0 && asInt < presets.length) {
+    return asInt;
+  }
+  var clean = input.trim().toLowerCase();
+  double ms = 0;
+  if (clean.endsWith('ms')) {
+    ms = double.tryParse(clean.substring(0, clean.length - 2)) ?? presets.first;
+  } else if (clean.endsWith('s')) {
+    final s = double.tryParse(clean.substring(0, clean.length - 1));
+    ms = s != null ? s * 1000 : presets.first;
+  } else {
+    final d = double.tryParse(clean);
+    ms = d ?? presets.first;
+  }
+
+  int bestIdx = 0;
+  double minDiff = (presets[0] - ms).abs();
+  for (int i = 1; i < presets.length; i++) {
+    final diff = (presets[i] - ms).abs();
+    if (diff < minDiff) {
+      minDiff = diff;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
 /// Pure hardware measurement result data point
 class BenchmarkRunResult {
   const BenchmarkRunResult({
@@ -77,6 +129,10 @@ class BenchmarkRunResult {
     required this.jankRatePct,
     required this.durationSec,
     this.scrollAnimation = true,
+    this.themeRotation = true,
+    this.tickerRotation = true,
+    this.themeIntervalIndex = 0,
+    this.tickerIntervalIndex = 0,
     this.setIndex = 1,
     this.medianEventLoopLagMs,
     this.maxEventLoopLagMs,
@@ -98,6 +154,10 @@ class BenchmarkRunResult {
   final double jankRatePct;
   final int durationSec;
   final bool scrollAnimation;
+  final bool themeRotation;
+  final bool tickerRotation;
+  final int themeIntervalIndex;
+  final int tickerIntervalIndex;
   final int setIndex;
   final double? medianEventLoopLagMs;
   final double? maxEventLoopLagMs;
@@ -113,6 +173,10 @@ class BenchmarkRunResult {
         'architecture': target.architecture,
         'set_index': setIndex,
         'scroll_animation': scrollAnimation,
+        'theme_rotation': themeRotation,
+        'theme_interval_ms': rotationIntervalPresetsMs[themeIntervalIndex],
+        'ticker_rotation': tickerRotation,
+        'ticker_interval_ms': rotationIntervalPresetsMs[tickerIntervalIndex],
         'target_tps': targetTps,
         'sustained_tps': sustainedTps,
         'achievement_rate_pct':
@@ -155,6 +219,10 @@ void main(List<String> args) async {
   int setsCount = 10;
   bool shuffleOrder = true;
   bool scrollAnimation = true;
+  bool themeRotation = true;
+  int themeIntervalIndex = 0; // 8.33ms (120Hz minimum)
+  bool tickerRotation = true;
+  int tickerIntervalIndex = 0; // 8.33ms (120Hz minimum)
   String outputDir = 'results';
   String mode =
       'drive'; // Default to Real Windows GPU Flutter Driver E2E Benchmarking
@@ -199,6 +267,48 @@ void main(List<String> args) async {
         arg.startsWith('--scroll=')) {
       final val = arg.split('=').last.toLowerCase();
       scrollAnimation = val == 'true';
+    } else if (arg == '--theme-rotation' || arg == '--theme-rot') {
+      themeRotation = true;
+    } else if (arg == '--no-theme-rotation' || arg == '--no-theme-rot') {
+      themeRotation = false;
+    } else if (arg.startsWith('--theme-rotation=') ||
+        arg.startsWith('--theme-rot=')) {
+      final val = arg.split('=').last.toLowerCase();
+      themeRotation = val == 'true';
+    } else if (arg.startsWith('--theme-interval=') ||
+        arg.startsWith('--theme-interval-ms=')) {
+      final val = arg.split('=').last;
+      themeIntervalIndex = _resolveIntervalIndex(val, rotationIntervalPresetsMs);
+    } else if (arg.startsWith('--theme-interval-index=')) {
+      themeIntervalIndex = int.parse(arg.split('=').last)
+          .clamp(0, rotationIntervalPresetsMs.length - 1);
+    } else if (arg == '--ticker-rotation' ||
+        arg == '--ticker-rot' ||
+        arg == '--watchlist-rotation' ||
+        arg == '--stock-rotation') {
+      tickerRotation = true;
+    } else if (arg == '--no-ticker-rotation' ||
+        arg == '--no-ticker-rot' ||
+        arg == '--no-watchlist-rotation' ||
+        arg == '--no-stock-rotation') {
+      tickerRotation = false;
+    } else if (arg.startsWith('--ticker-rotation=') ||
+        arg.startsWith('--ticker-rot=') ||
+        arg.startsWith('--watchlist-rotation=') ||
+        arg.startsWith('--stock-rotation=')) {
+      final val = arg.split('=').last.toLowerCase();
+      tickerRotation = val == 'true';
+    } else if (arg.startsWith('--ticker-interval=') ||
+        arg.startsWith('--ticker-interval-ms=') ||
+        arg.startsWith('--watchlist-interval=') ||
+        arg.startsWith('--stock-interval=')) {
+      final val = arg.split('=').last;
+      tickerIntervalIndex = _resolveIntervalIndex(val, rotationIntervalPresetsMs);
+    } else if (arg.startsWith('--ticker-interval-index=') ||
+        arg.startsWith('--watchlist-interval-index=') ||
+        arg.startsWith('--stock-interval-index=')) {
+      tickerIntervalIndex = int.parse(arg.split('=').last)
+          .clamp(0, rotationIntervalPresetsMs.length - 1);
     }
   }
 
@@ -209,6 +319,10 @@ void main(List<String> args) async {
       '  • Total Sets: $setsCount set(s) (Order Shuffling: ${shuffleOrder ? "RANDOMIZED" : "SEQUENTIAL"})');
   print(
       '  • Scroll Animation: ${scrollAnimation ? "ENABLED (Oscillating VSync)" : "DISABLED (Static Center)"}');
+  print(
+      '  • Theme Rotation: ${themeRotation ? "ENABLED (${_formatInterval(rotationIntervalPresetsMs[themeIntervalIndex])})" : "DISABLED"}');
+  print(
+      '  • Watchlist Ticker Rotation: ${tickerRotation ? "ENABLED (${_formatInterval(rotationIntervalPresetsMs[tickerIntervalIndex])})" : "DISABLED"}');
   print(
       '  • Target Frameworks: ${effectiveTargets.map((t) => t.name).join(', ')}');
   print(
@@ -279,6 +393,10 @@ void main(List<String> args) async {
                 durationSec: durationSec,
                 warmupSec: warmupSec,
                 scrollAnimation: scrollAnimation,
+                themeRotation: themeRotation,
+                themeIntervalIndex: themeIntervalIndex,
+                tickerRotation: tickerRotation,
+                tickerIntervalIndex: tickerIntervalIndex,
                 setIndex: setIndex,
                 setsCount: setsCount,
                 targetIndex: targetIndex,
@@ -293,6 +411,10 @@ void main(List<String> args) async {
                 durationSec: durationSec,
                 warmupSec: warmupSec,
                 scrollAnimation: scrollAnimation,
+                themeRotation: themeRotation,
+                themeIntervalIndex: themeIntervalIndex,
+                tickerRotation: tickerRotation,
+                tickerIntervalIndex: tickerIntervalIndex,
                 setIndex: setIndex,
                 setsCount: setsCount,
                 targetIndex: targetIndex,
@@ -352,6 +474,10 @@ void main(List<String> args) async {
   // 1. Generate Markdown Report
   final mdReportSub = _generateMediumMarkdownReport(
       allResults, tpsScenarios, durationSec, mode, setsCount, scrollAnimation,
+      themeRotation: themeRotation,
+      themeIntervalIndex: themeIntervalIndex,
+      tickerRotation: tickerRotation,
+      tickerIntervalIndex: tickerIntervalIndex,
       methodologyRelPath: '../../BENCHMARK_METHODOLOGY.md');
   final mdFile = File('${outDir.path}/SUMMARY_REPORT.md');
   mdFile.writeAsStringSync(mdReportSub);
@@ -359,7 +485,11 @@ void main(List<String> args) async {
 
   // 2. Generate JSON Matrix
   final jsonReport = _generateJsonMatrix(
-      allResults, tpsScenarios, mode, setsCount, scrollAnimation);
+      allResults, tpsScenarios, mode, setsCount, scrollAnimation,
+      themeRotation: themeRotation,
+      themeIntervalIndex: themeIntervalIndex,
+      tickerRotation: tickerRotation,
+      tickerIntervalIndex: tickerIntervalIndex);
   final jsonFile = File('${outDir.path}/benchmark_matrix.json');
   jsonFile.writeAsStringSync(
       const JsonEncoder.withIndent('  ').convert(jsonReport));
@@ -433,6 +563,10 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
   required int durationSec,
   required int warmupSec,
   bool scrollAnimation = true,
+  bool themeRotation = true,
+  int themeIntervalIndex = 0,
+  bool tickerRotation = true,
+  int tickerIntervalIndex = 0,
   int setIndex = 1,
   int setsCount = 1,
   int targetIndex = 1,
@@ -455,6 +589,10 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
       'BENCH_DURATION': durationSec.toString(),
       'BENCH_WARMUP': warmupSec.toString(),
       'BENCH_SCROLL_ANIM': scrollAnimation.toString(),
+      'BENCH_THEME_ROTATION': themeRotation.toString(),
+      'BENCH_THEME_INTERVAL_INDEX': themeIntervalIndex.toString(),
+      'BENCH_TICKER_ROTATION': tickerRotation.toString(),
+      'BENCH_TICKER_INTERVAL_INDEX': tickerIntervalIndex.toString(),
       'BENCH_SET_INDEX': setIndex.toString(),
       'BENCH_TOTAL_SETS': setsCount.toString(),
       'BENCH_TARGET_INDEX': targetIndex.toString(),
@@ -534,6 +672,12 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
     memoryRssMb: (data['memory_rss_mb'] as num).toDouble(),
     durationSec: durationSec,
     scrollAnimation: (data['scroll_animation'] as bool?) ?? scrollAnimation,
+    themeRotation: (data['theme_rotation'] as bool?) ?? themeRotation,
+    themeIntervalIndex:
+        (data['theme_interval_index'] as num?)?.toInt() ?? themeIntervalIndex,
+    tickerRotation: (data['ticker_rotation'] as bool?) ?? tickerRotation,
+    tickerIntervalIndex: (data['ticker_interval_index'] as num?)?.toInt() ??
+        tickerIntervalIndex,
     setIndex: setIndex,
   );
 }
@@ -546,6 +690,10 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
   required int durationSec,
   required int warmupSec,
   bool scrollAnimation = true,
+  bool themeRotation = true,
+  int themeIntervalIndex = 0,
+  bool tickerRotation = true,
+  int tickerIntervalIndex = 0,
   int setIndex = 1,
   int setsCount = 1,
   int targetIndex = 1,
@@ -561,6 +709,10 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
       durationSec: durationSec,
       warmupSec: warmupSec,
       scrollAnimation: scrollAnimation,
+      themeRotation: themeRotation,
+      themeIntervalIndex: themeIntervalIndex,
+      tickerRotation: tickerRotation,
+      tickerIntervalIndex: tickerIntervalIndex,
       setIndex: setIndex,
       setsCount: setsCount,
       targetIndex: targetIndex,
@@ -579,6 +731,10 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
       durationSec: durationSec,
       warmupSec: warmupSec,
       scrollAnimation: scrollAnimation,
+      themeRotation: themeRotation,
+      themeIntervalIndex: themeIntervalIndex,
+      tickerRotation: tickerRotation,
+      tickerIntervalIndex: tickerIntervalIndex,
       setIndex: setIndex,
       setsCount: setsCount,
       targetIndex: targetIndex,
@@ -596,6 +752,10 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
   required int durationSec,
   required int warmupSec,
   bool scrollAnimation = true,
+  bool themeRotation = true,
+  int themeIntervalIndex = 0,
+  bool tickerRotation = true,
+  int tickerIntervalIndex = 0,
   int setIndex = 1,
   int setsCount = 1,
   int targetIndex = 1,
@@ -622,6 +782,10 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
       'BENCH_DURATION': durationSec.toString(),
       'BENCH_WARMUP': warmupSec.toString(),
       'BENCH_SCROLL_ANIM': scrollAnimation.toString(),
+      'BENCH_THEME_ROTATION': themeRotation.toString(),
+      'BENCH_THEME_INTERVAL_INDEX': themeIntervalIndex.toString(),
+      'BENCH_TICKER_ROTATION': tickerRotation.toString(),
+      'BENCH_TICKER_INTERVAL_INDEX': tickerIntervalIndex.toString(),
       'BENCH_SET_INDEX': setIndex.toString(),
       'BENCH_TOTAL_SETS': setsCount.toString(),
       'BENCH_TARGET_INDEX': targetIndex.toString(),
@@ -709,6 +873,12 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
     memoryRssMb: (data['memory_rss_mb'] as num).toDouble(),
     durationSec: durationSec,
     scrollAnimation: (data['scroll_animation'] as bool?) ?? scrollAnimation,
+    themeRotation: (data['theme_rotation'] as bool?) ?? themeRotation,
+    themeIntervalIndex:
+        (data['theme_interval_index'] as num?)?.toInt() ?? themeIntervalIndex,
+    tickerRotation: (data['ticker_rotation'] as bool?) ?? tickerRotation,
+    tickerIntervalIndex: (data['ticker_interval_index'] as num?)?.toInt() ??
+        tickerIntervalIndex,
     setIndex: setIndex,
   );
 }
@@ -747,6 +917,10 @@ String _generateMediumMarkdownReport(
   String mode,
   int setsCount,
   bool scrollAnimation, {
+  bool themeRotation = true,
+  int themeIntervalIndex = 0,
+  bool tickerRotation = true,
+  int tickerIntervalIndex = 0,
   String methodologyRelPath = '../BENCHMARK_METHODOLOGY.md',
 }) {
   final buffer = StringBuffer();
@@ -765,6 +939,10 @@ String _generateMediumMarkdownReport(
       '- **Scenario Duration**: `${durationSec}s` per test scenario ($setsCount randomized set(s))');
   buffer.writeln(
       '- **Order Book Scroll Animation**: `${scrollAnimation ? "Enabled (Continuous VSync Oscillation)" : "Disabled (Static Center Viewport)"}`');
+  buffer.writeln(
+      '- **Theme Auto-Rotation**: `${themeRotation ? "Enabled (${_formatInterval(rotationIntervalPresetsMs[themeIntervalIndex])})" : "Disabled"}`');
+  buffer.writeln(
+      '- **Watchlist Ticker Auto-Rotation**: `${tickerRotation ? "Enabled (${_formatInterval(rotationIntervalPresetsMs[tickerIntervalIndex])})" : "Disabled"}`');
   buffer.writeln(
       '- **Execution Engine**: ${mode == 'drive' ? 'Flutter Driver Real Window, `--profile` build (GPU & VSync Timelines)' : 'Dedicated Background Isolate Ingestion & OS RSS Memory Sampling'}');
   buffer.writeln(
@@ -909,13 +1087,21 @@ Map<String, dynamic> _generateJsonMatrix(
   List<int> tpsScenarios,
   String mode,
   int setsCount,
-  bool scrollAnimation,
-) {
+  bool scrollAnimation, {
+  bool themeRotation = true,
+  int themeIntervalIndex = 0,
+  bool tickerRotation = true,
+  int tickerIntervalIndex = 0,
+}) {
   return {
     'suite': 'NASDAQ Order Book Mini Benchmark (100% Pure Hardware Execution)',
     'mode': mode,
     'sets_count': setsCount,
     'scroll_animation': scrollAnimation,
+    'theme_rotation': themeRotation,
+    'theme_interval_ms': rotationIntervalPresetsMs[themeIntervalIndex],
+    'ticker_rotation': tickerRotation,
+    'ticker_interval_ms': rotationIntervalPresetsMs[tickerIntervalIndex],
     'timestamp': DateTime.now().toIso8601String(),
     'environment': {
       'os': Platform.operatingSystem,
@@ -931,7 +1117,7 @@ Map<String, dynamic> _generateJsonMatrix(
 String _generateCsv(List<BenchmarkRunResult> results) {
   final buffer = StringBuffer();
   buffer.writeln(
-      'Framework,Architecture,Target_TPS,Sustained_TPS,Achievement_Rate_Pct,Total_Ticks,Avg_Event_Loop_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,UI_Build_Time_Ms,Raster_Time_Ms,Actual_FPS,Jank_Rate_Pct,Memory_RSS_MB,Latency_Ms,Scroll_Animation');
+      'Framework,Architecture,Target_TPS,Sustained_TPS,Achievement_Rate_Pct,Total_Ticks,Avg_Event_Loop_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,UI_Build_Time_Ms,Raster_Time_Ms,Actual_FPS,Jank_Rate_Pct,Memory_RSS_MB,Latency_Ms,Scroll_Animation,Theme_Rotation,Theme_Interval_Ms,Ticker_Rotation,Ticker_Interval_Ms');
   for (final r in results) {
     final lagStr = r.avgEventLoopLagMs != null
         ? r.avgEventLoopLagMs!.toStringAsFixed(2)
@@ -942,8 +1128,10 @@ String _generateCsv(List<BenchmarkRunResult> results) {
     final p99Str = r.p99EventLoopLagMs != null
         ? r.p99EventLoopLagMs!.toStringAsFixed(2)
         : 'N/A';
+    final themeIntervalMs = rotationIntervalPresetsMs[r.themeIntervalIndex];
+    final tickerIntervalMs = rotationIntervalPresetsMs[r.tickerIntervalIndex];
     buffer.writeln(
-        '"${r.target.name}","${r.target.architecture}",${r.targetTps},${r.sustainedTps},${r.achievementRate.toStringAsFixed(2)},${r.totalTicks},$lagStr,$p95Str,$p99Str,${r.uiBuildTimeMs.toStringAsFixed(2)},${r.rasterTimeMs.toStringAsFixed(2)},${r.actualFps.toStringAsFixed(1)},${r.jankRatePct.toStringAsFixed(2)},${r.memoryRssMb.toStringAsFixed(1)},${r.latencyMs.toStringAsFixed(2)},${r.scrollAnimation}');
+        '"${r.target.name}","${r.target.architecture}",${r.targetTps},${r.sustainedTps},${r.achievementRate.toStringAsFixed(2)},${r.totalTicks},$lagStr,$p95Str,$p99Str,${r.uiBuildTimeMs.toStringAsFixed(2)},${r.rasterTimeMs.toStringAsFixed(2)},${r.actualFps.toStringAsFixed(1)},${r.jankRatePct.toStringAsFixed(2)},${r.memoryRssMb.toStringAsFixed(1)},${r.latencyMs.toStringAsFixed(2)},${r.scrollAnimation},${r.themeRotation},$themeIntervalMs,${r.tickerRotation},$tickerIntervalMs');
   }
   return buffer.toString();
 }
