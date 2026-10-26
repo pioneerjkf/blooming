@@ -1,3 +1,26 @@
+## 0.2.0
+
+### Breaking Changes & Migration Guide
+
+- **State Producer Instantiation Unification**: Concrete constructors for state controllers (`BloomController`, `RawBloomController`, `BloomSignalController`, `BloomDraftController`) are now encapsulated and private (`._()`). All state creation must use the unified hierarchical **`blooming`** functor family.
+  - **Migration Guide**:
+    - `BloomController(init)` → `blooming(init)`
+    - `BloomController.late()` → `blooming.late<T>()`
+    - `BloomController.error(e)` → `blooming.error<T>(e)`
+    - `RawBloomController(init)` → `blooming.raw(init)`
+    - `RawBloomController.late()` → `blooming.raw.late<T>()`
+    - `BloomSignalController()` → `blooming.signal()`
+    - `BloomDraftController.list(init)` / `BloomListController(init)` → `blooming.list(init)`
+    - `BloomDraftController.map(init)` / `BloomMapController(init)` → `blooming.map(init)`
+    - `BloomDraftController.set(init)` / `BloomSetController(init)` → `blooming.set(init)`
+- **Coupler Independence**: `BloomCoupler` explicitly retains its standalone public constructor (`BloomCoupler(...)`) as an explicit pipeline coupler and adapter rather than a state producer.
+- **Collection Functor Privatization**: Collection functor implementation classes (`_BloomListFunctor`, `_BloomMapFunctor`, `_BloomSetFunctor`) are strictly internal and inaccessible from public API exports.
+
+### Improvements & Hardening
+
+- **Exception Stringification**: Hardened `BloomSnapshotExtractionException` formatting against double faults and cascading toString evaluation failures during diagnostic extraction.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.0.
+
 ## 0.1.5
 
 - **Async Primitives**: Introduced tuple async primitives (`Bloom.tuple`, `Bloom.tupleAsync`, `BloomAsyncTuple2`, `toBloomTuple()`, `toBloomTriple()`) for ergonomic multi-signal coordination.

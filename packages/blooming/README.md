@@ -232,7 +232,7 @@ refreshTrigger.emit(); // Emits monotonically increasing version tick
 #### Strict Separation of Producer and Consumer
 
 Bloom enforces strict **Has-a encapsulation** between state mutation and state observation:
-- State creation functors (`blooming(...)`, `blooming.list(...)`, etc.) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomDraftController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete controller constructors are encapsulated (`._()`), making `blooming(...)` the canonical and recommended creation pathway.
+- State creation functors (`blooming(...)`, `blooming.list(...)`, etc.) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomDraftController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete controller constructors are encapsulated (`._()`), making `blooming(...)` the canonical and recommended creation pathway. (`BloomCoupler` retains its standalone public constructor `BloomCoupler(...)` as an explicit pipeline coupler/adapter rather than a state producer.)
 - Downstream UI widgets and derivations only receive **Consumer Handles** (`Bloom<T>`) exposed via `.bloom`.
 
 ```dart

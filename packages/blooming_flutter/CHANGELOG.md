@@ -1,3 +1,8 @@
+## 0.2.0
+
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.2.0`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.0.
+
 ## 0.1.5
 
 - **Async UI**: Introduced `BloomAsyncBuilder.tuple` constructor supporting direct declarative binding of paired `(data, pending)` or `(data, status)` tuples.

@@ -1,3 +1,7 @@
+## 0.2.0
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.0.
+
 ## 0.1.5
 
 - **Analysis**: Optimized analysis options to prevent custom_lint background daemon leak.
