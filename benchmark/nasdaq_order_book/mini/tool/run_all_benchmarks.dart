@@ -31,31 +31,31 @@ const List<BenchmarkTarget> benchmarkTargets = [
     id: 'blooming',
     name: 'Blooming',
     architecture: 'Blooming 2-Phase LPDAG Reactive Graph',
-    directoryName: 'blooming_ai_swiss',
+    directoryName: 'nasdaq_mini_blooming',
   ),
   BenchmarkTarget(
     id: 'coralline',
     name: 'Coralline',
     architecture: 'Coralline High-Performance Reactive Graph',
-    directoryName: 'coralline_ai_swiss',
+    directoryName: 'nasdaq_mini_coralline',
   ),
   BenchmarkTarget(
     id: 'signals',
     name: 'Signals',
     architecture: 'Signals Reactive Fine-Grained Architecture',
-    directoryName: 'signals_ai_swiss',
+    directoryName: 'nasdaq_mini_signals',
   ),
   BenchmarkTarget(
     id: 'riverpod',
     name: 'Riverpod',
     architecture: 'Flutter Riverpod State Management',
-    directoryName: 'riverpod_ai_swiss',
+    directoryName: 'nasdaq_mini_riverpod',
   ),
   BenchmarkTarget(
     id: 'flutter',
     name: 'Flutter',
     architecture: 'Pure Flutter (ValueNotifier & ListenableBuilder)',
-    directoryName: 'flutter_ai_swiss',
+    directoryName: 'nasdaq_mini_flutter',
   ),
 ];
 
