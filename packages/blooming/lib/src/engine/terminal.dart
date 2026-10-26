@@ -82,8 +82,8 @@ abstract interface class RawTerminal implements LpdagStatus {
 ///
 /// ## Examples
 /// ```dart
-/// final firstName = BloomController('Jane');
-/// final lastName = BloomController('Doe');
+/// final firstName = blooming('Jane');
+/// final lastName = blooming('Doe');
 ///
 /// final terminal = RawViaTerminal(
 ///   (via) => '${via(firstName.bloom)} ${via(lastName.bloom)}',
@@ -152,8 +152,8 @@ base class RawViaTerminal<T> extends _RawTerminal
 ///
 /// ## Examples
 /// ```dart
-/// final price = BloomController(100);
-/// final quantity = BloomController(2);
+/// final price = blooming(100);
+/// final quantity = blooming(2);
 ///
 /// final totalTerminal = RawComputedTerminal(
 ///   (via) => via(price.bloom) * via(quantity.bloom),
@@ -284,7 +284,7 @@ base class RawComputedTerminal<T> extends _RawTerminal
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 ///
 /// final terminal = RawBloomTerminal(
 ///   counter.bloom,

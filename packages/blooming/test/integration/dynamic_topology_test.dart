@@ -12,9 +12,9 @@ void main() {
     // =========================================================================
     group('1. Dynamic Edge Rerouting & Sub-DAG Swapping', () {
       test('1.1 Dynamic pipeline switching via cascading', () {
-        final sourceA = BloomController<int>(10);
-        final sourceB = BloomController<int>(20);
-        final switcher = BloomController<bool>(true);
+        final sourceA = blooming<int>(10);
+        final sourceB = blooming<int>(20);
+        final switcher = blooming<bool>(true);
 
         final cascade = switched((via) {
           return via(switcher.bloom) ? sourceA.bloom : sourceB.bloom;
@@ -33,7 +33,7 @@ void main() {
       });
 
       test('1.2 Subtree disposal during dynamic cascading switch', () {
-        final switcher = BloomController<bool>(true);
+        final switcher = blooming<bool>(true);
         int disposeA = 0;
         int disposeB = 0;
 
@@ -74,8 +74,8 @@ void main() {
     // =========================================================================
     group('2. Dynamic Shape Morphing', () {
       test('2.1 Morphing between Diamond, Linear, and Star shapes', () {
-        final shapeMode = BloomController<String>('diamond');
-        final root = BloomController<int>(10);
+        final shapeMode = blooming<String>('diamond');
+        final root = blooming<int>(10);
 
         final morphingBloom = switched((via) {
           switch (via(shapeMode.bloom)) {
@@ -122,9 +122,9 @@ void main() {
     // =========================================================================
     group('3. Chained Coupler Permutations', () {
       test('3.1 Chained Coupler dynamic permutations without leaking connections', () {
-        final cA = BloomController<int>(1);
-        final cB = BloomController<int>(2);
-        final cC = BloomController<int>(3);
+        final cA = blooming<int>(1);
+        final cB = blooming<int>(2);
+        final cC = blooming<int>(3);
 
         final coupler1 = BloomCoupler<int>(cA.bloom);
         final coupler2 = BloomCoupler<int>(cB.bloom);

@@ -114,7 +114,7 @@ void main() {
     // =========================================================================
     group('2. Resource State Machine with Auto-Tracking', () {
       test('2.1 Upstream update reusing existing instance does not call dispose', () {
-        final source = BloomController<int>(100);
+        final source = blooming<int>(100);
         int createCount = 0;
         int updateCount = 0;
         int disposeCount = 0;
@@ -159,7 +159,7 @@ void main() {
       });
 
       test('2.2 Upstream update returning newly allocated instance disposes the old instance', () {
-        final source = BloomController<String>('A');
+        final source = blooming<String>('A');
         final disposedList = <String>[];
 
         final derived = managed<_DisposableResource>(
@@ -190,7 +190,7 @@ void main() {
       });
 
       test('2.3 Upstream error or empty state triggers disposal of active resource', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
         _DisposableResource? activeResource;
         int disposeCount = 0;
 
@@ -228,7 +228,7 @@ void main() {
       });
 
       test('2.4 Resource disposal sequence on update and deactivation', () {
-        final source = BloomController<String>('Alpha');
+        final source = blooming<String>('Alpha');
         final disposals = <String>[];
 
         final derived = managed<_DisposableResource>(
@@ -287,7 +287,7 @@ void main() {
       });
 
       test('3.2 Exception in updateResource disposes existing and transitions to error', () {
-        final source = BloomController<int>(1);
+        final source = blooming<int>(1);
         _DisposableResource? activeRes;
         int disposeCount = 0;
 
@@ -327,7 +327,7 @@ void main() {
         int activatedCount = 0;
         int deactivatedCount = 0;
 
-        final controller = BloomController<int>(
+        final controller = blooming<int>(
           0,
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,

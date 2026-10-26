@@ -15,8 +15,8 @@ void main() {
         late final BloomController<int> ctrlA;
         late final BloomController<int> ctrlB;
 
-        ctrlB = BloomController<int>(0);
-        ctrlA = BloomController<int>(
+        ctrlB = blooming<int>(0);
+        ctrlA = blooming<int>(
           0,
           equals: (prev, next) {
             ctrlB.set(next * 10);
@@ -44,8 +44,8 @@ void main() {
         late final BloomController<int> ctrlSource;
         late final BloomController<int> ctrlSecondary;
 
-        ctrlSecondary = BloomController<int>(100);
-        ctrlSource = BloomController<int>(
+        ctrlSecondary = blooming<int>(100);
+        ctrlSource = blooming<int>(
           1,
           onActivated: () {
             ctrlSecondary.set(200);
@@ -65,12 +65,12 @@ void main() {
       });
 
       test('1.3 Reentrant Terminal Evaluation & Reentrancy during Deactivation Grace Period', () {
-        final ctrlA = BloomController<int>(
+        final ctrlA = blooming<int>(
           10,
           graceful: const Graceful(),
           onDeactivated: () {},
         );
-        final ctrlB = BloomController<int>(
+        final ctrlB = blooming<int>(
           20,
           graceful: const Graceful(),
           onDeactivated: () {},
@@ -95,7 +95,7 @@ void main() {
       });
 
       test('1.4 Reentrant Mutation in onInvalidated is safely drained by Trampoline', () {
-        final source = BloomController<int>(0);
+        final source = blooming<int>(0);
         int invalidations = 0;
 
         late final RawBloomTerminal<int> terminal;
@@ -146,7 +146,7 @@ void main() {
     // =========================================================================
     group('2. Reactive Scope Isolation & Exception Containment', () {
       test('2.1 Reactive scope isolation when computed function throws', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
 
         final faultyComputed = computed((via) {
           if (via(source.bloom) == 10) {
@@ -180,8 +180,8 @@ void main() {
       });
 
       test('2.2 Nested Reactive Scope Execution with Inner Failure Containment', () {
-        final outerController = BloomController<int>(1);
-        final innerController = BloomController<int>(2);
+        final outerController = blooming<int>(1);
+        final innerController = blooming<int>(2);
 
         final innerFailing = computed<int>((via) {
           via(innerController.bloom);

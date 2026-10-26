@@ -12,7 +12,7 @@ void main() {
     // =========================================================================
     group('1. BloomCoupler Core API & Lifecycle', () {
       test('1.1 BloomCoupler proxies active downstream subscriber count and snapshot via .bloom', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
         final coupler = BloomCoupler<int>(source.bloom);
 
         expect(coupler, isA<BloomCoupler<int>>());
@@ -108,8 +108,8 @@ void main() {
     // =========================================================================
     group('2. BloomCoupler<List<T>> Core API & Lifecycle', () {
       test('2.1 BloomCoupler<List<T>> proxies active downstream subscriber count and snapshot', () {
-        final source1 = BloomController<int>(1);
-        final source2 = BloomController<int>(2);
+        final source1 = blooming<int>(1);
+        final source2 = blooming<int>(2);
         final group = Bloom.constant([source1.bloom, source2.bloom]);
 
         final coupler = BloomCoupler<List<Bloom<int>>>(group);
@@ -177,8 +177,8 @@ void main() {
     // =========================================================================
     group('3. Coupler Isolation & Non-Interference Invariants', () {
       test('3.1 Multiple couplers on same source operate independently without interference', () {
-        final sourceA = BloomController('A_orig');
-        final sourceB = BloomController('B_orig');
+        final sourceA = blooming('A_orig');
+        final sourceB = blooming('B_orig');
 
         final coupler1 = BloomCoupler<String>(sourceA.bloom);
         final coupler2 = BloomCoupler<String>(sourceA.bloom);
@@ -214,8 +214,8 @@ void main() {
       });
 
       test('3.2 Coupler couple must NOT steal or disrupt independent subscribers of the old source', () {
-        final sourceA = BloomController('A');
-        final sourceB = BloomController('B');
+        final sourceA = blooming('A');
+        final sourceB = blooming('B');
 
         int sourceANotifyCount = 0;
         int couplerNotifyCount = 0;
@@ -291,7 +291,7 @@ void main() {
       });
 
       test('3.4 setError and decouple do not notify independent source subscribers', () {
-        final sharedSource = BloomController('shared');
+        final sharedSource = blooming('shared');
         int sourceNotifyCount = 0;
         int couplerNotifyCount = 0;
 
@@ -355,7 +355,7 @@ void main() {
     // =========================================================================
     group('4. Daisy-Chained Couplers (Multi-Hop Propagation)', () {
       test('4.1 Daisy-chained 3-Hop Coupler propagates mutations cleanly', () {
-        final rootController = BloomController<int>(1);
+        final rootController = blooming<int>(1);
         final hop1 = BloomCoupler<int>(rootController.bloom);
         final hop2 = BloomCoupler<int>(hop1.bloom);
         final hop3 = BloomCoupler<int>(hop2.bloom);
@@ -377,8 +377,8 @@ void main() {
       });
 
       test('4.2 Daisy-chained Coupler intermediate couple and isolation', () {
-        final rootA = BloomController<String>('RootA');
-        final rootB = BloomController<String>('RootB');
+        final rootA = blooming<String>('RootA');
+        final rootB = blooming<String>('RootB');
 
         final hop1 = BloomCoupler<String>(rootA.bloom);
         final hop2 = BloomCoupler<String>(hop1.bloom);

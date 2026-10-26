@@ -262,7 +262,7 @@ void main() {
         final values = <int>[];
         late Bloom<int> driven;
 
-        final activeController = BloomController(true);
+        final activeController = blooming(true);
 
         await tester.pumpWidget(
           MaterialApp(

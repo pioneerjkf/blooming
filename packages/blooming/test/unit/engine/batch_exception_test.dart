@@ -20,7 +20,7 @@ void main() {
     });
 
     test('1. Normal batch completes and flushes mutated state even after user action exception', () {
-      final count = BloomController<int>(0);
+      final count = blooming<int>(0);
       int invalidationCalls = 0;
 
       final terminal = RawBloomTerminal(count.bloom, onInvalidated: () {
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('2. Uncaught error escaping _drain during batch purges remaining queues and prevents zombie nodes', () {
-      final b = BloomController<int>(0);
+      final b = blooming<int>(0);
 
       int bInvalidations = 0;
       final terminalB = RawBloomTerminal(b.bloom, onInvalidated: () {

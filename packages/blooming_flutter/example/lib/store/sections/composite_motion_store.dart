@@ -16,19 +16,19 @@ import '../../sections/composite_motion_section.dart';
 class CompositeMotionStore {
   CompositeMotionStore({DateTime Function()? clock})
       : _clock = clock,
-        _policy = BloomController<DurabilityPolicy>(DurabilityPolicy.resume),
-        _activeTab = BloomController<int>(0),
-        _durationMs = BloomController<int>(2400),
-        _isMounted = BloomController<bool>(true),
-        _isPingPong = BloomController<bool>(true),
-        _isPlaying = BloomController<bool>(true),
-        _enableSlideElevation = BloomController<bool>(true),
-        _enable3DRotation = BloomController<bool>(true),
-        _enableBorderRadius = BloomController<bool>(true),
-        _enableColorGradient = BloomController<bool>(true),
-        _enableElasticBadge = BloomController<bool>(true),
-        _enableStaggeredCascade = BloomController<bool>(true),
-        _masterCtrl = BloomController<DurableAnimationController>(
+        _policy = blooming<DurabilityPolicy>(DurabilityPolicy.resume),
+        _activeTab = blooming<int>(0),
+        _durationMs = blooming<int>(2400),
+        _isMounted = blooming<bool>(true),
+        _isPingPong = blooming<bool>(true),
+        _isPlaying = blooming<bool>(true),
+        _enableSlideElevation = blooming<bool>(true),
+        _enable3DRotation = blooming<bool>(true),
+        _enableBorderRadius = blooming<bool>(true),
+        _enableColorGradient = blooming<bool>(true),
+        _enableElasticBadge = blooming<bool>(true),
+        _enableStaggeredCascade = blooming<bool>(true),
+        _masterCtrl = blooming<DurableAnimationController>(
           DurableAnimationController(
             policy: DurabilityPolicy.resume,
             duration: const Duration(milliseconds: 2400),

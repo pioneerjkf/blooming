@@ -45,7 +45,7 @@ void main() {
     // 1. Re-exported bloomTest from blooming_test works seamlessly
     bloomTest<BloomController<int>>(
       '1. Re-exported bloomTest executes pure unit test logic',
-      build: () => BloomController(10),
+      build: () => blooming(10),
       target: (ctrl) => ctrl.bloom,
       act: (ctrl) => ctrl.data = 20,
       expect: () => [10, 20],
@@ -76,7 +76,7 @@ void main() {
     testWidgets('3. BloomOverride with error renders error fallback UI',
         (tester) async {
       final userBloom =
-          BloomController<UserProfile>(const UserProfile('Default')).bloom;
+          blooming<UserProfile>(const UserProfile('Default')).bloom;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -95,7 +95,7 @@ void main() {
     testWidgets('4. BloomOverride with empty renders placeholder UI',
         (tester) async {
       final userBloom =
-          BloomController<UserProfile>(const UserProfile('Default')).bloom;
+          blooming<UserProfile>(const UserProfile('Default')).bloom;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -132,7 +132,7 @@ void main() {
     bloomWidgetTest(
       '6. Dynamic mutations trigger reactive widget rebuilds in test',
       test: (tester) async {
-        final counter = BloomController(0);
+        final counter = blooming(0);
 
         await tester.pumpScopedWidget(
           MaterialApp(

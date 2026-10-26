@@ -61,7 +61,7 @@ void main() {
       final handler = _TestErrorHandler();
       LpdagUncaughtErrorHandler.instance = handler;
 
-      final ctrl = BloomController(0);
+      final ctrl = blooming(0);
       final terminal = RawBloomTerminal<int>(
         ctrl.bloom,
         onInvalidated: () {
@@ -90,7 +90,7 @@ void main() {
       final handler = _TestErrorHandler();
       LpdagUncaughtErrorHandler.instance = handler;
 
-      final ctrl = BloomController(0);
+      final ctrl = blooming(0);
       final terminal = RawBloomTerminal<int>(
         ctrl.bloom,
         onInvalidated: () {
@@ -121,7 +121,7 @@ void main() {
     test('4. Gracefully handles throwing LpdagUncaughtErrorHandler without crashing execution', () {
       LpdagUncaughtErrorHandler.instance = _ThrowingErrorHandler();
 
-      final ctrl = BloomController(0);
+      final ctrl = blooming(0);
       final terminal = RawBloomTerminal<int>(
         ctrl.bloom,
         onInvalidated: () {
@@ -147,7 +147,7 @@ void main() {
     test('5. Dispatches directly to Zone when handler is not registered', () {
       LpdagUncaughtErrorHandler.instance = null;
 
-      final ctrl = BloomController(0);
+      final ctrl = blooming(0);
       final terminal = RawBloomTerminal<int>(
         ctrl.bloom,
         onInvalidated: () {

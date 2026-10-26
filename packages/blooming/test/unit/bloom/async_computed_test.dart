@@ -88,7 +88,7 @@ void main() {
     });
 
     test('2.1 computed.future automatically tracks upstream synchronous dependencies', () async {
-      final userId = BloomController(1);
+      final userId = blooming(1);
       var fetchCount = 0;
 
       final userProfile = computed.future((via) async {
@@ -119,7 +119,7 @@ void main() {
     });
 
     test('3.1 Out-of-order race condition immunity (slow old request ignored after fast new request)', () async {
-      final query = BloomController('initial');
+      final query = blooming('initial');
       final slowCompleter = Completer<String>();
       final fastCompleter = Completer<String>();
 
@@ -169,7 +169,7 @@ void main() {
     });
 
     test('4.1 computed.future propagates errors to ErrorBloomState and supports onError fallback', () async {
-      final shouldFail = BloomController(false);
+      final shouldFail = blooming(false);
 
       final result = computed.future((via) async {
         if (via(shouldFail.bloom)) {
@@ -223,7 +223,7 @@ void main() {
     });
 
     test('5.1 computed.future respects reactive guards (guard and reason)', () async {
-      final isReady = BloomController(false);
+      final isReady = blooming(false);
       var computeCalled = false;
 
       final guarded = computed.future(
@@ -259,7 +259,7 @@ void main() {
     });
 
     test('6.1 computed.stream receives sequential events and auto-cancels old stream on dependency change', () async {
-      final channel = BloomController('A');
+      final channel = blooming('A');
       final scA = StreamController<String>.broadcast();
       final scB = StreamController<String>.broadcast();
 
@@ -332,8 +332,8 @@ void main() {
     });
 
     test('7.1 Synchronous computed(...) preserves 100% backward compatibility and inlined speed', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       // Standard top-level computed
       final sum = computed((via) => via(a.bloom) + via(b.bloom));

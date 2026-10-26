@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   group('Take Parameter on Effect Tests', () {
     test('1. Effect with take: 1 executes exactly once and tears down', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       int runs = 0;
 
       final effect = Effect.unary(counter.bloom, () {
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('2. Reactivation Guard: once exhausted, reviving parent scope cannot revive the effect', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       int runs = 0;
 
       final effect = Effect.unary(counter.bloom, () {
@@ -63,7 +63,7 @@ void main() {
     });
 
     test('3. Effect with take: 3 executes exactly 3 times then deactivates', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       final observed = <int>[];
 
       final effect = Effect.unary(source.bloom, () {
@@ -94,7 +94,7 @@ void main() {
     });
 
     test('4. Effect with take: 0 is permanently inactive and never executes', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       int runs = 0;
 
       final effect = Effect.unary(source.bloom, () {
@@ -112,7 +112,7 @@ void main() {
     });
 
     test('5. Negative take throws RangeError on construction', () {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       expect(
         () => Effect.unary(source.bloom, () {}, take: -1),
         throwsA(isA<RangeError>()),
@@ -124,8 +124,8 @@ void main() {
     });
 
     test('6. Multi-target list effect respects take parameter', () async {
-      final a = BloomController<int>(0);
-      final b = BloomController<int>(0);
+      final a = blooming<int>(0);
+      final b = blooming<int>(0);
       int runs = 0;
 
       final effect = Effect([a.bloom, b.bloom], () {
@@ -152,7 +152,7 @@ void main() {
     });
 
     test('7. Scope-bound Effect with take: 2 executes at most 2 times and self-deactivates', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       int runs = 0;
 
       final effect = counter.bloom.effect(() {

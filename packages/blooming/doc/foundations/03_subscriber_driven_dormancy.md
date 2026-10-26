@@ -172,7 +172,7 @@ final liveMarketFeed = computed.stream((via) {
 External handles requiring deterministic acquisition and disposal (hardware sensors, FFI pointers, periodic timers, native sound handles) are wrapped via [`managed`](../../lib/src/bloom/managed.dart#L51):
 
 ```dart
-final tickInterval = BloomController(const Duration(seconds: 1));
+final tickInterval = blooming(const Duration(seconds: 1));
 
 // Timer handle is instantiated ONLY while observed by an active screen
 final heartbeatTimer = managed<Timer>(
@@ -200,7 +200,7 @@ final heartbeatTimer = managed<Timer>(
 ### 4.2 Asynchronous Continuous Data Feeds (`computed.stream`)
 
 ```dart
-final currentRoomId = BloomController('room-general');
+final currentRoomId = blooming('room-general');
 
 final roomMessages = computed.stream(
   (via) => chatService.watchMessages(via(currentRoomId.bloom)),
@@ -239,7 +239,7 @@ base class PulseIndicator extends BloomWidget {
 When switching between heterogeneous views or algorithms via `switched`:
 
 ```dart
-final isAdvancedMode = BloomController(false);
+final isAdvancedMode = blooming(false);
 
 final activeDashboard = switched((via) {
   return via(isAdvancedMode.bloom) ? advancedAnalytics : simpleOverview;

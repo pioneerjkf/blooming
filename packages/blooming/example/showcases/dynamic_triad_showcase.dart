@@ -20,8 +20,8 @@ void main() async {
   // 1. computed: Pure Functional Derivations
   // ---------------------------------------------------------------------------
   print('--- 1. computed (Synchronous Derivation) ---');
-  final firstName = BloomController('John');
-  final lastName = BloomController('Doe');
+  final firstName = blooming('John');
+  final lastName = blooming('Doe');
 
   final fullName = computed((via) {
     return '${via(firstName.bloom)} ${via(lastName.bloom)}';
@@ -35,7 +35,7 @@ void main() async {
   // 2. computed.future: Async Parameter-Tracking Queries
   // ---------------------------------------------------------------------------
   print('--- 2. computed.future (Asynchronous Query) ---');
-  final userId = BloomController('user_42');
+  final userId = blooming('user_42');
 
   final userProfile = computed.future(
     (via) async {
@@ -62,9 +62,9 @@ void main() async {
   // 3. switched: Dynamic Topology Branch Morphing
   // ---------------------------------------------------------------------------
   print('--- 3. switched (Dynamic Branch Morphing) ---');
-  final isPremium = BloomController(false);
-  final freeFeed = BloomController('Free Feed: Standard Content');
-  final premiumFeed = BloomController('Premium Feed: Exclusive 4K Content');
+  final isPremium = blooming(false);
+  final freeFeed = blooming('Free Feed: Standard Content');
+  final premiumFeed = blooming('Premium Feed: Exclusive 4K Content');
 
   // Dynamically flattens into an active subtree based on isPremium state
   final activeFeed = switched((via) {

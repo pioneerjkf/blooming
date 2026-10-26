@@ -16,7 +16,7 @@ final class DirectPipelineBenchmark extends BenchmarkBase {
 
   @override
   void setup() {
-    controller = BloomController<int>(0);
+    controller = blooming<int>(0);
     terminal = RawBloomTerminal<int>(controller.bloom, onInvalidated: () {});
     terminal.activate();
     tick = 0;
@@ -46,7 +46,7 @@ final class DeepPipelineBenchmark extends BenchmarkBase {
 
   @override
   void setup() {
-    controller = BloomController<int>(0);
+    controller = blooming<int>(0);
     final stage1 = computed((via) => via(controller.bloom) + 1);
     final stage2 = computed((via) => via(stage1) * 2);
     final stage3 = computed((via) => via(stage2) + 10);
@@ -82,8 +82,8 @@ final class DiamondPipelineBenchmark extends BenchmarkBase {
 
   @override
   void setup() {
-    controllerA = BloomController<int>(0);
-    controllerB = BloomController<int>(0);
+    controllerA = blooming<int>(0);
+    controllerB = blooming<int>(0);
 
     final branchA = computed((via) => via(controllerA.bloom) * 2);
     final branchB = computed((via) => via(controllerB.bloom) + 5);

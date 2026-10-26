@@ -6,7 +6,7 @@ void main() {
     test(
         'firstWhereOrNull, lastWhereOrNull, singleWhereOrNull search elements reactively',
         () {
-      final controller = BloomController<List<String>>(
+      final controller = blooming<List<String>>(
           ['apple', 'banana', 'apricot', 'cherry']);
 
       final firstA =
@@ -39,7 +39,7 @@ void main() {
     });
 
     test('whereNotNull filters nulls reactively', () {
-      final controller = BloomController<List<int?>>([1, null, 3, null, 5]);
+      final controller = blooming<List<int?>>([1, null, 3, null, 5]);
 
       final nonNulls = controller.bloom.elements.whereNotNull;
       final term = RawBloomTerminal(nonNulls, onInvalidated: () {});
@@ -54,7 +54,7 @@ void main() {
     });
 
     test('mapIndexed and whereIndexed use indices reactively', () {
-      final controller = BloomController<List<String>>(['a', 'b', 'c']);
+      final controller = blooming<List<String>>(['a', 'b', 'c']);
 
       final mapped =
           controller.bloom.elements.mapIndexed((idx, val) => '$idx:$val');
@@ -75,7 +75,7 @@ void main() {
     });
 
     test('groupBy and slices group collections reactively', () {
-      final controller = BloomController<List<int>>([1, 2, 3, 4, 5]);
+      final controller = blooming<List<int>>([1, 2, 3, 4, 5]);
 
       final groups =
           controller.bloom.elements.groupBy((x) => x % 2 == 0 ? 'even' : 'odd');
@@ -106,7 +106,7 @@ void main() {
     test(
         'whereNot, shuffled, sortedBy, and isSortedBy reactively operate on elements',
         () {
-      final controller = BloomController<List<int>>([1, 2, 3, 4]);
+      final controller = blooming<List<int>>([1, 2, 3, 4]);
 
       final whereNotBloom = controller.bloom.elements.whereNot((x) => x.isEven);
       final isSortedBloom = controller.bloom.elements.isSortedBy((x) => x);
@@ -131,7 +131,7 @@ void main() {
     test(
         'reduceIndexed, foldIndexed, none, and indexed predicates reactively compute elements',
         () {
-      final controller = BloomController<List<int>>([1, 2, 3]);
+      final controller = blooming<List<int>>([1, 2, 3]);
 
       final redBloom = controller.bloom.elements
           .reduceIndexed((idx, prev, el) => prev + el + idx);
@@ -166,7 +166,7 @@ void main() {
     test(
         'splitBefore, splitAfter, splitBetween reactively partition collections',
         () {
-      final controller = BloomController<List<int>>([1, 0, 2, 1, 5, 7, 6]);
+      final controller = blooming<List<int>>([1, 0, 2, 1, 5, 7, 6]);
 
       final splitBloom = controller.bloom.elements.splitBefore((x) => x > 3);
       final tSplit = RawBloomTerminal(splitBloom, onInvalidated: () {});
@@ -185,7 +185,7 @@ void main() {
     test(
         'flattenedToList, flattenedToSet reactively flatten nested collections',
         () {
-      final controller = BloomController<List<List<int>>>([
+      final controller = blooming<List<List<int>>>([
         [1, 2],
         [3],
         [3, 4]

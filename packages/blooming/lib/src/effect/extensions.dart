@@ -54,8 +54,8 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final user = BloomController('Alice');
-/// final auth = BloomController(true);
+/// final user = blooming('Alice');
+/// final auth = blooming(true);
 ///
 /// // Create a multi-target effect off a tuple:
 /// final syncEffect = (user.bloom, auth.bloom).effect(() {
@@ -303,7 +303,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// final effect = counter.bloom.effect(() {
 ///   print('New counter value: ${untracked(counter.bloom)}');
 /// });
@@ -330,7 +330,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   ///
   /// ## Examples
   /// ```dart
-  /// final counter = BloomController(0);
+  /// final counter = blooming(0);
   /// final effect = counter.bloom.effect(() {
   ///   analyticsService.logCounter(untracked(counter.bloom));
   /// });
@@ -373,7 +373,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   ///
   /// ## Examples
   /// ```dart
-  /// final room = BloomController('lobby');
+  /// final room = blooming('lobby');
   /// final effect = room.bloom.effect.handled((handle) {
   ///   final timer = Timer.periodic(const Duration(seconds: 1), (_) => ping());
   ///   handle.onCleanup(timer.cancel);
@@ -415,7 +415,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   ///
   /// ## Examples
   /// ```dart
-  /// final scroll = BloomController(0.0);
+  /// final scroll = blooming(0.0);
   /// final effect = scroll.bloom.effect.throttle(
   ///   const Duration(milliseconds: 100),
   ///   () => syncScroll(untracked(scroll.bloom)),
@@ -463,7 +463,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   ///
   /// ## Examples
   /// ```dart
-  /// final query = BloomController('');
+  /// final query = blooming('');
   /// final effect = query.bloom.effect.debounce(
   ///   const Duration(milliseconds: 300),
   ///   () => apiService.search(untracked(query.bloom)),

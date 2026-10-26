@@ -10,8 +10,8 @@ import 'package:test/test.dart';
 void main() {
   group('Effect Engine Tests', () {
     test('1. Intercepts and completely blocks dirty pulses from propagating downstream', () async {
-      final normalSource = BloomController<int>(10);
-      final effectSource = BloomController<int>(100);
+      final normalSource = blooming<int>(10);
+      final effectSource = blooming<int>(100);
 
       var terminalInvalidatedCount = 0;
       var effectRunCount = 0;
@@ -66,7 +66,7 @@ void main() {
     });
 
     test('2. Lifecycle coupling: deactivating parent terminal deactivates Effect', () async {
-      final effectSource = BloomController<String>('Initial');
+      final effectSource = blooming<String>('Initial');
 
       var effectRunCount = 0;
       var observed = '';
@@ -107,9 +107,9 @@ void main() {
     });
 
     test('3. Dynamic branch switching prunes unread dependencies during Effect re-evaluation', () async {
-      final toggle = BloomController<bool>(true);
-      final branchA = BloomController<int>(1);
-      final branchB = BloomController<int>(2);
+      final toggle = blooming<bool>(true);
+      final branchA = blooming<int>(1);
+      final branchB = blooming<int>(2);
 
       var observedValue = 0;
 
@@ -158,8 +158,8 @@ void main() {
     });
 
     test('4. Parent terminal sweeps Effect when conditionally branch-swapped', () async {
-      final condition = BloomController<bool>(true);
-      final source = BloomController<int>(1);
+      final condition = blooming<bool>(true);
+      final source = blooming<int>(1);
 
       var runs = 0;
       final terminal = RawViaTerminal(
@@ -199,7 +199,7 @@ void main() {
     });
 
     test('5. Global scheduler cancels pending effect execution when deactivated before tick', () async {
-      final source = BloomController<int>(1);
+      final source = blooming<int>(1);
 
       var runs = 0;
       final terminal = RawViaTerminal(
@@ -232,7 +232,7 @@ void main() {
     });
 
     test('6. Pull firewall: Effect._isDirtySince returns false, preventing pull-based dirty leaks', () async {
-      final effectSource = BloomController<int>(1);
+      final effectSource = blooming<int>(1);
 
       var parentInvalidated = 0;
       final terminal = RawViaTerminal(
@@ -267,7 +267,7 @@ void main() {
     });
 
     test('7. Dormant on creation: Effect.via does not evaluate until tethered scope activates', () async {
-      final source = BloomController<int>(10);
+      final source = blooming<int>(10);
       var runCount = 0;
       var observed = -1;
 

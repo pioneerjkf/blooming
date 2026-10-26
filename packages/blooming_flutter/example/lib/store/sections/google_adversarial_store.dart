@@ -12,11 +12,11 @@ import '../../sections/google_adversarial_section.dart';
 class GoogleAdversarialStore {
   GoogleAdversarialStore({DateTime Function()? clock})
       : _externalClock = clock,
-        _isMounted = BloomController<bool>(true),
-        _isChurnRunning = BloomController<bool>(false),
-        _isReversed = BloomController<bool>(false),
-        _churnCyclesCompleted = BloomController<int>(0),
-        _adversarialLogs = BloomController<List<String>>([]) {
+        _isMounted = blooming<bool>(true),
+        _isChurnRunning = blooming<bool>(false),
+        _isReversed = blooming<bool>(false),
+        _churnCyclesCompleted = blooming<int>(0),
+        _adversarialLogs = blooming<List<String>>([]) {
     churnFrozenCtrl = DurableAnimationController(
       duration: const Duration(seconds: 4),
     );
@@ -139,9 +139,9 @@ class GoogleAdversarialStore {
 
   // --- Integrated Dormant Command Staging (Merged from DormantThrashing) ---
   final BloomController<List<String>> _stagedActionLog =
-      BloomController<List<String>>([]);
+      blooming<List<String>>([]);
   final BloomController<String> _lastStagedAction =
-      BloomController<String>('Idle (No Staged Motion)');
+      blooming<String>('Idle (No Staged Motion)');
 
   Bloom<List<String>> get stagedActionLog => _stagedActionLog.bloom;
   Bloom<String> get lastStagedAction => _lastStagedAction.bloom;

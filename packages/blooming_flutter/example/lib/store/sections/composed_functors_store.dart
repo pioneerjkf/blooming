@@ -9,9 +9,9 @@ import '../../sections/composed_functors_section.dart';
 
 /// Sub-store for Section 02: Declarative Inline composed()
 class ComposedFunctorsStore {
-  final _score = BloomController<int>(100);
-  final _level = BloomController<int>(1);
-  final _cascadeMode = BloomController<int>(
+  final _score = blooming<int>(100);
+  final _level = blooming<int>(1);
+  final _cascadeMode = blooming<int>(
       0); // 0: basic, 1: context, 2: child, 3: children, 4: child.context
 
   Bloom<int> get score => _score.bloom;

@@ -10,9 +10,9 @@ import '../../test_utils.dart';
 void main() {
   group('Bloom Switched & Dynamic Bloom List Matrix Tests', () {
     test('1.1 bloom.switched switches target Bloom dynamically and propagates updates', () {
-      final isPrimary = BloomController(true);
-      final primary = BloomController('Primary-Initial');
-      final secondary = BloomController('Secondary-Initial');
+      final isPrimary = blooming(true);
+      final primary = blooming('Primary-Initial');
+      final secondary = blooming('Secondary-Initial');
 
       final switchedBloom = switched((via) {
         return via(isPrimary.bloom) ? primary.bloom : secondary.bloom;
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('1.2 bloom.switched switches underlying Bloom nodes dynamically', () {
-      final mode = BloomController(1);
+      final mode = blooming(1);
       final node1 = Bloom.constant(100);
       final node2 = Bloom.constant(200);
       final node3 = Bloom.constant(300);
@@ -64,8 +64,8 @@ void main() {
     });
 
     test('1.3 Bloom.computed dynamically expands and shrinks collection of Blooms', () {
-      final count = BloomController(2);
-      final items = List.generate(5, (i) => BloomController((i + 1) * 10)); // [10, 20, 30, 40, 50]
+      final count = blooming(2);
+      final items = List.generate(5, (i) => blooming((i + 1) * 10)); // [10, 20, 30, 40, 50]
 
       final dynamicGroup = computed((via) {
         return List.generate(via(count.bloom), (i) => items[i].bloom);
@@ -93,9 +93,9 @@ void main() {
     });
 
     test('1.4 Deeply nested switches with effect tracking evaluate consistently', () async {
-      final rootCondition = BloomController(true);
-      final leafA = BloomController(10);
-      final leafB = BloomController(20);
+      final rootCondition = blooming(true);
+      final leafA = blooming(10);
+      final leafB = blooming(20);
 
       final branchSwitched = switched((via) => via(rootCondition.bloom) ? leafA.bloom : leafB.bloom);
       final computedResult = computed((via) => via(branchSwitched) * 2);

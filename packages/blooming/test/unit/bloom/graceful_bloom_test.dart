@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('GracefulBloom & BloomGracefulExtension Comprehensive Unit Tests', () {
     test('1. Passthrough data read and dirty notification', () {
-      final controller = BloomController<int>(10);
+      final controller = blooming<int>(10);
       final gracefulBloom = controller.bloom.graceful();
 
       expect(untracked(gracefulBloom), 10);
@@ -89,7 +89,7 @@ void main() {
     });
 
     test('3. Default graceful() uses microtask deferral policy', () {
-      final res = BloomController<int>(100);
+      final res = blooming<int>(100);
       final defaultGraceful = res.bloom.graceful();
 
       expect(defaultGraceful, isA<Bloom<int>>());

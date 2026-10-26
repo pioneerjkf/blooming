@@ -104,7 +104,7 @@ class StorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counterController = BloomController<int>(0);
+    final counterController = blooming<int>(0);
 
     return counterController.bloom.provide(
       child: const SizedBox(),

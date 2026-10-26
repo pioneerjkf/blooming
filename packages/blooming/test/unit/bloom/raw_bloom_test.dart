@@ -12,7 +12,7 @@ void main() {
     // =========================================================================
     group('1. Sibling Architecture & Strict Type Isolation', () {
       test('1.1 RawBloomController is a BloomController with Has-a Bloom, but NOT a Bloom itself', () {
-        final raw = RawBloomController<int>(10);
+        final raw = blooming.raw<int>(10);
 
         expect(raw, isA<RawBloomController<int>>());
         expect(raw, isA<BloomController<int>>());
@@ -21,7 +21,7 @@ void main() {
       });
 
       test('1.2 Standard BloomController is NOT a RawBloomController', () {
-        final writable = BloomController<int>(10);
+        final writable = blooming<int>(10);
 
         expect(writable, isA<BloomController<int>>());
         expect(writable, isNot(isA<Bloom>()), reason: 'BloomController must NOT be a Bloom (Has-a architecture)');
@@ -30,8 +30,8 @@ void main() {
             reason: 'Standard BloomController must NOT be an instance of RawBloomController');
       });
 
-      test('1.3 BloomController(distinct: false) is NOT a RawBloom', () {
-        final writableNonDistinct = BloomController<int>(10, distinct: false);
+      test('1.3 blooming(distinct: false) is NOT a RawBloom', () {
+        final writableNonDistinct = blooming<int>(10, distinct: false);
 
         expect(writableNonDistinct, isA<BloomController<int>>());
         expect(writableNonDistinct, isNot(isA<RawBloomController>()),
@@ -39,8 +39,8 @@ void main() {
       });
 
       test('1.4 Both BloomController and RawBloomController implement BloomController polymorphically', () {
-        final writable = BloomController<int>(10);
-        final raw = RawBloomController<int>(20);
+        final writable = blooming<int>(10);
+        final raw = blooming.raw<int>(20);
 
         expect(writable, isA<BloomController<int>>());
         expect(raw, isA<BloomController<int>>());
@@ -62,7 +62,7 @@ void main() {
     // =========================================================================
     group('2. markDirty() Zero-Allocation Dirty Pulse Invalidation', () {
       test('2.1 markDirty() broadcasts invalidation pulse without changing data', () {
-        final raw = RawBloomController<int>(42);
+        final raw = blooming.raw<int>(42);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -85,7 +85,7 @@ void main() {
 
       test('2.2 In-place collection mutation followed by markDirty()', () {
         final buffer = <String>['apple'];
-        final raw = RawBloomController<List<String>>(buffer);
+        final raw = blooming.raw<List<String>>(buffer);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -112,7 +112,7 @@ void main() {
       });
 
       test('2.3 markDirty() while inactive records dirty version and invalidates on reconnect', () {
-        final raw = RawBloomController<int>(100);
+        final raw = blooming.raw<int>(100);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
 
@@ -138,7 +138,7 @@ void main() {
     // =========================================================================
     group('3. Raw State Mutation (No Distinct Filtering)', () {
       test('3.1 Setting identical value unconditionally broadcasts dirty pulse', () {
-        final raw = RawBloomController<int>(5);
+        final raw = blooming.raw<int>(5);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -165,7 +165,7 @@ void main() {
       });
 
       test('3.2 setGuarded works on RawBloom', () {
-        final raw = RawBloomController<int>(1);
+        final raw = blooming.raw<int>(1);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -183,7 +183,7 @@ void main() {
       });
 
       test('3.3 empty() transitions to empty state and broadcasts dirty', () {
-        final raw = RawBloomController<int>(50);
+        final raw = blooming.raw<int>(50);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -198,7 +198,7 @@ void main() {
       });
 
       test('3.4 setError() transitions to error state and broadcasts dirty', () {
-        final raw = RawBloomController<int>(50);
+        final raw = blooming.raw<int>(50);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -217,7 +217,7 @@ void main() {
     // =========================================================================
     group('4. RawBloom.late & RawBloom.error', () {
       test('4.1 RawBloom.late starts in empty state and transitions on set', () {
-        final rawLate = RawBloomController<String>.late();
+        final rawLate = blooming.raw.late<String>();
         expect(rawLate.isEmpty, isTrue);
 
         int invalidationCount = 0;
@@ -239,7 +239,7 @@ void main() {
       });
 
       test('4.2 RawBloom.error starts in error state and propagates duplicate errors', () {
-        final rawErr = RawBloomController<int>.error('InitialError');
+        final rawErr = blooming.raw.error<int>('InitialError');
         expect(rawErr.hasError, isTrue);
 
         int invalidationCount = 0;
@@ -267,7 +267,7 @@ void main() {
     // =========================================================================
     group('5. bloom.dataOrNull Functor', () {
       test('5.1 bloom.dataOrNull creates RawBloom', () {
-        final r1 = RawBloomController(123);
+        final r1 = blooming.raw(123);
         expect(r1, isA<RawBloomController<int>>());
         expect(r1, isA<BloomController<int>>());
         expect(r1.data, 123);
@@ -283,11 +283,11 @@ void main() {
       });
 
       test('5.2 bloom.dataOrNull.late and bloom.dataOrNull.error functors work', () {
-        final lateRaw = RawBloomController<double>.late();
+        final lateRaw = blooming.raw.late<double>();
         expect(lateRaw, isA<RawBloomController<double>>());
         expect(lateRaw.isEmpty, isTrue);
 
-        final errRaw = RawBloomController<double>.error('Err1');
+        final errRaw = blooming.raw.error<double>('Err1');
         expect(errRaw, isA<RawBloomController<double>>());
         expect(errRaw.hasError, isTrue);
       });
@@ -301,7 +301,7 @@ void main() {
         int activatedCount = 0;
         int deactivatedCount = 0;
 
-        final raw = RawBloomController<int>(
+        final raw = blooming.raw<int>(
           0,
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,
@@ -323,7 +323,7 @@ void main() {
       test('6.2 Graceful deactivation works on RawBloom', () async {
         int deactivatedCount = 0;
 
-        final raw = RawBloomController<int>(
+        final raw = blooming.raw<int>(
           0,
           onActivated: () {},
           onDeactivated: () => deactivatedCount++,

@@ -13,7 +13,7 @@ import 'package:blooming/blooming.dart';
 void main() {
   print('--- 1. Producer / Consumer Encapsulation ---');
   // Controller is the mutable Producer handle; .bloom is the read-only Consumer view
-  final counterController = BloomController<int>(0);
+  final counterController = blooming<int>(0);
   final Bloom<int> counterView = counterController.bloom;
 
   print('Initial Counter: ${untracked(counterView)}');
@@ -22,7 +22,7 @@ void main() {
 
   print('--- 2. Discrete Event Signals ---');
   // Signals model stateless pulses (e.g. button clicks, refresh events)
-  final refreshSignalController = BloomSignalController();
+  final refreshSignalController = blooming.signal();
   final BloomSignal refreshSignal = refreshSignalController.bloom;
 
   // Pattern A: Discrete invalidation pulse via BloomVia

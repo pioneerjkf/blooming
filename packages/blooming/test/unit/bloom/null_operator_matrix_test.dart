@@ -9,7 +9,7 @@ void main() {
   group('Bloom Sound Null-Safety, 3-State Exclusivity & Safe Extraction Matrix', () {
     group('1. Sound Null Safety (Valid Null vs Empty vs Error)', () {
       test('1.1 Valid Bloom holding explicit null is not empty and not in error', () {
-        final nullableBloom = BloomController<String?>(null);
+        final nullableBloom = blooming<String?>(null);
 
         expect(nullableBloom.hasData, isTrue);
         expect(nullableBloom.isEmpty, isFalse);
@@ -21,7 +21,7 @@ void main() {
       });
 
       test('1.2 Bloom.late is strictly empty and fails fast on .data access', () {
-        final lateBloom = BloomController<String?>.late();
+        final lateBloom = blooming.late<String?>();
 
         expect(lateBloom.hasData, isFalse);
         expect(lateBloom.isEmpty, isTrue);
@@ -69,7 +69,7 @@ void main() {
 
     group('2. Nullable Combinators & Transformations on Bloom', () {
       test('2.1 computed with nullable data flows', () {
-        final source = BloomController<String?>('apple');
+        final source = blooming<String?>('apple');
 
         final uppercaseBloom = computed((via) => via(source.bloom)?.toUpperCase());
         final lengthBloom = computed((via) => via(source.bloom)?.length ?? 0);
@@ -89,7 +89,7 @@ void main() {
       });
 
       test('2.2 fallback recovery on nullable Bloom', () {
-        final lateBloom = BloomController<String?>.late();
+        final lateBloom = blooming.late<String?>();
 
         final fallbackToNull =
             computed<String?>((via) => via.state(lateBloom.bloom).hasData ? via(lateBloom.bloom) : null);
@@ -106,8 +106,8 @@ void main() {
       });
 
       test('2.3 guard conditionally gates computed', () {
-        final count = BloomController<int>(10);
-        final canProceed = BloomController(true);
+        final count = blooming<int>(10);
+        final canProceed = blooming(true);
 
         final guarded = computed(
           (via) => via(count.bloom),

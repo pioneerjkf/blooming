@@ -13,7 +13,7 @@ void main() {
     // =========================================================================
     group('1. Bloom.computed Fallback & Error Containment', () {
       test('1.1 computed transforms valid data normally when fallbacks are provided', () {
-        final controller = BloomController<int>(5);
+        final controller = blooming<int>(5);
         final mapped = computed((via) {
           final s = via.state(controller.bloom).snapshot;
           if (s.isEmpty) return 'Count: 0';
@@ -29,7 +29,7 @@ void main() {
       });
 
       test('1.2 computed uses onEmpty fallback when upstream is empty', () {
-        final controller = BloomController<int>.late();
+        final controller = blooming.late<int>();
         final mapped = computed((via) {
           final s = via.state(controller.bloom).snapshot;
           if (s.isEmpty) return 'Count: Default';
@@ -48,7 +48,7 @@ void main() {
       });
 
       test('1.3 computed uses onError fallback when upstream has error', () {
-        final controller = BloomController<int>.late();
+        final controller = blooming.late<int>();
         final mapped = computed((via) {
           final s = via.state(controller.bloom).snapshot;
           if (s.isEmpty) return 'Count: Default';
@@ -62,7 +62,7 @@ void main() {
       });
 
       test('1.4 computed catches exception thrown inside computation callback and isolates to Error', () {
-        final controller = BloomController<int>(0);
+        final controller = blooming<int>(0);
         final mapped = computed<int>((via) {
           final c = via(controller.bloom);
           if (c == 0) throw FormatException('Zero division forbidden');
@@ -80,7 +80,7 @@ void main() {
       });
 
       test('1.5 computed catches exception thrown inside onEmpty and onError branches gracefully', () {
-        final controller = BloomController<int>.late();
+        final controller = blooming.late<int>();
         final mapped = computed((via) {
           final s = via.state(controller.bloom).snapshot;
           if (s.isEmpty) throw StateError('Empty fallback failed');
@@ -104,7 +104,7 @@ void main() {
     // =========================================================================
     group('2. Bloom.computed with distinct Fallback & Deduplication', () {
       test('2.1 computed with distinct projects with deduplication and fallbacks', () {
-        final controller = BloomController<({String name, int age})>.late();
+        final controller = blooming.late<({String name, int age})>();
         final selected = computed((via) {
           final s = via.state(controller.bloom).snapshot;
           if (s.isEmpty) return 'Guest';
@@ -137,7 +137,7 @@ void main() {
       });
 
       test('2.2 computed catches exception in selector and isolates to Error', () {
-        final controller = BloomController<int>(0);
+        final controller = blooming<int>(0);
         final selected = computed<int>((via) {
           final c = via(controller.bloom);
           if (c == 0) throw ArgumentError('Zero is forbidden');
@@ -158,7 +158,7 @@ void main() {
     // =========================================================================
     group('3. Bloom.switched Native Fallback & Error Containment', () {
       test('2.1 switched switches branch with empty and error handling', () {
-        final trigger = BloomController<String?>.late();
+        final trigger = blooming.late<String?>();
         final fallbackBranch = Bloom.constant('DefaultBranch');
 
         final switchedBloom = switched<String>((via) {
@@ -179,7 +179,7 @@ void main() {
       });
 
       test('2.2 switched catches exception in switched builder callback', () {
-        final trigger = BloomController<int>(0);
+        final trigger = blooming<int>(0);
 
         final switchedBloom = switched<String>((via) {
           final data = via(trigger.bloom);
@@ -270,7 +270,7 @@ void main() {
     group('5. BloomController & BloomListController .error', () {
       test('5.1 BloomController.error starts in error state and recovers on set', () {
         final error = FormatException('Initial format error');
-        final controller = BloomController<int>.error(error);
+        final controller = blooming.error<int>(error);
 
         expect(controller.hasError, isTrue);
         expect(controller.hasData, isFalse);
@@ -294,7 +294,7 @@ void main() {
         bool activated = false;
         bool deactivated = false;
 
-        final controller = BloomController<String>.error(
+        final controller = blooming.error<String>(
           'InitError',
           onActivated: () => activated = true,
           onDeactivated: () => deactivated = true,

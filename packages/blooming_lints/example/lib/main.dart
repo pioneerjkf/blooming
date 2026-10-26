@@ -32,10 +32,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final counter = BloomController(0);
+final counter = blooming(0);
 final count = counter.bloom;
-final factor = BloomController(2).bloom;
-final status = BloomController('idle');
+final factor = blooming(2).bloom;
+final status = blooming('idle');
 
 // =============================================================================
 // 1. Reactive derivations (`computed`, `switched`, `managed`, `Effect.via`)
@@ -144,7 +144,7 @@ class CreationInBuild extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // expect_lint: avoid_bloom_creation_in_build
-    final local = BloomController(0);
+    final local = blooming(0);
     return composed((context, via) => Text('${via(local.bloom)}'));
   }
 }
@@ -164,7 +164,7 @@ class _CreationInStateState extends State<CreationInState> {
   @override
   void initState() {
     super.initState();
-    _local = BloomController(0);
+    _local = blooming(0);
     _doubled = computed((via) => via(_local.bloom) * 2);
   }
 

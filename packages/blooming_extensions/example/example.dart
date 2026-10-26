@@ -3,7 +3,7 @@ import 'package:blooming_extensions/blooming_extensions.dart';
 
 void main() async {
   // 1. Create a reactive controller holding a collection of numbers
-  final numbersController = BloomController<List<double>>([10.0, 20.0, 30.0]);
+  final numbersController = blooming<List<double>>([10.0, 20.0, 30.0]);
 
   // 2. Use blooming_extensions to calculate reactive sum and average
   final sumBloom = numbersController.bloom.elements.sum;

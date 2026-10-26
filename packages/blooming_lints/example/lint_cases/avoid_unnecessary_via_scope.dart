@@ -3,8 +3,8 @@
 
 import 'package:blooming/blooming.dart';
 
-final count = BloomController(0).bloom;
-final fallback = BloomController(1).bloom;
+final count = blooming(0).bloom;
+final fallback = blooming(1).bloom;
 
 // =============================================================================
 // BAD

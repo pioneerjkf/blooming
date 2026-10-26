@@ -16,7 +16,7 @@ final class _ValueListenableBloomPipe<T> {
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
   }) : _listenable = listenable {
-    _controller = BloomController<T>(
+    _controller = blooming<T>(
       listenable.value,
       distinct: distinct,
       equals: equals,
@@ -65,7 +65,7 @@ final class _ListenableSelectorBloomPipe<N extends Listenable, R> {
   })  : _listenable = listenable,
         _select = select {
     try {
-      _controller = BloomController<R>(
+      _controller = blooming<R>(
         select(listenable),
         distinct: distinct,
         equals: equals,
@@ -74,7 +74,7 @@ final class _ListenableSelectorBloomPipe<N extends Listenable, R> {
         onDeactivated: _onDeactivate,
       );
     } catch (error, stackTrace) {
-      _controller = BloomController<R>.error(
+      _controller = blooming.error<R>(
         error,
         stackTrace: stackTrace,
         distinct: distinct,

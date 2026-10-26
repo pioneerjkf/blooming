@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 void main() {
   group('BloomSignal & BloomSignalController Suite', () {
     test('1.1 Basic pulse emission advances version and notifies downstream terminal', () {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       expect(untracked(sig.bloom), 0);
       expect(sig.isActive, isFalse);
 
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('1.2 Signal dynamically drives computed evaluation via BloomVia', () {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       var computeRuns = 0;
 
       final counter = computed((via) {
@@ -66,7 +66,7 @@ void main() {
     });
 
     test('1.3 Signal is IMMUNE to distinct() drop bug because version advances monotonically', () {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
 
       // Explicitly attach distinct() to the signal pipeline
       final distinctSignal = sig.bloom.distinct();
@@ -100,7 +100,7 @@ void main() {
       var activatedCount = 0;
       var deactivatedCount = 0;
 
-      final sig = BloomSignalController(
+      final sig = blooming.signal(
         onActivated: () => activatedCount++,
         onDeactivated: () => deactivatedCount++,
       );
@@ -133,7 +133,7 @@ void main() {
     });
 
     test('1.5 Signal integrates seamlessly with Effect.via runner', () async {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       final receivedTicks = <int>[];
 
       final runner = Effect.via((via) {
@@ -157,10 +157,10 @@ void main() {
 
   group('2. Discrete Signal Invalidation Integration via BloomVia (computed & managed)', () {
     test('2.1 computed with via(sig.bloom) re-evaluates when signal emits', () {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       var computeRuns = 0;
 
-      final countNode = BloomController(10);
+      final countNode = blooming(10);
       final derived = computed((via) {
         via(sig.bloom);
         computeRuns++;
@@ -187,7 +187,7 @@ void main() {
     });
 
     test('2.2 computed.future with via(sig.bloom) refetches when signal emits', () async {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       var fetchCount = 0;
 
       final feed = computed.future((via) async {
@@ -218,7 +218,7 @@ void main() {
     });
 
     test('2.3 computed.stream with via(sig.bloom) re-creates stream when signal emits', () async {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       var streamCount = 0;
 
       final feed = computed.stream((via) {
@@ -244,7 +244,7 @@ void main() {
     });
 
     test('2.4 managed(create: (via) => ...) with via(sig.bloom) re-creates/disposes resource when signal emits', () {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       final createdInstances = <int>[];
       final disposedInstances = <int>[];
       var nextId = 1;
@@ -285,7 +285,7 @@ void main() {
     });
 
     test('2.5 BloomSignalController attaches debugLabel to controller and bloom independently', () {
-      final sig = BloomSignalController().withDebugLabel('RefreshController');
+      final sig = blooming.signal().withDebugLabel('RefreshController');
       sig.bloom.withDebugLabel('RefreshTrigger');
 
       expect(sig.debugLabel, equals('RefreshController'));

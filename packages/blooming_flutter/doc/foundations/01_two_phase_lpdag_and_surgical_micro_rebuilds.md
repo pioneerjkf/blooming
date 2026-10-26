@@ -158,7 +158,7 @@ class _CounterPageState extends State<CounterPage> {
 
 **GOOD:**
 ```dart
-final counter = BloomController(0);
+final counter = blooming(0);
 
 class CounterPage extends StatelessWidget {
   const CounterPage({super.key});

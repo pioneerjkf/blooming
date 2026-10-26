@@ -37,20 +37,20 @@ part of '../framework.dart';
 /// ## Sub-Functor & Factory Pathways
 /// ```text
 /// blooming(...)               ──> Distinct-filtered scalar state ([BloomController])
-///   ├─ .late(...)             ──> Uninitialized empty scalar state ([BloomController.late])
-///   ├─ .error(...)            ──> Pre-faulted error scalar state ([BloomController.error])
+///   ├─ .late(...)             ──> Uninitialized empty scalar state
+///   ├─ .error(...)            ──> Pre-faulted error scalar state
 ///   ├─ .raw(...)              ──> Unfiltered high-throughput state ([RawBloomController])
-///   │    ├─ .late(...)        ──> Uninitialized raw state ([RawBloomController.late])
-///   │    └─ .error(...)       ──> Pre-faulted raw state ([RawBloomController.error])
+///   │    ├─ .late(...)        ──> Uninitialized raw state
+///   │    └─ .error(...)       ──> Pre-faulted raw state
 ///   ├─ .list(...)             ──> Transactional reactive list ([BloomDraftController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive list ([BloomingListFunctor.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive list ([BloomingListFunctor.error])
+///   │    ├─ .late(...)        ──> Uninitialized reactive list
+///   │    └─ .error(...)       ──> Pre-faulted reactive list
 ///   ├─ .set(...)              ──> Transactional reactive set ([BloomDraftController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive set ([BloomingSetFunctor.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive set ([BloomingSetFunctor.error])
+///   │    ├─ .late(...)        ──> Uninitialized reactive set
+///   │    └─ .error(...)       ──> Pre-faulted reactive set
 ///   ├─ .map(...)              ──> Transactional reactive map ([BloomDraftController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive map ([BloomingMapFunctor.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive map ([BloomingMapFunctor.error])
+///   │    ├─ .late(...)        ──> Uninitialized reactive map
+///   │    └─ .error(...)       ──> Pre-faulted reactive map
 ///   └─ .signal(...)           ──> Discrete event notification signal ([BloomSignalController])
 /// ```
 ///
@@ -137,7 +137,7 @@ final class BloomingFunctor {
     void Function()? onDeactivated,
     Graceful? graceful,
   }) =>
-      BloomController<T>(
+      _BloomControllerImpl<T>(
         data,
         distinct: distinct,
         equals: equals,
@@ -176,7 +176,7 @@ final class BloomingFunctor {
     void Function()? onDeactivated,
     Graceful? graceful,
   }) =>
-      BloomController<T>.late(
+      _BloomControllerImpl<T>.late(
         reason: reason,
         distinct: distinct,
         equals: equals,
@@ -214,7 +214,7 @@ final class BloomingFunctor {
     void Function()? onDeactivated,
     Graceful? graceful,
   }) =>
-      BloomController<T>.error(
+      _BloomControllerImpl<T>.error(
         error,
         stackTrace: stackTrace,
         distinct: distinct,
@@ -256,7 +256,7 @@ final class BloomingRawFunctor {
     void Function()? onDeactivated,
     Graceful? graceful,
   }) =>
-      RawBloomController<T>(
+      _RawBloomControllerImpl<T>(
         data,
         onActivated: onActivated,
         onDeactivated: onDeactivated,
@@ -283,7 +283,7 @@ final class BloomingRawFunctor {
     void Function()? onDeactivated,
     Graceful? graceful,
   }) =>
-      RawBloomController<T>.late(
+      _RawBloomControllerImpl<T>.late(
         reason: reason,
         onActivated: onActivated,
         onDeactivated: onDeactivated,
@@ -312,7 +312,7 @@ final class BloomingRawFunctor {
     void Function()? onDeactivated,
     Graceful? graceful,
   }) =>
-      RawBloomController<T>.error(
+      _RawBloomControllerImpl<T>.error(
         error,
         stackTrace: stackTrace,
         onActivated: onActivated,
@@ -550,7 +550,7 @@ final class BloomingSignalFunctor {
     void Function()? onActivated,
     void Function()? onDeactivated,
   }) =>
-      BloomSignalController(
+      _BloomSignalControllerImpl(
         onActivated: onActivated,
         onDeactivated: onDeactivated,
       );

@@ -9,9 +9,9 @@ import '../../sections/watch_widget_section.dart';
 
 /// Sub-store for Section 01: BloomWidget & Dynamic Discovery
 class BloomWidgetStore {
-  final _counter = BloomController<int>(0);
-  final _userStatus = BloomController<String>('Online');
-  final _showDetails = BloomController<bool>(false);
+  final _counter = blooming<int>(0);
+  final _userStatus = blooming<String>('Online');
+  final _showDetails = blooming<bool>(false);
 
   Bloom<int> get counter => _counter.bloom;
   Bloom<String> get userStatus => _userStatus.bloom;
@@ -38,7 +38,7 @@ class BloomWidgetStore {
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final counterController = BloomController<int>(0);
+final counterController = blooming<int>(0);
 
 base class UserCounterCard extends BloomWidget {
   UserCounterCard({super.key});

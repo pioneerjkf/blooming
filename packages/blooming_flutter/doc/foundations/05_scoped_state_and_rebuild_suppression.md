@@ -102,7 +102,7 @@ extension BloomViaContextExtension on BloomVia {
 class StorePage extends StatelessWidget {
   StorePage({super.key});
 
-  final cartController = BloomController(CartState());
+  final cartController = blooming(CartState());
 
   @override
   Widget build(BuildContext context) {

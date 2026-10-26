@@ -22,10 +22,10 @@ class PhysicsBoundsStore {
           duration: const Duration(seconds: 4),
           clock: clock ?? DateTime.now,
         ),
-        _springStiffness = BloomController<double>(60.0),
-        _springDamping = BloomController<double>(12.0),
-        _frictionDrag = BloomController<double>(0.08),
-        _isMounted = BloomController<bool>(true);
+        _springStiffness = blooming<double>(60.0),
+        _springDamping = blooming<double>(12.0),
+        _frictionDrag = blooming<double>(0.08),
+        _isMounted = blooming<bool>(true);
 
   final DurableAnimationController physicsBoundedFrozenCtrl;
   final DurableAnimationController physicsBoundedCatchUpCtrl;
@@ -97,8 +97,8 @@ class PhysicsBoundsStore {
   }
 
   // --- Integrated Flapping Stress Test (Merged from SimulationFlapping) ---
-  final BloomController<bool> _isFlappingRunning = BloomController<bool>(false);
-  final BloomController<int> _flappingCycles = BloomController<int>(0);
+  final BloomController<bool> _isFlappingRunning = blooming<bool>(false);
+  final BloomController<int> _flappingCycles = blooming<int>(0);
 
   Bloom<bool> get isFlappingRunning => _isFlappingRunning.bloom;
   Bloom<int> get flappingCycles => _flappingCycles.bloom;

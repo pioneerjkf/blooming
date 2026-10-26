@@ -103,8 +103,8 @@ void main() {
     // =========================================================================
     group('3. BloomListController Lifecycle & Mutation', () {
       test('3.1 Standard BloomListController initialization and set mutation', () {
-        final bloom1 = BloomController<int>(10);
-        final bloom2 = BloomController<int>(20);
+        final bloom1 = blooming<int>(10);
+        final bloom2 = blooming<int>(20);
         final controller = blooming.list<Bloom<int>>([bloom1.bloom, bloom2.bloom]);
 
         expect(controller.hasData, isTrue);
@@ -112,7 +112,7 @@ void main() {
         expect(untracked.state(controller.data[0]).snapshot.data, equals(10));
         expect(untracked.state(controller.data[1]).snapshot.data, equals(20));
 
-        final bloom3 = BloomController<int>(30);
+        final bloom3 = blooming<int>(30);
         controller.set([bloom3.bloom]);
 
         expect(controller.data.length, equals(1));
@@ -126,7 +126,7 @@ void main() {
         expect(controller.hasData, isFalse);
         expect(() => controller.data, throwsA(isA<BloomSnapshotExtractionException>()));
 
-        final bloom1 = BloomController<int>(100);
+        final bloom1 = blooming<int>(100);
         controller.set([bloom1.bloom]);
 
         expect(controller.hasData, isTrue);
@@ -142,7 +142,7 @@ void main() {
         expect(controller.hasData, isFalse);
         expect(controller.error, isA<Exception>());
 
-        final bloom1 = BloomController<int>(50);
+        final bloom1 = blooming<int>(50);
         controller.setGuarded(() => [bloom1.bloom]);
         expect(controller.hasData, isTrue);
         expect(controller.data.length, equals(1));
@@ -273,7 +273,7 @@ void main() {
       });
 
       test('3.9 aggregate works polymorphically on Bloom<Set<T>> and Bloom<Iterable<T>>', () {
-        final setBloom = BloomController<Set<int>>({10, 20, 30});
+        final setBloom = blooming<Set<int>>({10, 20, 30});
         final total = setBloom.bloom.aggregate((elements) => elements.fold<int>(0, (a, b) => a + b));
         expect(untracked(total), 60);
 
@@ -316,8 +316,8 @@ void main() {
       });
 
       test('4.3 computed conditionally returns a value based on group elements', () {
-        final c1 = BloomController<int>(10);
-        final c2 = BloomController<int>(20);
+        final c1 = blooming<int>(10);
+        final c2 = blooming<int>(20);
         final group = blooming.list([c1.bloom, c2.bloom]);
 
         final converged = computed((via) {
@@ -389,8 +389,8 @@ void main() {
       });
 
       test('4.7 every and any boolean logical reduction operators', () {
-        final g1 = BloomController<int>(10);
-        final g2 = BloomController<int>(20);
+        final g1 = blooming<int>(10);
+        final g2 = blooming<int>(20);
         final group = Bloom.constant([g1.bloom, g2.bloom]);
 
         final allEven = group.every((x) => x % 2 == 0);
@@ -420,8 +420,8 @@ void main() {
     // =========================================================================
     group('5. Complex Bloom Node List Topology & Dynamic Lifecycle', () {
       test('5.1 Dynamic Bloom node list elements mutating trigger single dirty notification via combined pipeline', () {
-        final c1 = BloomController<int>(1);
-        final c2 = BloomController<int>(2);
+        final c1 = blooming<int>(1);
+        final c2 = blooming<int>(2);
         final group = Bloom.constant([c1.bloom, c2.bloom]);
 
         int dirtyCount = 0;
@@ -447,8 +447,8 @@ void main() {
       });
 
       test('5.2 Bloom node list combine reacts lazily to inner controllers while active', () {
-        final c1 = BloomController<String>('A');
-        final c2 = BloomController<String>('B');
+        final c1 = blooming<String>('A');
+        final c2 = blooming<String>('B');
         final group = Bloom.constant([c1.bloom, c2.bloom]);
         final combined = group.combine();
 
@@ -472,9 +472,9 @@ void main() {
       });
 
       test('5.3 Dynamic Re-parenting in BloomListController (Swap In, Swap Out & Mooring GC)', () {
-        final g1 = BloomController<String>('Item 1');
-        final g2 = BloomController<String>('Item 2');
-        final g3 = BloomController<String>('Item 3');
+        final g1 = blooming<String>('Item 1');
+        final g2 = blooming<String>('Item 2');
+        final g3 = blooming<String>('Item 3');
 
         final groupController = blooming.list<Bloom<String>>([g1.bloom, g2.bloom]);
         int dirtyCount = 0;
@@ -508,9 +508,9 @@ void main() {
       });
 
       test('5.4 Nested Bloom Node List Hierarchy: List of Lists with Deep Leaf Mutations', () {
-        final leafA1 = BloomController<String>('A1');
-        final leafA2 = BloomController<String>('A2');
-        final leafB1 = BloomController<String>('B1');
+        final leafA1 = blooming<String>('A1');
+        final leafA2 = blooming<String>('A2');
+        final leafB1 = blooming<String>('B1');
 
         final groupA = Bloom.constant([leafA1.bloom, leafA2.bloom]);
         final groupB = Bloom.constant([leafB1.bloom]);
@@ -542,8 +542,8 @@ void main() {
       });
 
       test('5.5 Single element transitioning to Error and recovering to Valid in Bloom node list', () {
-        final g1 = BloomController<int>(10);
-        final g2 = BloomController<int>(20);
+        final g1 = blooming<int>(10);
+        final g2 = blooming<int>(20);
 
         final group = Bloom.constant([g1.bloom, g2.bloom]);
         final combined = group.combine();
@@ -569,8 +569,8 @@ void main() {
       });
 
       test('5.6 BloomListController downstream pipeline integration via computed', () {
-        final c1 = BloomController<int>(10);
-        final c2 = BloomController<int>(20);
+        final c1 = blooming<int>(10);
+        final c2 = blooming<int>(20);
         final groupController = blooming.list<Bloom<int>>([c1.bloom, c2.bloom]);
 
         final sumBloom = computed(
@@ -587,7 +587,7 @@ void main() {
         expect(dirtyCount, equals(1));
         expect(terminal.data, equals(35));
 
-        final c3 = BloomController<int>(100);
+        final c3 = blooming<int>(100);
         groupController.set([c1.bloom, c2.bloom, c3.bloom]);
         expect(dirtyCount, equals(2));
         expect(terminal.data, equals(135));
@@ -596,11 +596,11 @@ void main() {
       });
 
       test('5.7 BloomListController multiple heterogeneous elements creates active reactive Bloom node list', () {
-        final c1 = BloomController<int>(10);
-        final c2 = BloomController<String>('hello');
-        final c3 = BloomController<bool>(true);
-        final c4 = BloomController<double>(3.14);
-        final c5 = BloomController<int>(50);
+        final c1 = blooming<int>(10);
+        final c2 = blooming<String>('hello');
+        final c3 = blooming<bool>(true);
+        final c4 = blooming<double>(3.14);
+        final c5 = blooming<int>(50);
 
         final group = blooming.list<Bloom<dynamic>>([c1.bloom, c2.bloom, c3.bloom, c4.bloom, c5.bloom]);
         expect(group.hasData, isTrue);
@@ -641,9 +641,9 @@ void main() {
       });
 
       test('6.2 Iterable<BloomController<T>>.data and dataOrNull extract values correctly', () {
-        final c1 = BloomController<String>('alpha');
-        final c2 = BloomController<String>('beta');
-        final c3 = BloomController<String>('gamma')..empty();
+        final c1 = blooming<String>('alpha');
+        final c2 = blooming<String>('beta');
+        final c3 = blooming<String>('gamma')..empty();
         final list = [c1, c2];
 
         expect(list.data.toList(), equals(['alpha', 'beta']));

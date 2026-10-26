@@ -9,8 +9,8 @@ void main() async {
   print('=== Bloom Reactive Engine: Core Pipeline Showcase ===\n');
 
   // 1. Reactive Node: Source Handle (Producer / Consumer Separation) & Discrete Signal Trigger
-  final searchController = BloomController<String>('');
-  final refreshTrigger = BloomSignalController(); // Discrete manual refresh trigger
+  final searchController = blooming<String>('');
+  final refreshTrigger = blooming.signal(); // Discrete manual refresh trigger
 
   // 2. Fluent Operators & Dynamic Triad (Debounce + Async Derivation + Distinct)
   final debouncedQuery = searchController.bloom.debounced(

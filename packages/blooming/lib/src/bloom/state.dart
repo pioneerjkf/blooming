@@ -88,7 +88,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final count = BloomController(0);
+/// final count = blooming(0);
 /// final doubled = computed((via) => via(count.bloom) * 2);
 ///
 /// print(untracked(doubled)); // 0

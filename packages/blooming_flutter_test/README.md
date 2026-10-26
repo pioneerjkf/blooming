@@ -68,7 +68,7 @@ Override dependencies with custom mock nodes, errors, or empty states without to
 
 ```dart
 testWidgets('renders fallback when service emits error', (tester) async {
-  final userBloom = BloomController<String>('Alice').bloom;
+  final userBloom = blooming<String>('Alice').bloom;
 
   await tester.pumpWidget(
     MaterialApp(
@@ -93,7 +93,7 @@ Verify 2-Phase LPDAG widget rebuild cycles on user interaction or state mutation
 bloomWidgetTest(
   'increments display when controller mutates',
   test: (tester) async {
-    final counter = BloomController(0);
+    final counter = blooming(0);
 
     await tester.pumpScopedWidget(
       MaterialApp(
@@ -122,7 +122,7 @@ Because `blooming_flutter_test` re-exports `blooming_test`, your unit tests and 
 ```dart
 bloomTest<BloomController<int>>(
   'pure business logic unit test',
-  build: () => BloomController(10),
+  build: () => blooming(10),
   target: (ctrl) => ctrl.bloom,
   act: (ctrl) => ctrl.data = 20,
   expect: () => [10, 20],

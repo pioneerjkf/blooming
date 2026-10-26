@@ -21,14 +21,14 @@ final class _TickerDriver<T> {
   }) : _vsync = vsync {
     bool hasInitError = false;
     try {
-      _controller = BloomController<T>(
+      _controller = blooming<T>(
         onTick(Duration.zero),
         distinct: distinct,
         equals: equals,
       );
     } catch (error, stackTrace) {
       hasInitError = true;
-      _controller = BloomController<T>.error(
+      _controller = blooming.error<T>(
         error,
         stackTrace: stackTrace,
         distinct: distinct,

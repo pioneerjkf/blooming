@@ -9,7 +9,7 @@ import '../../test_utils.dart';
 void main() {
   group('Bloom.late / bloom.late', () {
     test('starts in empty uninitialized state and fails fast on .data', () {
-      final user = BloomController<String>.late();
+      final user = blooming.late<String>();
 
       expect(user.isEmpty, isTrue);
       expect(user.hasData, isFalse);
@@ -19,7 +19,7 @@ void main() {
     });
 
     test('populates value and transitions to available state', () {
-      final user = BloomController<String>.late();
+      final user = blooming.late<String>();
 
       user.data = 'Alice';
 
@@ -30,7 +30,7 @@ void main() {
     });
 
     test('respects distinct setting when populated', () async {
-      final data = BloomController<int>.late();
+      final data = blooming.late<int>();
 
       var effectRuns = 0;
       int? lastVal;
@@ -61,7 +61,7 @@ void main() {
     });
 
     test('late with raw triggers effect on same value assignments', () async {
-      final lateSignal = BloomController<int>.late(distinct: false);
+      final lateSignal = blooming.late<int>(distinct: false);
 
       var effectRuns = 0;
       final dispose = effect((via) {
@@ -84,7 +84,7 @@ void main() {
     });
 
     test('late works reactively inside computed before and after population', () {
-      final lateSignal = BloomController<int>.late();
+      final lateSignal = blooming.late<int>();
       final multiplied = computed((via) => (via.state(lateSignal.bloom).dataOrNull ?? 0) * 10);
 
       expect(untracked(multiplied), 0);

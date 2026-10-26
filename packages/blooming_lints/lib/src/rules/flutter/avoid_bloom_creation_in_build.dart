@@ -17,7 +17,7 @@ part of '../../../blooming_lints.dart';
 /// **BAD:**
 /// ```dart
 /// Widget build(BuildContext context) {
-///   final counter = BloomController(0); // [Anti-Pattern] Recreated on every frame!
+///   final counter = blooming(0); // [Anti-Pattern] Recreated on every frame!
 ///   final doubled = computed((via) => via(counter.bloom) * 2); // [Anti-Pattern] Orphan pipeline node!
 ///   return Text('${untracked(doubled)}');
 /// }
@@ -39,7 +39,7 @@ part of '../../../blooming_lints.dart';
 ///   @override
 ///   void initState() {
 ///     super.initState();
-///     _counter = BloomController(0);
+///     _counter = blooming(0);
 ///     _doubled = computed((via) => via(_counter.bloom) * 2);
 ///   }
 ///
@@ -76,6 +76,7 @@ class AvoidBloomCreationInBuild extends DartLintRule {
   };
 
   static const _forbiddenPipelineFunctors = {
+    'blooming',
     'computed',
     'switched',
     'managed',
@@ -111,22 +112,28 @@ class AvoidBloomCreationInBuild extends DartLintRule {
       reporter.atNode(node, _code);
     });
 
-    // 3. Detect forbidden functor calls as FunctionExpressionInvocation (e.g. computed(), switched(), managed())
+    // 3. Detect forbidden functor calls as FunctionExpressionInvocation (e.g. blooming(), computed(), switched(), managed())
     context.registry.addFunctionExpressionInvocation((node) {
-      final function = node.function;
-      final name =
-          function is SimpleIdentifier ? function.name : function.toSource();
-      if (_forbiddenPipelineFunctors.contains(name) ||
-          _controllerAndTerminalConstructors.contains(name) ||
-          name.startsWith('computed.')) {
-        if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
-        if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
-          return;
-        }
-
-        reporter.atNode(node, _code);
+      if (!isForbiddenFunctionExpressionInvocation(node)) return;
+      if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
+      if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
+        return;
       }
+
+      reporter.atNode(node, _code);
     });
+  }
+
+  /// Returns `true` if [node] calls a forbidden pipeline functor via FunctionExpressionInvocation.
+  static bool isForbiddenFunctionExpressionInvocation(
+      FunctionExpressionInvocation node) {
+    final function = node.function;
+    final name =
+        function is SimpleIdentifier ? function.name : function.toSource();
+    return _forbiddenPipelineFunctors.contains(name) ||
+        _controllerAndTerminalConstructors.contains(name) ||
+        name.startsWith('blooming.') ||
+        name.startsWith('computed.');
   }
 
   /// Returns `true` if [node] creates a forbidden controller, coupler, signal, or terminal.
@@ -145,6 +152,9 @@ class AvoidBloomCreationInBuild extends DartLintRule {
       if (target is SimpleIdentifier && target.name == 'Bloom') return true;
     }
     final target = node.target;
+    if (target is SimpleIdentifier && target.name == 'blooming') {
+      return true;
+    }
     if (target is SimpleIdentifier && target.name == 'computed') {
       if (name == 'future' || name == 'stream' || name == 'async') {
         return true;

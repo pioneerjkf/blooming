@@ -13,16 +13,16 @@ base class _DeLorean<T> {
     T Function(Object error, [StackTrace? stackTrace])? onError,
   })  : _future = future,
         _onError = onError {
-    _pendingController = BloomController<bool>(true);
+    _pendingController = blooming<bool>(true);
     if (initialFactory != null) {
       try {
         final early = initialFactory();
-        _controller = BloomController<T>(early);
+        _controller = blooming<T>(early);
       } catch (e, s) {
-        _controller = BloomController<T>.error(e, stackTrace: s);
+        _controller = blooming.error<T>(e, stackTrace: s);
       }
     } else {
-      _controller = BloomController<T>.late();
+      _controller = blooming.late<T>();
     }
     _backToTheFuture();
   }
@@ -109,13 +109,13 @@ base class _PragueVltava<T> {
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
   }) : _stream = stream {
-    _pendingController = BloomController<bool>(
+    _pendingController = blooming<bool>(
       false,
       distinct: distinct,
     );
     if (initialFactory != null) {
       try {
-        _controller = BloomController<T>(
+        _controller = blooming<T>(
           initialFactory(),
           distinct: distinct,
           equals: equals,
@@ -124,7 +124,7 @@ base class _PragueVltava<T> {
           onDeactivated: _unsubscribe,
         );
       } catch (e, s) {
-        _controller = BloomController<T>.error(
+        _controller = blooming.error<T>(
           e,
           stackTrace: s,
           distinct: distinct,
@@ -135,7 +135,7 @@ base class _PragueVltava<T> {
         );
       }
     } else {
-      _controller = BloomController<T>.late(
+      _controller = blooming.late<T>(
         distinct: distinct,
         equals: equals,
         graceful: graceful,
@@ -143,7 +143,7 @@ base class _PragueVltava<T> {
         onDeactivated: _unsubscribe,
       );
     }
-    _doneController = BloomController<bool>(
+    _doneController = blooming<bool>(
       false,
       distinct: distinct,
     );

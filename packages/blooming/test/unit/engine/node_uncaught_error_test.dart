@@ -27,7 +27,7 @@ void main() {
   });
 
   test('Node _handleUncaughtError dispatches to downstream terminals (lines 198-203)', () {
-    final ctrl = BloomController(true);
+    final ctrl = blooming(true);
     final comp = managed<int>(
         guard: (via) => via(ctrl.bloom).guarded(),
         create: (BloomVia via) => 1,

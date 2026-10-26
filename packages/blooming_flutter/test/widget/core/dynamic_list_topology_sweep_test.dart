@@ -77,10 +77,10 @@ void main() {
       testWidgets(
           '1.1 Dynamic insertion, removal & sweep: detached items cause zero widget rebuilds',
           (tester) async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
-        final w4 = BloomController<int>(40);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
+        final w4 = blooming<int>(40);
 
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
@@ -158,9 +158,9 @@ void main() {
       testWidgets(
           '1.2 Order permutation & list clearing in BloomWidget sweeps all inner edges',
           (tester) async {
-        final w1 = BloomController<int>(1);
-        final w2 = BloomController<int>(2);
-        final w3 = BloomController<int>(3);
+        final w1 = blooming<int>(1);
+        final w2 = blooming<int>(2);
+        final w3 = blooming<int>(3);
 
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
@@ -205,7 +205,7 @@ void main() {
         expect(find.text('Sum: 0, Count: 0'), findsOneWidget);
 
         // Repopulate with new items
-        final w4 = BloomController<int>(7);
+        final w4 = blooming<int>(7);
         listController.set([w4.bloom]);
         await tester.pump();
         expect(find.text('Sum: 7, Count: 1'), findsOneWidget);
@@ -220,14 +220,14 @@ void main() {
       testWidgets(
           '1.3 Branch switching in BloomWidget sweeps all unselected branch items',
           (tester) async {
-        final useA = BloomController<bool>(true);
+        final useA = blooming<bool>(true);
 
-        final a1 = BloomController<int>(10);
-        final a2 = BloomController<int>(20);
+        final a1 = blooming<int>(10);
+        final a2 = blooming<int>(20);
         final listA = blooming.list<Bloom<int>>([a1.bloom, a2.bloom]);
 
-        final b1 = BloomController<int>(100);
-        final b2 = BloomController<int>(200);
+        final b1 = blooming<int>(100);
+        final b2 = blooming<int>(200);
         final listB = blooming.list<Bloom<int>>([b1.bloom, b2.bloom]);
 
         int buildCount = 0;
@@ -283,9 +283,9 @@ void main() {
     group('2. composed functor with dynamic Bloom<List<Bloom<T>>>', () {
       testWidgets('2.1 Dynamic insertion, removal & sweep in composed functor',
           (tester) async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -352,8 +352,8 @@ void main() {
       testWidgets(
           '2.2 composed.child isolates static child while dynamic list sweeps inner items',
           (tester) async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -395,7 +395,7 @@ void main() {
         expect(staticChildBuildCount, 1);
 
         // Dynamic change in list
-        final w3 = BloomController<int>(30);
+        final w3 = blooming<int>(30);
         listController.set([w2.bloom, w3.bloom]); // w1 removed, w3 added
         await tester.pump();
 
@@ -425,7 +425,7 @@ void main() {
         final pool = List.generate(
             6,
             (i) =>
-                BloomController<int>((i + 1) * 10)); // [10, 20, 30, 40, 50, 60]
+                blooming<int>((i + 1) * 10)); // [10, 20, 30, 40, 50, 60]
         final listController =
             blooming.list<Bloom<int>>([pool[0].bloom, pool[1].bloom]);
 
@@ -498,9 +498,9 @@ void main() {
     group('3. Asynchronous & Batch Operations in BloomWidget and composed', () {
       testWidgets('3.1 Atomic batch mutation coalesces rebuild to single frame',
           (tester) async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -548,8 +548,8 @@ void main() {
 
       testWidgets('3.2 Delayed asynchronous mutations across pump ticks',
           (tester) async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -565,7 +565,7 @@ void main() {
         expect(buildCount, 1);
 
         // Asynchronous delayed tick 1: Add new node w3
-        final w3 = BloomController<int>(30);
+        final w3 = blooming<int>(30);
         await tester.pump(const Duration(milliseconds: 5));
         listController.set([w1.bloom, w2.bloom, w3.bloom]);
         await tester.pump();
@@ -607,8 +607,8 @@ void main() {
       testWidgets(
           '4.1 BloomWidget with via.state pattern matching UI: Empty placeholder & Error banner',
           (tester) async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
         final listController =
             blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -680,9 +680,9 @@ void main() {
       testWidgets(
           '4.2 BloomWidget early return on first error item: renders error fallback; recovery restores list UI',
           (tester) async {
-        final w1 = BloomController<String>('Item1');
-        final w2 = BloomController<String>('Item2');
-        final w3 = BloomController<String>('Item3');
+        final w1 = blooming<String>('Item1');
+        final w2 = blooming<String>('Item2');
+        final w3 = blooming<String>('Item3');
         final listController =
             blooming.list<Bloom<String>>([w1.bloom, w2.bloom, w3.bloom]);
 
@@ -756,9 +756,9 @@ void main() {
       testWidgets(
           '5.1 Exhaustive 27-state matrix of 3 nodes under composed rendering & sweep',
           (tester) async {
-        final cA = BloomController<int>(1);
-        final cB = BloomController<int>(2);
-        final cC = BloomController<int>(3);
+        final cA = blooming<int>(1);
+        final cB = blooming<int>(2);
+        final cC = blooming<int>(3);
         final controllers = [cA, cB, cC];
 
         final listController =

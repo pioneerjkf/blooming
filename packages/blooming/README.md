@@ -123,7 +123,7 @@ Bloom's reactive engine is organized around three foundational pillars: **Reacti
 │     │    ├── blooming.raw(...)                  (unfiltered hot-path)      │
 │     │    ├── blooming.list / .set / .map        (transactional draft)      │
 │     │    ├── blooming.signal                    (discrete tick pulse)      │
-│     │    └── BloomController<T>                 (data) ──(.bloom)──> Bloom │
+│     │    └── blooming<T>(data) ──(.bloom)──> Bloom │
 │     │                                                                      │
 │     ├── The Dynamic Triad (Unified Functors)                               │
 │     │    ├── computed                          ((via) => ...)              │
@@ -232,7 +232,7 @@ refreshTrigger.emit(); // Emits monotonically increasing version tick
 #### Strict Separation of Producer and Consumer
 
 Bloom enforces strict **Has-a encapsulation** between state mutation and state observation:
-- State creation functors (`blooming(...)`) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomDraftController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete constructors (`BloomController(...)`) remain fully accessible for direct object-oriented instantiation.
+- State creation functors (`blooming(...)`) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomDraftController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete constructors (`blooming(...)`) remain fully accessible for direct object-oriented instantiation.
 - Downstream UI widgets and derivations only receive **Consumer Handles** (`Bloom<T>`) exposed via `.bloom`.
 
 ```dart

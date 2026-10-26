@@ -86,7 +86,7 @@ part of '../../framework.dart';
 /// ## Examples
 /// ```dart
 /// // Pure reactive state node:
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 ///
 /// class CounterPage extends StatelessWidget {
 ///   const CounterPage({super.key});

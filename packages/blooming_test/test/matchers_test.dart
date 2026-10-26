@@ -8,14 +8,14 @@ void main() {
   group('LPDAG Custom Matchers Suite', () {
     group('isDormant & isActive', () {
       test('node with 0 subscribers is dormant and not active', () {
-        final counter = BloomController(0);
+        final counter = blooming(0);
         expect(counter, isDormant);
         expect(counter.bloom, isDormant);
         expect(counter, isNot(isActive));
       });
 
       test('node with active terminal becomes active and not dormant', () {
-        final counter = BloomController(0);
+        final counter = blooming(0);
         final terminal = RawBloomTerminal(counter.bloom, onInvalidated: () {});
         terminal.activate();
 
@@ -31,7 +31,7 @@ void main() {
 
     group('hasSubscribers', () {
       test('accurately counts downstream active subscription edges', () {
-        final counter = BloomController(0);
+        final counter = blooming(0);
         expect(counter, hasSubscribers(0));
 
         final terminal1 = RawBloomTerminal(counter.bloom, onInvalidated: () {});
@@ -60,7 +60,7 @@ void main() {
         //    b   c
         //     \ /
         //      d
-        final a = BloomController(1);
+        final a = blooming(1);
         final b = computed((via) => via(a.bloom) * 2);
         final c = computed((via) => via(a.bloom) + 10);
         final d = computed<int>((via) => via(b) + via(c));
@@ -101,7 +101,7 @@ void main() {
       });
 
       test('matches Bloom nodes and controllers in Data state', () {
-        final ctrl = BloomController('active');
+        final ctrl = blooming('active');
         expect(ctrl, isData('active'));
         expect(ctrl.bloom, isData('active'));
       });

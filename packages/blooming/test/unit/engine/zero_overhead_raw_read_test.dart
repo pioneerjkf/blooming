@@ -10,8 +10,8 @@ import 'package:test/test.dart';
 void main() {
   group('Phase W-2: Zero-Overhead Raw Read & Explicit Tracking Specification', () {
     test('1. Raw reads without via() do not establish dependency edges', () async {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
       int computeCount = 0;
 
       // Only 'a' is explicitly tracked via `via(a)`.
@@ -37,8 +37,8 @@ void main() {
     });
 
     test('2. All 10 state getters are zero-overhead and untracked without via()', () {
-      final node = BloomController('Alpha');
-      final emptyNode = BloomController<String>.late();
+      final node = blooming('Alpha');
+      final emptyNode = blooming.late<String>();
       final errorNode = Bloom<String>.error('Fault');
 
       // Reading all 10 getters outside any scope
@@ -54,7 +54,7 @@ void main() {
       expect(untracked.state(errorNode).stackTrace, isNotNull);
 
       // Inside computed with explicit tracking of another node
-      final dummy = BloomController(1);
+      final dummy = blooming(1);
       final comp = computed((via) {
         via(dummy.bloom);
         // Direct read of all getters on 'node', 'emptyNode', 'errorNode' without via()
@@ -80,9 +80,9 @@ void main() {
     });
 
     test('3. Dynamic branching and 1-pass epoch sweeping with explicit via()', () async {
-      final condition = BloomController(true);
-      final branchA = BloomController('A');
-      final branchB = BloomController('B');
+      final condition = blooming(true);
+      final branchA = blooming('A');
+      final branchB = blooming('B');
       int computeRuns = 0;
 
       final dynamicNode = computed((via) {
@@ -110,7 +110,7 @@ void main() {
     });
 
     test('4. Effect with explicit via tracking triggers accurately on scheduled ticks', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       int effectRuns = 0;
       int observedValue = -1;
 

@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('ComparableBloomElementsExtension', () {
     test('maxOrNull and minOrNull compute comparable elements reactively', () {
-      final controller = BloomController<List<int>>([5, 3, 9, 1, 7]);
+      final controller = blooming<List<int>>([5, 3, 9, 1, 7]);
 
       final maxBloom = controller.bloom.elements.maxOrNull;
       final minBloom = controller.bloom.elements.minOrNull;
@@ -32,7 +32,7 @@ void main() {
     test(
         'max and min compute comparable elements reactively and throw when empty',
         () {
-      final controller = BloomController<List<int>>([5, 3, 9, 1, 7]);
+      final controller = blooming<List<int>>([5, 3, 9, 1, 7]);
 
       final maxBloom = controller.bloom.elements.max;
       final minBloom = controller.bloom.elements.min;
@@ -60,7 +60,7 @@ void main() {
     });
 
     test('isSorted detects sorted state reactively', () {
-      final controller = BloomController<List<int>>([1, 2, 3, 4, 5]);
+      final controller = blooming<List<int>>([1, 2, 3, 4, 5]);
       final isSortedBloom = controller.bloom.elements.isSorted();
 
       final term = RawBloomTerminal(isSortedBloom, onInvalidated: () {});
@@ -81,7 +81,7 @@ void main() {
     });
 
     test('sorted and sortedDescending produce sorted lists reactively', () {
-      final controller = BloomController<List<int>>([5, 3, 9, 1, 7]);
+      final controller = blooming<List<int>>([5, 3, 9, 1, 7]);
       final sortedBloom = controller.bloom.elements.sorted;
       final sortedDescBloom = controller.bloom.elements.sortedDescending;
 

@@ -385,8 +385,8 @@ final class SwitchedFunctor {
 ### 6.2 Precondition Gating with `BloomGuard`
 `switched` supports precondition guards to gate branch switching and avoid instantiating heavy subtrees until prerequisites are satisfied:
 ```dart
-final selectedTab = BloomController(0);
-final isLoggedIn = BloomController(false);
+final selectedTab = blooming(0);
+final isLoggedIn = blooming(false);
 
 final currentFeed = switched(
   (via) => via(selectedTab.bloom) == 0 ? homeFeed.bloom : trendingFeed.bloom,
@@ -404,7 +404,7 @@ final currentFeed = switched(
 ```dart
 // BAD: Re-creates controller on every branch evaluation
 final currentTheme = switched((via) {
-  return BloomController('Dark').bloom; // Anti-pattern: allocates new node every tick!
+  return blooming('Dark').bloom; // Anti-pattern: allocates new node every tick!
 });
 
 // GOOD: Return pre-existing or cached state nodes
@@ -434,7 +434,7 @@ final liveStockFeed = computed.future(
 final cachedStockFeed = computed((via) => getOfflineCachedQuotes());
 
 // 2. Control plane routing state (Online/offline toggle)
-final isOnlineMode = BloomController<bool>(true);
+final isOnlineMode = blooming<bool>(true);
 
 // 3. Switched: Dynamic routing of data plane based on control plane delta (Δ)
 final activeStockFeed = switched<List<String>>(

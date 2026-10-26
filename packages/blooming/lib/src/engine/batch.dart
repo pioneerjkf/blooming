@@ -44,8 +44,8 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController(0);
-/// final text = BloomController('hello');
+/// final counter = blooming(0);
+/// final text = blooming('hello');
 ///
 /// batch(() {
 ///   counter.data++;

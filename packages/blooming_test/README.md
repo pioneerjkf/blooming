@@ -50,7 +50,7 @@ import 'package:blooming_test/blooming_test.dart';
 
 /// Shopping cart business logic store
 class CartStore {
-  final items = BloomController<List<String>>([]);
+  final items = blooming<List<String>>([]);
 
   /// Derived reactive count: auto-computed via BloomVia
   late final Bloom<int> itemCount = computed((via) => via(items.bloom).length);
@@ -98,7 +98,7 @@ class SearchStore {
     debouncedQuery = query.bloom.debounced(const Duration(milliseconds: 300));
   }
 
-  final query = BloomController('');
+  final query = blooming('');
   late final Bloom<String> debouncedQuery;
 }
 
@@ -134,7 +134,7 @@ Verify the zero-leak **Subscriber-Driven Inactive Dormancy** invariant. When an 
 
 ```dart
 test('proves derived node enters zero-leak dormancy when unobserved', () {
-  final count = BloomController(10);
+  final count = blooming(10);
   final doubled = computed((via) => via(count.bloom) * 2);
 
   // 1. Initially dormant: 0 active subscribers
@@ -161,7 +161,7 @@ Assert that nodes or controllers transition cleanly between Data, Empty, and Err
 ```dart
 test('verifies 3-State FSM transitions', () {
   // 1. Initial Empty state with descriptive reason
-  final user = BloomController<String>.late(reason: 'AwaitingAuth');
+  final user = blooming.late<String>(reason: 'AwaitingAuth');
   expect(user, isEmptyState('AwaitingAuth'));
 
   // 2. Transition to valid Data state

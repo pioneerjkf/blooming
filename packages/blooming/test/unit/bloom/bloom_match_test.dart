@@ -9,8 +9,8 @@ import '../../test_utils.dart';
 void main() {
   group('Bloom State & Node switch (phase) Pattern Matching Tests', () {
     test('1. Valid, Late, Error BloomController branching with switch (phase)', () {
-      final validBloom = BloomController('Lotus');
-      final lateBloom = BloomController<String>.late();
+      final validBloom = blooming('Lotus');
+      final lateBloom = blooming.late<String>();
       final errorBloom = Bloom<String>.error('error payload');
 
       final validLabel = switch (validBloom.phase) {
@@ -37,8 +37,8 @@ void main() {
     });
 
     test('2. Fallback branching with hasData ternary', () {
-      final validBloom = BloomController('Lotus');
-      final lateBloom = BloomController<String>.late();
+      final validBloom = blooming('Lotus');
+      final lateBloom = blooming.late<String>();
 
       final validResult = validBloom.hasData ? 'Value: ${validBloom.data}' : 'Fallback';
       expect(validResult, 'Value: Lotus');
@@ -48,8 +48,8 @@ void main() {
     });
 
     test('3. Conditional null-coalescing extraction with hasData / hasError / dataOrNull', () {
-      final validBloom = BloomController('Lotus');
-      final lateBloom = BloomController<String>.late();
+      final validBloom = blooming('Lotus');
+      final lateBloom = blooming.late<String>();
       final errorBloom = Bloom<String>.error('error payload');
 
       // Idiomatic ternary extraction via hasData / hasError
@@ -69,7 +69,7 @@ void main() {
     });
 
     test('4. Auto-tracking inside computed() when branching on switch (via.state.phase)', () {
-      final count = BloomController(10);
+      final count = blooming(10);
 
       final statusMessage = computed((via) {
         final state = via.state(count.bloom);
@@ -87,7 +87,7 @@ void main() {
     });
 
     test('5. Auto-tracking inside effect() when reading via.state with hasData ternary', () async {
-      final text = BloomController('Initial');
+      final text = blooming('Initial');
       final logs = <String>[];
 
       final dispose = effect((BloomVia via) {
@@ -107,8 +107,8 @@ void main() {
     });
 
     test('6. Bloom list untracked.state branching with switch (phase)', () {
-      final r1 = BloomController(10);
-      final r2 = BloomController(20);
+      final r1 = blooming(10);
+      final r2 = blooming(20);
       final group = Bloom.constant([r1.bloom, r2.bloom]);
 
       final state = untracked.state(group);

@@ -11,7 +11,7 @@ import 'package:blooming/blooming.dart';
 void main() {
   group('EffectHandle Lifecycle & Cancellation Suite', () {
     test('1. Effect.handled executes with active handle via runner', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       EffectHandle? capturedHandle;
       var runCount = 0;
 
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('2. Invariant 1: onCleanup is called before subsequent turn begins', () async {
-      final query = BloomController('a');
+      final query = blooming('a');
       final log = <String>[];
       final handles = <EffectHandle>[];
 
@@ -72,7 +72,7 @@ void main() {
     });
 
     test('3. Invariant 2: onCleanup is called on deactivation / unmount', () async {
-      final target = BloomController(10);
+      final target = blooming(10);
       var cleanedUp = false;
       EffectHandle? currentHandle;
 
@@ -98,8 +98,8 @@ void main() {
     });
 
     test('4. Multi-target Effect.handled with tuple', () async {
-      final a = BloomController(1);
-      final b = BloomController(2);
+      final a = blooming(1);
+      final b = blooming(2);
       final cleanupOrder = <int>[];
 
       final runner = (a.bloom, b.bloom).effect.handled((handle) {
@@ -122,9 +122,9 @@ void main() {
     });
 
     test('5. Dynamic Effect.handledVia with 1-Pass Epoch Sweeping', () async {
-      final condition = BloomController(true);
-      final left = BloomController('L1');
-      final right = BloomController('R1');
+      final condition = blooming(true);
+      final left = blooming('L1');
+      final right = blooming('R1');
       final log = <String>[];
 
       final runner = Effect.handledVia((via, handle) {
@@ -167,7 +167,7 @@ void main() {
     });
 
     test('6. Multiple onCleanup callbacks execute in LIFO / all guaranteed via finally', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       final executed = <String>[];
 
       // 1. Verify exact LIFO execution order: 3 -> 2 -> 1
@@ -210,7 +210,7 @@ void main() {
     });
 
     test('7. Registering onCleanup on an already cancelled handle executes immediately', () {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       EffectHandle? storedHandle;
 
       final runner = counter.bloom.effect.handled((handle) {
@@ -232,7 +232,7 @@ void main() {
     });
 
     test('8. Guard returning false preserves previous handle and skips execution', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       var runCount = 0;
       var cleanups = 0;
 
@@ -264,7 +264,7 @@ void main() {
     });
 
     test('9. take: N automatically triggers early teardown and cleans up last handle', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       var runCount = 0;
       var cleanups = 0;
 
@@ -293,7 +293,7 @@ void main() {
     });
 
     test('10. In-flight race condition immunity simulation', () async {
-      final query = BloomController('first');
+      final query = blooming('first');
       final receivedResults = <String>[];
 
       final runner = query.bloom.effect.handled((handle) async {
@@ -326,7 +326,7 @@ void main() {
     });
 
     test('11. Cleanup errors after cancellation or disposal are routed to onUncaughtError', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       EffectHandle? capturedHandle;
       final errors = <Object>[];
 

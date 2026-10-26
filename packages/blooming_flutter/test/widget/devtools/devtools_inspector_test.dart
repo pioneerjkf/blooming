@@ -11,8 +11,8 @@ void main() {
     testWidgets(
         'exposes active Bloom dependencies in DiagnosticsNode properties',
         (tester) async {
-      final counter = BloomController(10)..debugLabel = 'counterState';
-      final title = BloomController('Hello').withDebugLabel('titleState');
+      final counter = blooming(10)..debugLabel = 'counterState';
+      final title = blooming('Hello').withDebugLabel('titleState');
 
       await tester.pumpWidget(
         Directionality(
@@ -45,7 +45,7 @@ void main() {
 
     testWidgets('real-time updates of inspector properties on Bloom mutation',
         (tester) async {
-      final count = BloomController(0)..debugLabel = 'liveCounter';
+      final count = blooming(0)..debugLabel = 'liveCounter';
 
       await tester.pumpWidget(
         Directionality(
@@ -77,9 +77,9 @@ void main() {
     testWidgets(
         'dynamic branching in build sweeps inactive dependencies in inspector properties',
         (tester) async {
-      final showExtra = BloomController(true)..debugLabel = 'showFlag';
-      final branchA = BloomController('Branch A').withDebugLabel('branchA');
-      final branchB = BloomController('Branch B').withDebugLabel('branchB');
+      final showExtra = blooming(true)..debugLabel = 'showFlag';
+      final branchA = blooming('Branch A').withDebugLabel('branchA');
+      final branchB = blooming('Branch B').withDebugLabel('branchB');
 
       await tester.pumpWidget(
         Directionality(
@@ -145,7 +145,7 @@ void main() {
 
     testWidgets('exposes tethered effects in inspector properties',
         (tester) async {
-      final counter = BloomController(10)..debugLabel = 'counter';
+      final counter = blooming(10)..debugLabel = 'counter';
       final effect =
           Effect([counter.bloom], () {}).withDebugLabel('CounterLogger');
 

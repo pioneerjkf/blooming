@@ -11,7 +11,7 @@ void main() {
   group('Bloom State Pipeline Temporal Control Suite', () {
     group('1. DebouncedBloom (Trailing Edge - Default)', () {
       test('1.1 Rapid successive mutations are collapsed to the last value after silence', () async {
-        final query = BloomController('a');
+        final query = blooming('a');
         final debouncedQuery = query.bloom.debounced(const Duration(milliseconds: 50));
 
         final observed = <String>[untracked(debouncedQuery)];
@@ -45,7 +45,7 @@ void main() {
       });
 
       test('1.2 Top-level factory bloom.debounced works identically', () async {
-        final text = BloomController('start');
+        final text = blooming('start');
         final debouncedText = text.bloom.debounced(const Duration(milliseconds: 40));
 
         final notifications = <String>[untracked(debouncedText)];
@@ -68,7 +68,7 @@ void main() {
     group('2. DebouncedBloom (Leading and Dual Edges)', () {
       test('2.1 Leading-only debounce propagates first mutation immediately and ignores subsequent in window',
           () async {
-        final state = BloomController(1);
+        final state = blooming(1);
         final debounced = state.bloom.debounced(
           const Duration(milliseconds: 50),
           leading: true,
@@ -105,7 +105,7 @@ void main() {
       });
 
       test('2.1.1 Leading-only debounce propagates immediately to downstream computed node', () async {
-        final state = BloomController(1);
+        final state = blooming(1);
         final debounced = state.bloom.debounced(
           const Duration(milliseconds: 50),
           leading: true,
@@ -127,7 +127,7 @@ void main() {
 
       test('2.2 Dual-edge debounce (leading: true, trailing: true) fires leading then trailing after silence',
           () async {
-        final state = BloomController('A');
+        final state = blooming('A');
         final debounced = state.bloom.debounced(
           const Duration(milliseconds: 50),
           leading: true,
@@ -162,7 +162,7 @@ void main() {
 
     group('3. ThrottledBloom (Rate-Limiting)', () {
       test('3.1 ThrottledBloom limits downstream notifications to window interval', () async {
-        final scroll = BloomController(0.0);
+        final scroll = blooming(0.0);
         final throttledScroll = scroll.bloom.throttled(
           const Duration(milliseconds: 50),
           leading: true,
@@ -198,7 +198,7 @@ void main() {
       });
 
       test('3.2 bloom.throttled factory creates functioning rate limiter', () async {
-        final counter = BloomController(0);
+        final counter = blooming(0);
         final throttled = counter.bloom.throttled(
           const Duration(milliseconds: 40),
           leading: false,
@@ -226,7 +226,7 @@ void main() {
 
     group('4. Zero-Leak Deactivation & Resilience', () {
       test('4.1 Deactivating node cancels running timers without leaking or throwing', () async {
-        final source = BloomController('live');
+        final source = blooming('live');
         final debounced = source.bloom.debounced(const Duration(milliseconds: 50));
 
         final terminal = RawBloomTerminal(debounced, onInvalidated: () {});
@@ -247,7 +247,7 @@ void main() {
       });
 
       test('4.2 Invalid configuration assert(leading || trailing) fails early', () {
-        final source = BloomController(42);
+        final source = blooming(42);
         expect(
           () => source.bloom.debounced(
             const Duration(milliseconds: 50),
@@ -270,7 +270,7 @@ void main() {
 
     group('5. Full Reactive Pipeline Integration (SWR / computed.future)', () {
       test('5.1 Debounced state seamlessly feeds computed.future with retained() SWR', () async {
-        final query = BloomController('init');
+        final query = blooming('init');
         final debounced = query.bloom.debounced(const Duration(milliseconds: 40));
 
         var apiCallCount = 0;

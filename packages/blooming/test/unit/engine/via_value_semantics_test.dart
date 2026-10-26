@@ -9,8 +9,8 @@ import 'package:test/test.dart';
 void main() {
   group('BloomVia Value Semantics & Short-Circuit Propagation Suite (D1, D2, D7)', () {
     test('1. via(x) returns T and dynamically tracks dependency', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       final sum = computed((via) => via(a.bloom) + via(b.bloom));
 
@@ -24,7 +24,7 @@ void main() {
     });
 
     test('2. Upstream Empty short-circuits and preserves emptyReason (D2)', () {
-      final a = BloomController<int>.late(reason: 'WaitingForInput');
+      final a = blooming.late<int>(reason: 'WaitingForInput');
       final derived = computed((via) => via(a.bloom) * 2);
 
       expect(untracked.state(derived).isEmpty, isTrue);
@@ -35,7 +35,7 @@ void main() {
 
     test('3. Upstream Error short-circuits and preserves original error without double-wrapping (D2)', () {
       final err = StateError('OriginalError');
-      final a = BloomController<int>.error(err);
+      final a = blooming.error<int>(err);
       final derived = computed((via) => via(a.bloom) * 2);
 
       expect(untracked.state(derived).hasError, isTrue);
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('4. 2-step chain (a -> b -> c) preserves Empty reason across hops', () {
-      final a = BloomController<int>.late(reason: 'Step1Reason');
+      final a = blooming.late<int>(reason: 'Step1Reason');
       final b = computed((via) => via(a.bloom) + 1);
       final c = computed((via) => via(b) * 2);
 
@@ -54,7 +54,7 @@ void main() {
     });
 
     test('5. Self-healing: When upstream changes from Empty to Data, downstream recovers', () {
-      final a = BloomController<int>.late(reason: 'InitialEmpty');
+      final a = blooming.late<int>(reason: 'InitialEmpty');
       final derived = computed((via) => via(a.bloom) * 2);
 
       expect(untracked.state(derived).isEmpty, isTrue);
@@ -65,9 +65,9 @@ void main() {
     });
 
     test('6. 1-Pass Epoch Sweeping on short-circuit: unreached branches are pruned', () {
-      final cond = BloomController(true);
-      final t = BloomController<int>.late(reason: 'EmptyTrueBranch');
-      final f = BloomController(100);
+      final cond = blooming(true);
+      final t = blooming.late<int>(reason: 'EmptyTrueBranch');
+      final f = blooming(100);
 
       var fEvaluations = 0;
       final fDerived = computed((via) {
@@ -95,7 +95,7 @@ void main() {
     });
 
     test('7. via.state(x) returns BloomState<T> without short-circuiting', () {
-      final a = BloomController<int>.late(reason: 'NoData');
+      final a = blooming.late<int>(reason: 'NoData');
 
       final status = computed((via) {
         final state = via.state(a.bloom);
@@ -112,7 +112,7 @@ void main() {
     });
 
     test('8. Guard condition evaluates and takes precedence over short-circuit', () {
-      final a = BloomController<int>(5);
+      final a = blooming<int>(5);
 
       final derived = computed(
         (via) => via(a.bloom) * 2,
@@ -131,7 +131,7 @@ void main() {
     });
 
     test('9. Effect.via short-circuits silently without calling action on Empty', () async {
-      final a = BloomController<int>.late(reason: 'NotReady');
+      final a = blooming.late<int>(reason: 'NotReady');
       var actionRuns = 0;
 
       final terminal = RawViaTerminal((via) {

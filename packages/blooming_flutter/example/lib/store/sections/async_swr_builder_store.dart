@@ -29,7 +29,7 @@ class DemoUser {
 /// Sub-store for Section 06: Async UI, SWR & BloomPendingIndicator.
 class AsyncSwrBuilderStore {
   AsyncSwrBuilderStore({int initialLatency = 500})
-      : _latencyMs = BloomController<int>(initialLatency) {
+      : _latencyMs = blooming<int>(initialLatency) {
     _rawFuture = computed.future<DemoUser?>((via) async {
       final query = via(_query.bloom);
       final latency = via(_latencyMs.bloom);
@@ -86,10 +86,10 @@ class AsyncSwrBuilderStore {
     userProfile = _rawFuture.retained(pending: _pendingCoupler);
   }
 
-  final _query = BloomController<String>('Alice');
-  final _preserveData = BloomController<bool>(true);
+  final _query = blooming<String>('Alice');
+  final _preserveData = blooming<bool>(true);
   final BloomController<int> _latencyMs;
-  final _fetchCount = BloomController<int>(1);
+  final _fetchCount = blooming<int>(1);
   final _pendingCoupler = BloomCoupler<bool>.late();
 
   late final Bloom<DemoUser?> _rawFuture;

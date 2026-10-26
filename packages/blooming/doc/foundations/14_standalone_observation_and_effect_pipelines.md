@@ -174,7 +174,7 @@ If the same `Effect` instance is shared between a tracking scope (`via.tether(ef
 The [`EffectHandle`](../../lib/src/effect/effect.dart) interface enables registering teardown callbacks to be invoked when an execution turn completes or when the effect deactivates:
 
 ```dart
-final roomIdBloom = BloomController('room_101').bloom;
+final roomIdBloom = blooming('room_101').bloom;
 
 final roomManager = roomIdBloom.effect.handled((handle) {
   // Resource 1: Acquired and immediately guarded
@@ -243,9 +243,9 @@ targets.effect                 ((action) => ...)
 
 ### 5.2 Record Tuple Combinators
 ```dart
-final userId = BloomController('usr_1');
-final authToken = BloomController('tok_abc');
-final syncStatus = BloomController('idle');
+final userId = blooming('usr_1');
+final authToken = blooming('tok_abc');
+final syncStatus = blooming('idle');
 
 // Multi-target handled effect on 3-tuple:
 final sessionRunner = (userId.bloom, authToken.bloom, syncStatus.bloom).effect.handled((handle) {
@@ -271,7 +271,7 @@ import 'package:blooming/effect.dart';
 enum ServerHealth { healthy, degraded, critical }
 
 void main() async {
-  final serverHealth = BloomController<ServerHealth>(ServerHealth.healthy);
+  final serverHealth = blooming<ServerHealth>(ServerHealth.healthy);
 
   // Standalone effect running outside any UI framework
   final healthRunner = serverHealth.bloom.effect(() {
@@ -295,8 +295,8 @@ void main() async {
 import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
 
-final speedBloom = BloomController<int>(50).bloom;
-final limitBloom = BloomController<int>(60).bloom;
+final speedBloom = blooming<int>(50).bloom;
+final limitBloom = blooming<int>(60).bloom;
 
 // Evaluates dependencies dynamically, triggering alerts only when condition holds
 final speedMonitor = Effect.via((via) {
@@ -314,8 +314,8 @@ final speedMonitor = Effect.via((via) {
 import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
 
-final scrollOffset = BloomController<double>(0.0);
-final pageIndex = BloomController<int>(0);
+final scrollOffset = blooming<double>(0.0);
+final pageIndex = blooming<int>(0);
 
 // Throttled multi-target effect running standalone
 final analyticsRunner = (scrollOffset.bloom, pageIndex.bloom).effect.throttle(

@@ -63,7 +63,7 @@ void main() {
 
     group('Terminal Lifecycle Methods & Status Getters (activate, deactivate)', () {
       test('Complete lifecycle state machine and idempotency checks', () {
-        final controller = BloomController<int>(1);
+        final controller = blooming<int>(1);
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {});
 
         // Initial state before activation
@@ -92,7 +92,7 @@ void main() {
 
     group('Zero Spurious Invalidation & Clean Initial Lifecycle Tests', () {
       test('RawBloomTerminal: instantiation and initial activation never fire spurious invalidations', () {
-        final controller = BloomController<int>(10);
+        final controller = blooming<int>(10);
         var invalidateCount = 0;
         final terminal = RawBloomTerminal<int>(controller.bloom, onInvalidated: () => invalidateCount++);
 
@@ -116,7 +116,7 @@ void main() {
 
       test('RawBloomTerminal: synchronizes pulledVersion AFTER lazy computed source resolves state', () {
         var computedCount = 0;
-        final trigger = BloomController<int>(1);
+        final trigger = blooming<int>(1);
         final lazySource = computed((via) {
           computedCount++;
           return via(trigger.bloom) * 10;
@@ -151,8 +151,8 @@ void main() {
 
       test('RawBloomTerminal on BloomListController: instantiation and activation never fire spurious invalidations',
           () {
-        final c1 = BloomController<int>(1);
-        final c2 = BloomController<int>(2);
+        final c1 = blooming<int>(1);
+        final c2 = blooming<int>(2);
         final group = blooming.list([c1.bloom, c2.bloom]);
 
         var invalidateCount = 0;
@@ -170,8 +170,8 @@ void main() {
       });
 
       test('BloomListController & downstream pipeline: construction does not fire spurious invalidations', () {
-        final c1 = BloomController<int>(10);
-        final c2 = BloomController<int>(20);
+        final c1 = blooming<int>(10);
+        final c2 = blooming<int>(20);
         final groupCtrl = blooming.list([c1.bloom, c2.bloom]);
 
         // Downstream aggregation
@@ -191,7 +191,7 @@ void main() {
         expect(terminal.data, 35);
 
         // BloomListController dynamic swap triggers exactly 1 invalidation
-        final c3 = BloomController<int>(100);
+        final c3 = blooming<int>(100);
         groupCtrl.set([c1.bloom, c2.bloom, c3.bloom]);
         expect(invalidateCount, 2);
         expect(terminal.data, 135);
@@ -201,7 +201,7 @@ void main() {
 
       test('BloomController mutated while inactive: subsequent terminal attachment has zero spurious invalidations',
           () {
-        final c = BloomController<int>(1);
+        final c = blooming<int>(1);
         c.set(2); // mutated while inactive
 
         var invalidateCount = 0;
@@ -219,9 +219,9 @@ void main() {
       });
 
       test('Cascading dynamic branching: activation does not fire spurious invalidations', () {
-        final triggerCtrl = BloomController<String>('alpha');
-        final c1 = BloomController<int>(100);
-        final c2 = BloomController<int>(200);
+        final triggerCtrl = blooming<String>('alpha');
+        final c1 = blooming<int>(100);
+        final c2 = blooming<int>(200);
 
         // 1. Dynamic branching computed node
         final branch = computed((via) {
@@ -247,7 +247,7 @@ void main() {
 
       test('All terminals support clean reconnection with zero spurious invalidations', () {
         // 1. RawBloomTerminal with mutated source while inactive
-        final ctrl = BloomController<int>(1);
+        final ctrl = blooming<int>(1);
         var invalidateCount = 0;
         final term = RawBloomTerminal<int>(ctrl.bloom, onInvalidated: () => invalidateCount++);
         term.activate();
@@ -308,7 +308,7 @@ void main() {
 
     group('RawTerminal.debugForceInvalidate Tests', () {
       test('debugForceInvalidate invalidates intermediate Relay caches and forces recomputation', () {
-        final ctrl = BloomController<int>(5);
+        final ctrl = blooming<int>(5);
         var multiplier = 2;
 
         // intermediate computed bloom capturing `multiplier`
@@ -334,7 +334,7 @@ void main() {
       });
 
       test('debugForceInvalidate walks multi-level DAG with diamond dependencies correctly', () {
-        final root = BloomController<int>(2);
+        final root = blooming<int>(2);
         var addend = 1;
 
         final branchA = computed((via) => via(root.bloom) + addend);
@@ -360,8 +360,8 @@ void main() {
       });
 
       test('debugForceInvalidate works with RawViaTerminal and dynamic dependencies', () {
-        final ctrlA = BloomController<int>(10);
-        final ctrlB = BloomController<int>(20);
+        final ctrlA = blooming<int>(10);
+        final ctrlB = blooming<int>(20);
         var useCtrlB = false;
 
         final terminal = RawViaTerminal<int>(
@@ -382,7 +382,7 @@ void main() {
       });
 
       test('debugForceInvalidate propagates to scope-bound effect', () {
-        final ctrl = BloomController<int>(10);
+        final ctrl = blooming<int>(10);
         var factor = 2;
         final mapped = computed((via) => via(ctrl.bloom) * factor);
 
@@ -415,7 +415,7 @@ void main() {
 
     group('Terminal onUncaughtError Custom Handler & Zone Fallback Tests', () {
       test('onUncaughtError catches exceptions thrown inside onInvalidated callback', () {
-        final ctrl = BloomController<int>(1);
+        final ctrl = blooming<int>(1);
         Object? caughtError;
         StackTrace? caughtStackTrace;
 
@@ -438,7 +438,7 @@ void main() {
       });
 
       test('onUncaughtError in RawBloomTerminal', () {
-        final ctrl = BloomController<int>(1);
+        final ctrl = blooming<int>(1);
         final caughtList = <String>[];
 
         final bloomTerminal = RawBloomTerminal(
@@ -454,7 +454,7 @@ void main() {
       });
 
       test('onUncaughtError in RawViaTerminal', () {
-        final ctrl = BloomController<int>(10);
+        final ctrl = blooming<int>(10);
         final caughtList = <String>[];
 
         final viaTerminal = RawViaTerminal(
@@ -473,7 +473,7 @@ void main() {
       });
 
       test('onUncaughtError in RawComputedTerminal', () {
-        final ctrl = BloomController<int>(10);
+        final ctrl = blooming<int>(10);
         final caughtList = <String>[];
 
         final computedTerminal = RawComputedTerminal<int>(
@@ -492,7 +492,7 @@ void main() {
       });
 
       test('When onUncaughtError throws, both original error and handler error fallback to Zone', () {
-        final ctrl = BloomController<int>(1);
+        final ctrl = blooming<int>(1);
         final zoneErrors = <Object>[];
 
         runZonedGuarded(() {
@@ -519,7 +519,7 @@ void main() {
 
     group('Zero-Copy Synchronous Gateway & Direct Source Access (P1)', () {
       test('Direct source read does NOT permanently mute subsequent invalidations', () {
-        final source = BloomController(1);
+        final source = blooming(1);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(source.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -544,7 +544,7 @@ void main() {
       });
 
       test('Bursty mutations coalesce into single notification within bloom.batch', () {
-        final source = BloomController(0, distinct: false);
+        final source = blooming(0, distinct: false);
         int invalidationCount = 0;
         final terminal = RawBloomTerminal(source.bloom, onInvalidated: () => invalidationCount++);
         terminal.activate();
@@ -571,8 +571,8 @@ void main() {
     // =========================================================================
     group('RawComputedTerminal Comprehensive Tests', () {
       test('data & snapshot reads lazily resolve value without evaluate() method', () {
-        final ctrlA = BloomController<int>(10);
-        final ctrlB = BloomController<int>(20);
+        final ctrlA = blooming<int>(10);
+        final ctrlB = blooming<int>(20);
         int computeCount = 0;
         int invalidations = 0;
 
@@ -616,9 +616,9 @@ void main() {
       });
 
       test('dynamic dependency switching & epoch sweep', () {
-        final cond = BloomController<bool>(true);
-        final a = BloomController<int>(1);
-        final b = BloomController<int>(100);
+        final cond = blooming<bool>(true);
+        final a = blooming<int>(1);
+        final b = blooming<int>(100);
 
         final terminal = RawComputedTerminal<int>(
           (via) => via(cond.bloom) ? via(a.bloom) : via(b.bloom),
@@ -639,7 +639,7 @@ void main() {
       });
 
       test('guard and reason support', () {
-        final count = BloomController<int>(0);
+        final count = blooming<int>(0);
         final terminal = RawComputedTerminal<int>(
           (via) => via(count.bloom) * 2,
           guard: (via) => (via(count.bloom) > 0).guarded('Count must be positive'),
@@ -658,7 +658,7 @@ void main() {
       });
 
       test('error containment and exception propagation', () {
-        final trigger = BloomController<bool>(false);
+        final trigger = blooming<bool>(false);
         final terminal = RawComputedTerminal<int>(
           (via) {
             if (via(trigger.bloom)) {
@@ -705,9 +705,9 @@ void main() {
 
     group('RawViaTerminal Dynamic Invariants & 1-Pass Epoch Sweep', () {
       test('dynamic branching and 1-pass epoch sweep detach inactive branch edges', () {
-        final condition = BloomController<bool>(true);
-        final branchA = BloomController<String>('A');
-        final branchB = BloomController<String>('B');
+        final condition = blooming<bool>(true);
+        final branchA = blooming<String>('A');
+        final branchB = blooming<String>('B');
         int invalidationCount = 0;
 
         final terminal = RawViaTerminal<String>(

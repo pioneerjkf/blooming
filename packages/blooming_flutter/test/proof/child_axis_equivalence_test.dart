@@ -117,7 +117,7 @@ void main() {
     testWidgets(
         '1. composed.child with non-const child rebuilds Probe only once across Bloom mutations',
         (WidgetTester tester) async {
-      final countCtrl = BloomController<int>(0);
+      final countCtrl = blooming<int>(0);
       final probeCount = [0];
 
       await tester.pumpWidget(
@@ -160,7 +160,7 @@ void main() {
     testWidgets(
         '2. Local variable hoisting in parent build rebuilds Probe only once across Bloom mutations',
         (WidgetTester tester) async {
-      final countCtrl = BloomController<int>(0);
+      final countCtrl = blooming<int>(0);
       final probeCount = [0];
 
       await tester.pumpWidget(
@@ -205,11 +205,11 @@ void main() {
     testWidgets(
         '3. composed.child vs Local Hoisting produce identical rebuild counts under M parent rebuilds',
         (WidgetTester tester) async {
-      final countCtrl1 = BloomController<int>(0);
+      final countCtrl1 = blooming<int>(0);
       final probeCount1 = [0];
       final key1 = GlobalKey<_ParentTestHarnessState>();
 
-      final countCtrl2 = BloomController<int>(0);
+      final countCtrl2 = blooming<int>(0);
       final probeCount2 = [0];
       final key2 = GlobalKey<_ParentTestHarnessState>();
 
@@ -285,7 +285,7 @@ void main() {
     testWidgets(
         '4. In-builder instantiation rebuilds Probe on EVERY Bloom mutation (anti-pattern comparison)',
         (WidgetTester tester) async {
-      final countCtrl = BloomController<int>(0);
+      final countCtrl = blooming<int>(0);
       final probeCount = [0];
 
       await tester.pumpWidget(
@@ -315,7 +315,7 @@ void main() {
     testWidgets(
         '5. Multi-child: composed.children with list isolates children identically to hoisting',
         (WidgetTester tester) async {
-      final countCtrl = BloomController<int>(0);
+      final countCtrl = blooming<int>(0);
       final p1 = [0];
       final p2 = [0];
 
@@ -355,7 +355,7 @@ void main() {
     testWidgets(
         '6. Multi-child: local hoisting of children list isolates identically to composed.children',
         (WidgetTester tester) async {
-      final countCtrlH = BloomController<int>(0);
+      final countCtrlH = blooming<int>(0);
       final h1 = [0];
       final h2 = [0];
 
@@ -499,8 +499,8 @@ void main() {
     testWidgets(
         '9. composed.vsync.child vs local variable hoisting across Bloom mutations',
         (WidgetTester tester) async {
-      final countCtrl1 = BloomController<int>(0);
-      final countCtrl2 = BloomController<int>(0);
+      final countCtrl1 = blooming<int>(0);
+      final countCtrl2 = blooming<int>(0);
       final probeCount1 = [0];
       final probeCount2 = [0];
 
@@ -548,8 +548,8 @@ void main() {
     testWidgets(
         '10. State and GlobalKey retention is identical between composed.child and local hoisting',
         (WidgetTester tester) async {
-      final countCtrl1 = BloomController<int>(0);
-      final countCtrl2 = BloomController<int>(0);
+      final countCtrl1 = blooming<int>(0);
+      final countCtrl2 = blooming<int>(0);
       State<_StatefulProbe>? state1;
       State<_StatefulProbe>? state2;
 
@@ -601,7 +601,7 @@ void main() {
     testWidgets(
         '11. const child widgets are canonically identical across all modes',
         (WidgetTester tester) async {
-      final countCtrl = BloomController<int>(0);
+      final countCtrl = blooming<int>(0);
       final probeCount = [0];
 
       await tester.pumpWidget(

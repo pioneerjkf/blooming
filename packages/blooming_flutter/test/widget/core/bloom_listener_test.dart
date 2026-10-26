@@ -12,7 +12,7 @@ void main() {
     testWidgets(
         '1. Rebuild Count: 0 Invariant - child never rebuilds on state mutations',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       int childBuildCount = 0;
       final listenerLogs = <int>[];
 
@@ -57,7 +57,7 @@ void main() {
 
     testWidgets('2. Microtask-Scheduled Execution and Burst Coalescing',
         (WidgetTester tester) async {
-      final message = BloomController<String>('Hello');
+      final message = blooming<String>('Hello');
       final results = <String>[];
 
       await tester.pumpWidget(
@@ -95,7 +95,7 @@ void main() {
 
     testWidgets('3. guard conditionally filters execution',
         (WidgetTester tester) async {
-      final number = BloomController<int>(0);
+      final number = blooming<int>(0);
       final recorded = <int>[];
 
       await tester.pumpWidget(
@@ -124,7 +124,7 @@ void main() {
     testWidgets(
         '4. onUncaughtError callback catches exceptions thrown in action',
         (WidgetTester tester) async {
-      final trigger = BloomController<int>(0);
+      final trigger = blooming<int>(0);
       Object? capturedError;
       StackTrace? capturedStackTrace;
 
@@ -156,7 +156,7 @@ void main() {
 
     testWidgets('5. BloomListener Element debugFillProperties diagnostics',
         (WidgetTester tester) async {
-      final testBloom = BloomController<int>(1);
+      final testBloom = blooming<int>(1);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -181,7 +181,7 @@ void main() {
     testWidgets(
         '6. BloomListener debugFillProperties on widget and reassemble()',
         (WidgetTester tester) async {
-      final a = BloomController<int>(1);
+      final a = blooming<int>(1);
       final widget = BloomListener<int>(
         a.bloom,
         (ctx, state) {},
@@ -211,7 +211,7 @@ void main() {
     testWidgets(
         '7. BloomListener error handling with custom onUncaughtError and uncaught fallback',
         (WidgetTester tester) async {
-      final a = BloomController<int>(1);
+      final a = blooming<int>(1);
       Object? capturedError;
       final widgetWithOnError = BloomListener<int>(
         a.bloom,
@@ -257,8 +257,8 @@ void main() {
 
     testWidgets('8. Composed multi-target listening via computed derived state',
         (WidgetTester tester) async {
-      final a = BloomController<int>(10);
-      final b = BloomController<int>(20);
+      final a = blooming<int>(10);
+      final b = blooming<int>(20);
       final sum = computed<int>((via) => via(a.bloom) + via(b.bloom));
       int childBuildCount = 0;
       final sumLogs = <int>[];
@@ -301,8 +301,8 @@ void main() {
 
     testWidgets('9. Dynamic widget update preserves reactivity with new target',
         (WidgetTester tester) async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
       final logs = <int>[];
 
       Widget buildHost({required bool swapToB}) {
@@ -343,7 +343,7 @@ void main() {
   group('Bloom<T>.listen Extension Tests', () {
     testWidgets('1. counter.bloom.listen(...) creates listener correctly',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(10);
+      final counter = blooming<int>(10);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -368,7 +368,7 @@ void main() {
     testWidgets(
         '2. counter.bloom.listen.debounce(...) debounces rapid mutations',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -400,7 +400,7 @@ void main() {
     testWidgets(
         '3. counter.bloom.listen.throttle(...) throttles consecutive mutations',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -433,7 +433,7 @@ void main() {
 
     testWidgets('4. counter.bloom.listen debounced side-effect works correctly',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -454,7 +454,7 @@ void main() {
 
     testWidgets('5. counter.bloom.listen respects take limit and deactivates',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -482,7 +482,7 @@ void main() {
   group('BloomListener Time-Domain (Debounce & Throttle) Tests', () {
     testWidgets('1. BloomListener.debounce delays execution until settled',
         (WidgetTester tester) async {
-      final a = BloomController<int>(0);
+      final a = blooming<int>(0);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -515,7 +515,7 @@ void main() {
     testWidgets(
         '2. BloomListener.throttle executes leading edge then trails after window',
         (WidgetTester tester) async {
-      final a = BloomController<int>(0);
+      final a = blooming<int>(0);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -549,7 +549,7 @@ void main() {
 
     testWidgets('3. BloomListener.debounce diagnostics and edge modes',
         (WidgetTester tester) async {
-      final target = BloomController<String>('init');
+      final target = blooming<String>('init');
       final logs = <String>[];
 
       await tester.pumpWidget(
@@ -589,7 +589,7 @@ void main() {
     testWidgets(
         '4. Debounced listener safely cancels timer and does not fire when unmounted',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildHost(bool show) {
@@ -625,7 +625,7 @@ void main() {
     testWidgets(
         '5. BloomListener.debounce and BloomListener.throttle factory constructors',
         (WidgetTester tester) async {
-      final target = BloomController<int>(1);
+      final target = blooming<int>(1);
       final logs = <int>[];
 
       await tester.pumpWidget(
@@ -648,7 +648,7 @@ void main() {
     testWidgets(
         '6. Parent rebuild with identical targets reuses existing EffectRunner instance',
         (WidgetTester tester) async {
-      final target = BloomController<int>(1);
+      final target = blooming<int>(1);
       final logs = <int>[];
 
       Widget buildTree(int parentVersion) {
@@ -690,8 +690,8 @@ void main() {
     testWidgets(
         '7. Parent rebuild with altered targets cleanly replaces EffectRunner',
         (WidgetTester tester) async {
-      final targetA = BloomController<int>(1);
-      final targetB = BloomController<int>(10);
+      final targetA = blooming<int>(1);
+      final targetB = blooming<int>(10);
       final logs = <int>[];
 
       Widget buildTree(Bloom<int> currentTarget) {
@@ -731,7 +731,7 @@ void main() {
     testWidgets(
         '8. Parent rebuild with inline lambda guard preserves EffectRunner and evaluates latest scope',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree(int threshold) {
@@ -791,7 +791,7 @@ void main() {
     testWidgets(
         '9. Dynamically adding or changing guard preserves EffectRunner while applying new predicate',
         (WidgetTester tester) async {
-      final target = BloomController<int>(1);
+      final target = blooming<int>(1);
       final logs = <int>[];
 
       Widget buildTree(bool hasGuard) {
@@ -832,7 +832,7 @@ void main() {
     testWidgets(
         '10. BloomListener.debounce dynamic duration update rebinds runner with new silence window',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree(Duration duration) {
@@ -865,7 +865,7 @@ void main() {
     testWidgets(
         '11. BloomListener.throttle dynamic duration update rebinds runner with new window',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree(Duration duration) {
@@ -904,7 +904,7 @@ void main() {
     testWidgets(
         '12. BloomListener.debounce dynamic leading/trailing edge update rebinds runner',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree({required bool leading, required bool trailing}) {
@@ -944,7 +944,7 @@ void main() {
     testWidgets(
         '13. Pending debounce timer survives across parent rebuilds with identical configuration',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree(int parentVersion) {
@@ -989,7 +989,7 @@ void main() {
     testWidgets(
         '14. Pending throttle trailing timer survives across parent rebuilds with identical configuration',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree(int parentVersion) {
@@ -1037,7 +1037,7 @@ void main() {
     testWidgets(
         '15. take limits execution count and tears down early (auto deactivation)',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final recorded = <int>[];
 
       await tester.pumpWidget(
@@ -1080,7 +1080,7 @@ void main() {
 
     testWidgets('16. take + guard preserves take tickets on false guard',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final recorded = <int>[];
 
       await tester.pumpWidget(
@@ -1134,7 +1134,7 @@ void main() {
     testWidgets(
         '17. Parent rebuild with updated take rebinds EffectRunner, while identical take preserves runner',
         (WidgetTester tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       final recorded = <int>[];
 
       Widget buildTree(int? takeLimit) {
@@ -1169,8 +1169,8 @@ void main() {
     testWidgets(
         '18. BloomListener.debounce and BloomListener.throttle with take limit',
         (WidgetTester tester) async {
-      final debTarget = BloomController<int>(0);
-      final thrTarget = BloomController<int>(0);
+      final debTarget = blooming<int>(0);
+      final thrTarget = blooming<int>(0);
       final debLogs = <int>[];
       final thrLogs = <int>[];
 
@@ -1226,7 +1226,7 @@ void main() {
     testWidgets(
         '19. Exhausted take listener does not resurrect upon duration update on parent rebuild',
         (WidgetTester tester) async {
-      final target = BloomController<int>(0);
+      final target = blooming<int>(0);
       final logs = <int>[];
 
       Widget buildTree(Duration duration) {

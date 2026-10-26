@@ -83,7 +83,7 @@ An entity governed by [`BloomState<T>`](../../lib/src/bloom/state.dart#L94) resi
 To eliminate silent null propagation while preventing unhandled app crashes, [`BloomState`](../../lib/src/bloom/state.dart#L94) provides multiple extraction tiers:
 
 ```dart
-final bloom = BloomController<String>('Alice').bloom;
+final bloom = blooming<String>('Alice').bloom;
 
 // 1. Fail-Fast Extraction (untracked)
 // Throws BloomSnapshotExtractionException immediately if isEmpty or hasError
@@ -175,9 +175,9 @@ In the **Lazy-Pull Phase (Phase 2)**, only nodes actively observed by connected 
 In dynamic derivations (`computed`, `switched`), branching conditions shift dependencies across evaluation turns:
 
 ```dart
-final useRemote = BloomController(true).bloom;
-final remoteSource = BloomController('remote').bloom;
-final localSource = BloomController('local').bloom;
+final useRemote = blooming(true).bloom;
+final remoteSource = blooming('remote').bloom;
+final localSource = blooming('local').bloom;
 
 final branch = computed((via) {
   if (via(useRemote)) {
@@ -263,9 +263,9 @@ Outside derivation scopes, reading `.data` or `.hasData` is devirtualized into a
 To protect complex multi-input derivations from evaluating amidst upstream errors or uninitialized states, Bloom provides compile-time extensions across Dart 3 Record tuples (arity 2 through 9 via [`BloomStateRecord2Extension`](../../lib/src/bloom/state.dart#L345) to [`BloomStateRecord9Extension`](../../lib/src/bloom/state.dart#L660)):
 
 ```dart
-final a = BloomController(1).bloom;
-final b = BloomController(2).bloom;
-final c = BloomController(3).bloom;
+final a = blooming(1).bloom;
+final b = blooming(2).bloom;
+final c = blooming(3).bloom;
 
 final total = computed(
   (via) => via(a) + via(b) + via(c),

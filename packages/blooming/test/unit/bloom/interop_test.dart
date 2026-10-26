@@ -10,7 +10,7 @@ import '../../test_utils.dart';
 void main() {
   group('Bloom Interop & Proxy Delegation', () {
     test('BloomController.bloom wraps reactive node and tracks automatically', () async {
-      final controller = BloomController<int>(100);
+      final controller = blooming<int>(100);
       final bloomView = controller.bloom;
 
       expect(untracked(bloomView), 100);
@@ -37,8 +37,8 @@ void main() {
     });
 
     test('untracked function and member bypass reactive tracking', () async {
-      final trigger = BloomController(0);
-      final untrackedData = BloomController('Secret');
+      final trigger = blooming(0);
+      final untrackedData = blooming('Secret');
 
       var effectRuns = 0;
       String? observedSecret;
@@ -75,8 +75,8 @@ void main() {
     });
 
     test('works smoothly with BloomListController pipelines', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       final group = blooming.list([a.bloom, b.bloom]);
       expect(group.data.map((g) => untracked(g)).toList(), [10, 20]);
@@ -86,8 +86,8 @@ void main() {
     });
 
     test('BloomController implements BloomState directly', () {
-      final r1 = BloomController(10);
-      final r2 = BloomController<int>.late();
+      final r1 = blooming(10);
+      final r2 = blooming.late<int>();
 
       expect(r1, isA<BloomState<int>>());
       expect(r1.hasData, isTrue);
@@ -104,8 +104,8 @@ void main() {
     });
 
     test('BloomIterableExtension combines and folds multiple Blooms reactively', () async {
-      final a = BloomController('Hello');
-      final b = BloomController('World');
+      final a = blooming('Hello');
+      final b = blooming('World');
 
       final combined = Bloom.constant([a.bloom, b.bloom]).combine();
       final folded = Bloom.constant([a.bloom, b.bloom]).fold('>>', (acc, item) => '$acc $item');
@@ -141,9 +141,9 @@ void main() {
     });
 
     test('BloomIterableNumericExtension sum computes reactive sum via Bloom.constant().sum()', () async {
-      final p1 = BloomController(100);
-      final p2 = BloomController(250);
-      final p3 = BloomController(50);
+      final p1 = blooming(100);
+      final p2 = blooming(250);
+      final p3 = blooming(50);
 
       final total = Bloom.constant([p1.bloom, p2.bloom, p3.bloom]).sum();
 
@@ -168,9 +168,9 @@ void main() {
     });
 
     test('BloomIterableExtension evaluates logical AND (every) and OR (any)', () async {
-      final isNameValid = BloomController(true);
-      final isEmailValid = BloomController(true);
-      final isAgreed = BloomController(false);
+      final isNameValid = blooming(true);
+      final isEmailValid = blooming(true);
+      final isAgreed = blooming(false);
 
       final formReady = Bloom.constant([isNameValid.bloom, isEmailValid.bloom, isAgreed.bloom]).every();
       final hasAnyValid = Bloom.constant([isNameValid.bloom, isEmailValid.bloom, isAgreed.bloom]).any();
@@ -202,7 +202,7 @@ void main() {
 
     test('Bloom.computed with distinct projects slice and suppresses downstream effect runs when slice unchanged',
         () async {
-      final user = BloomController((name: 'Alice', age: 20));
+      final user = blooming((name: 'Alice', age: 20));
 
       final name = computed((via) => via(user.bloom).name).distinct();
 
@@ -306,7 +306,7 @@ void main() {
     });
 
     test('Bloom.computed and Bloom.distinct transform and deduplicate reactively', () async {
-      final count = BloomController(5);
+      final count = blooming(5);
       final multiplied = computed((via) => via(count.bloom) * 2);
       final isEven = computed((via) => via(multiplied) % 2 == 0).distinct();
 
@@ -333,7 +333,7 @@ void main() {
     });
 
     test('Bloom.computed with guard conditionally blocks computation and becomes empty state', () async {
-      final secret = BloomController('TopSecret');
+      final secret = blooming('TopSecret');
       var authorized = true;
 
       final guarded = computed(
@@ -371,7 +371,7 @@ void main() {
     });
 
     test('Bloom dataOrElse and computed recover uninitialized and error states', () {
-      final uninit = BloomController<String>.late();
+      final uninit = blooming.late<String>();
       final failing = Bloom<String>.error('NetworkError');
 
       final safeUninit = computed((via) => via.state(uninit.bloom).dataOrElse(() => 'DefaultUninit'));
@@ -389,7 +389,7 @@ void main() {
     });
 
     test('bloom.resource auto-tracks upstream and creates lifecycle-bound resource', () async {
-      final factor = BloomController(2);
+      final factor = blooming(2);
       var disposedResource = '';
 
       final derivedRes = managed<String>(
@@ -411,7 +411,7 @@ void main() {
 
     test('bloom.resource disposes previous and creates new resource on upstream change when update is omitted',
         () async {
-      final config = BloomController('wss://server-1');
+      final config = blooming('wss://server-1');
       final disposedList = <String>[];
       final createdList = <String>[];
 
@@ -457,9 +457,9 @@ void main() {
     });
 
     test('BloomCollectionExtension extracts data and dataOrNull with fail-fast validation', () {
-      final r1 = BloomController(10);
-      final r2 = BloomController(20);
-      final rEmpty = BloomController<int>.late();
+      final r1 = blooming(10);
+      final r2 = blooming(20);
+      final rEmpty = blooming.late<int>();
       final rError = Bloom<int>.error('Err');
 
       final validList = [r1, r2];
@@ -472,7 +472,7 @@ void main() {
     });
 
     test('Bloom.computed with distinct and custom comparator suppresses downstream effect executions', () async {
-      final user = BloomController((name: 'Alice', score: 100));
+      final user = blooming((name: 'Alice', score: 100));
       var effectRuns = 0;
       String? observedName;
 
@@ -506,8 +506,8 @@ void main() {
     });
 
     test('Bloom.computed with guard dynamically blocks and restores downstream pipeline based on condition', () async {
-      final allowed = BloomController(false);
-      final query = BloomController('sensitive_data');
+      final allowed = blooming(false);
+      final query = blooming('sensitive_data');
       final guarded = computed(
         (via) => via(query.bloom),
         guard: (via) => via(allowed.bloom).guarded('Access Denied'),
@@ -538,7 +538,7 @@ void main() {
     });
 
     test('bloom.resource with graceful=true defers disposal to microtask', () async {
-      final source = BloomController('res_1');
+      final source = blooming('res_1');
       var disposedResource = '';
 
       final derivedRes = managed<String>(
@@ -566,7 +566,7 @@ void main() {
     });
 
     test('bloom.resource dispose cleans up resources on update or deactivation', () async {
-      final source = BloomController('initial_endpoint');
+      final source = blooming('initial_endpoint');
       final disposals = <String>[];
 
       final derivedRes = managed<String>(
@@ -606,7 +606,7 @@ void main() {
       final r2 = bloom1;
       final r3 = bloom2;
 
-      final writable = BloomController(100);
+      final writable = blooming(100);
       final bloomView = writable.bloom;
 
       expect(identical(r1, r2), isTrue);

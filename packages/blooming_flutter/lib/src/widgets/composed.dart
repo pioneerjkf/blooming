@@ -68,7 +68,7 @@ part of '../../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final count = BloomController(0);
+/// final count = blooming(0);
 ///
 /// Widget build(BuildContext context) {
 ///   return Column(

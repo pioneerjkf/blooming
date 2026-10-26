@@ -88,9 +88,9 @@ Because of this separation, `untracked(...)` compiles down to direct memory acce
 Dynamic branching refers to scenarios where the set of observed nodes changes dynamically at runtime depending on program logic:
 
 ```dart
-final isDark = BloomController(false);
-final darkTheme = BloomController(DarkTheme());
-final lightTheme = BloomController(LightTheme());
+final isDark = blooming(false);
+final darkTheme = blooming(DarkTheme());
+final lightTheme = blooming(LightTheme());
 
 final activeTheme = computed((via) {
   return via(isDark.bloom) ? via(darkTheme.bloom) : via(lightTheme.bloom);

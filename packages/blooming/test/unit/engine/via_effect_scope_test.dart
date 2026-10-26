@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   group('via.tether Scope Binding & Execution Suite', () {
     test('1. Standalone Effect.via() functor intercepts dirty pulses and shields parent scope', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       var parentInvalidations = 0;
       var effectRuns = 0;
       var lastObserved = -1;
@@ -55,7 +55,7 @@ void main() {
     });
 
     test('2. via.tether(Effect.via(...)) binds and returns active Effect with lifecycle', () async {
-      final text = BloomController('hello');
+      final text = blooming('hello');
       Effect? capturedEffect;
       var runs = 0;
 
@@ -91,7 +91,7 @@ void main() {
     });
 
     test('3. via.tether(effect) binds and returns active Effect with lifecycle', () async {
-      final source = BloomController(100);
+      final source = blooming(100);
       final observed = <int>[];
       Effect? capturedEffect;
 
@@ -124,9 +124,9 @@ void main() {
     });
 
     test('4. Dynamic branch switching prunes unobserved dependencies inside Effect.via', () async {
-      final condition = BloomController(true);
-      final branchA = BloomController('A1');
-      final branchB = BloomController('B1');
+      final condition = blooming(true);
+      final branchA = blooming('A1');
+      final branchB = blooming('B1');
 
       var runs = 0;
       var lastRead = '';
@@ -175,7 +175,7 @@ void main() {
     });
 
     test('5. Global scheduler cancels pending effect execution when parent deactivates', () async {
-      final source = BloomController(1);
+      final source = blooming(1);
       var runs = 0;
 
       final terminal = RawViaTerminal(
@@ -208,8 +208,8 @@ void main() {
     });
 
     test('6. Microtask batching coalesces rapid consecutive mutations into a single execution', () async {
-      final a = BloomController(1);
-      final b = BloomController(10);
+      final a = blooming(1);
+      final b = blooming(10);
       var runs = 0;
       var sum = 0;
 
@@ -250,7 +250,7 @@ void main() {
 
   group('Direct .effect() Extension Suite with via.tether(...) (Single, Tuples & Iterable)', () {
     test('1. Single Bloom .effect() skips initial execution (0 initial runs)', () async {
-      final cart = BloomController('item_A');
+      final cart = blooming('item_A');
       var runs = 0;
       var lastRecorded = '';
 
@@ -284,8 +284,8 @@ void main() {
     });
 
     test('2. 2-Tuple (cart, coupon).effect() tracks pair and coalesces mutations', () async {
-      final cart = BloomController(100);
-      final coupon = BloomController(10);
+      final cart = blooming(100);
+      final coupon = blooming(10);
       var runs = 0;
       var total = 0;
 
@@ -328,9 +328,9 @@ void main() {
     });
 
     test('3. 3-Tuple (a, b, c).effect() tracks triplet', () async {
-      final a = BloomController(1);
-      final b = BloomController(2);
-      final c = BloomController(3);
+      final a = blooming(1);
+      final b = blooming(2);
+      final c = blooming(3);
       var runs = 0;
       var product = 0;
 
@@ -358,8 +358,8 @@ void main() {
     });
 
     test('4. Dynamic List [a, b].effect() tracks collection', () async {
-      final a = BloomController('hello');
-      final b = BloomController('world');
+      final a = blooming('hello');
+      final b = blooming('world');
       var runs = 0;
       var combined = '';
 
@@ -387,8 +387,8 @@ void main() {
     });
 
     test('5. Untracked execution boundary prevents re-trigger infection', () async {
-      final trigger = BloomController('trigger_0');
-      final bystander = BloomController('bystander_0');
+      final trigger = blooming('trigger_0');
+      final bystander = blooming('bystander_0');
       var runs = 0;
 
       final terminal = RawViaTerminal(
@@ -423,8 +423,8 @@ void main() {
 
   group('Explicit .effect() and via.tether(...) Scope Binding Suite', () {
     test('1. via.tether((cart, coupon).effect(() {})) registers and triggers on pair mutation', () async {
-      final cart = BloomController(1);
-      final coupon = BloomController(10);
+      final cart = blooming(1);
+      final coupon = blooming(10);
 
       var runs = 0;
       var lastCart = 0;
@@ -458,8 +458,8 @@ void main() {
     });
 
     test('2. Pre-declared (a, b).effect() bound via via.tether(plan)', () async {
-      final a = BloomController('A');
-      final b = BloomController('B');
+      final a = blooming('A');
+      final b = blooming('B');
 
       var runs = 0;
       // Pre-declared outside any scope
@@ -496,7 +496,7 @@ void main() {
     });
 
     test('3. Single bloom.effect() with via.tether()', () async {
-      final item = BloomController(100);
+      final item = blooming(100);
       var runs = 0;
 
       final terminal = RawViaTerminal(
@@ -519,8 +519,8 @@ void main() {
     });
 
     test('4. (a, b).effect() with via.tether() explicit binding', () async {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
       var runs = 0;
       var sum = 0;
 

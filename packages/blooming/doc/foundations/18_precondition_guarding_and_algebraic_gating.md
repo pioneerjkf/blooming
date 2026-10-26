@@ -88,8 +88,8 @@ In synchronous computations and asynchronous bridges (`computed.future`, `comput
 
 ```dart
 // 1. Synchronous computation with zero-heap record multi-guard:
-final a = BloomController<int>(10).bloom;
-final b = BloomController<int>(20).bloom;
+final a = blooming<int>(10).bloom;
+final b = blooming<int>(20).bloom;
 final orderTotal = computed(
   (via) => via(a) + via(b),
   guard: (via) => (via.state(a), via.state(b)).guarded(),
@@ -106,7 +106,7 @@ final checkoutGate = computed(
 );
 
 // 3. Asynchronous Future pipeline gated on session availability:
-final authToken = BloomController<String>('valid_token').bloom;
+final authToken = blooming<String>('valid_token').bloom;
 final userProfile = computed.future(
   (via) => api.fetchUserFeed(),
   guard: (via) => (via.state(authToken).hasData && via(authToken).isNotEmpty)
@@ -122,8 +122,8 @@ Inside [`_ComputedPullMixin._pull()`](../../lib/src/bloom/_internal/_computed.da
 The most critical operational impact of `guard` occurs in [`managed`](../../lib/src/bloom/managed.dart). Beyond simply gating initial allocation, the guard enforces **Deterministic Auto-Disposal**:
 
 ```dart
-final isTrackingEnabled = BloomController<bool>(true).bloom;
-final deviceId = BloomController<String>('dev_42').bloom;
+final isTrackingEnabled = blooming<bool>(true).bloom;
+final deviceId = blooming<String>('dev_42').bloom;
 
 final liveTelemetry = managed<ApiClient>(
   create: (via) => ApiClient(port: 8080),
@@ -172,10 +172,10 @@ If an active resource is currently held, and any dependency in `guard` changes s
 In dynamic topological routing ([`switched`](../../lib/src/bloom/switched.dart)), the guard prevents the initialization and activation of entire downstream subgraphs:
 
 ```dart
-final selectedTab = BloomController<int>(0).bloom;
-final normalFeed = BloomController<String>('normal').bloom;
-final adminFeed = BloomController<String>('admin').bloom;
-final isSessionValid = BloomController<bool>(true).bloom;
+final selectedTab = blooming<int>(0).bloom;
+final normalFeed = blooming<String>('normal').bloom;
+final adminFeed = blooming<String>('admin').bloom;
+final isSessionValid = blooming<bool>(true).bloom;
 
 final activeDashboardFeed = switched(
   (via) => via(selectedTab) == 0 ? normalFeed : adminFeed,
@@ -238,9 +238,9 @@ In conventional Dart code, multi-entity checks often introduce heap allocation o
 To eliminate allocation on hot evaluation paths, Bloom provides compile-time extensions across **Dart 3 Record tuples from arity 2 through 9** (see [`BloomStateRecord2Extension` through `BloomStateRecord9Extension`](../../lib/src/bloom/state.dart)):
 
 ```dart
-final nodeA = BloomController<int>(1).bloom;
-final nodeB = BloomController<int>(2).bloom;
-final nodeC = BloomController<int>(3).bloom;
+final nodeA = blooming<int>(1).bloom;
+final nodeB = blooming<int>(2).bloom;
+final nodeC = blooming<int>(3).bloom;
 
 final combinedQuote = computed(
   (via) => via(nodeA) + via(nodeB) + via(nodeC),
@@ -316,8 +316,8 @@ class BadChatManager {
 #### GOOD: Declarative Auto-Disposing Managed Handle
 ```dart
 // [Recommended] Deterministic lifecycle guaranteed by engine invariants
-final token = BloomController<String>('token_123').bloom;
-final isLoggedIn = BloomController<bool>(true).bloom;
+final token = blooming<String>('token_123').bloom;
+final isLoggedIn = blooming<bool>(true).bloom;
 
 final chatSocket = managed<ApiClient>(
   create: (via) => ApiClient(port: 8080),

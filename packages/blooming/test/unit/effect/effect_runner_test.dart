@@ -11,7 +11,7 @@ import 'package:blooming/blooming.dart';
 void main() {
   group('EffectRunner Architectural Suite (Standalone Effect Execution)', () {
     test('1. Architectural Contract: EffectRunner is a RawTerminal governing an Effect', () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final effect = controller.bloom.effect(() {});
       final runner = effect.run();
 
@@ -24,7 +24,7 @@ void main() {
     });
 
     test('1.1 Standalone execution with run() responds to mutations', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       var runs = 0;
 
       final runner = counter.bloom.effect(() {
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('1.2 autoStart: false stays inactive until explicit activate()', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       var runs = 0;
 
       final runner = counter.bloom.effect(() {
@@ -87,7 +87,7 @@ void main() {
       test(
         '2.1 Deactivating runner keeps effect active while tether scope is active',
         () async {
-          final counter = BloomController<int>(0);
+          final counter = blooming<int>(0);
           var runs = 0;
 
           // Single shared Effect instance
@@ -96,7 +96,7 @@ void main() {
           });
 
           // 1. Tethered inside a reactive scope (e.g. computed node)
-          final toggle = BloomController<bool>(true);
+          final toggle = blooming<bool>(true);
           final computedScope = computed((via) {
             if (via(toggle.bloom)) {
               via.tether(sharedEffect);
@@ -153,14 +153,14 @@ void main() {
       test(
         '2.2 Unmounting tether scope keeps effect active while runner is active',
         () async {
-          final counter = BloomController<int>(0);
+          final counter = blooming<int>(0);
           var runs = 0;
 
           final sharedEffect = counter.bloom.effect(() {
             runs++;
           });
 
-          final toggle = BloomController<bool>(true);
+          final toggle = blooming<bool>(true);
           final computedScope = computed((via) {
             if (via(toggle.bloom)) {
               via.tether(sharedEffect);
@@ -205,8 +205,8 @@ void main() {
     // =========================================================================
     group('3. Composite EffectGroup Execution', () {
       test('3.1 EffectGroup.run() coordinates multiple effects atomically', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
         var runsA = 0;
         var runsB = 0;
 
@@ -246,8 +246,8 @@ void main() {
       });
 
       test('3.2 Tuple extension (e1, e2).group.run() works seamlessly', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
         var runsA = 0;
         var runsB = 0;
 
@@ -276,7 +276,7 @@ void main() {
     // =========================================================================
     group('4. Temporal Pipelines (Debounce & Throttle)', () {
       test('4.1 Debounced effect runs standalone and respects silence duration', () async {
-        final query = BloomController<String>('');
+        final query = blooming<String>('');
         final results = <String>[];
 
         final runner = query.bloom.effect.debounce(const Duration(milliseconds: 30), () {
@@ -301,7 +301,7 @@ void main() {
       });
 
       test('4.2 Deactivating runner during active debounce cancels pending timer cleanly', () async {
-        final query = BloomController<String>('');
+        final query = blooming<String>('');
         final results = <String>[];
 
         final runner = query.bloom.effect.debounce(const Duration(milliseconds: 50), () {
@@ -325,7 +325,7 @@ void main() {
     // =========================================================================
     group('5. Lazy Computed Derivation Priming & Graph Continuity', () {
       test('5.1 Unary effect on lazy computed node primes DAG and responds to upstream mutations', () async {
-        final counter = BloomController<int>(10);
+        final counter = blooming<int>(10);
         final doubled = computed((via) => via(counter.bloom) * 2);
 
         final captured = <int>[];
@@ -349,8 +349,8 @@ void main() {
       });
 
       test('5.2 N-ary effect on multiple lazy computed nodes primes DAG cleanly', () async {
-        final a = BloomController<int>(1);
-        final b = BloomController<int>(2);
+        final a = blooming<int>(1);
+        final b = blooming<int>(2);
         final sum = computed((via) => via(a.bloom) + via(b.bloom));
         final product = computed((via) => via(a.bloom) * via(b.bloom));
 

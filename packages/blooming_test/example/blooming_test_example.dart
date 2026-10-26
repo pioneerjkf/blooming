@@ -23,7 +23,7 @@ class SearchStore {
   }
 
   /// Upstream user input
-  final query = BloomController('');
+  final query = blooming('');
 
   /// Internal debounced pipeline node
   late final Bloom<String> debouncedQuery;
@@ -39,7 +39,7 @@ class SearchStore {
 class CartStore {
   CartStore();
 
-  final items = BloomController<List<String>>([]);
+  final items = blooming<List<String>>([]);
 
   late final Bloom<int> itemCount = computed((via) => via(items.bloom).length);
 
@@ -107,7 +107,7 @@ void main() {
   group('LPDAG Lifecycle & Invariant Assertions', () {
     test('verifies subscriber-driven dormancy invariant (zero memory leak)',
         () {
-      final source = BloomController(100);
+      final source = blooming(100);
       final derived = computed((via) => via(source.bloom) * 2);
 
       // 1. Unobserved nodes remain dormant (0 active subscribers)
@@ -125,7 +125,7 @@ void main() {
     });
 
     test('asserts 3-State FSM transitions with snapshot matchers', () {
-      final user = BloomController<String>.late(reason: 'Unauthenticated');
+      final user = blooming.late<String>(reason: 'Unauthenticated');
 
       // Check empty state directly on controller or node
       expect(user, isEmptyState('Unauthenticated'));

@@ -76,7 +76,7 @@ void main() {
 
     testWidgets('BloomTestScope overrides with simulated network error',
         (tester) async {
-      final userBloom = BloomController<User>.late().bloom;
+      final userBloom = blooming.late<User>().bloom;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -118,7 +118,7 @@ void main() {
     bloomWidgetTest(
       'Widget rebuilds dynamically when BloomController mutates in test',
       test: (tester) async {
-        final counter = BloomController(0);
+        final counter = blooming(0);
 
         await tester.pumpScopedWidget(
           MaterialApp(

@@ -5,9 +5,9 @@
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final counter = BloomController(0);
+final counter = blooming(0);
 final count = counter.bloom;
-final other = BloomController(1).bloom;
+final other = blooming(1).bloom;
 
 // =============================================================================
 // BAD

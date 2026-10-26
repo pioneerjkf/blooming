@@ -19,7 +19,7 @@ class _TestResource {
 void main() {
   group('ManagedBloom 2-Phase LPDAG Normalization & Distinct Short-Circuit', () {
     test('1. Upstream distinct short-circuit prevents resource disposal & recreation', () {
-      final source = BloomController<int>(10);
+      final source = blooming<int>(10);
       // Upstream distinct derivation: stays true for even numbers
       final isEven = computed<bool>((via) => via(source.bloom) % 2 == 0).distinct();
 
@@ -73,7 +73,7 @@ void main() {
     });
 
     test('2. updateResource returning identical instance suppresses _version++ and downstream cascade', () {
-      final source = BloomController<int>(1);
+      final source = blooming<int>(1);
       int updateCallCount = 0;
       int disposeCount = 0;
 
@@ -124,8 +124,8 @@ void main() {
     });
 
     test('3. Guarded managed node honors distinct short-circuit without recreating resources', () {
-      final source = BloomController<int>(10);
-      final flag = BloomController<bool>(true);
+      final source = blooming<int>(10);
+      final flag = blooming<bool>(true);
       final isEven = computed<bool>((via) => via(source.bloom) % 2 == 0).distinct();
 
       int createCount = 0;
@@ -167,7 +167,7 @@ void main() {
     });
 
     test('4. Guarded managed node: emptyReason changes while remaining empty must invalidate downstream', () {
-      final step = BloomController<int>(1);
+      final step = blooming<int>(1);
       final managedNode = managed<String>(
         guard: (via) {
           final s = via(step.bloom);

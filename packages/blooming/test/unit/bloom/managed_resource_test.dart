@@ -25,8 +25,8 @@ final class _TestErrorHandler implements LpdagUncaughtErrorHandler {
 void main() {
   group('Bloom.managed / bloom.managed Unified Engine Tests', () {
     test('1. Multi-dependency reactive tracking across multiple upstreams', () {
-      final host = BloomController('localhost');
-      final port = BloomController(8080);
+      final host = blooming('localhost');
+      final port = blooming(8080);
       final disposed = <_TestSocket>[];
 
       final socketRes = managed<_TestSocket>(
@@ -77,9 +77,9 @@ void main() {
     });
 
     test('2. Dynamic edge pruning when branching dependencies change', () {
-      final useBackup = BloomController(false);
-      final primary = BloomController('primary.db');
-      final backup = BloomController('backup.db');
+      final useBackup = blooming(false);
+      final primary = blooming('primary.db');
+      final backup = blooming('backup.db');
       final log = <String>[];
 
       final dbResource = managed<String>(
@@ -120,7 +120,7 @@ void main() {
     });
 
     test('3. Instance reuse via update callback', () {
-      final port = BloomController(3000);
+      final port = blooming(3000);
       int createCount = 0;
       int updateCount = 0;
       int disposeCount = 0;
@@ -170,7 +170,7 @@ void main() {
     });
 
     test('4. Lazy allocation defers until read and avoids thrashing', () {
-      final config = BloomController(1);
+      final config = blooming(1);
       int createCount = 0;
       int disposeCount = 0;
 
@@ -223,7 +223,7 @@ void main() {
     });
 
     test('5. Diamond graph evaluates atomic consistent state without intermediate glitches', () {
-      final root = BloomController(1);
+      final root = blooming(1);
       final host = computed((via) => 'server-${via(root.bloom)}');
       final port = computed((via) => 8000 + via(root.bloom));
 
@@ -330,7 +330,7 @@ void main() {
     });
 
     test('8. Update callback returning new instance disposes old; throws uncaught error if dispose throws', () {
-      final port = BloomController(80);
+      final port = blooming(80);
       final handler = _TestErrorHandler();
       LpdagUncaughtErrorHandler.instance = handler;
 
@@ -363,7 +363,7 @@ void main() {
     });
 
     test('9. BloomSignal triggers re-evaluation of managed node via BloomVia', () {
-      final sig = BloomSignalController();
+      final sig = blooming.signal();
       int count = 0;
 
       final res = managed<int>(
@@ -384,7 +384,7 @@ void main() {
     });
 
     test('10. guard and reason prevent allocation and dispose previous data with version bump', () {
-      final enabled = BloomController(true);
+      final enabled = blooming(true);
       int disposed = 0;
 
       final res = managed<String>(
@@ -407,7 +407,7 @@ void main() {
     });
 
     test('11. create and update error transitions to ErrorBloomState', () {
-      final triggerError = BloomController(false);
+      final triggerError = blooming(false);
 
       final res = managed<String>(
         create: (via) {
@@ -475,7 +475,7 @@ void main() {
     });
 
     test('14. Eager managed node evaluates on activate, updates in microtask, cancels on deactivate', () async {
-      final counter = BloomController(1);
+      final counter = blooming(1);
       int createCount = 0;
       int updateCount = 0;
       int disposeCount = 0;

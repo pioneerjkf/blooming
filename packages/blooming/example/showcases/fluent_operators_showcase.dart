@@ -21,7 +21,7 @@ void main() async {
   // 1. .distinct: Duplicate Filter
   // ---------------------------------------------------------------------------
   print('--- 1. .distinct() ---');
-  final count = BloomController<int>(0);
+  final count = blooming<int>(0);
   var distinctNotifications = 0;
 
   final distinctCount = count.bloom.distinct();
@@ -46,7 +46,7 @@ void main() async {
   // 2. .debounced: Quiet-Period Rate Limiter
   // ---------------------------------------------------------------------------
   print('--- 2. .debounced() ---');
-  final searchInput = BloomController<String>('');
+  final searchInput = blooming<String>('');
   final debouncedInput = searchInput.bloom.debounced(const Duration(milliseconds: 30));
 
   final debounceRunner = debouncedInput.effect(() {
@@ -70,7 +70,7 @@ void main() async {
   // 3. .throttled: Frequency Limiter
   // ---------------------------------------------------------------------------
   print('--- 3. .throttled() ---');
-  final scrollOffset = BloomController<double>(0.0);
+  final scrollOffset = blooming<double>(0.0);
   final throttledScroll = scrollOffset.bloom.throttled(
     const Duration(milliseconds: 30),
     leading: true,
@@ -93,7 +93,7 @@ void main() async {
   // 4. .retained: Stale-While-Revalidate (SWR) Pattern
   // ---------------------------------------------------------------------------
   print('--- 4. .retained() (SWR Cache) ---');
-  final liveSource = BloomController<String>('Initial Cached Data');
+  final liveSource = blooming<String>('Initial Cached Data');
   final pendingCoupler = BloomCoupler<bool>.late();
 
   final swrFeed = liveSource.bloom.retained(pending: pendingCoupler);
@@ -109,7 +109,7 @@ void main() async {
   // 5. .graceful: Deactivation Buffer
   // ---------------------------------------------------------------------------
   print('--- 5. .graceful() (Mooring Period) ---');
-  final rawResource = BloomController<String>('Hardware Connection');
+  final rawResource = blooming<String>('Hardware Connection');
   final resilientResource = rawResource.bloom.graceful(
     const Graceful.period(Duration(milliseconds: 30)),
   );

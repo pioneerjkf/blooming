@@ -59,9 +59,9 @@ class ShowcaseStore {
     bool initialSidebarOpen = true,
     DateTime Function()? clock,
     Graceful? textEditingGraceful = Graceful.microtask,
-  })  : _activeIndex = BloomController<int>(initialIndex),
-        _themeMode = BloomController<ThemeMode>(initialThemeMode),
-        _isSidebarOpen = BloomController<bool>(initialSidebarOpen),
+  })  : _activeIndex = blooming<int>(initialIndex),
+        _themeMode = blooming<ThemeMode>(initialThemeMode),
+        _isSidebarOpen = blooming<bool>(initialSidebarOpen),
         sections = SectionsStore(
           clock: clock,
           textEditingGraceful: textEditingGraceful,
@@ -70,7 +70,7 @@ class ShowcaseStore {
   final BloomController<int> _activeIndex;
   final BloomController<ThemeMode> _themeMode;
   final BloomController<bool> _isSidebarOpen;
-  final BloomController<int> _mobileTabIndex = BloomController<int>(0);
+  final BloomController<int> _mobileTabIndex = blooming<int>(0);
 
   /// Currently selected section index.
   Bloom<int> get activeIndex => _activeIndex.bloom;

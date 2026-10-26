@@ -10,11 +10,11 @@ import '../../sections/scoped_state_di_section.dart';
 
 /// Sub-store for Section 04: Scoped State DI
 class ScopedStateDiStore {
-  final _item1 = BloomController<CartItem>(
+  final _item1 = blooming<CartItem>(
     const CartItem(name: 'Wireless Headphones', price: 120, quantity: 1),
   );
 
-  final _item2 = BloomController<CartItem>(
+  final _item2 = blooming<CartItem>(
     const CartItem(name: 'Mechanical Keyboard', price: 85, quantity: 2),
   );
 
@@ -57,7 +57,7 @@ class ScopedStateDiStore {
         icon: Icons.account_tree_rounded,
         codeSnippet: '''
 // 1. Parent: Provide state to subtree using bloom.provide()
-final authController = BloomController(AuthState(isLoggedIn: true));
+final authController = blooming(AuthState(isLoggedIn: true));
 
 Widget buildApp() {
   return authController.bloom.provide(

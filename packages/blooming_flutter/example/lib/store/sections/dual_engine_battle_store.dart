@@ -34,15 +34,15 @@ class DualEngineBattleStore {
           duration: const Duration(seconds: 2),
           clock: clock ?? DateTime.now,
         ),
-        _isMounted = BloomController<bool>(true),
-        _isSleeping = BloomController<bool>(false),
-        _isPingPong = BloomController<bool>(false),
-        _isUnboundedMode = BloomController<bool>(false),
-        _unboundedTarget = BloomController<double>(0.0),
-        _isRepeatMounted = BloomController<bool>(true),
-        _repeatPhase = BloomController<String>('Idle'),
-        _repeatCount = BloomController<int>(4),
-        _isAutoScenarioRunning = BloomController<bool>(false) {
+        _isMounted = blooming<bool>(true),
+        _isSleeping = blooming<bool>(false),
+        _isPingPong = blooming<bool>(false),
+        _isUnboundedMode = blooming<bool>(false),
+        _unboundedTarget = blooming<double>(0.0),
+        _isRepeatMounted = blooming<bool>(true),
+        _repeatPhase = blooming<String>('Idle'),
+        _repeatCount = blooming<int>(4),
+        _isAutoScenarioRunning = blooming<bool>(false) {
     frozenCtrl.repeat();
     catchUpCtrl.repeat();
   }

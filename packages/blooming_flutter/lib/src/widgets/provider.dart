@@ -57,7 +57,7 @@ part of '../../framework.dart';
 /// ```dart
 /// // [Anti-Pattern] New controller instantiated per frame in provider
 /// Widget build(BuildContext context) {
-///   return BloomProvider(bloom: BloomController(0).bloom, child: const ChildWidget());
+///   return BloomProvider(bloom: blooming(0).bloom, child: const ChildWidget());
 /// }
 /// ```
 ///
@@ -66,7 +66,7 @@ part of '../../framework.dart';
 /// // [Recommended] Provide stable cached state
 /// class FeaturePage extends StatelessWidget {
 ///   FeaturePage({super.key});
-///   final counter = BloomController(0);
+///   final counter = blooming(0);
 ///
 ///   @override
 ///   Widget build(BuildContext context) {

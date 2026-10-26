@@ -282,7 +282,7 @@ For `computed.stream`, the underlying `_StreamBloomBridge` wires its lifecycle d
 // packages/blooming/lib/src/bloom/_internal/_async.dart
 base class _PragueVltava<T> {
   _PragueVltava(...) {
-    _controller = BloomController<T>.late(
+    _controller = blooming.late<T>(
       distinct: distinct,
       equals: equals,
       graceful: graceful,

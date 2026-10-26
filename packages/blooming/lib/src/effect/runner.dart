@@ -72,7 +72,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final query = BloomController('');
+/// final query = blooming('');
 /// final searchEffect = query.bloom.effect.debounce(
 ///   const Duration(milliseconds: 300),
 ///   () => apiService.search(untracked(query.bloom)),
@@ -170,7 +170,7 @@ extension EffectRunExtension on Effect {
   ///
   /// ## Examples
   /// ```dart
-  /// final counter = BloomController(0);
+  /// final counter = blooming(0);
   /// final loggingEffect = counter.bloom.effect(() => log(untracked(counter.bloom)));
   /// final runner = loggingEffect.run();
   ///

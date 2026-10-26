@@ -9,7 +9,7 @@ import '../../sections/adaptive_proxies_section.dart';
 
 /// Sub-store for Section 10: Adaptive Design & Context Integration
 class AdaptiveProxiesStore {
-  final _isCupertinoSwitchActive = BloomController<bool>(true);
+  final _isCupertinoSwitchActive = blooming<bool>(true);
   Bloom<bool> get isCupertinoSwitchActive => _isCupertinoSwitchActive.bloom;
 
   void toggleCupertinoSwitch(bool value) => _isCupertinoSwitchActive.set(value);

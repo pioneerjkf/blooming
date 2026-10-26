@@ -34,7 +34,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final numbersController = BloomController([1, 2, 3, 4, 5]);
+/// final numbersController = blooming([1, 2, 3, 4, 5]);
 /// final evenNumbersBloom = numbersController.bloom.elements.where((n) => n.isEven);
 /// ```
 extension BloomIterableElementsExtension<E> on Bloom<Iterable<E>> {
@@ -66,7 +66,7 @@ extension BloomIterableElementsExtension<E> on Bloom<Iterable<E>> {
 ///
 /// ## Examples
 /// ```dart
-/// final users = BloomController([User(id: '1', name: 'Alice')]);
+/// final users = blooming([User(id: '1', name: 'Alice')]);
 /// final userViewModels = users.bloom.keyed.map(
 ///   key: (user) => user.id,
 ///   convert: (user) => UserViewModel(user),
@@ -93,7 +93,7 @@ extension BloomKeyedIterableElementsExtension<E> on Bloom<Iterable<E>> {
 ///
 /// ## Examples
 /// ```dart
-/// final itemsController = BloomController(['A', 'B', 'C']);
+/// final itemsController = blooming(['A', 'B', 'C']);
 /// final firstItemBloom = itemsController.bloom.elements[0]; // Bloom<String> holding 'A'
 /// ```
 extension BloomListElementsExtension<E> on Bloom<List<E>> {
@@ -116,7 +116,7 @@ extension BloomListElementsExtension<E> on Bloom<List<E>> {
 ///
 /// ## Examples
 /// ```dart
-/// final setAController = BloomController({'a', 'b'});
+/// final setAController = blooming({'a', 'b'});
 /// final unionBloom = setAController.bloom.elements.union({'c', 'd'});
 /// ```
 extension BloomSetElementsExtension<E> on Bloom<Set<E>> {
@@ -141,7 +141,7 @@ extension BloomSetElementsExtension<E> on Bloom<Set<E>> {
 ///
 /// ## Examples
 /// ```dart
-/// final scoresController = BloomController({'Alice': 100, 'Bob': 85});
+/// final scoresController = blooming({'Alice': 100, 'Bob': 85});
 /// final aliceScoreBloom = scoresController.bloom.elements['Alice']; // Bloom<int?> holding 100
 /// ```
 extension BloomMapElementsExtension<K, V> on Bloom<Map<K, V>> {

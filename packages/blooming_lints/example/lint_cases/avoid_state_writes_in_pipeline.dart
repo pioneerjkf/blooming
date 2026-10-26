@@ -6,8 +6,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final counter = BloomController(0);
-final label = BloomController('');
+final counter = blooming(0);
+final label = blooming('');
 
 // =============================================================================
 // BAD

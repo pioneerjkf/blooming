@@ -121,7 +121,7 @@ final class BloomPendingIndicator extends BloomWidget implements PreferredSizeWi
 
 ```dart
 // BloomSignalController is from package:blooming (re-exported by blooming_flutter)
-final refreshSignal = BloomSignalController();
+final refreshSignal = blooming.signal();
 final userFeed = computed.future((via) {
   via(refreshSignal.bloom);
   return apiService.fetchUserTimeline();

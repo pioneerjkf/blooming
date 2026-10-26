@@ -11,7 +11,7 @@ void main() {
     // =========================================================================
     group('1. Bloom.resource with guard & reason', () {
       test('1.1 guard == false prevents create() and holds Empty(emptyReason)', () {
-        final token = BloomController<String>.late();
+        final token = blooming.late<String>();
         int createCount = 0;
         int disposeCount = 0;
 
@@ -58,7 +58,7 @@ void main() {
       });
 
       test('1.2 Dynamic condition toggling: Valid -> Empty(emptyReason) triggers dispose()', () {
-        final isOnline = BloomController(true);
+        final isOnline = blooming(true);
         int createCount = 0;
         final disposedList = <String>[];
 
@@ -98,8 +98,8 @@ void main() {
       });
 
       test('1.3 update callback with guard & reason', () {
-        final server = BloomController('alpha');
-        final enabled = BloomController(true);
+        final server = blooming('alpha');
+        final enabled = blooming(true);
         int createCount = 0;
         int updateCount = 0;
         final disposed = <String>[];
@@ -142,8 +142,8 @@ void main() {
       });
 
       test('1.4 dispose() callback is strictly Untracked (preventing zombie edges and loops)', () {
-        final trigger = BloomController(1);
-        final counter = BloomController(100);
+        final trigger = blooming(1);
+        final counter = blooming(100);
         int disposeCount = 0;
 
         final res = managed<int>(
@@ -196,7 +196,7 @@ void main() {
       });
 
       test('1.6 Error handling during guard, create, and update', () {
-        final shouldThrow = BloomController(false);
+        final shouldThrow = blooming(false);
         final disposed = <String>[];
 
         final errorRes = managed<String>(
@@ -226,7 +226,7 @@ void main() {
       });
 
       test('1.7 Graceful resource deactivation with guard', () async {
-        final online = BloomController(true);
+        final online = blooming(true);
         int disposeCount = 0;
 
         final res = managed<String>(
@@ -263,8 +263,8 @@ void main() {
     // =========================================================================
     group('2. Bloom.computed with guard & reason', () {
       test('2.1 guard controls pure computation and suspends with emptyReason', () {
-        final ready = BloomController(false);
-        final count = BloomController(10);
+        final ready = blooming(false);
+        final count = blooming(10);
         int computeCallCount = 0;
 
         final calc = computed(
@@ -316,7 +316,7 @@ void main() {
         expect(pure.runtimeType.toString(), contains('_ComputedBloom'));
         expect(guarded.runtimeType.toString(), contains('_ComputedBloom'));
 
-        final num = BloomController(42);
+        final num = blooming(42);
         final pureComputed = computed((via) => via(num.bloom) + 1);
         expect(untracked(pureComputed), 43);
         num.data = 100;
@@ -324,8 +324,8 @@ void main() {
       });
 
       test('2.3 top-level computed() forwarding', () {
-        final ready = BloomController(false);
-        final name = BloomController('Bloom');
+        final ready = blooming(false);
+        final name = blooming('Bloom');
 
         final comp = computed(
           (via) => 'Hello, ${via(name.bloom)}',
@@ -341,7 +341,7 @@ void main() {
       });
 
       test('2.4 Exception in guard transitions computed into error state', () {
-        final shouldFail = BloomController(false);
+        final shouldFail = blooming(false);
         final comp = computed(
           (via) => 100,
           guard: (via) {
@@ -369,10 +369,10 @@ void main() {
     // =========================================================================
     group('3. Bloom.switched with guard & reason', () {
       test('3.1 guard controls dynamic switching with emptyReason', () {
-        final loggedIn = BloomController(false);
-        final mode = BloomController('light');
-        final lightTheme = BloomController('Theme-Light');
-        final darkTheme = BloomController('Theme-Dark');
+        final loggedIn = blooming(false);
+        final mode = blooming('light');
+        final lightTheme = blooming('Theme-Light');
+        final darkTheme = blooming('Theme-Dark');
         int switchCallCount = 0;
 
         final currentTheme = switched(
@@ -411,8 +411,8 @@ void main() {
       });
 
       test('3.2 Eager switched respects guard and reason', () {
-        final ready = BloomController(false);
-        final branchA = BloomController('BranchA');
+        final ready = blooming(false);
+        final branchA = blooming('BranchA');
 
         final eagerSwitched = switched(
           (_) => branchA.bloom,
@@ -439,8 +439,8 @@ void main() {
     // =========================================================================
     group('4. Bloom.computed with guard and reason', () {
       test('4.1 guard with reason returns Empty(emptyReason) when blocked', () {
-        final controller = BloomController<int>(10);
-        final isAllowed = BloomController<bool>(true);
+        final controller = blooming<int>(10);
+        final isAllowed = blooming<bool>(true);
 
         final guarded = computed(
           (via) => via(controller.bloom),
@@ -469,7 +469,7 @@ void main() {
       });
 
       test('4.2 distinct() suppresses consecutive identical emptyReason', () {
-        final reason = BloomController('ReasonA');
+        final reason = blooming('ReasonA');
 
         final comp = computed(
           (via) => 42,
@@ -564,7 +564,7 @@ void main() {
         final leaf = Bloom.empty('LeafReason');
         expect(untracked.state(leaf).emptyReason, 'LeafReason');
 
-        final writeableLate = BloomController<int>.late();
+        final writeableLate = blooming.late<int>();
         expect(writeableLate.emptyReason, isNull);
 
         final guarded = computed(
@@ -579,7 +579,7 @@ void main() {
       });
 
       test('5.5 BloomController and RawBloomController support optional reason on .late and .empty()', () {
-        final ctrl = BloomController<String>.late(reason: 'AwaitingLogin');
+        final ctrl = blooming.late<String>(reason: 'AwaitingLogin');
         expect(ctrl.isEmpty, isTrue);
         expect(ctrl.emptyReason, 'AwaitingLogin');
         expect(untracked.state(ctrl.bloom).emptyReason, 'AwaitingLogin');
@@ -594,7 +594,7 @@ void main() {
         expect(untracked.state(ctrl.bloom).emptyReason, 'UserLoggedOut');
 
         // Test RawBloomController as well
-        final rawCtrl = RawBloomController<int>.late(reason: 'RawPending');
+        final rawCtrl = blooming.raw.late<int>(reason: 'RawPending');
         expect(rawCtrl.isEmpty, isTrue);
         expect(rawCtrl.emptyReason, 'RawPending');
         expect(untracked.state(rawCtrl.bloom).emptyReason, 'RawPending');

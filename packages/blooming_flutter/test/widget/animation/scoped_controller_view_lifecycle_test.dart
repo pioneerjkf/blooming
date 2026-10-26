@@ -15,7 +15,7 @@ void main() {
           duration: const Duration(milliseconds: 300),
         );
 
-        final isMountedBloom = BloomController<bool>(true);
+        final isMountedBloom = blooming<bool>(true);
         int tickCount = 0;
         final statuses = <AnimationStatus>[];
 
@@ -90,7 +90,7 @@ void main() {
         final controller = DurableAnimationController(
           duration: const Duration(milliseconds: 300),
         );
-        final isMountedBloom = BloomController<bool>(true);
+        final isMountedBloom = blooming<bool>(true);
         late ScopedAnimationController capturedMounted;
         late Animation<double> capturedView;
 

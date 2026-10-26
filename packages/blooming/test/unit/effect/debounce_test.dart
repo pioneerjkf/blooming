@@ -11,7 +11,7 @@ void main() {
   group('Debounce Effect Comprehensive Unit Tests', () {
     test('1. Default debounce (leading: false) resets timer on consecutive mutations and fires once after silence',
         () async {
-      final input = BloomController<String>('');
+      final input = blooming<String>('');
       final observed = <String>[];
 
       final effect = DebounceEffect.unary(
@@ -47,7 +47,7 @@ void main() {
     test(
         '2. Leading-only debounce (leading: true, trailing: false) fires immediately on first burst then silences until window expires',
         () async {
-      final query = BloomController<String>('');
+      final query = blooming<String>('');
       final observed = <String>[];
 
       final effect = DebounceEffect.unary(
@@ -84,7 +84,7 @@ void main() {
     });
 
     test('3. Debounce with take limit self-deactivates after limit is reached', () async {
-      final search = BloomController<String>('');
+      final search = blooming<String>('');
       int runs = 0;
 
       final effect = DebounceEffect.unary(
@@ -110,8 +110,8 @@ void main() {
     });
 
     test('4. Multi-target debounce on list of targets', () async {
-      final minPrice = BloomController<int>(0);
-      final maxPrice = BloomController<int>(100);
+      final minPrice = blooming<int>(0);
+      final maxPrice = blooming<int>(100);
       int runs = 0;
 
       final effect = DebounceEffect(
@@ -137,7 +137,7 @@ void main() {
     });
 
     test('5. Deactivation cancels pending debounce timer and prevents execution', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       int runs = 0;
 
       final effect = DebounceEffect.unary(
@@ -160,7 +160,7 @@ void main() {
     });
 
     test('6. Scope-bound DebounceEffect works with fluent extension', () async {
-      final input = BloomController<String>('');
+      final input = blooming<String>('');
       final observed = <String>[];
 
       final effect = input.bloom.effect.debounce(
@@ -187,7 +187,7 @@ void main() {
     test(
         '7. Dual-edge debounce (leading: true, trailing: true) fires leading edge immediately and trailing edge after silence',
         () async {
-      final search = BloomController<String>('');
+      final search = blooming<String>('');
       final observed = <String>[];
 
       final effect = DebounceEffect.unary(
@@ -227,7 +227,7 @@ void main() {
     });
 
     test('8. Debounce with leading: false and trailing: false throws AssertionError', () {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       expect(
         () => DebounceEffect.unary(
           source.bloom,
@@ -251,7 +251,7 @@ void main() {
     });
 
     test('9. DebounceEffect forwards uncaught errors to onUncaughtError', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       Object? caughtError;
 
       final effect = source.bloom.effect.debounce(

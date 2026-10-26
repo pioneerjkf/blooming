@@ -6,8 +6,8 @@
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final count = BloomController(0).bloom;
-final text = BloomController('');
+final count = blooming(0).bloom;
+final text = blooming('');
 
 // =============================================================================
 // BAD

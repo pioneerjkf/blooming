@@ -37,9 +37,9 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final isDark = BloomController(false);
-/// final lightTheme = BloomController('Light Theme');
-/// final darkTheme = BloomController('Dark Theme');
+/// final isDark = blooming(false);
+/// final lightTheme = blooming('Light Theme');
+/// final darkTheme = blooming('Dark Theme');
 ///
 /// final currentTheme = switched((via) => via(isDark.bloom) ? darkTheme.bloom : lightTheme.bloom);
 /// ```
@@ -72,7 +72,7 @@ final class SwitchedFunctor {
   /// ```dart
   /// // [Anti-Pattern] Re-creates controller on every branch evaluation
   /// final currentTheme = switched((via) {
-  ///   return BloomController('Dark').bloom;
+  ///   return blooming('Dark').bloom;
   /// });
   /// ```
   ///
@@ -88,17 +88,17 @@ final class SwitchedFunctor {
   ///
   /// ### 1. Simple Dynamic Branch Switching:
   /// ```dart
-  /// final isDark = BloomController(false);
-  /// final lightTheme = BloomController('Light Theme');
-  /// final darkTheme = BloomController('Dark Theme');
+  /// final isDark = blooming(false);
+  /// final lightTheme = blooming('Light Theme');
+  /// final darkTheme = blooming('Dark Theme');
   ///
   /// final currentTheme = switched((via) => via(isDark.bloom) ? darkTheme.bloom : lightTheme.bloom);
   /// ```
   ///
   /// ### 2. Subtree Gating with Precondition Guard:
   /// ```dart
-  /// final selectedTab = BloomController(0);
-  /// final isLoggedIn = BloomController(false);
+  /// final selectedTab = blooming(0);
+  /// final isLoggedIn = blooming(false);
   ///
   /// // Gating: Entire downstream feed graph is uninstantiated until user is authenticated
   /// final currentFeed = switched(

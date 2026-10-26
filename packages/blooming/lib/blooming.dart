@@ -99,7 +99,7 @@
 ///
 /// void main() {
 ///   // 1. Declare a mutable leaf state
-///   final counter = BloomController(0);
+///   final counter = blooming(0);
 ///
 ///   // 2. Declare a derived computation
 ///   final doubled = computed((via) => via(counter.bloom) * 2);

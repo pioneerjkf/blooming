@@ -19,8 +19,8 @@ class UnboundedCoordinatesStore {
           duration: const Duration(seconds: 6),
           clock: clock ?? DateTime.now,
         ),
-        _isMounted = BloomController<bool>(true),
-        _currentTarget = BloomController<double>(0.0);
+        _isMounted = blooming<bool>(true),
+        _currentTarget = blooming<double>(0.0);
 
   final DurableAnimationController unboundedFrozenCtrl;
   final DurableAnimationController unboundedCatchUpCtrl;

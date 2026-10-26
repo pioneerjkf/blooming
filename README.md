@@ -109,7 +109,7 @@ import 'package:blooming/effect.dart';
 import 'package:blooming/blooming.dart';
 
 Future<void> main() async {
-  final count = BloomController(0);
+  final count = blooming(0);
 
   // `via(...)` declares which nodes this computation depends on.
   final doubled = computed((via) => via(count.bloom) * 2);
@@ -149,7 +149,7 @@ dependencies:
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final counter = BloomController(0);
+final counter = blooming(0);
 int pageBuilds = 0; // demo only: counts rebuilds of CounterPage
 
 void main() => runApp(const MaterialApp(home: CounterPage()));

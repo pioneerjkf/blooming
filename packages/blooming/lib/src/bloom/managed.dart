@@ -109,7 +109,7 @@ final class ManagedFunctor {
   ///
   /// ### 2. Manual Reset / Reconnection Trigger via BloomSignal:
   /// ```dart
-  /// final resetTrigger = BloomSignalController();
+  /// final resetTrigger = blooming.signal();
   ///
   /// final socket = managed<WebSocketChannel>(
   ///   create: (via) {
@@ -125,7 +125,7 @@ final class ManagedFunctor {
   ///
   /// ### 3. In-Place Resource Reuse via update:
   /// ```dart
-  /// final serverPort = BloomController(8080);
+  /// final serverPort = blooming(8080);
   ///
   /// final client = managed<ApiClient>(
   ///   create: (via) => ApiClient(port: via(serverPort.bloom)),

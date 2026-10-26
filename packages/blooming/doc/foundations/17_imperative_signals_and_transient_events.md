@@ -8,7 +8,7 @@
 
 ## 1. Overview and Background: The State vs. Event Dichotomy
 
-In modern reactive architectures (such as Flutter and Dart), a prevalent anti-pattern is treating one-off imperative events as persistent domain state. For example, to display a transient error Snackbar, developers often declare a `BloomController<String?>(null)` and assign `"Network Connection Lost"`.
+In modern reactive architectures (such as Flutter and Dart), a prevalent anti-pattern is treating one-off imperative events as persistent domain state. For example, to display a transient error Snackbar, developers often declare a `blooming<String?>(null)` and assign `"Network Connection Lost"`.
 
 This creates three critical architectural defects:
 
@@ -30,7 +30,7 @@ The Bloom Framework resolves this fundamental dichotomy by introducing **`BloomS
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                        │
 │   [ Producer Layer (Encapsulated Controller) ]                        │
-│   final _refreshSignal = BloomSignalController();                       │
+│   final _refreshSignal = blooming.signal();                       │
 │   BloomSignal get refreshSignal => _refreshSignal.bloom;                │
 │          │                                                             │
 │          ▼ emit()                                                      │
@@ -96,10 +96,10 @@ Manifest effects ([`Effect`](../../lib/src/effect/effect.dart)) monitor explicit
 
 ```dart
 class AuthStore {
-  final _loginSuccessSignal = BloomSignalController();
+  final _loginSuccessSignal = blooming.signal();
   BloomSignal get loginSuccessSignal => _loginSuccessSignal.bloom;
 
-  final userProfile = BloomController<UserProfile?>(null);
+  final userProfile = blooming<UserProfile?>(null);
 
   Future<void> login(String credentials) async {
     final profile = await api.authenticate(credentials);
@@ -155,7 +155,7 @@ class CheckoutView extends StatelessWidget {
 Signals serve as declarative cache-invalidation triggers inside asynchronous pipelines ([computed.future](../../lib/src/bloom/computed.dart)), initiating immediate background refetches without imperative callback spaghettis:
 
 ```dart
-final refreshSignal = BloomSignalController();
+final refreshSignal = blooming.signal();
 
 // Baseline snapshot loads on mount; subsequent [refreshSignal.emit()] pulses trigger fresh refetches:
 final marketOverview = computed.future((via) async {
@@ -176,8 +176,8 @@ Signals can be observed inside conditional selectors ([switched](../../lib/src/b
 ```dart
 enum FeedTab { trending, personalized }
 
-final selectedTab = BloomController(FeedTab.trending);
-final reloadTabSignal = BloomSignalController();
+final selectedTab = blooming(FeedTab.trending);
+final reloadTabSignal = blooming.signal();
 
 final activeFeed = switched((via) {
   final tab = via(selectedTab.bloom);
@@ -196,7 +196,7 @@ final activeFeed = switched((via) {
 When coordinating managed lifecycle resources ([managed](../../lib/src/bloom/managed.dart)), observing a signal inside the `create` factory tears down the previous resource via `dispose` and cleanly allocates a fresh instance:
 
 ```dart
-final reconnectSignal = BloomSignalController();
+final reconnectSignal = blooming.signal();
 
 final activeSocket = managed<WebSocketChannel>(
   create: (via) {
@@ -219,7 +219,7 @@ void reconnect() {
 `BloomSignalController` supports subscriber boundary callbacks, allowing emitters to coordinate upstream data sources (e.g., hardware sensors, polling intervals, SSE listeners) based on whether any downstream UI component is actively observing the signal:
 
 ```dart
-final pushEventSignal = BloomSignalController(
+final pushEventSignal = blooming.signal(
   onActivated: () {
     // Connect to external push stream only when observed by active terminal/UI
     pushClient.subscribe();
@@ -236,7 +236,7 @@ final pushEventSignal = BloomSignalController(
 `BloomSignalController` integrates seamlessly into Bloom's zero-cost diagnostic ecosystem via [BloomSignalControllerDebugExtension](../../lib/src/engine/debug.dart):
 
 ```dart
-final refreshSignal = BloomSignalController().withDebugLabel('OrderRefreshSignal');
+final refreshSignal = blooming.signal().withDebugLabel('OrderRefreshSignal');
 
 // Inspect live diagnostic state in debug mode
 final snapshot = refreshSignal.bloom.debug.snapshot();

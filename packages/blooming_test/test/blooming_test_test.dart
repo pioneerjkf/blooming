@@ -7,7 +7,7 @@ import 'dart:async';
 import 'package:blooming_test/blooming_test.dart';
 
 class CounterStore {
-  CounterStore([int initial = 0]) : count = BloomController(initial);
+  CounterStore([int initial = 0]) : count = blooming(initial);
 
   final BloomController<int> count;
 
@@ -36,8 +36,8 @@ class SearchStore {
     }).run();
   }
 
-  final query = BloomController('');
-  final results = BloomController<List<String>>.late(reason: 'empty-query');
+  final query = blooming('');
+  final results = blooming.late<List<String>>(reason: 'empty-query');
   Timer? _timer;
 
   void dispose() {

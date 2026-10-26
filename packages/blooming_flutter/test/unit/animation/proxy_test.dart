@@ -101,7 +101,7 @@ void main() {
     testWidgets(
         '4. unmounting inline widget clears scoped listeners without affecting target controller',
         (tester) async {
-      final showBloom = BloomController<bool>(true);
+      final showBloom = blooming<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       );
@@ -142,8 +142,8 @@ void main() {
     testWidgets(
         '5. unmounting one inline widget does not affect other widgets or the target',
         (tester) async {
-      final showA = BloomController<bool>(true);
-      final showB = BloomController<bool>(true);
+      final showA = blooming<bool>(true);
+      final showB = blooming<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       );
@@ -205,7 +205,7 @@ void main() {
     testWidgets(
         '6. inline widget detaches on unmount and preserves frozen value on remount',
         (tester) async {
-      final showBloom = BloomController<bool>(true);
+      final showBloom = blooming<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       );
@@ -441,8 +441,8 @@ void main() {
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
       );
-      final showA = BloomController<bool>(true);
-      final showB = BloomController<bool>(true);
+      final showA = blooming<bool>(true);
+      final showB = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -523,7 +523,7 @@ void main() {
         ..value = 0.75;
 
       final activeCtrlBloom =
-          BloomController<DurableAnimationController>(ctrl1);
+          blooming<DurableAnimationController>(ctrl1);
 
       await tester.pumpWidget(
         Directionality(

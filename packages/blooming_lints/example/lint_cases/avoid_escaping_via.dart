@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final source = BloomController(1).bloom;
+final source = blooming(1).bloom;
 
 // =============================================================================
 // BAD

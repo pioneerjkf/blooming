@@ -122,7 +122,7 @@ final class BloomDebugSnapshot {
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController(0).withDebugLabel('counter');
+/// final counter = blooming(0).withDebugLabel('counter');
 ///
 /// print(counter.bloom.debug.debugLabel);   // 'counter'
 /// print(counter.bloom.debug.targetCount);  // 0

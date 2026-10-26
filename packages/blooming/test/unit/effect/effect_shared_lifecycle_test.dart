@@ -12,7 +12,7 @@ void main() {
     test(
         '1. Shared Effect stays active while at least one scope is active, goes dormant when all scopes unmount, and revives on remount',
         () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       var effectRuns = 0;
       var observed = -1;
 
@@ -89,7 +89,7 @@ void main() {
     });
 
     test('2. Zero rebuild invariant: parent scopes are never invalidated by shared effect execution', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       var scopeAInvalidations = 0;
       var scopeBInvalidations = 0;
       var effectRuns = 0;

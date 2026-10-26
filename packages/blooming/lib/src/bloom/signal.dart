@@ -43,7 +43,7 @@ part of '../framework.dart';
 /// When a computation needs to be invalidated or re-evaluated whenever an event occurs,
 /// declare the dependency via `via(refreshTrigger.bloom)`:
 /// ```dart
-/// final refreshTrigger = BloomSignalController();
+/// final refreshTrigger = blooming.signal();
 ///
 /// // Declaratively re-evaluates/refetches whenever `refreshTrigger.emit()` is called:
 /// final userFeed = computed.future((via) {
@@ -55,7 +55,7 @@ part of '../framework.dart';
 /// ### Pattern B: Explicit Dynamic Read via `BloomVia` (When Tick Count is Needed)
 /// When the computation specifically reads or displays the tick sequence number:
 /// ```dart
-/// final pulseSignal = BloomSignalController();
+/// final pulseSignal = blooming.signal();
 ///
 /// final pulseCounter = computed((via) {
 ///   final tick = via(pulseSignal.bloom);
@@ -78,7 +78,7 @@ part of '../framework.dart';
 /// ```dart
 /// // [Anti-Pattern] Exposing mutable signal controller handle directly to UI consumers
 /// class RefreshService {
-///   final refreshSignal = BloomSignalController(); // Callers can invoke emit() uncontrollably!
+///   final refreshSignal = blooming.signal(); // Callers can invoke emit() uncontrollably!
 /// }
 /// ```
 ///
@@ -86,7 +86,7 @@ part of '../framework.dart';
 /// ```dart
 /// // [Recommended] Encapsulate signal controller and expose read-only BloomSignal
 /// class RefreshService {
-///   final _refreshSignal = BloomSignalController();
+///   final _refreshSignal = blooming.signal();
 ///   BloomSignal get refreshSignal => _refreshSignal.bloom;
 ///
 ///   void refresh() => _refreshSignal.emit();
@@ -95,7 +95,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final refreshSignal = BloomSignalController();
+/// final refreshSignal = blooming.signal();
 ///
 /// final userFeed = computed.future((via) {
 ///   via(refreshSignal.bloom); // Dynamically tracks signal pulse
@@ -112,14 +112,8 @@ abstract base class BloomSignal implements Bloom<int> {}
 /// Exposes a read-only [bloom] consumer view for downstream observation,
 /// completely encapsulating emission capabilities.
 abstract base class BloomSignalController implements LpdagStatus {
-  /// Creates a [BloomSignalController] with optional subscriber lifecycle hooks.
-  ///
-  /// * [onActivated]: Callback invoked when the signal transitions from 0 to 1 active downstream subscriber.
-  /// * [onDeactivated]: Callback invoked when the signal drops to 0 active subscribers.
-  factory BloomSignalController({
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-  }) = _BloomSignalControllerImpl;
+  /// Private constructor preventing direct instantiation; use `blooming.signal` instead.
+  BloomSignalController._();
 
   /// The encapsulated read-only [BloomSignal] view exposed to downstream consumers.
   BloomSignal get bloom;

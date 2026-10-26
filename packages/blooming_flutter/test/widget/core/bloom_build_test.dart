@@ -13,7 +13,7 @@ void main() {
     testWidgets(
         'renders initial data correctly via bloom.build((context, data) => ...)',
         (tester) async {
-      final controller = BloomController<int>(10);
+      final controller = blooming<int>(10);
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(
@@ -31,7 +31,7 @@ void main() {
 
     testWidgets('rebuilds reactively when controller value changes',
         (tester) async {
-      final controller = BloomController<String>('Hello');
+      final controller = blooming<String>('Hello');
       final targetBloom = controller.bloom;
       var buildCount = 0;
 
@@ -58,7 +58,7 @@ void main() {
 
     testWidgets('does not rebuild when value is distinct (same value)',
         (tester) async {
-      final controller = BloomController<int>(42, distinct: true);
+      final controller = blooming<int>(42, distinct: true);
       final targetBloom = controller.bloom;
       var buildCount = 0;
 
@@ -82,7 +82,7 @@ void main() {
     });
 
     testWidgets('handles nullable Bloom<T?> values gracefully', (tester) async {
-      final controller = BloomController<String?>('Initial');
+      final controller = blooming<String?>('Initial');
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(
@@ -108,8 +108,8 @@ void main() {
     testWidgets(
         'updates correctly when widget configuration changes (same or new node)',
         (tester) async {
-      final controller1 = BloomController<int>(1);
-      final controller2 = BloomController<int>(2);
+      final controller1 = blooming<int>(1);
+      final controller2 = blooming<int>(2);
 
       Widget createHost(Bloom<int> node) {
         return Directionality(
@@ -142,7 +142,7 @@ void main() {
 
     testWidgets('cleans up and deactivates RawBloomTerminal upon unmounting',
         (tester) async {
-      final controller = BloomController<int>(100);
+      final controller = blooming<int>(100);
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(
@@ -172,7 +172,7 @@ void main() {
     testWidgets(
         'always provides local BuildContext allowing local InheritedWidget lookup',
         (tester) async {
-      final controller = BloomController<String>('Alpha');
+      final controller = blooming<String>('Alpha');
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(
@@ -194,7 +194,7 @@ void main() {
     testWidgets(
         'targetBloom.build.child passes context, data, and cached child',
         (tester) async {
-      final controller = BloomController<int>(10);
+      final controller = blooming<int>(10);
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(
@@ -220,7 +220,7 @@ void main() {
     testWidgets(
         'targetBloom.build.children passes context, data, and cached children list',
         (tester) async {
-      final controller = BloomController<String>('Title');
+      final controller = blooming<String>('Title');
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(

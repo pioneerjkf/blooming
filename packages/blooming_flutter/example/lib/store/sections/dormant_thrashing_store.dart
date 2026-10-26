@@ -19,10 +19,10 @@ class DormantThrashingStore {
           duration: const Duration(seconds: 3),
           clock: clock ?? DateTime.now,
         ),
-        _isMounted = BloomController<bool>(true),
-        _stagedActionLog = BloomController<List<String>>([]),
-        _lastStagedAction = BloomController<String>('Idle (No Staged Motion)'),
-        _stagedTargetValue = BloomController<double>(0.0);
+        _isMounted = blooming<bool>(true),
+        _stagedActionLog = blooming<List<String>>([]),
+        _lastStagedAction = blooming<String>('Idle (No Staged Motion)'),
+        _stagedTargetValue = blooming<double>(0.0);
 
   final DurableAnimationController frozenCtrl;
   final DurableAnimationController catchUpCtrl;

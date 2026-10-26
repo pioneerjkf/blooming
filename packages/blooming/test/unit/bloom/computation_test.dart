@@ -123,9 +123,9 @@ void main() {
     // =========================================================================
     group('1. Auto-Dependency Tracking & Encapsulation', () {
       test('1.1 Computes multi-inbound derivation with helper methods without manual manifest', () {
-        final base = BloomController(100);
-        final discount = BloomController(20);
-        final tax = BloomController(8);
+        final base = blooming(100);
+        final discount = blooming(20);
+        final tax = blooming(8);
 
         final comp = _FullPricingComputation(base.bloom, discount.bloom, tax.bloom);
 
@@ -152,10 +152,10 @@ void main() {
       });
 
       test('1.2 Dynamic conditional branching prunes inactive edges', () {
-        final usePrefix = BloomController(true);
-        final prefix = BloomController('TAG');
-        final value = BloomController('Item1');
-        final fallback = BloomController('DEFAULT');
+        final usePrefix = blooming(true);
+        final prefix = blooming('TAG');
+        final value = blooming('Item1');
+        final fallback = blooming('DEFAULT');
 
         final comp = _ConditionalBranchComputation(usePrefix.bloom, prefix.bloom, value.bloom, fallback.bloom);
 
@@ -199,8 +199,8 @@ void main() {
     // =========================================================================
     group('2. Reactive Guards (BloomGuard)', () {
       test('2.1 Constructor-based guard parameters gate computation', () {
-        final ready = BloomController(false);
-        final content = BloomController('Hello World');
+        final ready = blooming(false);
+        final content = blooming('Hello World');
 
         final comp = _ConstructorGuardedComputation(ready.bloom, content.bloom);
 
@@ -226,8 +226,8 @@ void main() {
       });
 
       test('2.2 Overridden method guard() returns BloomGuard', () {
-        final auth = BloomController(false);
-        final payload = BloomController('Secret Data');
+        final auth = blooming(false);
+        final payload = blooming('Secret Data');
 
         final comp = _OverriddenGuardedComputation(auth.bloom, payload.bloom);
 
@@ -249,7 +249,7 @@ void main() {
     // =========================================================================
     group('3. Lifecycle Integration (BloomLifecycleAware)', () {
       test('3.1 Coordinates didActivate and didDeactivate with terminal subscriptions', () {
-        final num = BloomController(10);
+        final num = blooming(10);
         final comp = _LifecycleTrackedComputation(num.bloom);
 
         expect(comp.isActive, isFalse);
@@ -286,9 +286,9 @@ void main() {
     // =========================================================================
     group('4. Direct Convenience Getters & Snapshot Symmetry', () {
       test('4.1 Convenience getters delegate directly to underlying bloom', () {
-        final source = BloomController('Active');
+        final source = blooming('Active');
         final comp =
-            _FullPricingComputation(BloomController(10).bloom, BloomController(2).bloom, BloomController(1).bloom);
+            _FullPricingComputation(blooming(10).bloom, blooming(2).bloom, blooming(1).bloom);
 
         expect(comp.data, 9);
         expect(comp.dataOrNull, 9);
@@ -300,7 +300,7 @@ void main() {
         expect(comp.snapshot.data, 9);
 
         // Empty state getters
-        final emptyComp = _ConstructorGuardedComputation(BloomController(false).bloom, source.bloom);
+        final emptyComp = _ConstructorGuardedComputation(blooming(false).bloom, source.bloom);
         expect(emptyComp.isEmpty, isTrue);
         expect(emptyComp.hasData, isFalse);
         expect(emptyComp.emptyReason, 'AwaitingReady');
@@ -315,7 +315,7 @@ void main() {
     // =========================================================================
     group('5. Error Containment & Fault Isolation', () {
       test('5.1 Exception in compute() transitions computation into hasError state', () {
-        final source = BloomController(10);
+        final source = blooming(10);
         final comp = _FailingComputation(source.bloom, failInGuard: false);
 
         expect(comp.hasData, isTrue);
@@ -335,7 +335,7 @@ void main() {
       });
 
       test('5.2 Exception in guard() transitions computation into hasError state', () {
-        final source = BloomController(10);
+        final source = blooming(10);
         final comp = _FailingComputation(source.bloom, failInGuard: true);
 
         expect(comp.hasData, isTrue);

@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   group('Throttle Effect Comprehensive Unit Tests', () {
     test('1. Default throttle (leading: true, trailing: true) fires on leading edge and trailing edge', () async {
-      final query = BloomController<String>('initial');
+      final query = blooming<String>('initial');
       final observed = <String>[];
 
       final effect = ThrottleEffect.unary(
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('2. Leading-only throttle (leading: true, trailing: false) ignores mutations during window', () async {
-      final click = BloomController<int>(0);
+      final click = blooming<int>(0);
       int runs = 0;
 
       final effect = ThrottleEffect.unary(
@@ -77,7 +77,7 @@ void main() {
 
     test('3. Trailing-only throttle (leading: false, trailing: true) delays first execution to window expiration',
         () async {
-      final text = BloomController<String>('');
+      final text = blooming<String>('');
       final observed = <String>[];
 
       final effect = ThrottleEffect.unary(
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('4. Throttle with take limit deactivates and cleans up timer after limit reached', () async {
-      final count = BloomController<int>(0);
+      final count = blooming<int>(0);
       int runs = 0;
 
       final effect = ThrottleEffect.unary(
@@ -136,8 +136,8 @@ void main() {
     });
 
     test('5. Multi-target throttle on list of targets', () async {
-      final a = BloomController<int>(0);
-      final b = BloomController<int>(0);
+      final a = blooming<int>(0);
+      final b = blooming<int>(0);
       int runs = 0;
 
       final effect = ThrottleEffect(
@@ -161,7 +161,7 @@ void main() {
     });
 
     test('6. Deactivation cancels pending throttle timer and prevents ghost executions', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       int runs = 0;
 
       final effect = ThrottleEffect.unary(
@@ -188,7 +188,7 @@ void main() {
     });
 
     test('7. Scope-bound ThrottleEffect works with fluent extension', () async {
-      final query = BloomController<String>('initial');
+      final query = blooming<String>('initial');
       final observed = <String>[];
 
       final effect = query.bloom.effect.throttle(
@@ -214,7 +214,7 @@ void main() {
     });
 
     test('8. Throttle with leading: false and trailing: false throws AssertionError', () {
-      final click = BloomController<int>(0);
+      final click = blooming<int>(0);
       expect(
         () => ThrottleEffect.unary(
           click.bloom,
@@ -238,7 +238,7 @@ void main() {
     });
 
     test('9. ThrottleEffect forwards uncaught errors to onUncaughtError', () async {
-      final click = BloomController<int>(0);
+      final click = blooming<int>(0);
       Object? caughtError;
 
       final effect = click.bloom.effect.throttle(

@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   group('Bloom Direct .effect() Extension Suite', () {
     test('1. BloomEffectExtension creates Effect attached to single Bloom', () async {
-      final ctrl = BloomController<int>(0);
+      final ctrl = blooming<int>(0);
       var effectRuns = 0;
       var observedValue = -1;
 
@@ -47,8 +47,8 @@ void main() {
     });
 
     test('2. BloomRecord2EffectExtension handles 2-tuple', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<String>('hello');
+      final a = blooming<int>(1);
+      final b = blooming<String>('hello');
       var runs = 0;
       var lastA = 0;
       var lastB = '';
@@ -95,9 +95,9 @@ void main() {
     });
 
     test('3. BloomRecord3EffectExtension handles 3-tuple', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
-      final c = BloomController<int>(3);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
+      final c = blooming<int>(3);
       var sum = 0;
 
       final tuple = (a.bloom, b.bloom, c.bloom);
@@ -122,10 +122,10 @@ void main() {
     });
 
     test('4. BloomRecord4EffectExtension handles 4-tuple', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
-      final c = BloomController<int>(3);
-      final d = BloomController<int>(4);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
+      final c = blooming<int>(3);
+      final d = blooming<int>(4);
       var runs = 0;
 
       final tuple = (a.bloom, b.bloom, c.bloom, d.bloom);
@@ -149,11 +149,11 @@ void main() {
     });
 
     test('5. BloomRecord5EffectExtension handles 5-tuple', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
-      final c = BloomController<int>(3);
-      final d = BloomController<int>(4);
-      final e = BloomController<int>(5);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
+      final c = blooming<int>(3);
+      final d = blooming<int>(4);
+      final e = blooming<int>(5);
       var runs = 0;
 
       final tuple = (a.bloom, b.bloom, c.bloom, d.bloom, e.bloom);
@@ -177,9 +177,9 @@ void main() {
     });
 
     test('6. BloomIterableEffectExtension handles list and iterable', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
-      final c = BloomController<int>(3);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
+      final c = blooming<int>(3);
       var runs = 0;
 
       final list = [a.bloom, b.bloom, c.bloom];
@@ -202,10 +202,10 @@ void main() {
     });
 
     test('7. Heterogeneous tuple containing Bloom and Bloom list', () async {
-      final g1 = BloomController<int>(10);
-      final g2 = BloomController<int>(20);
+      final g1 = blooming<int>(10);
+      final g2 = blooming<int>(20);
       final groupCtrl = blooming.list([g1.bloom, g2.bloom]);
-      final g3 = BloomController<int>(30);
+      final g3 = blooming<int>(30);
 
       var runs = 0;
       final effect = (groupCtrl.bloom, g3.bloom).effect(() {
@@ -233,7 +233,7 @@ void main() {
     });
 
     test('8. Effect.unary constructor directly creates and drives unary effect', () async {
-      final ctrl = BloomController<String>('initial');
+      final ctrl = blooming<String>('initial');
       var runs = 0;
       var observed = '';
 
@@ -259,7 +259,7 @@ void main() {
     });
 
     test('9. Effect.unary coalesces multiple synchronous mutations into single microtask', () async {
-      final ctrl = BloomController<int>(0);
+      final ctrl = blooming<int>(0);
       var runs = 0;
 
       final effect = Effect.unary(ctrl.bloom, () {
@@ -287,7 +287,7 @@ void main() {
     });
 
     test('10. Effect.unary cancels pending scheduled microtask when deactivated before execution', () async {
-      final ctrl = BloomController<int>(0);
+      final ctrl = blooming<int>(0);
       var runs = 0;
 
       final effect = Effect.unary(ctrl.bloom, () {
@@ -312,8 +312,8 @@ void main() {
     });
 
     test('11. Effect.unary attached to Bloom list triggers on composite mutations', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
       final groupCtrl = blooming.list([a.bloom, b.bloom]);
 
       var runs = 0;
@@ -335,7 +335,7 @@ void main() {
     });
 
     test('12. watch.effect binds effect lifecycle to enclosing watch scope', () async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       var effectRuns = 0;
       var observedValue = -1;
 
@@ -385,8 +385,8 @@ void main() {
     });
 
     test('13. Effect.group activates and deactivates child effects as a unified DAG terminal', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
       var aRuns = 0;
       var bRuns = 0;
 
@@ -430,8 +430,8 @@ void main() {
     });
 
     test('14. watch.effect binds EffectGroup lifecycle to enclosing watch scope with 0 rebuilds', () async {
-      final a = BloomController<int>(0);
-      final b = BloomController<int>(0);
+      final a = blooming<int>(0);
+      final b = blooming<int>(0);
       var aRuns = 0;
       var bRuns = 0;
 
@@ -469,7 +469,7 @@ void main() {
     });
 
     test('15. Tuple records and Iterable .group extensions create valid EffectGroup instances', () {
-      final a = BloomController<int>(0);
+      final a = blooming<int>(0);
       final e1 = a.bloom.effect(() {});
       final e2 = a.bloom.effect(() {});
       final e3 = a.bloom.effect(() {});
@@ -503,8 +503,8 @@ void main() {
     });
 
     test('16. BloomIterableEffectExtension provides  getter symmetrically', () {
-      final a = BloomController<int>(0);
-      final b = BloomController<int>(1);
+      final a = blooming<int>(0);
+      final b = blooming<int>(1);
       final list = [a.bloom, b.bloom];
       expect(list, list);
 
@@ -513,7 +513,7 @@ void main() {
     });
 
     test('17. EffectGroup deduplicates identical child effects', () async {
-      final a = BloomController<int>(0);
+      final a = blooming<int>(0);
       var runs = 0;
       final e1 = a.bloom.effect(() => runs++);
       final e2 = a.bloom.effect(() => runs++);
@@ -537,7 +537,7 @@ void main() {
     });
 
     test('17.1. EffectGroup safely consumes single-pass generators without multiple iteration desync', () {
-      final a = BloomController<int>(0);
+      final a = blooming<int>(0);
       final e1 = a.bloom.effect(() {});
       final e2 = a.bloom.effect(() {});
 
@@ -553,7 +553,7 @@ void main() {
     });
 
     test('18. Unary and N-ary Manifest Effect forwards uncaught errors to onUncaughtError', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       Object? caughtError;
       StackTrace? caughtStack;
 
@@ -582,7 +582,7 @@ void main() {
     });
 
     test('19. Manifest Effect forwards guard uncaught errors to onUncaughtError', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       Object? caughtError;
 
       final effect = Effect(
@@ -610,7 +610,7 @@ void main() {
     });
 
     test('20. BloomVia Effect forwards uncaught errors to onUncaughtError during reactive evaluation', () async {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
       final caughtErrors = <Object>[];
 
       final terminal = RawViaTerminal((via) {
@@ -642,11 +642,11 @@ void main() {
     });
 
     test('21. Declarative Effect handled, debounce, and throttle properties and creation', () {
-      final a = BloomController(1);
-      final b = BloomController(2);
-      final c = BloomController(3);
-      final d = BloomController(4);
-      final e = BloomController(5);
+      final a = blooming(1);
+      final b = blooming(2);
+      final c = blooming(3);
+      final d = blooming(4);
+      final e = blooming(5);
 
       // bloom.effect.handled
       final singleHandled = a.bloom.effect.handled((handle) {});

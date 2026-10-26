@@ -864,11 +864,11 @@ class MainAppShell extends StatelessWidget {
 }
 ''' : ''}
 enum AuthState { authenticated, unauthenticated, checking }
-final counterBloom = BloomController(0).bloom;
-final errorMessageBloom = BloomController<String?>(null).bloom;
-final authStateBloom = BloomController(AuthState.checking).bloom;
-final profileCompletedBloom = BloomController(false).bloom;
-final checkoutErrorBloom = BloomController<String?>(null).bloom;
+final counterBloom = blooming(0).bloom;
+final errorMessageBloom = blooming<String?>(null).bloom;
+final authStateBloom = blooming(AuthState.checking).bloom;
+final profileCompletedBloom = blooming(false).bloom;
+final checkoutErrorBloom = blooming<String?>(null).bloom;
 class _OrderController {
   void reset() {}
   void submit() {}
@@ -876,8 +876,8 @@ class _OrderController {
 final orderController = _OrderController();
 ${!cleanCode.contains('class AuthStore') ? '''
 class AuthStore {
-  final isLoggedIn = BloomController(false).bloom;
-  final currentUserBloom = BloomController<User?>(const User("Alice")).bloom;
+  final isLoggedIn = blooming(false).bloom;
+  final currentUserBloom = blooming<User?>(const User("Alice")).bloom;
 }
 ''' : ''}
 class GoRouter {
@@ -887,8 +887,8 @@ class GoRoute {
   GoRoute({dynamic path, dynamic builder});
 }
 class Article { const Article(); }
-final articlesBloom = BloomController<List<Article>>([const Article()]).bloom;
-final isPendingBloom = BloomController(false).bloom;
+final articlesBloom = blooming<List<Article>>([const Article()]).bloom;
+final isPendingBloom = blooming(false).bloom;
 Future<List<Article>> fetchArticles() async => [const Article()];
 class TimelineItem { const TimelineItem(); }
 class _ApiService {
@@ -897,9 +897,9 @@ class _ApiService {
 }
 final apiService = _ApiService();
 class _SampleStore {
-  final isLoading = BloomController(false).bloom;
-  final isSubmitting = BloomController(false).bloom;
-  final showSuccessDialogSignal = BloomController(false).bloom;
+  final isLoading = blooming(false).bloom;
+  final isSubmitting = blooming(false).bloom;
+  final showSuccessDialogSignal = blooming(false).bloom;
   void fetchNextPage() {}
   void submit() {}
 }
@@ -988,114 +988,114 @@ void main() {}
 
     final stubLines = [
       if (isUsed('controllerA') && !isDefined('controllerA'))
-        'final controllerA = BloomController<int>(0);',
+        'final controllerA = blooming<int>(0);',
       if (isUsed('controllerB') && !isDefined('controllerB'))
-        'final controllerB = BloomController<int>(0);',
+        'final controllerB = blooming<int>(0);',
       if (isUsed('controllerC') && !isDefined('controllerC'))
-        'final controllerC = BloomController<int>(0);',
+        'final controllerC = blooming<int>(0);',
       if (isUsed('counter') && !isDefined('counter'))
-        'final counter = BloomController<int>(0).bloom;',
+        'final counter = blooming<int>(0).bloom;',
       if (isUsed('authController') && !isDefined('authController'))
-        'final authController = BloomController<AuthSession>(const AuthSession("Alice"));',
+        'final authController = blooming<AuthSession>(const AuthSession("Alice"));',
       if (isUsed('vipAnalyticsEffect') && !isDefined('vipAnalyticsEffect'))
         'final vipAnalyticsEffect = Effect.via((via) {});',
       if (isUsed('selectedSymbol') && !isDefined('selectedSymbol'))
-        'final selectedSymbol = BloomController<String>("AAPL").bloom;',
+        'final selectedSymbol = blooming<String>("AAPL").bloom;',
       if (isUsed('selectedCamera') && !isDefined('selectedCamera'))
-        'final selectedCamera = BloomController<String>("back").bloom;',
+        'final selectedCamera = blooming<String>("back").bloom;',
       if (isUsed('savedOffset') && !isDefined('savedOffset'))
-        'final savedOffset = BloomController<double>(100.0).bloom;',
+        'final savedOffset = blooming<double>(100.0).bloom;',
       if (isUsed('userId') && !isDefined('userId'))
-        'final userId = BloomController<String>("user_1").bloom;',
+        'final userId = blooming<String>("user_1").bloom;',
       if (isUsed('filter') && !isDefined('filter'))
-        'final filter = BloomController<String>("all");',
+        'final filter = blooming<String>("all");',
       if (isUsed('page') && !isDefined('page'))
-        'final page = BloomController<int>(1);',
+        'final page = blooming<int>(1);',
       if (isUsed('nodeA') && !isDefined('nodeA'))
-        'final nodeA = BloomController<int>(0);',
+        'final nodeA = blooming<int>(0);',
       if (isUsed('node') && !isDefined('node'))
-        'final node = BloomController<int>(0);',
+        'final node = blooming<int>(0);',
       if (isUsed('root') && !isDefined('root'))
-        'final root = BloomController<int>(0);',
+        'final root = blooming<int>(0);',
       if (isUsed('extra') && !isDefined('extra'))
-        'final extra = BloomController<int>(0);',
+        'final extra = blooming<int>(0);',
       if (isUsed('myBloom') && !isDefined('myBloom'))
-        'final myBloom = BloomController<int>(0).bloom;',
+        'final myBloom = blooming<int>(0).bloom;',
       if (isUsed('roomIdBloom') && !isDefined('roomIdBloom'))
-        'final roomIdBloom = BloomController<String>("room_1").bloom;',
+        'final roomIdBloom = blooming<String>("room_1").bloom;',
       if (isUsed('currentRoom') && !isDefined('currentRoom'))
-        'final currentRoom = BloomController<String>("room_1").bloom;',
+        'final currentRoom = blooming<String>("room_1").bloom;',
       if (isUsed('refreshSignal') && !isDefined('refreshSignal'))
-        'final refreshSignal = BloomSignalController();',
+        'final refreshSignal = blooming.signal();',
       if (isUsed('isPending') && !isDefined('isPending'))
-        'final isPending = BloomController<bool>(false).bloom;',
+        'final isPending = blooming<bool>(false).bloom;',
       if (isUsed('bufferedFeed') && !isDefined('bufferedFeed'))
-        'final bufferedFeed = BloomController<String>("initial").bloom;',
+        'final bufferedFeed = blooming<String>("initial").bloom;',
       if (isUsed('isLoggedIn') && !isDefined('isLoggedIn'))
-        'final isLoggedIn = BloomController<bool>(true).bloom;',
+        'final isLoggedIn = blooming<bool>(true).bloom;',
       if (isUsed('userData') && !isDefined('userData'))
-        'final userData = BloomController<User>(const User("Alice")).bloom;',
+        'final userData = blooming<User>(const User("Alice")).bloom;',
       if (isUsed('scrollController') && !isDefined('scrollController'))
         'final scrollController = ScrollController();',
       if (isUsed('homeFeed') && !isDefined('homeFeed'))
-        'final homeFeed = BloomController<String>("home");',
+        'final homeFeed = blooming<String>("home");',
       if (isUsed('trendingFeed') && !isDefined('trendingFeed'))
-        'final trendingFeed = BloomController<String>("trending");',
+        'final trendingFeed = blooming<String>("trending");',
       if (isUsed('serverPort') && !isDefined('serverPort'))
-        'final serverPort = BloomController<int>(8080);',
+        'final serverPort = blooming<int>(8080);',
       if (isUsed('reconnectTrigger') && !isDefined('reconnectTrigger'))
-        'final reconnectTrigger = BloomSignalController();',
+        'final reconnectTrigger = blooming.signal();',
       if (isUsed('primaryFeed') && !isDefined('primaryFeed'))
-        'final primaryFeed = BloomController<String>("primary");',
+        'final primaryFeed = blooming<String>("primary");',
       if (isUsed('backupFeed') && !isDefined('backupFeed'))
-        'final backupFeed = BloomController<String>("backup");',
+        'final backupFeed = blooming<String>("backup");',
       if (isUsed('activeSource') && !isDefined('activeSource'))
-        'final activeSource = BloomController<String>("primary");',
+        'final activeSource = blooming<String>("primary");',
       if (isUsed('devConfig') && !isDefined('devConfig'))
-        'final devConfig = BloomController<String>("dev");',
+        'final devConfig = blooming<String>("dev");',
       if (isUsed('prodConfig') && !isDefined('prodConfig'))
-        'final prodConfig = BloomController<String>("prod");',
+        'final prodConfig = blooming<String>("prod");',
       if (isUsed('isDev') && !isDefined('isDev'))
-        'final isDev = BloomController<bool>(true);',
+        'final isDev = blooming<bool>(true);',
       if (isUsed('selectedTab') && !isDefined('selectedTab'))
-        'final selectedTab = BloomController<int>(0);',
+        'final selectedTab = blooming<int>(0);',
       if (isUsed('stockStream') && !isDefined('stockStream'))
         'final stockStream = const Stream<double>.empty();',
       if (isUsed('stateBloom') && !isDefined('stateBloom'))
-        'final stateBloom = BloomController<int>(0).bloom;',
+        'final stateBloom = blooming<int>(0).bloom;',
       if (isUsed('counterController') && !isDefined('counterController'))
-        'final counterController = BloomController<int>(0);',
+        'final counterController = blooming<int>(0);',
       if (isUsed('firstNameBloom') && !isDefined('firstNameBloom'))
-        'final firstNameBloom = BloomController<String>("John").bloom;',
+        'final firstNameBloom = blooming<String>("John").bloom;',
       if (isUsed('lastNameBloom') && !isDefined('lastNameBloom'))
-        'final lastNameBloom = BloomController<String>("Doe").bloom;',
+        'final lastNameBloom = blooming<String>("Doe").bloom;',
       if (isUsed('themeBloom') && !isDefined('themeBloom'))
-        'final themeBloom = BloomController<Brightness>(Brightness.light).bloom;',
+        'final themeBloom = blooming<Brightness>(Brightness.light).bloom;',
       if (isUsed('userBloom') && !isDefined('userBloom'))
-        'final userBloom = BloomController<User>(const User("Alice")).bloom;',
+        'final userBloom = blooming<User>(const User("Alice")).bloom;',
       if (isUsed('guestUserBloom') && !isDefined('guestUserBloom'))
-        'final guestUserBloom = BloomController<User>(const User("Guest", isGuest: true)).bloom;',
+        'final guestUserBloom = blooming<User>(const User("Guest", isGuest: true)).bloom;',
       if (isUsed('authenticatedUserBloom') &&
           !isDefined('authenticatedUserBloom'))
-        'final authenticatedUserBloom = BloomController<User>(const User("Alice")).bloom;',
+        'final authenticatedUserBloom = blooming<User>(const User("Alice")).bloom;',
       if (isUsed('speedBloom') && !isDefined('speedBloom'))
-        'final speedBloom = BloomController<int>(50).bloom;',
+        'final speedBloom = blooming<int>(50).bloom;',
       if (isUsed('limitBloom') && !isDefined('limitBloom'))
-        'final limitBloom = BloomController<int>(60).bloom;',
+        'final limitBloom = blooming<int>(60).bloom;',
       if (isUsed('tokenBloom') && !isDefined('tokenBloom'))
-        'final tokenBloom = BloomController<String>("token_123").bloom;',
+        'final tokenBloom = blooming<String>("token_123").bloom;',
       if (isUsed('loggedInBloom') && !isDefined('loggedInBloom'))
-        'final loggedInBloom = BloomController<bool>(true).bloom;',
+        'final loggedInBloom = blooming<bool>(true).bloom;',
       if (isUsed('cartBloom') && !isDefined('cartBloom'))
-        'final cartBloom = BloomController<Cart>(Cart()).bloom;',
+        'final cartBloom = blooming<Cart>(Cart()).bloom;',
       if (isUsed('addressBloom') && !isDefined('addressBloom'))
-        'final addressBloom = BloomController<Address>(const Address()).bloom;',
+        'final addressBloom = blooming<Address>(const Address()).bloom;',
       if (isUsed('feedBloom') && !isDefined('feedBloom'))
-        'final feedBloom = BloomController<String>("feed").bloom;',
+        'final feedBloom = blooming<String>("feed").bloom;',
       if (isUsed('roomId') && !isDefined('roomId'))
-        'final roomId = BloomController<String>("room_1").bloom;',
+        'final roomId = blooming<String>("room_1").bloom;',
       if (isUsed('other') && !isDefined('other'))
-        'final other = BloomController<int>(2).bloom;',
+        'final other = blooming<int>(2).bloom;',
     ];
 
     final explicitStubLines = <String>[];

@@ -22,7 +22,7 @@
 /// ┌────────────────────────────────────────────────────────────────────────┐
 /// │                     Upstream State Carrier ([Bloom<List<T>>])          │
 /// │                                                                        │
-/// │   final users = BloomController<List<User>>([...]);                      │
+/// │   final users = blooming<List<User>>([...]);                      │
 /// └──────────────────────────────────┬─────────────────────────────────────┘
 ///                                    │ (Push-Dirty Invalidation)
 ///                                    ▼
@@ -52,7 +52,7 @@
 /// import 'package:blooming/blooming.dart';
 /// import 'blooming_extensions/blooming_extensions.dart';
 ///
-/// final scores = BloomController([40, 10, 90, 20]);
+/// final scores = blooming([40, 10, 90, 20]);
 ///
 /// // Create a derived sorted pipeline:
 /// final sortedScores = scores.elements.sorted((a, b) => a.compareTo(b));
@@ -65,7 +65,7 @@
 ///
 /// ### 2. Numeric Reductions and Aggregations
 /// ```dart
-/// final prices = BloomController<List<double>>([19.99, 9.99, 4.99]);
+/// final prices = blooming<List<double>>([19.99, 9.99, 4.99]);
 ///
 /// final total = prices.elements.sum; // Bloom<double>
 /// final avg = prices.elements.average; // Bloom<double>

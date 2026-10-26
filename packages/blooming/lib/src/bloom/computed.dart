@@ -118,15 +118,15 @@ final class ComputedFunctor {
   ///
   /// ### 1. Basic Synchronous Derivation:
   /// ```dart
-  /// final firstName = BloomController('Jane');
-  /// final lastName = BloomController('Doe');
+  /// final firstName = blooming('Jane');
+  /// final lastName = blooming('Doe');
   ///
   /// final fullName = computed((via) => '${via(firstName.bloom)} ${via(lastName.bloom)}');
   /// ```
   ///
   /// ### 2. Declarative Event Pulse / Refresh Signal:
   /// ```dart
-  /// final refreshSignal = BloomSignalController();
+  /// final refreshSignal = blooming.signal();
   ///
   /// // Automatically re-evaluates whenever `refreshSignal.emit()` is called:
   /// final snapshot = computed((via) {
@@ -190,7 +190,7 @@ final class ComputedFutureFunctor {
   ///
   /// ### 1. Dynamic Parameter Tracking (Auto-Refetching on Dependency Change):
   /// ```dart
-  /// final userId = BloomController('user_123');
+  /// final userId = blooming('user_123');
   ///
   /// // Automatically re-evaluates and switches when `userId` changes,
   /// // cleanly discarding stale in-flight requests (race-condition immune):
@@ -201,7 +201,7 @@ final class ComputedFutureFunctor {
   ///
   /// ### 2. Guarded Query with Precondition Gating:
   /// ```dart
-  /// final searchQuery = BloomController('');
+  /// final searchQuery = blooming('');
   ///
   /// // Gates evaluation until the search query has at least 2 non-whitespace characters;
   /// // gracefully halts network call and emits Empty('QueryTooShort') without throwing:
@@ -214,7 +214,7 @@ final class ComputedFutureFunctor {
   ///
   /// ### 3. Resilient Fetching with Instant Cache & Error Fallback:
   /// ```dart
-  /// final accountId = BloomController('acc_42');
+  /// final accountId = blooming('acc_42');
   ///
   /// // Instant cache render (zero-flicker) while asynchronously fetching fresh data,
   /// // with graceful fallback recovery if the remote endpoint throws:
@@ -229,7 +229,7 @@ final class ComputedFutureFunctor {
   ///
   /// ### 4. Manual Refresh Trigger (Pull-to-Refresh / Discrete Event Pulse):
   /// ```dart
-  /// final refreshSignal = BloomSignalController();
+  /// final refreshSignal = blooming.signal();
   ///
   /// // Declaratively refetches whenever `refreshSignal.emit()` is called:
   /// final userList = computed.future((via) {
@@ -278,7 +278,7 @@ final class ComputedStreamFunctor {
   ///
   /// ### 1. Dynamic Parameter Tracking (Auto-Switching Stream):
   /// ```dart
-  /// final currentRoomId = BloomController('room-1');
+  /// final currentRoomId = blooming('room-1');
   ///
   /// // Automatically unsubscribes from the previous room stream and subscribes
   /// // to the new one whenever [currentRoomId] changes:
@@ -289,8 +289,8 @@ final class ComputedStreamFunctor {
   ///
   /// ### 2. Offline-First SWR with `async*` (Local Cache Preload + Live Stream):
   /// ```dart
-  /// final currentUserId = BloomController('user-1');
-  /// final isLoggedIn = BloomController(true);
+  /// final currentUserId = blooming('user-1');
+  /// final isLoggedIn = blooming(true);
   ///
   /// // Leverages an `async*` generator to asynchronously load & yield local DB cache
   /// // first, then seamlessly yield* continuous live server updates:
@@ -314,8 +314,8 @@ final class ComputedStreamFunctor {
   ///
   /// ### 3. Resilient Live Ticker with `async*` & Graceful Retain (Zero-Thrashing):
   /// ```dart
-  /// final selectedSymbol = BloomController('AAPL');
-  /// final isNetworkOnline = BloomController(true);
+  /// final selectedSymbol = blooming('AAPL');
+  /// final isNetworkOnline = blooming(true);
   ///
   /// // Combines async REST baseline snapshot fetching with live WebSocket streaming,
   /// // custom equality filtering, and time-bounded graceful retention across route changes:
@@ -347,7 +347,7 @@ final class ComputedStreamFunctor {
   ///
   /// ### 4. Re-subscribing / Reconnecting Stream with Signal:
   /// ```dart
-  /// final reconnectSignal = BloomSignalController();
+  /// final reconnectSignal = blooming.signal();
   ///
   /// // Automatically tears down previous subscription and re-subscribes when signal emits:
   /// final liveFeed = computed.stream((via) {

@@ -46,7 +46,7 @@ The Bloom Framework resolves these limits through **`.retained()` Stale-While-Re
 The framework eliminates bespoke refresh interfaces or lifecycle mixins. Producers create a [BloomSignalController] handle and expose its read-only [BloomSignalController.bloom] view. Consumers register a dependency on the signal via `via(refreshSignal.bloom)` inside computation closures:
 
 ```dart
-final refreshSignal = BloomSignalController();
+final refreshSignal = blooming.signal();
 
 // Explicit dependency tracking via BloomVia:
 final userProfile = computed.future((via) {
@@ -65,7 +65,7 @@ Appending `.retained()` to any reactive pipeline unlocks **Stale-While-Revalidat
 
 ```dart
 // 1. Signal-based refresh trigger (Producer handle)
-final refreshSignal = BloomSignalController();
+final refreshSignal = blooming.signal();
 
 // 2. Asynchronous data query pipeline
 final userFeed = computed.future((via) {
@@ -154,7 +154,7 @@ import 'package:blooming/effect.dart';
 
 void main() async {
   // 1. Pipeline configuration
-  final refreshSignal = BloomSignalController();
+  final refreshSignal = blooming.signal();
   final userFeed = computed.future((via) async {
     via(refreshSignal.bloom);
     await Future<void>.delayed(const Duration(milliseconds: 10));

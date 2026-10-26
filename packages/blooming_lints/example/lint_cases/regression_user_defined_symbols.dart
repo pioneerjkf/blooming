@@ -5,7 +5,7 @@
 
 import 'package:blooming/blooming.dart';
 
-final count = BloomController(0).bloom;
+final count = blooming(0).bloom;
 
 // #case regression/good/P9-user-defined-effect-class
 class Effect {

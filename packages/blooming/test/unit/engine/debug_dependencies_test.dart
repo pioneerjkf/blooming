@@ -9,10 +9,10 @@ import 'package:blooming/effect.dart';
 void main() {
   group('BloomDebugSnapshot & Terminal debugDependencies Tests', () {
     test('BloomController and RawBloomController attach debugLabel', () {
-      final a = BloomController(10)..debugLabel = 'counterA';
-      final b = RawBloomController('hello').withDebugLabel('rawB');
-      final c = BloomController<double>.late()..debugLabel = 'lateC';
-      final d = BloomController<String>.error('initError').withDebugLabel('errorD');
+      final a = blooming(10)..debugLabel = 'counterA';
+      final b = blooming.raw('hello').withDebugLabel('rawB');
+      final c = blooming.late<double>()..debugLabel = 'lateC';
+      final d = blooming.error<String>('initError').withDebugLabel('errorD');
 
       expect(a.debugLabel, equals('counterA'));
       expect(b.debugLabel, equals('rawB'));
@@ -21,8 +21,8 @@ void main() {
     });
 
     test('computed attaches debugLabel and reflects in debugDependencies', () {
-      final a = BloomController(1)..debugLabel = 'sourceA';
-      final b = BloomController(2)..debugLabel = 'sourceB';
+      final a = blooming(1)..debugLabel = 'sourceA';
+      final b = blooming(2)..debugLabel = 'sourceB';
       final sum = computed<int>(
         (via) => via(a.bloom) + via(b.bloom),
       )..debugLabel = 'sumComputed';
@@ -52,9 +52,9 @@ void main() {
     });
 
     test('RawViaTerminal dynamic branching updates debugDependencies correctly', () {
-      final flag = BloomController(true)..debugLabel = 'flag';
-      final optionA = BloomController('A').withDebugLabel('optionA');
-      final optionB = BloomController('B').withDebugLabel('optionB');
+      final flag = blooming(true)..debugLabel = 'flag';
+      final optionA = blooming('A').withDebugLabel('optionA');
+      final optionB = blooming('B').withDebugLabel('optionB');
 
       final terminal = RawViaTerminal<String>(
         (via) {
@@ -84,7 +84,7 @@ void main() {
     });
 
     test('RawBloomTerminal reflects single source in debugDependencies', () {
-      final count = BloomController(42)..debugLabel = 'counter';
+      final count = blooming(42)..debugLabel = 'counter';
       final terminal = RawBloomTerminal<int>(
         count.bloom,
         onInvalidated: () {},
@@ -101,9 +101,9 @@ void main() {
     });
 
     test('BloomDebugSnapshot describes empty and error states correctly', () {
-      final validNode = BloomController<double>(3.14)..debugLabel = 'validNode';
-      final lateNode = BloomController<String>.late()..debugLabel = 'lateNode';
-      final errorNode = BloomController<int>.error('Failed').withDebugLabel('errorNode');
+      final validNode = blooming<double>(3.14)..debugLabel = 'validNode';
+      final lateNode = blooming.late<String>()..debugLabel = 'lateNode';
+      final errorNode = blooming.error<int>('Failed').withDebugLabel('errorNode');
 
       final terminal = RawViaTerminal<void>(
         (via) {
@@ -148,7 +148,7 @@ void main() {
     });
 
     test('terminal.debugTethers tracks tethered effects and separates from debugDependencies', () {
-      final trigger = BloomController(10)..debugLabel = 'trigger';
+      final trigger = blooming(10)..debugLabel = 'trigger';
       var effectRuns = 0;
 
       final effectA = Effect([trigger.bloom], () => effectRuns++).withDebugLabel('syncEffectA');
@@ -158,7 +158,7 @@ void main() {
       expect(effectA.debugDependencies.length, equals(1));
       expect(effectA.debugDependencies.first.debugLabel, equals('trigger'));
 
-      final flag = BloomController(true);
+      final flag = blooming(true);
 
       final terminal = RawViaTerminal<int>(
         (via) {

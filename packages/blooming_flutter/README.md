@@ -37,7 +37,7 @@ import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
 // 1. Pure reactive state nodes & controllers (No Codegen, No Global State Traps)
-final likes = BloomController(0);
+final likes = blooming(0);
 
 // 🚀 Zero-Disposal Motion: pauses on unmount and resumes cleanly without boilerplate
 final pulse = DurableAnimationController(
@@ -271,7 +271,7 @@ In standard Flutter, updating a reactive value inside a large widget often leads
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final livePriceController = BloomController<double>(100.0);
+final livePriceController = blooming<double>(100.0);
 
 class StockDashboardCard extends StatelessWidget {
   const StockDashboardCard({super.key});
@@ -352,7 +352,7 @@ Flutter's standard dependency injection mechanism, `InheritedWidget` (and state 
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final authController = BloomController(AuthState(user: 'Alice', token: 'xyz'));
+final authController = blooming(AuthState(user: 'Alice', token: 'xyz'));
 
 class RootAppShell extends StatelessWidget {
   const RootAppShell({super.key});

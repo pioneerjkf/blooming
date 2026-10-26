@@ -19,7 +19,7 @@ void main() {
       //         sum
       //          │
       //       terminal
-      final root = BloomController<int>(10);
+      final root = blooming<int>(10);
       final left = computed<int>((via) => via(root.bloom) + 1); // 11 -> 21
       final right = computed<int>((via) => via(root.bloom) + 2); // 12 -> 22
       final sum = computed<int>((via) => via(left) + via(right)); // 23 -> 43
@@ -55,7 +55,7 @@ void main() {
     // Test Case 2: RawViaTerminal Diamond Graph Glitch Prevention
     // =========================================================================
     test('2. RawViaTerminal diamond graph dynamically evaluates without glitch', () {
-      final root = BloomController<int>(1);
+      final root = blooming<int>(1);
       final left = computed((via) => via(root.bloom) * 2); // 2 -> 20
       final right = computed((via) => via(root.bloom) * 3); // 3 -> 30
 
@@ -88,8 +88,8 @@ void main() {
     // Test Case 3: Multiple Independent Entries & Pipelines
     // =========================================================================
     test('3. Independent entry mutations coalesce and resolve cleanly', () {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(10);
+      final a = blooming<int>(1);
+      final b = blooming<int>(10);
       final combined = computed<int>((via) => via(a.bloom) + via(b.bloom));
 
       final log = <int>[];
@@ -115,7 +115,7 @@ void main() {
     // Test Case 4: Trampoline Loop Flattens Reentrant Mutations
     // =========================================================================
     test('4. Reentrant mutation inside onInvalidated drains sequentially via trampoline without stack explosion', () {
-      final source = BloomController<int>(1);
+      final source = blooming<int>(1);
       final history = <int>[];
       late final RawBloomTerminal<int> terminal;
 
@@ -145,8 +145,8 @@ void main() {
     // Test Case 5: Inter-Terminal Cascade via Reentrant Mutation
     // =========================================================================
     test('5. Reentrant cascade across two terminals drains in causal order', () {
-      final sourceA = BloomController<int>(1);
-      final sourceB = BloomController<int>(10);
+      final sourceA = blooming<int>(1);
+      final sourceB = blooming<int>(10);
 
       final executionOrder = <String>[];
 
@@ -185,7 +185,7 @@ void main() {
     // Test Case 6: Deactivation While Queued in Pushing Scope
     // =========================================================================
     test('6. Terminal deactivated while in pushing queue drops flush callback', () {
-      final source = BloomController<int>(1);
+      final source = blooming<int>(1);
 
       late final RawBloomTerminal<int> terminalA;
       late final RawBloomTerminal<int> terminalB;
@@ -221,8 +221,8 @@ void main() {
     // Test Case 7: BloomCoupler as _PushOriginMixin Origin Point
     // =========================================================================
     test('7. BloomCoupler couple triggers _PushScope flush without glitch', () {
-      final s1 = BloomController<int>(10);
-      final s2 = BloomController<int>(20);
+      final s1 = blooming<int>(10);
+      final s2 = blooming<int>(20);
 
       final coupler = BloomCoupler<int>(s1.bloom);
       final derived = computed((via) => via(coupler.bloom) * 2);

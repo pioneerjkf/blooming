@@ -11,7 +11,7 @@ void main() {
     testWidgets(
         '1. Direct composed.vsync provides TickerProvider and tracks reactivity',
         (tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
 
       await tester.pumpWidget(
         Directionality(
@@ -31,7 +31,7 @@ void main() {
     });
 
     testWidgets('2. composed.vsync provides context and vsync', (tester) async {
-      final counter = BloomController<int>(10);
+      final counter = blooming<int>(10);
 
       final w1 = composed.vsync((context, via, vsync) {
         expect(context, isA<BuildContext>());
@@ -63,7 +63,7 @@ void main() {
 
     testWidgets('3. composed.vsync.child memoizes static child',
         (tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
       int childBuildCount = 0;
 
       final childWidget = Builder(
@@ -104,7 +104,7 @@ void main() {
 
     testWidgets('4. composed.vsync.child provides context, vsync, and child',
         (tester) async {
-      final counter = BloomController<int>(5);
+      final counter = blooming<int>(5);
 
       final w1 = composed.vsync.child(
         (context, via, vsync, child) => Column(
@@ -136,7 +136,7 @@ void main() {
     testWidgets(
         '5. composed.vsync.children provides context, vsync, and children',
         (tester) async {
-      final counter = BloomController<int>(100);
+      final counter = blooming<int>(100);
 
       final w1 = composed.vsync.children(
         (context, via, vsync, children) => Column(

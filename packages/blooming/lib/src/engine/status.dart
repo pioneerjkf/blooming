@@ -35,7 +35,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// print(counter.bloom.isActive); // false (no downstream terminals yet)
 ///
 /// final terminal = RawBloomTerminal(

@@ -12,7 +12,7 @@ import '../../test_utils.dart';
 void main() {
   group('retained (Stale-While-Revalidate Functor & Coupler Integration) Suite', () {
     test('1.1 Basic SWR transition retains previous data and toggles pending via coupler', () async {
-      final query = BloomController('apple');
+      final query = blooming('apple');
       Completer<String>? activeCompleter;
 
       final rawFuture = computed.future((via) {
@@ -76,7 +76,7 @@ void main() {
     });
 
     test('1.2 Chained .retained() creates working pure Bloom<T> with zero-alloc pending', () async {
-      final query = BloomController('cat');
+      final query = blooming('cat');
       Completer<String>? activeCompleter;
 
       final smooth = computed.future((via) {
@@ -109,7 +109,7 @@ void main() {
     });
 
     test('2.1 Coupler surgical reactivity: pending facet pulses independently from data', () async {
-      final id = BloomController(1);
+      final id = blooming(1);
       Completer<String>? activeCompleter;
 
       final pendingCoupler = BloomCoupler<bool>.late();
@@ -183,7 +183,7 @@ void main() {
     });
 
     test('3.1 Zero-Zombie out-of-order race condition immunity', () async {
-      final query = BloomController('initial');
+      final query = blooming('initial');
       final slowCompleter = Completer<String>();
       final fastCompleter = Completer<String>();
 
@@ -232,7 +232,7 @@ void main() {
     });
 
     test('4.1 Returning empty data (Future.value) smoothly transitions and settles pending', () async {
-      final query = BloomController('search');
+      final query = blooming('search');
       final pendingCoupler = BloomCoupler<bool>.late();
 
       final search = computed.future((via) {
@@ -262,7 +262,7 @@ void main() {
     });
 
     test('5.1 Errors immediately clear retained data, surface error state, and clear pending', () async {
-      final trigger = BloomController(1);
+      final trigger = blooming(1);
       Completer<String>? completer;
       final pendingCoupler = BloomCoupler<bool>.late();
 
@@ -295,7 +295,7 @@ void main() {
     });
 
     test('6.1 Stream transition retains last stream value while new stream prepares', () async {
-      final channel = BloomController('A');
+      final channel = blooming('A');
       StreamController<String>? controller;
       final pendingCoupler = BloomCoupler<bool>.late();
 
@@ -335,7 +335,7 @@ void main() {
 
     test('7.1 Observing pending coupler alone activates upstream pipeline', () async {
       var isComputedActivated = false;
-      final query = BloomController('start');
+      final query = blooming('start');
 
       final pendingCoupler = BloomCoupler<bool>.late();
       computed.future((via) async {
@@ -358,7 +358,7 @@ void main() {
     });
 
     test('8.1 Chained .retained() and managed(...).retained() compatibility', () async {
-      final count = BloomController(10);
+      final count = blooming(10);
       final raw = computed((via) => 'Count: ${via(count.bloom)}');
       final smooth = raw.retained();
 
@@ -381,7 +381,7 @@ void main() {
     });
 
     test('9.1 Debug observability reflects retained properties', () async {
-      final source = BloomController('val');
+      final source = blooming('val');
       final pendingCoupler = BloomCoupler<bool>.late();
       final smooth = source.bloom.retained(pending: pendingCoupler)..debugTrace('SmoothNode');
 
@@ -395,7 +395,7 @@ void main() {
     // 10. Distinct Invariant & Diamond Consistency on Pending Facet
     // =========================================================================
     test('10.1 Pending facet does NOT increment version when pending state remains unchanged', () async {
-      final source = BloomController('Data1');
+      final source = blooming('Data1');
       final pendingCoupler = BloomCoupler<bool>.late();
       source.bloom.retained(pending: pendingCoupler);
       final pending = pendingCoupler.bloom;
@@ -428,7 +428,7 @@ void main() {
     });
 
     test('10.2 Diamond graph observing both retained and pending facet resolves consistently', () async {
-      final query = BloomController('A');
+      final query = blooming('A');
       Completer<String>? completer;
 
       final rawFuture = computed.future((via) {
@@ -485,7 +485,7 @@ void main() {
     });
 
     test('10.3 Pending facet pull suppresses version bump when current pending matches previous state', () {
-      final source = BloomController('A');
+      final source = blooming('A');
       final pendingCoupler = BloomCoupler<bool>.late();
       source.bloom.retained(pending: pendingCoupler);
       final pending = pendingCoupler.bloom;
@@ -505,7 +505,7 @@ void main() {
 
     test('11.1 retainedTuple() returns ({data, pending}) named record and retains prior data without coupler',
         () async {
-      final query = BloomController('alpha');
+      final query = blooming('alpha');
       Completer<String>? activeCompleter;
 
       final rawFuture = computed.future((via) {
@@ -554,7 +554,7 @@ void main() {
     });
 
     test('11.2 retainedTuple() handles deactivation and reactivation lifecycle', () {
-      final source = BloomController('Original');
+      final source = blooming('Original');
       final (data: dataBloom, pending: pendingBloom) = source.bloom.retainedTuple();
 
       expect(untracked(dataBloom), 'Original');

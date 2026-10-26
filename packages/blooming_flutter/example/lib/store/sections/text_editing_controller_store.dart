@@ -11,7 +11,7 @@ import '../../sections/text_editing_controller_section.dart';
 class TextEditingControllerStore {
   TextEditingControllerStore({
     Graceful? graceful = Graceful.microtask,
-  }) : _mutationCount = BloomController<int>(0) {
+  }) : _mutationCount = blooming<int>(0) {
     // 1. Flutter standard TextEditingController
     textController = TextEditingController(text: 'Hello Bloom World!');
 

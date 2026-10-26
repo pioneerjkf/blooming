@@ -9,9 +9,9 @@ import '../../test_utils.dart';
 void main() {
   group('Bloom.switched & bloom.switched Comprehensive Unit Tests', () {
     test('bloom.switched dynamically switches target Bloom based on reactive state', () {
-      final isDark = BloomController(false);
-      final lightTheme = BloomController('Light Mode');
-      final darkTheme = BloomController('Dark Mode');
+      final isDark = blooming(false);
+      final lightTheme = blooming('Light Mode');
+      final darkTheme = blooming('Dark Mode');
 
       final activeTheme = switched((via) {
         return via(isDark.bloom) ? darkTheme.bloom : lightTheme.bloom;
@@ -33,12 +33,12 @@ void main() {
     });
 
     test('bloom.switched prunes obsolete dependencies on dynamic conditional branches', () {
-      final branch = BloomController(true);
-      final a = BloomController('Alpha');
-      final b = BloomController('Beta');
+      final branch = blooming(true);
+      final a = blooming('Alpha');
+      final b = blooming('Beta');
 
-      final targetA = BloomController(10);
-      final targetB = BloomController(20);
+      final targetA = blooming(10);
+      final targetB = blooming(20);
 
       var evaluations = 0;
       final switchedBloom = switched((via) {
@@ -82,9 +82,9 @@ void main() {
     });
 
     test('bloom.switched reacts inside effect and computed', () async {
-      final selectedId = BloomController(1);
-      final item1 = BloomController('Item 1: Alice');
-      final item2 = BloomController('Item 2: Bob');
+      final selectedId = blooming(1);
+      final item1 = blooming('Item 1: Alice');
+      final item2 = blooming('Item 2: Bob');
 
       final currentItem = switched((via) {
         return via(selectedId.bloom) == 1 ? item1.bloom : item2.bloom;
@@ -117,7 +117,7 @@ void main() {
     });
 
     test('bloom.switched dynamically switches target pure Bloom based on reactive state', () {
-      final isDark = BloomController(false);
+      final isDark = blooming(false);
       final lightThemeBloom = Bloom.constant('Pure Light Bloom');
       final darkThemeBloom = Bloom.constant('Pure Dark Bloom');
 
@@ -135,13 +135,13 @@ void main() {
     });
 
     test('bloom.switched handles errors safely and recovers', () {
-      final shouldFail = BloomController(true);
+      final shouldFail = blooming(true);
 
       final switchedBloom = switched<int>((via) {
         if (via(shouldFail.bloom)) {
           throw Exception('Switch failed!');
         }
-        return BloomController(100).bloom;
+        return blooming(100).bloom;
       });
 
       expect(untracked.state(switchedBloom).hasError, isTrue);
@@ -154,9 +154,9 @@ void main() {
     });
 
     test('bloom.switched dynamically synchronizes version when switched branch is lazy computed', () {
-      final selector = BloomController('A');
-      final rootA = BloomController(10);
-      final rootB = BloomController(20);
+      final selector = blooming('A');
+      final rootA = blooming(10);
+      final rootB = blooming(20);
 
       var computedRunsA = 0;
       final lazyA = computed((via) {
@@ -210,9 +210,9 @@ void main() {
 
   group('Dynamic List Bloom.computed Comprehensive Unit Tests', () {
     test('Bloom.computed dynamically generates collection of Blooms (e.g. Nasdaq items)', () {
-      final count = BloomController(3);
+      final count = blooming(3);
       final codes = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'NVDA'];
-      final priceRubies = codes.map((code) => BloomController(100)).toList();
+      final priceRubies = codes.map((code) => blooming(100)).toList();
 
       final group = computed((via) {
         final currentCount = via(count.bloom);
@@ -238,8 +238,8 @@ void main() {
     });
 
     test('Bloom.computed on Bloom list combines elements reactively', () {
-      final count = BloomController(2);
-      final items = [BloomController('A'), BloomController('B'), BloomController('C')];
+      final count = blooming(2);
+      final items = [blooming('A'), blooming('B'), blooming('C')];
 
       final group = computed((via) {
         return List.generate(via(count.bloom), (i) => items[i].bloom);
@@ -258,7 +258,7 @@ void main() {
     });
 
     test('Bloom.computed works with generic Bloom elements', () {
-      final count = BloomController(2);
+      final count = blooming(2);
       final nodeA = Bloom.constant(10);
       final nodeB = Bloom.constant(20);
       final nodeC = Bloom.constant(30);
@@ -277,13 +277,13 @@ void main() {
     });
 
     test('Bloom.computed on Bloom list handles error states and recovers', () {
-      final shouldFail = BloomController(true);
+      final shouldFail = blooming(true);
 
       final group = computed<List<Bloom<int>>>((via) {
         if (via(shouldFail.bloom)) {
           throw Exception('Failed to generate group!');
         }
-        return [BloomController(1).bloom, BloomController(2).bloom];
+        return [blooming(1).bloom, blooming(2).bloom];
       });
 
       expect(untracked.state(group).hasError, isTrue);

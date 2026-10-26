@@ -456,9 +456,9 @@ test('computed.future progresses through Empty -> Data under terminal', () async
 
 ```dart
 test('RawViaTerminal sweeps unused dependency edges dynamically', () {
-  final condition = BloomController(true);
-  final branchA = BloomController('A');
-  final branchB = BloomController('B');
+  final condition = blooming(true);
+  final branchA = blooming('A');
+  final branchB = blooming('B');
 
   final terminal = RawViaTerminal(
     (via) => via(condition.bloom) ? via(branchA.bloom) : via(branchB.bloom),
@@ -496,7 +496,7 @@ test('RawViaTerminal sweeps unused dependency edges dynamically', () {
 
 ```dart
 test('RawComputedTerminal caches 0-compute hits and invalidates on source delta', () {
-  final source = BloomController(10);
+  final source = blooming(10);
   var computeCycles = 0;
 
   final terminal = RawComputedTerminal(

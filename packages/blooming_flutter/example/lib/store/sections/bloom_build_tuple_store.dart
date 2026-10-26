@@ -9,11 +9,11 @@ import '../../sections/bloom_build_tuple_section.dart';
 
 /// Sub-store for Section 03: bloom.build & Inline Cascades
 class BloomBuildTupleStore {
-  final _user = BloomController<String>('Alice');
-  final _score = BloomController<int>(2500);
-  final _rank = BloomController<int>(1);
+  final _user = blooming<String>('Alice');
+  final _score = blooming<int>(2500);
+  final _rank = blooming<int>(1);
   final _cascadeMode =
-      BloomController<int>(0); // 0: direct, 1: context, 2: child, 3: children
+      blooming<int>(0); // 0: direct, 1: context, 2: child, 3: children
 
   Bloom<String> get user => _user.bloom;
   Bloom<int> get score => _score.bloom;

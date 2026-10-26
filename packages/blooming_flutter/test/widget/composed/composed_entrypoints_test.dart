@@ -33,8 +33,8 @@ void main() {
         BuildContext? capturedOuterContext;
         BuildContext? capturedInnerContext;
 
-        final themeColor = BloomController(Colors.red);
-        final dummyBloom = BloomController(0);
+        final themeColor = blooming(Colors.red);
+        final dummyBloom = blooming(0);
 
         final innerTree = Builder(
           builder: (outerContext) {
@@ -88,7 +88,7 @@ void main() {
       'Regression: regular composed does NOT rebuild on TickerMode toggle',
       (tester) async {
         var composedBuildCount = 0;
-        final tickerEnabled = BloomController(true);
+        final tickerEnabled = blooming(true);
 
         final innerWidget = composed((context, via) {
           composedBuildCount++;
@@ -131,8 +131,8 @@ void main() {
         var ticker1Ticks = 0;
         var ticker2Ticks = 0;
 
-        final showWidget = BloomController(true);
-        final tickerEnabled = BloomController(true);
+        final showWidget = blooming(true);
+        final tickerEnabled = blooming(true);
 
         Widget buildVsyncTree() {
           return composed((context, via) {
@@ -201,7 +201,7 @@ void main() {
         BuildContext? capturedContext;
         ScopedAnimationController? scopedCtrl;
 
-        final showWidget = BloomController(true);
+        final showWidget = blooming(true);
 
         Widget buildTree() {
           return composed((context, via) {
@@ -272,7 +272,7 @@ void main() {
         var childBuildCount = 0;
         Widget? receivedChild;
 
-        final counter = BloomController(0);
+        final counter = blooming(0);
         final childWidget = _BuildCounterWidget(
           onBuild: () => childBuildCount++,
           label: 'static-child',
@@ -320,7 +320,7 @@ void main() {
         var childBBuildCount = 0;
         List<Widget>? receivedChildren;
 
-        final alignment = BloomController(MainAxisAlignment.start);
+        final alignment = blooming(MainAxisAlignment.start);
         final childA = _BuildCounterWidget(
           onBuild: () => childABuildCount++,
           label: 'child-A',
@@ -368,7 +368,7 @@ void main() {
       (tester) async {
         var childABuildCount = 0;
         var childBBuildCount = 0;
-        final childSelector = BloomController(true);
+        final childSelector = blooming(true);
 
         Widget buildTree() {
           return composed((context, via) {
@@ -524,7 +524,7 @@ void main() {
       (tester) async {
         var childComposedBuildCount = 0;
         var childrenComposedBuildCount = 0;
-        final tickerEnabled = BloomController(true);
+        final tickerEnabled = blooming(true);
 
         final innerChildWidget = composed.child(
           (c, v, child) {

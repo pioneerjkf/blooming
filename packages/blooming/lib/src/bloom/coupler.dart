@@ -53,7 +53,7 @@ part of '../framework.dart';
 /// ```dart
 /// // [Recommended] Hot-coupling independent upstream sources
 /// final mockSource = Bloom.constant('Guest');
-/// final liveSource = BloomController<String>('User123');
+/// final liveSource = blooming<String>('User123');
 ///
 /// final coupler = BloomCoupler<String>(mockSource);
 /// final greetingBloom = computed((via) => 'Hello, ${via(coupler.bloom)}!');

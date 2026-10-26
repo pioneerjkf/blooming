@@ -10,7 +10,7 @@ import 'package:blooming/blooming.dart';
 void main() {
   group('Dynamic Triad 1st-Class Public Interfaces & Constructors', () {
     test('1. computed functors (sync, future, stream, async) return pure Bloom<T>', () async {
-      final a = BloomController(10);
+      final a = blooming(10);
 
       // 1.1 sync
       final syncNode = computed((via) => via(a.bloom) * 2);
@@ -45,9 +45,9 @@ void main() {
     });
 
     test('2. switched() functor (lazy, eager microtask scheduling & flicker-free)', () async {
-      final cond = BloomController(true);
-      final branchA = BloomController('A');
-      final branchB = BloomController('B');
+      final cond = blooming(true);
+      final branchA = blooming('A');
+      final branchB = blooming('B');
 
       // 2.1 default (lazy): does NOT decouple on dirty; keeps old source until pulled!
       final lazySwitched = switched((via) => via(cond.bloom) ? branchA.bloom : branchB.bloom);
@@ -99,7 +99,7 @@ void main() {
     });
 
     test('4. retained extension on Bloom<T> and pure Bloom<T> interface with optional coupler', () {
-      final source = BloomController<int>(1);
+      final source = blooming<int>(1);
       final pendingCoupler = BloomCoupler<bool>.late();
       final retainedNode = source.bloom.retained(pending: pendingCoupler);
 
@@ -114,9 +114,9 @@ void main() {
     });
 
     test('5. SwitchedFunctor and ManagedFunctor eager option verification', () {
-      final cond = BloomController(true);
-      final branchA = BloomController('A');
-      final branchB = BloomController('B');
+      final cond = blooming(true);
+      final branchA = blooming('A');
+      final branchB = blooming('B');
 
       final s1 = switched((via) => via(cond.bloom) ? branchA.bloom : branchB.bloom);
       expect(s1, isA<Bloom<String>>());

@@ -9,8 +9,8 @@ import 'package:test/test.dart';
 void main() {
   group('BloomVia & RawViaTerminal Explicit Dependency Tracking Suite', () {
     test('1. BloomVia interface contracts and direct value extraction', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       var viaCalls = 0;
 
@@ -33,8 +33,8 @@ void main() {
     });
 
     test('2. RawViaTerminal multi-dependency tracking and push-dirty invalidation', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -67,9 +67,9 @@ void main() {
     });
 
     test('3. RawViaTerminal dynamic branching and 1-pass epoch sweeping', () {
-      final condition = BloomController(true);
-      final a = BloomController('Branch A');
-      final b = BloomController('Branch B');
+      final condition = blooming(true);
+      final a = blooming('Branch A');
+      final b = blooming('Branch B');
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -112,7 +112,7 @@ void main() {
     });
 
     test('4. Pure dependency registration via track(node)', () {
-      final trigger = BloomController(0);
+      final trigger = blooming(0);
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -135,8 +135,8 @@ void main() {
     });
 
     test('5. Zero-Overhead: Direct read without via(...) is not tracked', () {
-      final a = BloomController(100);
-      final b = BloomController(200);
+      final a = blooming(100);
+      final b = blooming(200);
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -182,8 +182,8 @@ void main() {
     });
 
     test('7. Exception Transactional Resilience: Edges are preserved on error and awake upon upstream change', () {
-      final a = BloomController(1);
-      final b = BloomController(10);
+      final a = blooming(1);
+      final b = blooming(10);
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -224,7 +224,7 @@ void main() {
     });
 
     test('8. Cursor-Accelerated Sequential Tracking with Many Sources & Dynamic Order Retention', () {
-      final controllers = List.generate(50, (i) => BloomController(i));
+      final controllers = List.generate(50, (i) => blooming(i));
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -259,7 +259,7 @@ void main() {
     });
 
     test('9. _pullVersion Invariant: Lazy computed dependencies synchronize pulledVersion in _endEpoch', () {
-      final source = BloomController(10);
+      final source = blooming(10);
       var computedRunCount = 0;
 
       // Lazy computed node whose version starts at 0 and increments upon pull
@@ -299,7 +299,7 @@ void main() {
     });
 
     test('10. _pullVersion Invariant: Distinct Short-Circuit execution drop under RawComputedTerminal', () {
-      final user = BloomController((name: 'Alice', age: 20));
+      final user = blooming((name: 'Alice', age: 20));
       var distinctComputeCount = 0;
 
       // Derived distinct name: only increments version if 'name' actually changes
@@ -353,9 +353,9 @@ void main() {
     });
 
     test('11. _pullVersion Invariant: Dynamic branch swap synchronizes pulledVersion on newly mounted edges', () {
-      final branch = BloomController(true);
-      final a = BloomController('A0');
-      final b = BloomController('B0');
+      final branch = blooming(true);
+      final a = blooming('A0');
+      final b = blooming('B0');
 
       var aComputeCount = 0;
       final compA = computed((via) {
@@ -407,8 +407,8 @@ void main() {
     });
 
     test('12. _pullVersion Exception Guard: Failed evaluation does NOT advance pulledVersion on unvisited edges', () {
-      final trigger = BloomController(1);
-      final errorTrigger = BloomController(false);
+      final trigger = blooming(1);
+      final errorTrigger = blooming(false);
       var invalidationCount = 0;
 
       final terminal = RawViaTerminal(
@@ -444,7 +444,7 @@ void main() {
     });
 
     test('13. _pullVersion Invariant: Effect distinct short-circuit drops scheduled execution', () async {
-      final user = BloomController((name: 'Alice', age: 20));
+      final user = blooming((name: 'Alice', age: 20));
       var distinctComputeCount = 0;
 
       final distinctName = computed((via) {
@@ -495,9 +495,9 @@ void main() {
     });
 
     test('14. Duplicate reads of the same source in one evaluation remain correct across re-evaluations', () {
-      final a = BloomController('Hello');
-      final b = BloomController('World');
-      final c = BloomController('!');
+      final a = blooming('Hello');
+      final b = blooming('World');
+      final c = blooming('!');
 
       final terminal = RawViaTerminal(
         (via) {
@@ -525,7 +525,7 @@ void main() {
     });
 
     test('15. _pullVersion Invariant: Effect.handledVia distinct short-circuit drops scheduled execution', () async {
-      final user = BloomController((name: 'Alice', age: 20));
+      final user = blooming((name: 'Alice', age: 20));
       final distinctName = computed((via) => via(user.bloom).name).distinct();
 
       var effectRuns = 0;
@@ -558,10 +558,10 @@ void main() {
     });
 
     test('16. _trackDependency self-healing order realignment and dynamic insertion before cursor', () {
-      final a = BloomController('A');
-      final b = BloomController('B');
-      final c = BloomController('C');
-      final order = BloomController(['A', 'B', 'C']);
+      final a = blooming('A');
+      final b = blooming('B');
+      final c = blooming('C');
+      final order = blooming(['A', 'B', 'C']);
 
       var invalidations = 0;
       final terminal = RawViaTerminal(
@@ -600,7 +600,7 @@ void main() {
       expect(terminal.evaluate(), 'BAC2');
 
       // Epoch 5: Dynamic insertion in the middle [B, new D, A, C]
-      final d = BloomController('D');
+      final d = blooming('D');
       order.data = ['B', 'D', 'A', 'C'];
       expect(invalidations, 4);
 
@@ -632,9 +632,9 @@ void main() {
     });
 
     test('17. _trackDependency re-read with interleaved order retains integrity', () {
-      final a = BloomController(1);
-      final b = BloomController(2);
-      final c = BloomController(3);
+      final a = blooming(1);
+      final b = blooming(2);
+      final c = blooming(3);
 
       final terminal = RawViaTerminal(
         (via) {

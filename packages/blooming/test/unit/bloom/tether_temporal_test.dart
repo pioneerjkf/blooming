@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   group('Tether Throttle, Debounce & Scope Effect Extensions Suite', () {
     test('1. ThrottleEffect.unary throttles mutations within scope lifecycle', () async {
-      final clicks = BloomController(0);
+      final clicks = blooming(0);
       int runs = 0;
 
       final effect = ThrottleEffect.unary(
@@ -35,7 +35,7 @@ void main() {
     });
 
     test('2. DebounceEffect.unary debounces mutations within scope lifecycle', () async {
-      final text = BloomController('');
+      final text = blooming('');
       final observed = <String>[];
 
       final effect = DebounceEffect.unary(
@@ -62,8 +62,8 @@ void main() {
     });
 
     test('3. Multi-target DebounceEffect([min, max])', () async {
-      final min = BloomController(10);
-      final max = BloomController(100);
+      final min = blooming(10);
+      final max = blooming(100);
       int runs = 0;
 
       final effect = DebounceEffect(
@@ -84,7 +84,7 @@ void main() {
     });
 
     test('4. Effect.unary(take: n) auto-deactivates after limit', () async {
-      final count = BloomController(0);
+      final count = blooming(0);
       int runs = 0;
 
       final effect = Effect.unary(count.bloom, () {
@@ -106,7 +106,7 @@ void main() {
     });
 
     test('5. Scope-bound via.tether(bloom.throttle(...)) throttles within scope lifecycle', () async {
-      final clicks = BloomController(0);
+      final clicks = blooming(0);
       int runs = 0;
 
       final terminal = RawViaTerminal(
@@ -136,7 +136,7 @@ void main() {
     });
 
     test('6. Scope-bound via.tether(bloom.debounce(...)) debounces within scope lifecycle', () async {
-      final text = BloomController('');
+      final text = blooming('');
       final observed = <String>[];
 
       final terminal = RawViaTerminal(

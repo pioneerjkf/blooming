@@ -44,7 +44,7 @@ void main() {
     testWidgets(
         '1.1 GlobalKey reparenting preserves reactive bindings across subtrees',
         (tester) async {
-      final counter = BloomController<int>(10);
+      final counter = blooming<int>(10);
       final widgetKey = GlobalKey();
       final swapNotifier = ValueNotifier<bool>(false);
 
@@ -93,8 +93,8 @@ void main() {
     testWidgets(
         '1.2 Nested BloomProvider scoping and independent branch overriding',
         (tester) async {
-      final rootThemeController = BloomController<String>('RootTheme');
-      final nestedThemeController = BloomController<String>('NestedTheme');
+      final rootThemeController = blooming<String>('RootTheme');
+      final nestedThemeController = blooming<String>('NestedTheme');
 
       await tester.pumpWidget(
         Directionality(
@@ -136,7 +136,7 @@ void main() {
         '1.3 Dynamically wrapping and unwrapping optional BloomProvider ancestor',
         (tester) async {
       final hasAncestorNotifier = ValueNotifier<bool>(false);
-      final themeController = BloomController<String>('DynamicTheme');
+      final themeController = blooming<String>('DynamicTheme');
 
       await tester.pumpWidget(
         Directionality(
@@ -179,7 +179,7 @@ void main() {
         '1.4 Rapid 20-cycle mount/unmount flapping does not leak listeners or hang',
         (tester) async {
       final showNotifier = ValueNotifier<bool>(true);
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
 
       await tester.pumpWidget(
         Directionality(

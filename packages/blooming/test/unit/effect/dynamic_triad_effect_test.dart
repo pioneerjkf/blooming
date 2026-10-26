@@ -15,7 +15,7 @@ void main() {
     // =========================================================================
     group('1. Unary Primitives x EffectRunner', () {
       test('1.1 computed -> EffectRunner: primes DAG, skips initial, responds to upstream mutation', () async {
-        final count = BloomController<int>(10);
+        final count = blooming<int>(10);
         final doubled = computed((via) => via(count.bloom) * 2);
 
         final captured = <int>[];
@@ -41,9 +41,9 @@ void main() {
       });
 
       test('1.2 switched -> EffectRunner: primes active branch, tracks mutation, dynamically switches', () async {
-        final useVip = BloomController<bool>(false);
-        final normalFeed = BloomController<String>('Normal 1');
-        final vipFeed = BloomController<String>('VIP 1');
+        final useVip = blooming<bool>(false);
+        final normalFeed = blooming<String>('Normal 1');
+        final vipFeed = blooming<String>('VIP 1');
 
         final activeFeed = switched(
           (via) => via(useVip.bloom) ? vipFeed.bloom : normalFeed.bloom,
@@ -85,7 +85,7 @@ void main() {
       });
 
       test('1.3 managed -> EffectRunner: creates resource upon activation, disposes on deactivation', () async {
-        final port = BloomController<int>(8080);
+        final port = blooming<int>(8080);
         int created = 0;
         int updated = 0;
         int disposed = 0;
@@ -129,9 +129,9 @@ void main() {
     // =========================================================================
     group('2. Pairwise 2-Stage Composite Pipelines', () {
       test('2.1 computed -> switched -> EffectRunner (computed condition drives switched selection)', () async {
-        final score = BloomController<int>(50);
-        final passNode = BloomController<String>('PASS');
-        final failNode = BloomController<String>('FAIL');
+        final score = blooming<int>(50);
+        final passNode = blooming<String>('PASS');
+        final failNode = blooming<String>('FAIL');
 
         final isPassed = computed((via) => via(score.bloom) >= 60);
         final status = switched((via) => via(isPassed) ? passNode.bloom : failNode.bloom);
@@ -157,9 +157,9 @@ void main() {
       });
 
       test('2.2 switched -> computed -> EffectRunner (computed derives from dynamic branch output)', () async {
-        final mode = BloomController<int>(1);
-        final rateA = BloomController<double>(1.1);
-        final rateB = BloomController<double>(1.5);
+        final mode = blooming<int>(1);
+        final rateA = blooming<double>(1.1);
+        final rateB = blooming<double>(1.5);
 
         final activeRate = switched((via) => via(mode.bloom) == 1 ? rateA.bloom : rateB.bloom);
         final price = computed((via) => (100.0 * via(activeRate)).toStringAsFixed(1));
@@ -185,7 +185,7 @@ void main() {
       });
 
       test('2.3 managed -> computed -> EffectRunner (computed derives from managed resource)', () async {
-        final capacity = BloomController<int>(5);
+        final capacity = blooming<int>(5);
         int created = 0;
         int disposed = 0;
 
@@ -216,8 +216,8 @@ void main() {
       });
 
       test('2.4 computed -> managed -> EffectRunner (computed feeds managed lifecycle input)', () async {
-        final host = BloomController<String>('api.example.com');
-        final isSecure = BloomController<bool>(true);
+        final host = blooming<String>('api.example.com');
+        final isSecure = blooming<bool>(true);
 
         final url = computed((via) => '${via(isSecure.bloom) ? 'https' : 'http'}://${via(host.bloom)}');
 
@@ -250,7 +250,7 @@ void main() {
       });
 
       test('2.5 managed -> switched -> EffectRunner (switched selects between managed resources)', () async {
-        final useProduction = BloomController<bool>(false);
+        final useProduction = blooming<bool>(false);
         int devCreated = 0;
         int devDisposed = 0;
         int prodCreated = 0;
@@ -298,9 +298,9 @@ void main() {
       });
 
       test('2.6 switched -> managed -> EffectRunner (switched feeds managed lifecycle input)', () async {
-        final tier = BloomController<String>('free');
-        final freeLimit = BloomController<int>(10);
-        final paidLimit = BloomController<int>(100);
+        final tier = blooming<String>('free');
+        final freeLimit = blooming<int>(10);
+        final paidLimit = blooming<int>(100);
 
         final limit = switched(
           (via) => via(tier.bloom) == 'paid' ? paidLimit.bloom : freeLimit.bloom,
@@ -344,9 +344,9 @@ void main() {
     // =========================================================================
     group('3. 3-Stage Full Dynamic Triad Pipeline', () {
       test('3.1 managed -> computed -> switched -> EffectRunner: full pipeline with sweeping & disposal', () async {
-        final isBackup = BloomController<bool>(false);
-        final primaryPort = BloomController<int>(5432);
-        final backupPort = BloomController<int>(5433);
+        final isBackup = blooming<bool>(false);
+        final primaryPort = blooming<int>(5432);
+        final backupPort = blooming<int>(5433);
 
         int primaryCreated = 0;
         int primaryDisposed = 0;
@@ -408,11 +408,11 @@ void main() {
       });
 
       test('3.2 computed -> switched -> managed -> EffectRunner: dynamic resource driven by derived switch', () async {
-        final userRole = BloomController<String>('guest');
+        final userRole = blooming<String>('guest');
         final isElevated = computed((via) => via(userRole.bloom) == 'admin' || via(userRole.bloom) == 'owner');
 
-        final defaultQuota = BloomController<int>(10);
-        final elevatedQuota = BloomController<int>(1000);
+        final defaultQuota = blooming<int>(10);
+        final elevatedQuota = blooming<int>(1000);
 
         final activeQuota = switched((via) => via(isElevated) ? elevatedQuota.bloom : defaultQuota.bloom);
 
@@ -454,12 +454,12 @@ void main() {
     // =========================================================================
     group('4. Multi-Target (N-ary) Tuples x EffectRunner', () {
       test('4.1 (computed, switched).effect(...).run(): both prime and trigger independently', () async {
-        final a = BloomController<int>(1);
+        final a = blooming<int>(1);
         final comp = computed((via) => via(a.bloom) * 10);
 
-        final toggle = BloomController<bool>(false);
-        final opt1 = BloomController<String>('Opt1');
-        final opt2 = BloomController<String>('Opt2');
+        final toggle = blooming<bool>(false);
+        final opt1 = blooming<String>('Opt1');
+        final opt2 = blooming<String>('Opt2');
         final sw = switched((via) => via(toggle.bloom) ? opt2.bloom : opt1.bloom);
 
         var runs = 0;
@@ -481,7 +481,7 @@ void main() {
       });
 
       test('4.2 (computed, managed).effect(...).run(): primes computation and allocates resource atomically', () async {
-        final numCtrl = BloomController<int>(5);
+        final numCtrl = blooming<int>(5);
         final doubled = computed((via) => via(numCtrl.bloom) * 2);
 
         int created = 0;
@@ -512,12 +512,12 @@ void main() {
 
       test('4.3 (computed, switched, managed).effect(...).run(): 3-tuple primes all 3 Dynamic Triad primitives',
           () async {
-        final numCtrl = BloomController<int>(1);
+        final numCtrl = blooming<int>(1);
         final comp = computed((via) => via(numCtrl.bloom) + 100);
 
-        final sel = BloomController<bool>(false);
-        final branchA = BloomController<String>('A');
-        final branchB = BloomController<String>('B');
+        final sel = blooming<bool>(false);
+        final branchA = blooming<String>('A');
+        final branchB = blooming<String>('B');
         final sw = switched((via) => via(sel.bloom) ? branchB.bloom : branchA.bloom);
 
         int created = 0;
@@ -563,9 +563,9 @@ void main() {
     // =========================================================================
     group('5. Rate-Limited Temporal Terminals with Dynamic Triad', () {
       test('5.1 switched.effect.debounce primes and collapses rapid mutations', () async {
-        final selector = BloomController<int>(1);
-        final f1 = BloomController<String>('Feed 1');
-        final f2 = BloomController<String>('Feed 2');
+        final selector = blooming<int>(1);
+        final f1 = blooming<String>('Feed 1');
+        final f2 = blooming<String>('Feed 2');
 
         final feed = switched((via) => via(selector.bloom) == 1 ? f1.bloom : f2.bloom);
 
@@ -591,7 +591,7 @@ void main() {
       });
 
       test('5.2 managed.effect.throttle primes, throttles, and maintains lifecycle', () async {
-        final interval = BloomController<int>(10);
+        final interval = blooming<int>(10);
         int created = 0;
         int disposed = 0;
 
@@ -637,8 +637,8 @@ void main() {
     // =========================================================================
     group('6. Early Teardown & Cascading Cleanup via `take: N` with Dynamic Triad', () {
       test('6.1 managed -> computed -> switched -> effect(take: 2) cascades teardown on completion', () async {
-        final selector = BloomController<bool>(true);
-        final port = BloomController<int>(8080);
+        final selector = blooming<bool>(true);
+        final port = blooming<int>(8080);
         int managedCreated = 0;
         int managedDisposed = 0;
 
@@ -654,7 +654,7 @@ void main() {
         );
 
         final serverInfo = computed((via) => 'Info: ${via(server)}');
-        final fallback = BloomController<String>('Fallback');
+        final fallback = blooming<String>('Fallback');
 
         final activeSource = switched<String>(
           (via) => via(selector.bloom) ? serverInfo : fallback.bloom,
@@ -705,7 +705,7 @@ void main() {
     // =========================================================================
     group('7. Inactive Dormancy & Full Lifecycle Roundtrip', () {
       test('7.1 autoStart: false -> activate -> mutate -> deactivate -> dormant mutation -> reactivate', () async {
-        final factor = BloomController<int>(2);
+        final factor = blooming<int>(2);
         int managedCreated = 0;
         int managedDisposed = 0;
 
@@ -774,9 +774,9 @@ void main() {
     // =========================================================================
     group('8. Conditional Guards & Dynamic Triad Integration', () {
       test('8.1 guard preserves take tickets and filters execution across switched branches', () async {
-        final selector = BloomController<bool>(true);
-        final numA = BloomController<int>(10);
-        final numB = BloomController<int>(20);
+        final selector = blooming<bool>(true);
+        final numA = blooming<int>(10);
+        final numB = blooming<int>(20);
 
         final branch = switched((via) => via(selector.bloom) ? numA.bloom : numB.bloom);
         final calc = computed((via) => via(branch));
@@ -830,7 +830,7 @@ void main() {
     // =========================================================================
     group('9. Diamond DAG Topology & Glitch-Free Invariants', () {
       test('9.1 Diamond DAG: 1 upstream change triggers exactly 1 glitch-free effect execution', () async {
-        final source = BloomController<int>(1);
+        final source = blooming<int>(1);
 
         // Left & Right branches
         final left = computed((via) => via(source.bloom) * 10);
@@ -861,7 +861,7 @@ void main() {
       });
 
       test('9.2 Diamond Topology with Switched & Managed: clean resource switching without glitches', () async {
-        final selector = BloomController<bool>(true);
+        final selector = blooming<bool>(true);
         int managedLeftCreated = 0;
         int managedLeftDisposed = 0;
         int managedRightCreated = 0;
@@ -916,7 +916,7 @@ void main() {
     // =========================================================================
     group('10. Handled Effect (onCleanup) & Managed (dispose) Dual Coordination', () {
       test('10.1 onCleanup runs before subsequent turn, and both onCleanup and dispose finish on teardown', () async {
-        final config = BloomController<String>('ConfigA');
+        final config = blooming<String>('ConfigA');
         final log = <String>[];
 
         final resource = managed<String>(

@@ -77,7 +77,7 @@ void main() {
   group('BloomWidget & BloomElement Tests', () {
     testWidgets('renders initial data and updates on Bloom state mutation',
         (tester) async {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final targetBloom = controller.bloom;
 
       await tester.pumpWidget(
@@ -101,8 +101,8 @@ void main() {
     testWidgets(
         'rebuilds with force: true when parent passes new widget configuration',
         (tester) async {
-      final controller1 = BloomController<int>(10);
-      final controller2 = BloomController<int>(20);
+      final controller1 = blooming<int>(10);
+      final controller2 = blooming<int>(20);
 
       Widget createHost({
         required Bloom<int> targetBloom,
@@ -135,7 +135,7 @@ void main() {
     testWidgets(
         'upstream distinct short-circuits build evaluation when state value is unchanged',
         (tester) async {
-      final source = BloomController<int>(0, distinct: false);
+      final source = blooming<int>(0, distinct: false);
       final isEven = computed((via) => via(source.bloom) % 2 == 0).distinct();
 
       int buildCount = 0;
@@ -170,7 +170,7 @@ void main() {
     });
 
     testWidgets('cleans up RawViaTerminal on unmount', (tester) async {
-      final controller = BloomController<int>(5);
+      final controller = blooming<int>(5);
 
       await tester.pumpWidget(
         Directionality(
@@ -197,7 +197,7 @@ void main() {
     });
 
     testWidgets('supports const BloomWidget instantiation', (tester) async {
-      final theme = BloomController<String>('Dark');
+      final theme = blooming<String>('Dark');
 
       // Const instantiation verification:
       const staticWidget = ContextAwareBloomWidget();
@@ -219,7 +219,7 @@ void main() {
   group('BloomProvider & BloomBuildContextExtension Tests', () {
     testWidgets('bloomOf<T>() reactively subscribes to BloomProvider<T>',
         (tester) async {
-      final themeController = BloomController<String>('Dark');
+      final themeController = blooming<String>('Dark');
 
       await tester.pumpWidget(
         themeController.bloom.provide(
@@ -251,7 +251,7 @@ void main() {
 
     testWidgets('maybeBloomOf<T>() subscribes when BloomProvider<T> is present',
         (tester) async {
-      final themeController = BloomController<String>('Custom');
+      final themeController = blooming<String>('Custom');
 
       await tester.pumpWidget(
         themeController.bloom.provide(
@@ -271,7 +271,7 @@ void main() {
 
     testWidgets('via.of<T>(context) reactively subscribes to BloomProvider<T>',
         (tester) async {
-      final themeController = BloomController<String>('Dark');
+      final themeController = blooming<String>('Dark');
 
       await tester.pumpWidget(
         themeController.bloom.provide(
@@ -305,7 +305,7 @@ void main() {
     testWidgets(
         'via.maybeOf<T>(context) subscribes when BloomProvider<T> is present',
         (tester) async {
-      final themeController = BloomController<String>('Custom');
+      final themeController = blooming<String>('Custom');
 
       await tester.pumpWidget(
         themeController.bloom.provide(
@@ -326,7 +326,7 @@ void main() {
     testWidgets(
         'BloomProvider updateShouldNotify returns false for identical bloom reference',
         (tester) async {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
 
       final widget1 = BloomProvider<int>(
         bloom: controller.bloom,
@@ -340,7 +340,7 @@ void main() {
 
       expect(widget1.updateShouldNotify(widget2), isFalse);
 
-      final otherController = BloomController<int>(0);
+      final otherController = blooming<int>(0);
       final widget3 = BloomProvider<int>(
         bloom: otherController.bloom,
         child: const SizedBox.shrink(),
@@ -399,7 +399,7 @@ void main() {
         'bloomOf<T>() requires exact type match and fails on supertype unless explicitly provided',
         (tester) async {
       final childBloom =
-          BloomController<_TestChildClass>(_TestChildClass('exact_payload'))
+          blooming<_TestChildClass>(_TestChildClass('exact_payload'))
               .bloom;
 
       // 1. Provided as BloomProvider<_TestChildClass>
@@ -543,7 +543,7 @@ void main() {
     testWidgets(
         'Uncaught error inside terminal invalidation is reported to FlutterError',
         (tester) async {
-      final ctrl = BloomController<int>(1);
+      final ctrl = blooming<int>(1);
       FlutterErrorDetails? reportedDetails;
       final prevOnError = FlutterError.onError;
       FlutterError.onError = (details) {
@@ -585,7 +585,7 @@ void main() {
     testWidgets(
         'BloomVsyncWidget provides active vsync and tracks Bloom dependencies',
         (tester) async {
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
 
       await tester.pumpWidget(
         Directionality(
@@ -632,7 +632,7 @@ void main() {
       final ctrl = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       );
-      final counter = BloomController<int>(0);
+      final counter = blooming<int>(0);
 
       await tester.pumpWidget(
         Directionality(

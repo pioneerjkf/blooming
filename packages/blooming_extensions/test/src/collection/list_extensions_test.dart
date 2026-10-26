@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('ListBloomElementsExtension', () {
     test('binarySearch and lowerBound locate elements reactively', () {
-      final controller = BloomController<List<int>>([10, 20, 30, 40]);
+      final controller = blooming<List<int>>([10, 20, 30, 40]);
 
       final indexBloom = controller.bloom.elements.binarySearch(30);
       final boundBloom = controller.bloom.elements.lowerBound(25);
@@ -26,7 +26,7 @@ void main() {
     test(
         'sortedRange, sortedBy, sortedByCompare, shuffledRange, reversedRange, swapped return new lists reactively',
         () {
-      final controller = BloomController<List<int>>([5, 3, 9, 1, 7]);
+      final controller = blooming<List<int>>([5, 3, 9, 1, 7]);
 
       final sortedRangeBloom =
           controller.bloom.elements.sortedRange(1, 4, (a, b) => a.compareTo(b));
@@ -62,7 +62,7 @@ void main() {
     test(
         'equals, slice, elementAtOrNull, slices reactively compute list properties',
         () {
-      final controller = BloomController<List<int>>([1, 2, 3]);
+      final controller = blooming<List<int>>([1, 2, 3]);
 
       final eqBloom = controller.bloom.elements.equals([1, 2, 3]);
       final sliceBloom = controller.bloom.elements.slice(1, 3);

@@ -23,7 +23,7 @@ class BadBridgeInBuild extends StatelessWidget {
 }
 
 // #case avoid_bridging_in_build/bad/to-listenable-in-computed
-final source = BloomController(0).bloom;
+final source = blooming(0).bloom;
 final badInComputed = computed((via) {
   // expect_lint: avoid_bridging_in_build
   final listenable = source.toListenable();

@@ -73,7 +73,7 @@ Modeling one-off UI side-effects (such as dialog popups or route transitions) as
 ```dart
 // [Anti-Pattern] Persistent boolean state triggers zombie dialogs upon remount
 class BadFormStore {
-  final showSuccessDialogState = BloomController<bool>(false);
+  final showSuccessDialogState = blooming<bool>(false);
 
   Future<void> submit() async {
     await api.submit();
@@ -87,7 +87,7 @@ class BadFormStore {
 // [Recommended] Pure transient signal or one-shot bounded listener (take: 1)
 class FormStore {
   // BloomSignalController is from package:blooming (re-exported by blooming_flutter)
-  final showSuccessDialogSignal = BloomSignalController();
+  final showSuccessDialogSignal = blooming.signal();
 
   Future<void> submit() async {
     await api.submit();

@@ -75,7 +75,7 @@ In Bloom, [`BloomController<T>`](../../lib/src/bloom/controller.dart#L81) **neve
 * **Strict "Has-a" Composition**: `BloomController<T>` owns and encapsulates a private physical entry node inside the engine. It exposes the read-only consumer interface solely via `controller.bloom`.
 * **Zero Downcasting Vulnerability**: A `Bloom<T>` instance passed to presentation layers cannot be downcast to a `BloomController` under any circumstance. Attempting `bloom is BloomController<T>` evaluates to `false` statically or throws a `TypeError` at runtime:
   ```dart
-  final controller = BloomController(42);
+  final controller = blooming(42);
   final consumerView = controller.bloom;
 
   assert(consumerView is Bloom<int>);
@@ -95,11 +95,11 @@ The framework provides two controller variants engineered for distinct operation
 
 ```dart
 // 1. Standard BloomController: Blocks downstream re-rendering on duplicate values
-final counter = BloomController(0);
+final counter = blooming(0);
 counter.data = 0; // Identical value: suppresses dirty pulses (0 recomputations)!
 
 // 2. RawBloomController: In-place mutation notifications
-final buffer = RawBloomController<List<int>>([1, 2, 3]);
+final buffer = blooming.raw<List<int>>([1, 2, 3]);
 buffer.data.add(4); // Same reference identity
 buffer.markDirty(); // Explicitly notifies downstream subscribers of in-place mutation!
 ```
@@ -293,9 +293,9 @@ Every stateful entity in Bloom conforms to a deterministic **3-State Finite Stat
 When derivations depend on multiple upstream inputs, evaluating readiness using `List` allocations incurs garbage collection pressure. The Bloom Framework provides zero-cost Dart 3 Record extensions (arity 2 through 9):
 
 ```dart
-final userId = BloomController<String>.late();
-final authToken = BloomController<String>.late();
-final userRole = BloomController<String>.late();
+final userId = blooming.late<String>();
+final authToken = blooming.late<String>();
+final userRole = blooming.late<String>();
 
 final profileQuery = computed(
   (via) => fetchProfile(via(userId.bloom), via(authToken.bloom), via(userRole.bloom)),
@@ -318,8 +318,8 @@ The Bloom Framework rejects implicit ambient dependency tracking through Zone va
 
 ```dart
 // Explicit dependency manifest in Bloom
-final firstName = BloomController('Grace');
-final lastName = BloomController('Hopper');
+final firstName = blooming('Grace');
+final lastName = blooming('Hopper');
 
 final fullName = computed((via) => '${via(firstName.bloom)} ${via(lastName.bloom)}');
 ```

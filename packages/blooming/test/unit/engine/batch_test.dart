@@ -8,9 +8,9 @@ import 'package:test/test.dart';
 void main() {
   group('Zero-Allocation _BatchScope & Batch System Suite', () {
     test('1. Single batch coalesces multiple mutations into a single terminal flush', () {
-      final a = BloomController(1);
-      final b = BloomController(2);
-      final c = BloomController(3);
+      final a = blooming(1);
+      final b = blooming(2);
+      final c = blooming(3);
 
       final sum = computed<int>((via) => (via(a.bloom) + via(b.bloom) + via(c.bloom)).toInt());
 
@@ -45,9 +45,9 @@ void main() {
     });
 
     test('2. Nested batch coalesces to the outermost batch boundary', () {
-      final first = BloomController('A');
-      final last = BloomController('B');
-      final age = BloomController(20);
+      final first = blooming('A');
+      final last = blooming('B');
+      final age = blooming(20);
 
       final profile = computed((via) => '${via(first.bloom)} ${via(last.bloom)} (${via(age.bloom)})');
 
@@ -94,7 +94,7 @@ void main() {
     });
 
     test('3. RYOW (Read-Your-Own-Writes) and multiple writes to the same entry in batch', () {
-      final a = BloomController(1);
+      final a = blooming(1);
       final derived = computed((via) => via(a.bloom) * 10);
 
       var notificationCount = 0;
@@ -143,7 +143,7 @@ void main() {
       //   left  right
       //      \ /
       //      sum
-      final a = BloomController(1);
+      final a = blooming(1);
       final left = computed<int>((via) => via(a.bloom) * 2);
       final right = computed<int>((via) => via(a.bloom) + 10);
       final sum = computed<int>((via) => via(left) + via(right));
@@ -170,7 +170,7 @@ void main() {
     });
 
     test('5. Exception in batch safely releases lock and maintains consistency', () async {
-      final count = BloomController(0);
+      final count = blooming(0);
       var notificationCount = 0;
 
       final terminal = RawBloomTerminal(count.bloom, onInvalidated: () {
@@ -211,8 +211,8 @@ void main() {
     });
 
     test('6. Reentrant mutation inside terminal notification callback during batch flush', () {
-      final a = BloomController(1);
-      final b = BloomController(10);
+      final a = blooming(1);
+      final b = blooming(10);
 
       var aFlushCount = 0;
       var bFlushCount = 0;

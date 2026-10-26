@@ -12,7 +12,7 @@ void main() {
     // =========================================================================
     group('1. Single-Source Version Disconnect/Reconnect Coherency', () {
       test('1.1 Computation node updates cached snapshot when source changes during disconnection', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
         int computeCount = 0;
 
         final mapped = computed((via) {
@@ -57,7 +57,7 @@ void main() {
       });
 
       test('1.2 Computation node preserves cache when source does NOT change during disconnection', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
         int computeCount = 0;
 
         final mapped = computed((via) {
@@ -95,8 +95,8 @@ void main() {
     // =========================================================================
     group('2. Multi-Source Bloom list Inactive Partial Modification', () {
       test('2.1 Multi-source bloom list aggregator detects partial source modification during disconnection', () {
-        final source1 = BloomController<int>(1);
-        final source2 = BloomController<int>(2);
+        final source1 = blooming<int>(1);
+        final source2 = blooming<int>(2);
         final group = Bloom.constant([source1.bloom, source2.bloom]);
 
         int computeCount = 0;
@@ -140,9 +140,9 @@ void main() {
     // =========================================================================
     group('3. Standalone Node Inactive Evaluation Coherency', () {
       test('3.1 Cascading Bloom updates snapshot when inactive and trigger changes', () {
-        final trigger = BloomController<int>(1);
-        final bloomA = BloomController<String>('A1');
-        final bloomB = BloomController<String>('B1');
+        final trigger = blooming<int>(1);
+        final bloomA = blooming<String>('A1');
+        final bloomB = blooming<String>('B1');
 
         int cascadeCallCount = 0;
         final lazyCascade = switched((via) {

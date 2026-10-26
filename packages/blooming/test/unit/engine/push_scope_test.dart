@@ -4,7 +4,7 @@ import 'package:blooming/blooming.dart';
 void main() {
   group('PushScope Coverage', () {
     test('Phase 2 Terminal Flush Error (line 100)', () {
-      final ctrl = BloomController(0);
+      final ctrl = blooming(0);
 
       Object? caughtError;
       final t1 = RawBloomTerminal<int>(
@@ -24,7 +24,7 @@ void main() {
     });
 
     test('Multiple terminals queue flush tail coverage (line 61)', () {
-      final ctrl = BloomController(0);
+      final ctrl = blooming(0);
       final t1 = RawBloomTerminal<int>(ctrl.bloom, onInvalidated: () {});
       final t2 = RawBloomTerminal<int>(ctrl.bloom, onInvalidated: () {});
 
@@ -37,9 +37,9 @@ void main() {
     });
 
     test('Multiple terminals push origin tail coverage (line 36)', () {
-      final ctrl = BloomController(0);
-      final ctrl1 = BloomController(0);
-      final ctrl2 = BloomController(0);
+      final ctrl = blooming(0);
+      final ctrl1 = blooming(0);
+      final ctrl2 = blooming(0);
 
       final t = RawBloomTerminal<int>(ctrl.bloom, onInvalidated: () {
         print('onInvalidated called!');

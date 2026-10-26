@@ -242,7 +242,7 @@ void main() {
     testWidgets(
         '8. composed.drive cancels internal ticker upon unmount preventing leaks',
         (tester) async {
-      final showBloom = BloomController<bool>(true);
+      final showBloom = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -309,7 +309,7 @@ void main() {
     testWidgets(
         '10. composed.drive automatically tracks external Bloom mutations via RawViaTerminal',
         (tester) async {
-      final prefixBloom = BloomController<String>('Speed:');
+      final prefixBloom = blooming<String>('Speed:');
       int buildCount = 0;
 
       await tester.pumpWidget(
@@ -346,7 +346,7 @@ void main() {
     testWidgets(
         '11. composed.drive tracks external Blooms with hoisted widgets',
         (tester) async {
-      final tagBloom = BloomController<String>('Tag');
+      final tagBloom = blooming<String>('Tag');
       const staticChild = Text('ChildStatic');
       const staticChildren = [Text('Item 1')];
 
@@ -427,7 +427,7 @@ void main() {
     testWidgets(
         '13. composed.animate in composed tracks external Bloom alongside controller',
         (tester) async {
-      final modeBloom = BloomController<String>('Linear');
+      final modeBloom = blooming<String>('Linear');
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
       );
@@ -557,7 +557,7 @@ void main() {
     testWidgets(
         '15. composed.animate enters dormancy on unmount and wakes on remount',
         (tester) async {
-      final showBloom = BloomController<bool>(true);
+      final showBloom = blooming<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       )..forward();
@@ -602,8 +602,8 @@ void main() {
     testWidgets(
         '16. composed.animate inside composed renders and tracks dormancy properly',
         (tester) async {
-      final showBloom = BloomController<bool>(true);
-      final titleBloom = BloomController<String>('TitleA');
+      final showBloom = blooming<bool>(true);
+      final titleBloom = blooming<String>('TitleA');
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
       )..forward();
@@ -736,7 +736,7 @@ void main() {
     testWidgets(
         '19. composed.animate tracks both frame ticks and external Bloom mutations',
         (tester) async {
-      final labelBloom = BloomController<String>('Alpha');
+      final labelBloom = blooming<String>('Alpha');
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 200),
       )..forward();
@@ -804,7 +804,7 @@ void main() {
     testWidgets(
         '21. composed.animate unmount/remount dormant and lifecycle safety',
         (tester) async {
-      final showBloom = BloomController<bool>(true);
+      final showBloom = blooming<bool>(true);
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       );

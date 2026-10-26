@@ -41,8 +41,8 @@ part of '../framework.dart';
 ///
 /// **BAD:**
 /// ```dart
-/// final price = BloomController(100);
-/// final quantity = BloomController(2);
+/// final price = blooming(100);
+/// final quantity = blooming(2);
 ///
 /// // [Anti-Pattern] Reading untracked directly without via() leaves node untracked
 /// final badTotal = computed((via) {
@@ -52,8 +52,8 @@ part of '../framework.dart';
 ///
 /// **GOOD:**
 /// ```dart
-/// final price = BloomController(100);
-/// final quantity = BloomController(2);
+/// final price = blooming(100);
+/// final quantity = blooming(2);
 ///
 /// // [Recommended] Explicitly register dependencies through via()
 /// final goodTotal = computed((via) {
@@ -63,8 +63,8 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final firstName = BloomController('Jane');
-/// final lastName = BloomController('Doe');
+/// final firstName = blooming('Jane');
+/// final lastName = blooming('Doe');
 ///
 /// final fullName = computed((via) {
 ///   return '${via(firstName.bloom)} ${via(lastName.bloom)}';
@@ -97,7 +97,7 @@ abstract interface class BloomVia {
   ///
   /// ## Examples
   /// ```dart
-  /// final counter = BloomController(0);
+  /// final counter = blooming(0);
   /// final doubled = computed((via) => via(counter.bloom) * 2);
   /// ```
   T call<T>(Bloom<T> bloom);
@@ -149,7 +149,7 @@ abstract interface class BloomVia {
   ///
   /// ## Examples
   /// ```dart
-  /// final eventCount = BloomController(0);
+  /// final eventCount = blooming(0);
   ///
   /// final analyticsLoggerEffect = Effect([eventCount.bloom], () {
   ///   print('Logged event: ${untracked(eventCount.bloom)}');

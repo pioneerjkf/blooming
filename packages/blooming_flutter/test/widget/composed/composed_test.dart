@@ -11,8 +11,8 @@ void main() {
     testWidgets(
         '1. composed((context, via) => ...) dynamically tracks multiple Blooms',
         (WidgetTester tester) async {
-      final userCtrl = BloomController<String>('Alice');
-      final scoreCtrl = BloomController<int>(100);
+      final userCtrl = blooming<String>('Alice');
+      final scoreCtrl = blooming<int>(100);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -41,7 +41,7 @@ void main() {
 
     testWidgets('2. composed((context, via) => ...) accesses Theme and Bloom',
         (WidgetTester tester) async {
-      final themeNameCtrl = BloomController<String>('Dark');
+      final themeNameCtrl = blooming<String>('Dark');
 
       await tester.pumpWidget(
         MaterialApp(
@@ -68,7 +68,7 @@ void main() {
 
     testWidgets('3. composed.child isolates static child from rebuilds',
         (WidgetTester tester) async {
-      final colorCtrl = BloomController<bool>(false);
+      final colorCtrl = blooming<bool>(false);
       int childBuildCount = 0;
 
       await tester.pumpWidget(
@@ -111,7 +111,7 @@ void main() {
 
     testWidgets('4. composed.children(...) caches static widget list',
         (WidgetTester tester) async {
-      final titleCtrl = BloomController<String>('Menu');
+      final titleCtrl = blooming<String>('Menu');
 
       await tester.pumpWidget(
         MaterialApp(
@@ -150,8 +150,8 @@ void main() {
     testWidgets(
         '5. Nested composed calls allow independent micro-rebuilds without shadowing issues',
         (WidgetTester tester) async {
-      final outerCtrl = BloomController<String>('Outer');
-      final innerCtrl = BloomController<int>(1);
+      final outerCtrl = blooming<String>('Outer');
+      final innerCtrl = blooming<int>(1);
 
       int outerBuildCount = 0;
       int innerBuildCount = 0;
@@ -202,7 +202,7 @@ void main() {
     testWidgets(
         '6. Composed entrypoints (call, child, children) render correctly',
         (WidgetTester tester) async {
-      final textBloom = BloomController<String>('Alpha');
+      final textBloom = blooming<String>('Alpha');
 
       final a1 =
           composed((context, via) => Text('A1: ${via(textBloom.bloom)}'));
@@ -237,7 +237,7 @@ void main() {
     testWidgets(
         '7. composed.child and composed.children work seamlessly with context',
         (WidgetTester tester) async {
-      final valBloom = BloomController<String>('Gamma');
+      final valBloom = blooming<String>('Gamma');
 
       final b1 = composed.child(
         (context, via, child) => Row(children: [
@@ -306,7 +306,7 @@ void main() {
       final controller = DurableAnimationController(
         duration: const Duration(milliseconds: 300),
       );
-      final labelBloom = BloomController<String>('Score');
+      final labelBloom = blooming<String>('Score');
 
       await tester.pumpWidget(
         MaterialApp(

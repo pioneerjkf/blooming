@@ -56,8 +56,8 @@ void main() {
   group('BloomWidget & BloomElement Comprehensive Tests', () {
     testWidgets('Renders and dynamically updates when accessed blooms change',
         (tester) async {
-      final nameController = BloomController<String>('Alice');
-      final ageController = BloomController<int>(25);
+      final nameController = blooming<String>('Alice');
+      final ageController = blooming<int>(25);
 
       await tester.pumpWidget(
         UserProfileBloomWidget(
@@ -82,9 +82,9 @@ void main() {
     testWidgets(
         'Dynamically switches branches and prunes unobserved dependencies',
         (tester) async {
-      final usePrimaryController = BloomController<bool>(true);
-      final primaryController = BloomController<String>('Primary Content');
-      final secondaryController = BloomController<String>('Secondary Content');
+      final usePrimaryController = blooming<bool>(true);
+      final primaryController = blooming<String>('Primary Content');
+      final secondaryController = blooming<String>('Secondary Content');
 
       await tester.pumpWidget(
         DynamicBranchBloomWidget(
@@ -121,12 +121,12 @@ void main() {
     testWidgets(
         'BloomWidget dynamically updates compute when widget configuration changes',
         (tester) async {
-      final bloomA = BloomController<int>(10);
-      final bloomB = BloomController<int>(20);
+      final bloomA = blooming<int>(10);
+      final bloomB = blooming<int>(20);
 
       await tester.pumpWidget(
         UserProfileBloomWidget(
-          nameBloom: BloomController<String>('User').bloom,
+          nameBloom: blooming<String>('User').bloom,
           ageBloom: bloomA.bloom,
         ),
       );
@@ -135,7 +135,7 @@ void main() {
       // Update widget with new ageBloom (bloomB)
       await tester.pumpWidget(
         UserProfileBloomWidget(
-          nameBloom: BloomController<String>('User').bloom,
+          nameBloom: blooming<String>('User').bloom,
           ageBloom: bloomB.bloom,
         ),
       );

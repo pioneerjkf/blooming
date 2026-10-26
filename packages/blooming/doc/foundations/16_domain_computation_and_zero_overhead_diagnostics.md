@@ -222,7 +222,7 @@ Debug labels and creation stack traces are stored externally in global `Expando`
 
 ```dart
 // 1. Attach debug labels in debug mode (Assert-guarded, No-op in release mode)
-final counter = BloomController(0).withDebugLabel('DashboardCounter');
+final counter = blooming(0).withDebugLabel('DashboardCounter');
 final pricing = OrderPricingComputation(cartBloom, userBloom, promoBloom)
     .withDebugLabel('PricingComponent');
 

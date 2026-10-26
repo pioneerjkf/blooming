@@ -22,7 +22,7 @@ For standard synchronous mutations (e.g., updating a simple `BloomController<int
 
 ```dart
 testWidgets('Synchronous mutation updates UI after pump', (tester) async {
-  final counter = BloomController<int>(0);
+  final counter = blooming<int>(0);
   
   await tester.pumpWidget(
     Directionality(

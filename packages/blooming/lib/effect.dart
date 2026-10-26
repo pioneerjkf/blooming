@@ -60,7 +60,7 @@
 /// **BAD:**
 /// ```dart
 /// // [Anti-Pattern] Uncontrolled state mutation inside side-effect creates reentrancy loop
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// final effect = counter.bloom.effect(() {
 ///   counter.set(untracked(counter.bloom) + 1); // Mutates source node without guard!
 /// });
@@ -69,7 +69,7 @@
 /// **GOOD:**
 /// ```dart
 /// // [Recommended] One-way terminal sink for external interactions
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// final effect = counter.bloom.effect(() {
 ///   analyticsService.logCount(untracked(counter.bloom)); // Pure side-effect sink
 /// });
@@ -79,7 +79,7 @@
 ///
 /// ### 1. Fluent Single-Node Debounce:
 /// ```dart
-/// final searchQuery = BloomController('');
+/// final searchQuery = blooming('');
 ///
 /// // Debounce searches to execute 300ms after user stops typing
 /// final searchRunner = searchQuery.bloom.effect
@@ -92,8 +92,8 @@
 ///
 /// ### 2. Scope-Bound Lifecycle with `via.tether()`:
 /// ```dart
-/// final user = BloomController(User(id: 'u1'));
-/// final settings = BloomController(Settings());
+/// final user = blooming(User(id: 'u1'));
+/// final settings = blooming(Settings());
 ///
 /// // Inside a computation scope or terminal:
 /// final term = RawViaTerminal(

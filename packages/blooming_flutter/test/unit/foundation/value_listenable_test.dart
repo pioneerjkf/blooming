@@ -403,7 +403,7 @@ void main() {
 
   group('change_notifier.dart - BloomListenableExtension (toListenable)', () {
     test('basic ValueListenable bridge notifications', () {
-      final controller = BloomController<int>(10);
+      final controller = blooming<int>(10);
       final listenable = controller.bloom.toListenable();
 
       expect(listenable.value, 10);
@@ -426,7 +426,7 @@ void main() {
 
     test('toListenable(sync: false) applies microtask batch coalescing',
         () async {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable(sync: false);
 
       final values = <int>[];
@@ -448,7 +448,7 @@ void main() {
     });
 
     test('isolates listener exception and prevents starvation', () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final reportedErrors = <FlutterErrorDetails>[];
@@ -491,7 +491,7 @@ void main() {
     });
 
     test('skips listener if removed during notification traversal', () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final calls = <String>[];
@@ -525,7 +525,7 @@ void main() {
     test(
         'linked list: listener removes itself during notification (self-removal)',
         () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final calls = <String>[];
@@ -556,7 +556,7 @@ void main() {
 
     test('linked list: listener removes preceding listener during notification',
         () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final calls = <String>[];
@@ -587,7 +587,7 @@ void main() {
     });
 
     test('linked list: listener adds new listener during notification', () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final calls = <String>[];
@@ -619,7 +619,7 @@ void main() {
 
     test('linked list: removes all remaining listeners during notification',
         () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final calls = <String>[];
@@ -651,7 +651,7 @@ void main() {
 
     test('linked list: handles duplicate registrations and partial removal',
         () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       int count = 0;
@@ -683,7 +683,7 @@ void main() {
     test(
         'linked list: re-entrant notifications dispatch safely without loop corruption',
         () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final history = <String>[];
@@ -716,7 +716,7 @@ void main() {
     test(
         're-entrant notify: listener removed during re-entrant notification pass',
         () {
-      final controller = BloomController<int>(0);
+      final controller = blooming<int>(0);
       final listenable = controller.bloom.toListenable();
 
       final calls = <String>[];

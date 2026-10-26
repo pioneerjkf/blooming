@@ -13,8 +13,8 @@ void main() {
     testWidgets(
         '1.1 BloomAsyncBuilder renders loading when node has no data yet',
         (tester) async {
-      final controller = BloomController<String>.late();
-      final pending = BloomController<bool>(true);
+      final controller = blooming.late<String>();
+      final pending = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -36,8 +36,8 @@ void main() {
 
     testWidgets('1.2 BloomAsyncBuilder transitions from loading to data',
         (tester) async {
-      final controller = BloomController<String>.late();
-      final pending = BloomController<bool>(true);
+      final controller = blooming.late<String>();
+      final pending = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -65,8 +65,8 @@ void main() {
 
     testWidgets('1.3 BloomAsyncBuilder renders error when node fails',
         (tester) async {
-      final controller = BloomController<String>.late();
-      final pending = BloomController<bool>(true);
+      final controller = blooming.late<String>();
+      final pending = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -92,8 +92,8 @@ void main() {
     testWidgets(
         '1.4 BloomAsyncBuilder renders empty when payload is empty list/map',
         (tester) async {
-      final listController = BloomController<List<String>>(['first', 'second']);
-      final pending = BloomController<bool>(false);
+      final listController = blooming<List<String>>(['first', 'second']);
+      final pending = blooming<bool>(false);
 
       await tester.pumpWidget(
         Directionality(
@@ -118,7 +118,7 @@ void main() {
       expect(find.text('Items: 0'), findsNothing);
 
       // Mutate to empty map
-      final mapController = BloomController<Map<String, int>>({'a': 1});
+      final mapController = blooming<Map<String, int>>({'a': 1});
       await tester.pumpWidget(
         Directionality(
           textDirection: TextDirection.ltr,
@@ -141,8 +141,8 @@ void main() {
     testWidgets(
         '1.4b BloomAsyncBuilder renders default ErrorWidget when error callback is null',
         (tester) async {
-      final controller = BloomController<String>.late();
-      final pending = BloomController<bool>(true);
+      final controller = blooming.late<String>();
+      final pending = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -239,8 +239,8 @@ void main() {
     testWidgets(
         '1.5d BloomAsyncBuilder transitions from loading to empty when pending settles to false on empty node',
         (tester) async {
-      final dataController = BloomController<String>.late();
-      final pendingController = BloomController<bool>(true);
+      final dataController = blooming.late<String>();
+      final pendingController = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -270,7 +270,7 @@ void main() {
     testWidgets(
         '1.6 SWR preservation: retains prior data during pending re-evaluation by default',
         (tester) async {
-      final query = BloomController<String>('apple');
+      final query = blooming<String>('apple');
       Completer<String>? activeCompleter;
 
       final rawFuture = computed.future((via) {
@@ -327,7 +327,7 @@ void main() {
     testWidgets(
         '1.7 SWR disabled (preserveDataOnPending: false): shows loading during pending',
         (tester) async {
-      final query = BloomController<String>('apple');
+      final query = blooming<String>('apple');
       Completer<String>? activeCompleter;
 
       final rawFuture = computed.future((via) {
@@ -380,8 +380,8 @@ void main() {
     testWidgets(
         '1.8 Selective pending subscription: BloomAsyncBuilder does NOT rebuild on pending change when preserveDataOnPending is true',
         (tester) async {
-      final dataController = BloomController<String>('InitialData');
-      final pendingController = BloomController<bool>(false);
+      final dataController = blooming<String>('InitialData');
+      final pendingController = blooming<bool>(false);
       int buildCount = 0;
 
       await tester.pumpWidget(
@@ -428,8 +428,8 @@ void main() {
     testWidgets(
         '1.9 Selective pending subscription: error state does NOT rebuild on pending change',
         (tester) async {
-      final dataController = BloomController<String>.error('FatalError');
-      final pendingController = BloomController<bool>(false);
+      final dataController = blooming.error<String>('FatalError');
+      final pendingController = blooming<bool>(false);
       int errorBuildCount = 0;
 
       await tester.pumpWidget(
@@ -463,7 +463,7 @@ void main() {
 
     testWidgets('2.1 BloomPendingIndicator renders idle vs pending correctly',
         (tester) async {
-      final pendingBloom = BloomController<bool>(false);
+      final pendingBloom = blooming<bool>(false);
 
       final bar = BloomPendingIndicator(
         target: pendingBloom.bloom,
@@ -502,7 +502,7 @@ void main() {
 
     testWidgets('2.2 BloomPendingIndicator supports custom builder',
         (tester) async {
-      final pendingBloom = BloomController<bool>(false);
+      final pendingBloom = blooming<bool>(false);
 
       await tester.pumpWidget(
         Directionality(
@@ -525,7 +525,7 @@ void main() {
     testWidgets(
         '2.3 BloomPendingIndicator directly binds to retained pending coupler',
         (tester) async {
-      final query = BloomController<int>(1);
+      final query = blooming<int>(1);
       Completer<String>? completer;
 
       final pendingCoupler = BloomCoupler<bool>.late();
@@ -573,7 +573,7 @@ void main() {
     testWidgets(
         '2.4 BloomPendingIndicator with opaque backgroundColor paints background',
         (tester) async {
-      final pendingBloom = BloomController<bool>(true);
+      final pendingBloom = blooming<bool>(true);
 
       await tester.pumpWidget(
         Directionality(
@@ -597,7 +597,7 @@ void main() {
     testWidgets(
         '3.1 composed with BloomPhase pattern matching handles 3-state nodes declaratively',
         (tester) async {
-      final node = BloomController<String>.late();
+      final node = blooming.late<String>();
 
       await tester.pumpWidget(
         Directionality(

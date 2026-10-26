@@ -18,7 +18,7 @@ void main() {
         final random = Random(1337);
 
         // 1. Construct 6 root controllers
-        final roots = List.generate(6, (i) => BloomController<int>(i + 1));
+        final roots = List.generate(6, (i) => blooming<int>(i + 1));
 
         // 2. Construct 4 dynamic couplers
         final couplers = List.generate(4, (i) => BloomCoupler<int>(roots[i].bloom));
@@ -115,9 +115,9 @@ void main() {
     // =========================================================================
     group('2. Multi-Root Concurrent Transitions', () {
       test('2.1 Multi-Root Concurrent Transitions on Converging Mesh DAG', () {
-        final r1 = BloomController<int>(1);
-        final r2 = BloomController<int>(2);
-        final r3 = BloomController<int>(3);
+        final r1 = blooming<int>(1);
+        final r2 = blooming<int>(2);
+        final r3 = blooming<int>(3);
 
         final midA = computed((via) => via(r1.bloom) * 10 + via(r2.bloom));
         final midB = computed((via) => via(r2.bloom) * 10 + via(r3.bloom));

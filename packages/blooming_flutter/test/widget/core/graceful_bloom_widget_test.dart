@@ -146,7 +146,7 @@ void main() {
     testWidgets(
       '1.3 composed with via explicit tracking works seamlessly with GracefulBloom',
       (tester) async {
-        final count = BloomController<int>(1);
+        final count = blooming<int>(1);
         final gracefulCount = count.bloom
             .graceful(const Graceful.period(Duration(milliseconds: 60)));
 

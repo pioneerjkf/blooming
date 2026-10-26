@@ -11,8 +11,8 @@ import 'package:blooming/blooming.dart';
 void main() {
   group('Unary-Faced Terminals with N-ary & Diamond Upstream Graph Suites', () {
     test('1. Unary node (distinct) facing Effect with N-ary (computed) upstream', () async {
-      final a = BloomController<int>(10);
-      final b = BloomController<int>(20);
+      final a = blooming<int>(10);
+      final b = blooming<int>(20);
       final sum = computed<int>((via) => via(a.bloom) + via(b.bloom));
       final distinctSum = sum.distinct();
 
@@ -52,7 +52,7 @@ void main() {
     });
 
     test('2. Diamond upstream graph feeding Unary node (distinct) facing Effect', () async {
-      final root = BloomController<int>(2);
+      final root = blooming<int>(2);
       // Diamond branches
       final branchLeft = computed<int>((via) => via(root.bloom) * 10);
       final branchRight = computed<int>((via) => via(root.bloom) * 100);
@@ -83,7 +83,7 @@ void main() {
     });
 
     test('3. Unary nodes inside Diamond branches feeding N-ary join facing Effect', () async {
-      final root = BloomController<int>(5);
+      final root = blooming<int>(5);
       // Unary nodes inside branches
       final branchA = root.bloom.distinct();
       final branchB = root.bloom.distinct();
@@ -105,8 +105,8 @@ void main() {
     });
 
     test('4. Multi-hop Unary chain (distinct -> debounced) with N-ary upstream', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
       final sum = computed<int>((via) => via(a.bloom) + via(b.bloom));
       final distinctSum = sum.distinct();
       final debouncedSum = distinctSum.debounced(const Duration(milliseconds: 30));
@@ -132,8 +132,8 @@ void main() {
     });
 
     test('5. Unary node with N-ary upstream: inactive mutation then activation', () async {
-      final a = BloomController<int>(1);
-      final b = BloomController<int>(2);
+      final a = blooming<int>(1);
+      final b = blooming<int>(2);
       final sum = computed<int>((via) => via(a.bloom) + via(b.bloom));
       final distinctSum = sum.distinct();
 
@@ -155,7 +155,7 @@ void main() {
     });
 
     test('6. Uneven Diamond with short direct path and long Unary/N-ary branch', () async {
-      final root = BloomController<int>(1);
+      final root = blooming<int>(1);
       // Long branch: root -> computed -> distinct
       final longBranch = computed<int>((via) => via(root.bloom) * 10).distinct();
       // Join: directly reads root and longBranch
@@ -183,7 +183,7 @@ void main() {
     });
 
     test('7. Diamond with one distinct branch dropping mutation while other branch updates', () async {
-      final root = BloomController<int>(1);
+      final root = blooming<int>(1);
       // Left branch drops even/odd changes: parity
       final parity = computed((via) => via(root.bloom) % 2).distinct();
       // Right branch scales
@@ -213,8 +213,8 @@ void main() {
     });
 
     test('8. Diamond with switched & managed dynamic triad under unary distinct node', () async {
-      final useManaged = BloomController<bool>(true);
-      final capacity = BloomController<int>(3);
+      final useManaged = blooming<bool>(true);
+      final capacity = blooming<int>(3);
       int managedCreated = 0;
       int managedDisposed = 0;
 
@@ -226,7 +226,7 @@ void main() {
         dispose: (_) => managedDisposed++,
       );
 
-      final staticFallback = BloomController<String>('StaticFallback');
+      final staticFallback = blooming<String>('StaticFallback');
 
       final activeResource = switched<String>(
         (via) => via(useManaged.bloom) ? pool : staticFallback.bloom,
@@ -257,7 +257,7 @@ void main() {
     });
 
     test('9. Handled Effect with Unary wrapping Diamond Upstream and cleanup lifecycle', () async {
-      final root = BloomController<int>(1);
+      final root = blooming<int>(1);
       final b1 = computed<int>((via) => via(root.bloom) * 2);
       final b2 = computed<int>((via) => via(root.bloom) * 3);
       final join = computed<int>((via) => via(b1) + via(b2));
@@ -295,12 +295,12 @@ void main() {
     });
 
     test('10. Multi-Target (N-ary) Effect with Unary Diamond and Direct Controllers', () async {
-      final root = BloomController<int>(1);
+      final root = blooming<int>(1);
       final b1 = computed<int>((via) => via(root.bloom) + 10);
       final b2 = computed<int>((via) => via(root.bloom) + 20);
       final diamondUnary = computed<int>((via) => via(b1) + via(b2)).distinct();
 
-      final independent = BloomController<String>('Hello');
+      final independent = blooming<String>('Hello');
 
       int runCount = 0;
       final runner = (diamondUnary, independent.bloom).effect(() {
@@ -323,7 +323,7 @@ void main() {
     });
 
     test('11. Direct BloomController leaf facing Effect', () async {
-      final ctrl = BloomController<int>(100);
+      final ctrl = blooming<int>(100);
 
       final captured = <int>[];
       final runner = ctrl.bloom.effect(() {

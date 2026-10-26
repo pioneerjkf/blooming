@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('NumericBloomElementsExtension', () {
     test('sum and average compute numeric elements reactively', () {
-      final controller = BloomController<List<double>>([1.5, 2.5, 4.0]);
+      final controller = blooming<List<double>>([1.5, 2.5, 4.0]);
 
       final sumBloom = controller.bloom.elements.sum;
       final avgBloom = controller.bloom.elements.average;

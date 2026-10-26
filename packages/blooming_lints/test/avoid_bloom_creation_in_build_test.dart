@@ -10,11 +10,11 @@ import 'package:blooming_lints/blooming_lints.dart';
 
 void main() {
   group('AvoidBloomCreationInBuild AST detection', () {
-    test('detects BloomController instantiation inside build()', () {
+    test('detects blooming() instantiation inside build()', () {
       final unit = parseString(content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
-    final controller = BloomController(0);
+    final controller = blooming(0);
     return Container();
   }
 }
@@ -22,10 +22,11 @@ class MyWidget extends StatelessWidget {
 
       MethodInvocation? invocation;
       unit.accept(_MethodInvocationVisitor(
-          'BloomController', (node) => invocation = node));
+          'blooming', (node) => invocation = node));
 
       expect(invocation, isNotNull);
-      expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
+      expect(
+          AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
           isTrue);
       expect(FlutterAstUtils.isInsideBuildMethod(invocation!), isTrue);
       expect(
@@ -34,11 +35,11 @@ class MyWidget extends StatelessWidget {
           isFalse);
     });
 
-    test('detects BloomSignalController instantiation inside build()', () {
+    test('detects blooming.signal() instantiation inside build()', () {
       final unit = parseString(content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
-    final signal = BloomSignalController();
+    final signal = blooming.signal();
     return Container();
   }
 }
@@ -46,7 +47,7 @@ class MyWidget extends StatelessWidget {
 
       MethodInvocation? invocation;
       unit.accept(_MethodInvocationVisitor(
-          'BloomSignalController', (node) => invocation = node));
+          'signal', (node) => invocation = node));
 
       expect(invocation, isNotNull);
       expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
@@ -73,7 +74,8 @@ class MyWidget extends StatelessWidget {
           _MethodInvocationVisitor('computed', (node) => invocation = node));
 
       expect(invocation, isNotNull);
-      expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
+      expect(
+          AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
           isTrue);
       expect(FlutterAstUtils.isInsideBuildMethod(invocation!), isTrue);
       expect(
@@ -101,14 +103,14 @@ class MyWidget extends StatelessWidget {
           isFalse);
     });
 
-    test('permits BloomController creation inside event callbacks in build()',
+    test('permits blooming() creation inside event callbacks in build()',
         () {
       final unit = parseString(content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: () {
-        final ctrl = BloomController(10);
+        final ctrl = blooming(10);
       },
       child: Text('Click'),
     );
@@ -118,10 +120,11 @@ class MyWidget extends StatelessWidget {
 
       MethodInvocation? invocation;
       unit.accept(_MethodInvocationVisitor(
-          'BloomController', (node) => invocation = node));
+          'blooming', (node) => invocation = node));
 
       expect(invocation, isNotNull);
-      expect(AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
+      expect(
+          AvoidBloomCreationInBuild.isForbiddenMethodInvocation(invocation!),
           isTrue);
       expect(
           AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(
@@ -129,19 +132,19 @@ class MyWidget extends StatelessWidget {
           isTrue);
     });
 
-    test('permits BloomController inside State.initState()', () {
+    test('permits blooming() inside State.initState()', () {
       final unit = parseString(content: '''
 class MyState extends State<MyWidget> {
   void initState() {
     super.initState();
-    final ctrl = BloomController(0);
+    final ctrl = blooming(0);
   }
 }
 ''').unit;
 
       MethodInvocation? invocation;
       unit.accept(_MethodInvocationVisitor(
-          'BloomController', (node) => invocation = node));
+          'blooming', (node) => invocation = node));
 
       expect(invocation, isNotNull);
       expect(FlutterAstUtils.isInsideBuildMethod(invocation!), isFalse);
@@ -160,5 +163,22 @@ class _MethodInvocationVisitor extends RecursiveAstVisitor<void> {
       onFound(node);
     }
     super.visitMethodInvocation(node);
+  }
+}
+
+class _FunctionInvocationVisitor extends RecursiveAstVisitor<void> {
+  _FunctionInvocationVisitor(this.functionName, this.onFound);
+  final String functionName;
+  final void Function(FunctionExpressionInvocation) onFound;
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    final function = node.function;
+    final name =
+        function is SimpleIdentifier ? function.name : function.toSource();
+    if (name == functionName) {
+      onFound(node);
+    }
+    super.visitFunctionExpressionInvocation(node);
   }
 }

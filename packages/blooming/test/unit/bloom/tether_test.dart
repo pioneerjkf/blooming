@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('Tether Declarative Lifecycle Contract Suite', () {
     test('1. Effect inherits from Tether and preserves generic typing in via.tether()', () {
-      final source = BloomController(1);
+      final source = blooming(1);
       final effect = Effect([source.bloom], () {});
 
       // Verify inheritance
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('2. TetherDebugExtension provides label, location, and chaining with exact type preservation', () {
-      final trigger = BloomController(0);
+      final trigger = blooming(0);
       final effect = Effect([trigger.bloom], () {}).withDebugLabel('analyticsTether');
 
       // Static typing check: withDebugLabel preserves Effect
@@ -46,8 +46,8 @@ void main() {
     });
 
     test('3. Dynamic epoch sweeping detaches and deactivates swept tethers', () async {
-      final branchSwitch = BloomController(true);
-      final trigger = BloomController(0);
+      final branchSwitch = blooming(true);
+      final trigger = blooming(0);
 
       var effectARuns = 0;
       var effectBRuns = 0;
@@ -90,7 +90,7 @@ void main() {
     });
 
     test('4. Tethers do not emit dirty invalidation pulses downstream to parent watch scopes', () async {
-      final trigger = BloomController(0);
+      final trigger = blooming(0);
       var effectRuns = 0;
       var terminalEvaluations = 0;
 

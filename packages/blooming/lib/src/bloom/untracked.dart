@@ -39,7 +39,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// final doubled = computed((via) => via(counter.bloom) * 2);
 ///
 /// // 1. Imperative untracked read in tests / event handlers:

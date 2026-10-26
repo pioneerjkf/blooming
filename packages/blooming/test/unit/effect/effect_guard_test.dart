@@ -14,7 +14,7 @@ void main() {
     // =========================================================================
     group('1. Explicit Manifest Effect with Guard', () {
       test('1.1 guard == false skips action execution', () async {
-        final target = BloomController<int>(0);
+        final target = blooming<int>(0);
         bool isAllowed = false;
         int actionRunCount = 0;
 
@@ -55,7 +55,7 @@ void main() {
       });
 
       test('1.2 Ticket Preservation: blocked execution does not consume take limit', () async {
-        final target = BloomController<int>(10);
+        final target = blooming<int>(10);
         bool isAllowed = false;
         int actionRunCount = 0;
 
@@ -108,8 +108,8 @@ void main() {
     // =========================================================================
     group('2. Multi-Target List with Guard', () {
       test('2.1 Multi-target list effect respects guard', () async {
-        final a = BloomController<int>(1);
-        final b = BloomController<int>(2);
+        final a = blooming<int>(1);
+        final b = blooming<int>(2);
         bool allowed = false;
         int runs = 0;
 
@@ -140,9 +140,9 @@ void main() {
       });
 
       test('2.2 Multi-target effects respect guard and ticket preservation', () async {
-        final a = BloomController<int>(1);
-        final b = BloomController<int>(2);
-        final c = BloomController<int>(3);
+        final a = blooming<int>(1);
+        final b = blooming<int>(2);
+        final c = blooming<int>(3);
 
         bool allowed = false;
         int runs3 = 0;
@@ -175,8 +175,8 @@ void main() {
     // =========================================================================
     group('3. Reactive Effect with Guard & Dynamic Tracking', () {
       test('3.1 Guard dependencies are dynamically tracked in effect', () async {
-        final gate = BloomController<bool>(false);
-        final payload = BloomController<String>('Initial');
+        final gate = blooming<bool>(false);
+        final payload = blooming<String>('Initial');
         int executionCount = 0;
         String? observed;
 
@@ -231,7 +231,7 @@ void main() {
     // =========================================================================
     group('4. Debounce & Throttle Effects with Guard', () {
       test('4.1 ThrottleEffect respects guard and preserves take tickets', () async {
-        final target = BloomController<int>(0);
+        final target = blooming<int>(0);
         bool allowed = false;
         int runs = 0;
 
@@ -264,7 +264,7 @@ void main() {
       });
 
       test('4.2 DebounceEffect respects guard and preserves take tickets', () async {
-        final target = BloomController<int>(0);
+        final target = blooming<int>(0);
         bool allowed = false;
         int runs = 0;
 
@@ -302,7 +302,7 @@ void main() {
     // =========================================================================
     group('5. Declarative Effect and RawViaTerminal with Guard', () {
       test('5.1 Declarative target.effect mounted via RawViaTerminal respects guard', () async {
-        final target = BloomController<int>(0);
+        final target = blooming<int>(0);
         bool allowed = false;
         int runs = 0;
 
@@ -340,8 +340,8 @@ void main() {
       });
 
       test('5.2 Effect.via with guard in RawViaTerminal', () async {
-        final gate = BloomController<bool>(false);
-        final val = BloomController<int>(100);
+        final gate = blooming<bool>(false);
+        final val = blooming<int>(100);
         int runs = 0;
 
         final terminal = RawViaTerminal((via) {

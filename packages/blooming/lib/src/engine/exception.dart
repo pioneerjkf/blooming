@@ -42,7 +42,7 @@ part of '../framework.dart';
 /// **BAD:**
 /// ```dart
 /// // [Anti-Pattern] Synchronously mutating state inside a synchronous terminal invalidation callback
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// final terminal = RawBloomTerminal(
 ///   counter.bloom,
 ///   onInvalidated: () {
@@ -54,7 +54,7 @@ part of '../framework.dart';
 /// **GOOD:**
 /// ```dart
 /// // [Recommended] Defer follow-up mutations to the next microtask or tick
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// final terminal = RawBloomTerminal(
 ///   counter.bloom,
 ///   onInvalidated: () {
@@ -123,7 +123,7 @@ class LpdagReentrancyError extends StateError {
 /// **GOOD:**
 /// ```dart
 /// // [Recommended] Unidirectional acyclic data flow from a common upstream source
-/// final base = BloomController(1);
+/// final base = blooming(1);
 /// final a = computed((via) => via(base.bloom) + 1);
 /// final b = computed((via) => via(base.bloom) * 2);
 ///

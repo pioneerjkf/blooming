@@ -44,7 +44,7 @@ import 'package:blooming/effect.dart';
 import 'package:blooming_extensions/blooming_extensions.dart';
 
 void main() async {
-  final numbersController = BloomController<List<double>>([10.0, 20.0, 30.0]);
+  final numbersController = blooming<List<double>>([10.0, 20.0, 30.0]);
 
   // Derived reactive aggregation nodes
   final sumBloom = numbersController.bloom.elements.sum;

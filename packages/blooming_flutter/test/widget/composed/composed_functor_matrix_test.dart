@@ -10,7 +10,7 @@ void main() {
   group('Canonical Build Functor Hierarchy & Child Caching Tests', () {
     testWidgets('1. Canonical Single-Bloom Functor Pathways render and react',
         (tester) async {
-      final ctrl = BloomController<int>(10);
+      final ctrl = blooming<int>(10);
 
       // 1. Direct call
       final w1 = ctrl.bloom.build((context, d) => Text('W1: $d'));
@@ -57,11 +57,11 @@ void main() {
     testWidgets(
         '2. Multi-Bloom composed inline (2..5 elements) builds correctly',
         (tester) async {
-      final c1 = BloomController<int>(1);
-      final c2 = BloomController<int>(2);
-      final c3 = BloomController<int>(3);
-      final c4 = BloomController<int>(4);
-      final c5 = BloomController<int>(5);
+      final c1 = blooming<int>(1);
+      final c2 = blooming<int>(2);
+      final c3 = blooming<int>(3);
+      final c4 = blooming<int>(4);
+      final c5 = blooming<int>(5);
 
       final w2 = composed(
           (context, via) => Text('T2: ${via(c1.bloom) + via(c2.bloom)}'));
@@ -96,7 +96,7 @@ void main() {
     testWidgets(
         '3. Cached child preserves widget instance identity across parent rebuilds',
         (tester) async {
-      final countCtrl = BloomController<int>(0);
+      final countCtrl = blooming<int>(0);
       int childBuildCount = 0;
 
       final staticChild = Builder(
@@ -282,7 +282,7 @@ void main() {
       );
 
       // 2. Dependencies and tethers
-      final ctrl = BloomController<int>(42);
+      final ctrl = blooming<int>(42);
       final eff1 = Effect([ctrl.bloom], () {}).withDebugLabel('LabeledEffect');
       final eff2 = Effect([ctrl.bloom], () {}); // debugLabel is null
 

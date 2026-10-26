@@ -21,27 +21,27 @@ class TemporalOrchestrationStore {
   // ---------------------------------------------------------------------------
 
   /// The raw search query string entered by the user.
-  final _searchQuery = BloomController<String>('');
+  final _searchQuery = blooming<String>('');
   Bloom<String> get searchQuery => _searchQuery.bloom;
 
   /// Total count of raw keystrokes received.
-  final _rawKeyStrokes = BloomController<int>(0);
+  final _rawKeyStrokes = blooming<int>(0);
   Bloom<int> get rawKeyStrokes => _rawKeyStrokes.bloom;
 
   /// Total count of debounced API dispatch calls actually executed.
-  final _debouncedCalls = BloomController<int>(0);
+  final _debouncedCalls = blooming<int>(0);
   Bloom<int> get debouncedCalls => _debouncedCalls.bloom;
 
   /// The last search query payload processed by the debounced API dispatch.
-  final _lastDispatchedQuery = BloomController<String>('(none)');
+  final _lastDispatchedQuery = blooming<String>('(none)');
   Bloom<String> get lastDispatchedQuery => _lastDispatchedQuery.bloom;
 
   /// Configurable debounce silence duration in milliseconds.
-  final _debounceDurationMs = BloomController<int>(400);
+  final _debounceDurationMs = blooming<int>(400);
   Bloom<int> get debounceDurationMs => _debounceDurationMs.bloom;
 
   /// Debounce leading edge execution flag.
-  final _debounceLeading = BloomController<bool>(false);
+  final _debounceLeading = blooming<bool>(false);
   Bloom<bool> get debounceLeading => _debounceLeading.bloom;
 
   /// The active debounce [DebounceEffect] instance.
@@ -52,27 +52,27 @@ class TemporalOrchestrationStore {
   // ---------------------------------------------------------------------------
 
   /// Raw trigger counter bumped on every rapid button press.
-  final _throttleTrigger = BloomController<int>(0);
+  final _throttleTrigger = blooming<int>(0);
   Bloom<int> get throttleTrigger => _throttleTrigger.bloom;
 
   /// Total count of rapid user clicks.
-  final _rawClickCount = BloomController<int>(0);
+  final _rawClickCount = blooming<int>(0);
   Bloom<int> get rawClickCount => _rawClickCount.bloom;
 
   /// Total count of throttled executions actually fired.
-  final _throttledRunCount = BloomController<int>(0);
+  final _throttledRunCount = blooming<int>(0);
   Bloom<int> get throttledRunCount => _throttledRunCount.bloom;
 
   /// Configurable throttle window interval in milliseconds.
-  final _throttleDurationMs = BloomController<int>(600);
+  final _throttleDurationMs = blooming<int>(600);
   Bloom<int> get throttleDurationMs => _throttleDurationMs.bloom;
 
   /// Whether leading-edge execution is enabled on throttle.
-  final _throttleLeading = BloomController<bool>(true);
+  final _throttleLeading = blooming<bool>(true);
   Bloom<bool> get throttleLeading => _throttleLeading.bloom;
 
   /// Whether trailing-edge execution is enabled on throttle.
-  final _throttleTrailing = BloomController<bool>(true);
+  final _throttleTrailing = blooming<bool>(true);
   Bloom<bool> get throttleTrailing => _throttleTrailing.bloom;
 
   /// The active throttle [ThrottleEffect] instance.
@@ -85,23 +85,23 @@ class TemporalOrchestrationStore {
   static const int takeLimit = 3;
 
   /// Mutation trigger for the take-limited effect.
-  final _takeTrigger = BloomController<int>(0);
+  final _takeTrigger = blooming<int>(0);
   Bloom<int> get takeTrigger => _takeTrigger.bloom;
 
   /// Total user attempts/clicks to redeem.
-  final _takeClickAttempts = BloomController<int>(0);
+  final _takeClickAttempts = blooming<int>(0);
   Bloom<int> get takeClickAttempts => _takeClickAttempts.bloom;
 
   /// Total times the take-limited effect has actually executed.
-  final _takeExecutedCount = BloomController<int>(0);
+  final _takeExecutedCount = blooming<int>(0);
   Bloom<int> get takeExecutedCount => _takeExecutedCount.bloom;
 
   /// Whether the effect has reached its limit and entered permanent dormancy.
-  final _isTakeDormant = BloomController<bool>(false);
+  final _isTakeDormant = blooming<bool>(false);
   Bloom<bool> get isTakeDormant => _isTakeDormant.bloom;
 
   /// Count of rejected attempts to re-activate the dormant effect.
-  final _guardBlockedAttempts = BloomController<int>(0);
+  final _guardBlockedAttempts = blooming<int>(0);
   Bloom<int> get guardBlockedAttempts => _guardBlockedAttempts.bloom;
 
   /// The active [Effect] configured with `take: 3`.
@@ -112,11 +112,11 @@ class TemporalOrchestrationStore {
   // ---------------------------------------------------------------------------
 
   /// Timestamped live event log history for real-time observability.
-  final _eventLogs = BloomController<List<String>>([]);
+  final _eventLogs = blooming<List<String>>([]);
   Bloom<List<String>> get eventLogs => _eventLogs.bloom;
 
   /// Version counter bumped whenever effects are reconfigured, notifying UI to tether latest instances.
-  final _effectsVersion = BloomController<int>(0);
+  final _effectsVersion = blooming<int>(0);
   Bloom<int> get effectsVersion => _effectsVersion.bloom;
 
   /// Composite [EffectGroup] bundling showcase effects for unified lifecycle management.

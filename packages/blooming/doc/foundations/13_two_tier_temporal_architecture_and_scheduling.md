@@ -279,7 +279,7 @@ abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
 Using compile-time zero-cost extension types ([extensions.dart](../../lib/src/effect/extensions.dart)), developers define debounce and throttle effects directly on `Bloom` instances:
 
 ```dart
-final searchInput = BloomController('');
+final searchInput = blooming('');
 
 // Fluent unary debounce effect:
 final searchEffect = searchInput.bloom.effect.debounce(
@@ -344,7 +344,7 @@ effect((via) {
 import 'package:blooming/blooming.dart';
 
 // 1. Source producer (Raw user keystroke input)
-final searchQuery = BloomController<String>('');
+final searchQuery = blooming<String>('');
 
 // 2. State-domain debounce (Intermediate LPDAG relay node)
 //    Suppresses Push-Dirty pulses for 300ms to eliminate redundant network queries
@@ -363,7 +363,7 @@ final searchResults = computed.future((via) async {
 ### 7.2 Sensor & Scroll Offset Rate-Limiting (Throttled Stream)
 
 ```dart
-final scrollPosition = BloomController<double>(0.0);
+final scrollPosition = blooming<double>(0.0);
 
 // Throttles scroll position updates to at most once every 50ms:
 final throttledScroll = scrollPosition.bloom.throttled(
@@ -378,7 +378,7 @@ final scrollProgress = computed((via) => via(throttledScroll) / maxScrollExtent)
 ### 7.3 Synchronous Burst Mutation Coalescing
 
 ```dart
-final transactionLog = BloomController<int>(0, distinct: false);
+final transactionLog = blooming<int>(0, distinct: false);
 
 // Collapses 100 consecutive synchronous increments into 1 trailing notification:
 final coalescedLog = transactionLog.bloom.coalesced();
@@ -394,7 +394,7 @@ final renderTerminal = RawBloomTerminal(coalescedLog, onInvalidated: () {
 import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
 
-final buttonClickCount = BloomController<int>(0);
+final buttonClickCount = blooming<int>(0);
 
 // Pure side-effect: Dispatches analytics at most once per second on leading edge
 final clickTracker = buttonClickCount.bloom.effect.throttle(

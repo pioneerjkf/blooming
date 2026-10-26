@@ -15,13 +15,13 @@ class BadControllerInBuild extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // expect_lint: avoid_bloom_creation_in_build
-    final local = BloomController(0);
+    final local = blooming(0);
     return composed((context, via) => Text('${via(local.bloom)}'));
   }
 }
 
 // #case avoid_bloom_creation_in_build/bad/computed-in-build
-final shared = BloomController(0);
+final shared = blooming(0);
 
 class BadComputedInBuild extends StatelessWidget {
   const BadComputedInBuild({super.key});
@@ -65,7 +65,7 @@ class GoodCreationState extends State<GoodCreation> {
   @override
   void initState() {
     super.initState();
-    _counter = BloomController(0);
+    _counter = blooming(0);
     _doubled = computed((via) => via(_counter.bloom) * 2);
   }
 

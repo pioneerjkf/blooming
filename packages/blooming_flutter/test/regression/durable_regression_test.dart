@@ -812,7 +812,7 @@ void main() {
           value: 0.0,
           duration: const Duration(seconds: 1),
         );
-        final showBloom = BloomController<bool>(true);
+        final showBloom = blooming<bool>(true);
 
         await tester.pumpWidget(
           Directionality(
@@ -1186,7 +1186,7 @@ void main() {
       testWidgets(
         'Reset Defect 5: Reactive widget lifecycle integration via controller.animate mount/unmount/remount',
         (WidgetTester tester) async {
-          final showBloom = BloomController<bool>(true);
+          final showBloom = blooming<bool>(true);
           final controller = DurableAnimationController(
             policy: DurabilityPolicy.reset,
             duration: const Duration(milliseconds: 1000),

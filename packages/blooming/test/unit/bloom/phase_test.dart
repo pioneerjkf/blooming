@@ -37,9 +37,9 @@ void main() {
 
   group('BloomController.phase & State Transitions', () {
     test('initial phases align with constructor variants', () {
-      final validController = BloomController<int>(10);
-      final emptyController = BloomController<int>.late();
-      final errorController = BloomController<int>.error(Exception('initial error'));
+      final validController = blooming<int>(10);
+      final emptyController = blooming.late<int>();
+      final errorController = blooming.error<int>(Exception('initial error'));
 
       expect(validController.phase, equals(BloomPhase.valid));
       expect(emptyController.phase, equals(BloomPhase.empty));
@@ -47,7 +47,7 @@ void main() {
     });
 
     test('transitions update phase reactively', () {
-      final controller = BloomController<int>.late();
+      final controller = blooming.late<int>();
       expect(controller.phase, equals(BloomPhase.empty));
 
       // Transition: empty -> valid
@@ -70,7 +70,7 @@ void main() {
 
   group('untracked.state(bloom).phase & Computed DAG Propagation', () {
     test('untracked.state reflects the underlying node phase', () {
-      final controller = BloomController<String>('hello');
+      final controller = blooming<String>('hello');
       expect(untracked.state(controller.bloom).phase, equals(BloomPhase.valid));
 
       controller.empty();
@@ -81,8 +81,8 @@ void main() {
     });
 
     test('computed derivation propagates upstream phase deterministically', () {
-      final a = BloomController<int>(5);
-      final b = BloomController<int>(10);
+      final a = blooming<int>(5);
+      final b = blooming<int>(10);
       final sum = computed((via) => via(a.bloom) + via(b.bloom));
 
       expect(untracked.state(sum).phase, equals(BloomPhase.valid));

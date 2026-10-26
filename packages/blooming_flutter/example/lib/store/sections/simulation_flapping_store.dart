@@ -23,19 +23,19 @@ class SimulationFlappingStore {
           duration: const Duration(seconds: 6),
           clock: clock ?? DateTime.now,
         ),
-        _springMass = BloomController<double>(3.0),
-        _springStiffness = BloomController<double>(40.0),
-        _springDamping = BloomController<double>(6.0),
-        _gravityForce = BloomController<double>(2.5),
-        _frictionDrag = BloomController<double>(0.04),
-        _speedScale = BloomController<double>(1.0),
-        _isAutoBounce = BloomController<bool>(true),
-        _flappingIntervalMs = BloomController<int>(20),
-        _isMounted = BloomController<bool>(true),
-        _isFlappingRunning = BloomController<bool>(false),
-        _flappingCyclesCompleted = BloomController<int>(0),
-        _activeSimulationType = BloomController<String>('SpringSimulation'),
-        _diagnosticLogs = BloomController<List<String>>([]) {
+        _springMass = blooming<double>(3.0),
+        _springStiffness = blooming<double>(40.0),
+        _springDamping = blooming<double>(6.0),
+        _gravityForce = blooming<double>(2.5),
+        _frictionDrag = blooming<double>(0.04),
+        _speedScale = blooming<double>(1.0),
+        _isAutoBounce = blooming<bool>(true),
+        _flappingIntervalMs = blooming<int>(20),
+        _isMounted = blooming<bool>(true),
+        _isFlappingRunning = blooming<bool>(false),
+        _flappingCyclesCompleted = blooming<int>(0),
+        _activeSimulationType = blooming<String>('SpringSimulation'),
+        _diagnosticLogs = blooming<List<String>>([]) {
     runSpringSimulation();
   }
 

@@ -401,7 +401,7 @@ extension ListenableBloomExtension<L extends Listenable> on L {
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController<int>(0);
+/// final counter = blooming<int>(0);
 /// final ValueListenable<int> listenable = counter.bloom.toListenable();
 /// ```
 extension BloomListenableExtension<T> on Bloom<T> {
@@ -457,7 +457,7 @@ extension BloomListenableExtension<T> on Bloom<T> {
   ///
   /// ### 1. Bridging to ValueListenableBuilder
   /// ```dart
-  /// final counter = BloomController<int>(0);
+  /// final counter = blooming<int>(0);
   /// final ValueListenable<int> listenable = counter.bloom.toListenable();
   ///
   /// Widget build(BuildContext context) {

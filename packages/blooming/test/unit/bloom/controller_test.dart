@@ -9,7 +9,7 @@ import '../../test_utils.dart';
 void main() {
   group('BloomController / bloom', () {
     test('initializes with given value and provides standard getters', () {
-      final count = BloomController(10);
+      final count = blooming(10);
 
       expect(count.data, 10);
       expect(count.dataOrNull, 10);
@@ -21,7 +21,7 @@ void main() {
     });
 
     test('mutates data via .data setter and .set()', () {
-      final count = BloomController(0);
+      final count = blooming(0);
 
       count.data = 1;
       expect(count.data, 1);
@@ -33,8 +33,8 @@ void main() {
       expect(count.data, 3);
     });
 
-    test('BloomController() class constructor produces identical behavior', () {
-      final text = BloomController('hello');
+    test('blooming() class constructor produces identical behavior', () {
+      final text = blooming('hello');
       expect(text.data, 'hello');
 
       text.data = 'world';
@@ -42,7 +42,7 @@ void main() {
     });
 
     test('distinct filtering ignores identical value assignments by default', () async {
-      final count = BloomController(10);
+      final count = blooming(10);
 
       var dirtyCount = 0;
       final effectDispose = effect((via) {
@@ -63,7 +63,7 @@ void main() {
     });
 
     test('BloomController.bloom provides read-only reactive view with tracking', () async {
-      final mutable = BloomController(42);
+      final mutable = blooming(42);
       final proxyView = mutable.bloom;
 
       expect(proxyView, isA<Bloom<int>>());
@@ -88,8 +88,8 @@ void main() {
       effectDispose();
     });
 
-    test('BloomController(distinct: false) allows duplicate value assignments to trigger effects', () async {
-      final count = BloomController(10, distinct: false);
+    test('blooming(distinct: false) allows duplicate value assignments to trigger effects', () async {
+      final count = blooming(10, distinct: false);
 
       var effectRuns = 0;
       final dispose = effect((via) {
@@ -114,7 +114,7 @@ void main() {
     });
 
     test('supports nullable values where null is a valid payload', () {
-      final nullableBloom = BloomController<String?>(null);
+      final nullableBloom = blooming<String?>(null);
 
       expect(nullableBloom.hasData, isTrue);
       expect(nullableBloom.isEmpty, isFalse);
@@ -130,7 +130,7 @@ void main() {
     });
 
     test('accessing .bloom provides direct access to underlying Bloom node', () {
-      final count = BloomController(5);
+      final count = blooming(5);
       final node = count.bloom;
 
       expect(node, isA<Bloom<int>>());
@@ -141,7 +141,7 @@ void main() {
     });
 
     test('setGuarded gracefully catches errors and injects error state', () {
-      final value = BloomController(10);
+      final value = blooming(10);
 
       value.setGuarded(() => 20);
       expect(value.data, 20);
@@ -155,7 +155,7 @@ void main() {
     });
 
     test('setError manually injects error state and stack trace', () {
-      final state = BloomController('initial');
+      final state = blooming('initial');
 
       state.setError('Network failure');
       expect(state.hasError, isTrue);
@@ -168,7 +168,7 @@ void main() {
     });
 
     test('empty resets node to uninitialized state', () {
-      final count = BloomController(100);
+      final count = blooming(100);
       expect(count.hasData, isTrue);
 
       count.empty();

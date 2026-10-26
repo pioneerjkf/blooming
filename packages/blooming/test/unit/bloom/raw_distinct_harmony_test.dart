@@ -7,11 +7,11 @@ import 'package:test/test.dart';
 void main() {
   group('Raw & Suffix Raw Escape Hatches Comprehensive Unit Tests', () {
     // =========================================================================
-    // 1. BloomController(distinct: false) vs BloomController default (distinct: true)
+    // 1. blooming(distinct: false) vs BloomController default (distinct: true)
     // =========================================================================
-    group('1. BloomController(distinct: false) vs BloomController default', () {
-      test('1.1 BloomController(distinct: false) emits dirty pulses unconditionally on identical values', () {
-        final raw = BloomController<int>(10, distinct: false);
+    group('1. blooming(distinct: false) vs BloomController default', () {
+      test('1.1 blooming(distinct: false) emits dirty pulses unconditionally on identical values', () {
+        final raw = blooming<int>(10, distinct: false);
         int dirtyCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => dirtyCount++);
         terminal.activate();
@@ -31,7 +31,7 @@ void main() {
       });
 
       test('1.2 BloomController default suppresses dirty pulse on identical value', () {
-        final distinctBloom = BloomController<int>(10);
+        final distinctBloom = blooming<int>(10);
         int dirtyCount = 0;
         final terminal = RawBloomTerminal(distinctBloom.bloom, onInvalidated: () => dirtyCount++);
         terminal.activate();
@@ -48,9 +48,9 @@ void main() {
         terminal.deactivate();
       });
 
-      test('1.3 BloomController(distinct: false) enables in-place mutable buffer streaming', () {
+      test('1.3 blooming(distinct: false) enables in-place mutable buffer streaming', () {
         final buffer = <int>[];
-        final stream = BloomController<List<int>>(buffer, distinct: false);
+        final stream = blooming<List<int>>(buffer, distinct: false);
         int dirtyCount = 0;
         final terminal = RawBloomTerminal(stream.bloom, onInvalidated: () => dirtyCount++);
         terminal.activate();
@@ -73,11 +73,11 @@ void main() {
     });
 
     // =========================================================================
-    // 2. BloomController(distinct: false) vs bloom default
+    // 2. blooming(distinct: false) vs bloom default
     // =========================================================================
-    group('2. BloomController(distinct: false) Functor', () {
-      test('2.1 BloomController(distinct: false) emits on duplicate value assignments', () {
-        final raw = BloomController('alpha', distinct: false);
+    group('2. blooming(distinct: false) Functor', () {
+      test('2.1 blooming(distinct: false) emits on duplicate value assignments', () {
+        final raw = blooming('alpha', distinct: false);
         int dirtyCount = 0;
         final terminal = RawBloomTerminal(raw.bloom, onInvalidated: () => dirtyCount++);
         terminal.activate();
@@ -96,7 +96,7 @@ void main() {
       });
 
       test('2.2 bloom.late(distinct: false) starts empty and propagates duplicate assignments', () {
-        final lateRaw = BloomController<int>.late(distinct: false);
+        final lateRaw = blooming.late<int>(distinct: false);
         expect(lateRaw.isEmpty, isTrue);
 
         int dirtyCount = 0;
@@ -115,8 +115,8 @@ void main() {
         terminal.deactivate();
       });
 
-      test('2.3 BloomController.error(distinct: false) starts in error and propagates duplicate error assignments', () {
-        final errRaw = BloomController<int>.error('InitialError', distinct: false);
+      test('2.3 blooming.error(distinct: false) starts in error and propagates duplicate error assignments', () {
+        final errRaw = blooming.error<int>('InitialError', distinct: false);
         expect(errRaw.hasError, isTrue);
 
         int dirtyCount = 0;
@@ -137,7 +137,7 @@ void main() {
     // =========================================================================
     group('3. BloomController with distinct: false', () {
       test('3.1 bloom.late(distinct: false) behaves as non-distinct late state', () {
-        final wLateRaw = BloomController<String>.late(distinct: false);
+        final wLateRaw = blooming.late<String>(distinct: false);
         expect(wLateRaw.isEmpty, isTrue);
 
         int dirtyCount = 0;
@@ -154,8 +154,8 @@ void main() {
         terminal.deactivate();
       });
 
-      test('3.2 BloomController.error(distinct: false) behaves as non-distinct error state', () {
-        final wErrRaw = BloomController<int>.error('Err', distinct: false);
+      test('3.2 blooming.error(distinct: false) behaves as non-distinct error state', () {
+        final wErrRaw = blooming.error<int>('Err', distinct: false);
         expect(wErrRaw.hasError, isTrue);
 
         int dirtyCount = 0;
@@ -176,7 +176,7 @@ void main() {
     // =========================================================================
     group('4. computed and bloom.computed (Pure Lazy LPDAG)', () {
       test('4.1 computed creates valid computation node that evaluates lazily', () {
-        final source = BloomController(10);
+        final source = blooming(10);
         int evalCount = 0;
         final c = computed((via) {
           evalCount++;
@@ -201,8 +201,8 @@ void main() {
       });
 
       test('4.2 bloom.computed works symmetrically with top-level computed', () {
-        final a = BloomController(5, distinct: false);
-        final b = BloomController(10, distinct: false);
+        final a = blooming(5, distinct: false);
+        final b = blooming(10, distinct: false);
         final sum = computed((via) => via(a.bloom) + via(b.bloom));
 
         int dirtyCount = 0;
@@ -220,7 +220,7 @@ void main() {
       });
 
       test('4.3 Bloom.computed factory constructor works', () {
-        final source = BloomController(1);
+        final source = blooming(1);
         final doubled = computed((via) => via(source.bloom) * 2);
 
         expect(untracked(doubled), 2);
@@ -229,7 +229,7 @@ void main() {
       });
 
       test('4.4 computed evaluates purely on pull and guarantees exactly 1 computation on diamond graph', () {
-        final root = BloomController(10);
+        final root = blooming(10);
         final left = computed((via) => via(root.bloom) * 2);
         final right = computed((via) => via(root.bloom) * 3);
 

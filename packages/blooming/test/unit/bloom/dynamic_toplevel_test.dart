@@ -39,7 +39,7 @@ void main() {
       });
 
       test('1.2 managed() with guard & reason guards allocation', () {
-        final token = BloomController<String>.late();
+        final token = blooming.late<String>();
         int created = 0;
         int disposed = 0;
 
@@ -101,9 +101,9 @@ void main() {
     // =========================================================================
     group('2. Top-Level switched() Functor', () {
       test('2.1 switched() dynamically flattens active subtree branches', () {
-        final isVip = BloomController(false);
-        final normalFeed = BloomController('Normal Feed');
-        final vipFeed = BloomController('VIP Feed');
+        final isVip = blooming(false);
+        final normalFeed = blooming('Normal Feed');
+        final vipFeed = blooming('VIP Feed');
 
         final activeFeed = switched((via) => via(isVip.bloom) ? vipFeed.bloom : normalFeed.bloom);
 
@@ -130,10 +130,10 @@ void main() {
       });
 
       test('2.2 switched() with guard & reason', () {
-        final isAuth = BloomController(false);
-        final tab = BloomController(0);
-        final feed0 = BloomController('Tab 0');
-        final feed1 = BloomController('Tab 1');
+        final isAuth = blooming(false);
+        final tab = blooming(0);
+        final feed0 = blooming('Tab 0');
+        final feed1 = blooming('Tab 1');
 
         final feed = switched(
           (via) => via(tab.bloom) == 0 ? feed0.bloom : feed1.bloom,
@@ -160,8 +160,8 @@ void main() {
     // =========================================================================
     group('3. Dynamic Triad Interplay (computed + switched + managed)', () {
       test('3.1 Full pipeline: managed client fed into computed stats and switched channels', () {
-        final isConnected = BloomController(false);
-        final channelId = BloomController(1);
+        final isConnected = blooming(false);
+        final channelId = blooming(1);
 
         // 1. Managed resource
         final socket = managed<String>(
@@ -177,7 +177,7 @@ void main() {
         );
 
         // 3. Switched subtree
-        final fallbackBloom = BloomController('Offline Banner');
+        final fallbackBloom = blooming('Offline Banner');
         final liveBloom = socketStatus;
         final display = switched(
           (via) => via(isConnected.bloom) ? liveBloom : fallbackBloom.bloom,
@@ -203,7 +203,7 @@ void main() {
       });
 
       test('3.2 managed() with upstream dependency', () {
-        final upstream = BloomController(10);
+        final upstream = blooming(10);
         int created = 0;
         int disposed = 0;
 
@@ -237,8 +237,8 @@ void main() {
     // =========================================================================
     group('4. Bloom Namespaced Static Functors Suite', () {
       test('4.1 Bloom.computed works identically to top-level computed', () {
-        final a = BloomController(5);
-        final b = BloomController(15);
+        final a = blooming(5);
+        final b = blooming(15);
         final sum = Bloom.computed((via) => via(a.bloom) + via(b.bloom));
 
         expect(untracked(sum), 20);
@@ -247,7 +247,7 @@ void main() {
       });
 
       test('4.2 Bloom.computed.future & Bloom.computed.stream work seamlessly', () async {
-        final id = BloomController(1);
+        final id = blooming(1);
         final user = Bloom.computed.future(
           (via) async => 'User-${via(id.bloom)}',
           initialFactory: () => 'Initial',
@@ -259,7 +259,7 @@ void main() {
         expect(termFuture.data, 'User-1');
         termFuture.deactivate();
 
-        final count = BloomController(0);
+        final count = blooming(0);
         final stream = Bloom.computed.stream(
           (via) => Stream.value('Count:${via(count.bloom)}'),
           initialFactory: () => 'Count:init',
@@ -273,9 +273,9 @@ void main() {
       });
 
       test('4.3 Bloom.switched works identically to top-level switched', () {
-        final flag = BloomController(true);
-        final branchA = BloomController('A');
-        final branchB = BloomController('B');
+        final flag = blooming(true);
+        final branchA = blooming('A');
+        final branchB = blooming('B');
 
         final active = Bloom.switched((via) => via(flag.bloom) ? branchA.bloom : branchB.bloom);
 

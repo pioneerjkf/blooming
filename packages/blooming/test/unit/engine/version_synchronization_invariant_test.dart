@@ -15,7 +15,7 @@ void main() {
     group('1. 1:1 Terminals (RawBloomTerminal)', () {
       test('1.1 RawBloomTerminal: Post-_read() edge version matches lazy computed version', () {
         var computedCount = 0;
-        final upstream = BloomController(10);
+        final upstream = blooming(10);
         final lazySource = computed((via) {
           computedCount++;
           return via(upstream.bloom) * 2;
@@ -50,7 +50,7 @@ void main() {
       });
 
       test('1.3 RawBloomTerminal: Dormant deactivation, upstream mutation, and re-activation version sync', () {
-        final root = BloomController(100);
+        final root = blooming(100);
         var compCount = 0;
         final lazy = computed((via) {
           compCount++;
@@ -93,8 +93,8 @@ void main() {
     // =========================================================================
     group('2. Dynamic N-ary Terminals & Effects', () {
       test('2.1 RawViaTerminal: Sequential lazy dependencies all advance to current version in _endEpoch', () {
-        final ctrl1 = BloomController(1);
-        final ctrl2 = BloomController(2);
+        final ctrl1 = blooming(1);
+        final ctrl2 = blooming(2);
 
         final lazy1 = computed((via) => via(ctrl1.bloom) + 10);
         final lazy2 = computed((via) => via(ctrl2.bloom) + 20);
@@ -123,9 +123,9 @@ void main() {
       });
 
       test('2.2 RawViaTerminal: Dynamic branch sweep updates pulledVersion for newly tracked branch only', () {
-        final selector = BloomController(true);
-        final rootA = BloomController('A');
-        final rootB = BloomController('B');
+        final selector = blooming(true);
+        final rootA = blooming('A');
+        final rootB = blooming('B');
 
         var aRuns = 0;
         final lazyA = computed((via) {
@@ -172,7 +172,7 @@ void main() {
       });
 
       test('2.3 RawViaTerminal: Exception in evaluator skips _pullVersion and preserves edges across retry', () {
-        final trigger = BloomController(1);
+        final trigger = blooming(1);
         var shouldThrow = true;
 
         var invalidationCount = 0;
@@ -206,7 +206,7 @@ void main() {
 
       test('2.4 Effect.via: Distinct short-circuit strictly suppresses execution when upstream version unchanged',
           () async {
-        final user = BloomController((name: 'Alice', age: 20));
+        final user = blooming((name: 'Alice', age: 20));
         var distinctRuns = 0;
         final distinctName = computed((via) {
           distinctRuns++;
@@ -246,7 +246,7 @@ void main() {
       });
 
       test('2.5 Effect.unary: Manifest effect skips initial execution and executes on mutation', () async {
-        final root = BloomController(10);
+        final root = blooming(10);
         var compRuns = 0;
         final lazySource = computed((via) {
           compRuns++;
@@ -291,7 +291,7 @@ void main() {
     group('3. Dynamic Coupling Relays (BloomCoupler & Bloom.switched)', () {
       test('3.1 BloomCoupler: Synchronizes version when coupled to lazy computed and bumps its own version', () {
         final coupler = BloomCoupler<int>.late();
-        final root = BloomController(5);
+        final root = blooming(5);
         var computeCount = 0;
         final lazyTarget = computed((via) {
           computeCount++;
@@ -327,7 +327,7 @@ void main() {
       });
 
       test('3.2 BloomCoupler: Decouple and error transitions correctly advance versions', () {
-        final initial = BloomController(42);
+        final initial = blooming(42);
         final coupler = BloomCoupler<int>(initial.bloom);
 
         expect(untracked(coupler.bloom), 42);
@@ -341,15 +341,15 @@ void main() {
         expect(untracked.state(coupler.bloom).hasError, isTrue);
 
         // Re-couple to valid node
-        final fresh = BloomController(100);
+        final fresh = blooming(100);
         coupler.couple(fresh.bloom);
         expect(untracked(coupler.bloom), 100);
       });
 
       test('3.3 Bloom.switched: Synchronizes version when switching branches to uncomputed lazy computed', () {
-        final selector = BloomController('branchA');
-        final rootA = BloomController(10);
-        final rootB = BloomController(20);
+        final selector = blooming('branchA');
+        final rootA = blooming(10);
+        final rootB = blooming(20);
 
         var aRuns = 0;
         final lazyA = computed((via) {
@@ -396,8 +396,8 @@ void main() {
       });
 
       test('3.4 Bloom.switched with Distinct: Drops downstream re-computation if branch output is unchanged', () {
-        final selector = BloomController(1);
-        final root = BloomController((flag: true, text: 'Hello'));
+        final selector = blooming(1);
+        final root = blooming((flag: true, text: 'Hello'));
 
         final distinctText = computed((via) => via(root.bloom).text).distinct();
         final staticBranch = Bloom.constant('Static');
@@ -435,7 +435,7 @@ void main() {
       });
 
       test('3.5 Bloom.switched: Switching to throwing selector catches into Error state and increments version', () {
-        final flag = BloomController(true);
+        final flag = blooming(true);
         final switchedBloom = switched<int>((via) {
           if (via(flag.bloom)) {
             return Bloom.constant(100);
@@ -462,7 +462,7 @@ void main() {
     // =========================================================================
     group('4. Transform, Filter & Temporal Relays', () {
       test('4.1 DistinctBloom: PullResolver advances pulledVersion after source._read() even when value unchanged', () {
-        final root = BloomController(100);
+        final root = blooming(100);
         var sourceComputeRuns = 0;
         final lazySource = computed((via) {
           sourceComputeRuns++;
@@ -499,7 +499,7 @@ void main() {
       });
 
       test('4.2 RetainedBloom: Pending state transitions correctly manage and sync versions with pending coupler', () {
-        final root = BloomController<String>('Initial');
+        final root = blooming<String>('Initial');
         final pendingCoupler = BloomCoupler<bool>.late();
         final retained = root.bloom.retained(pending: pendingCoupler);
 
@@ -518,7 +518,7 @@ void main() {
       });
 
       test('4.3 KeyedMapBloom: Dynamic list generation from lazy source synchronizes version cleanly', () {
-        final count = BloomController(3);
+        final count = blooming(3);
         var listComputeRuns = 0;
         final lazyList = computed((via) {
           listComputeRuns++;
@@ -544,7 +544,7 @@ void main() {
       });
 
       test('4.4 DebouncedBloom: Deferred pull synchronizes version upon timer expiration', () async {
-        final root = BloomController(1);
+        final root = blooming(1);
         final debounced = root.bloom.debounced(const Duration(milliseconds: 20));
         final observed = <int>[untracked(debounced)];
         final terminal = RawBloomTerminal(debounced, onInvalidated: () {
@@ -574,7 +574,7 @@ void main() {
       });
 
       test('4.5 ThrottledBloom: Leading and trailing window accurately synchronizes version', () async {
-        final root = BloomController('A');
+        final root = blooming('A');
         final throttled = root.bloom.throttled(
           const Duration(milliseconds: 25),
           leading: true,
@@ -608,7 +608,7 @@ void main() {
       });
 
       test('4.6 GracefulBloom: Graceful node preserves state and synchronizes version during grace window', () {
-        final root = BloomController(50);
+        final root = blooming(50);
         var lazyRuns = 0;
         final lazySource = computed((via) {
           lazyRuns++;
@@ -642,7 +642,7 @@ void main() {
     // =========================================================================
     group('5. Managed Resources Lifecycle (Bloom.managed)', () {
       test('5.1 Bloom.managed: Resolves uncomputed lazy dependencies and manages resource versions', () {
-        final config = BloomController({'port': 8080});
+        final config = blooming({'port': 8080});
         var lazyRuns = 0;
         final lazyPort = computed((via) {
           lazyRuns++;
@@ -695,8 +695,8 @@ void main() {
       });
 
       test('5.2 Bloom.managed: Guard transitions between Valid and Empty correctly increment and sync versions', () {
-        final isEnabled = BloomController(false);
-        final payload = BloomController('Data');
+        final isEnabled = blooming(false);
+        final payload = blooming('Data');
 
         var createCount = 0;
         var disposeCount = 0;
@@ -741,8 +741,8 @@ void main() {
       test('6.1 Multi-tier uncomputed chain resolves atomically from terminal read with 0 redundant computations', () {
         // Topology:
         // root -> lazyCompA -> switched -> distinct -> lazyCompB -> terminal
-        final root = BloomController(10);
-        final mode = BloomController(true);
+        final root = blooming(10);
+        final mode = blooming(true);
 
         var compARuns = 0;
         final lazyCompA = computed((via) {
@@ -799,7 +799,7 @@ void main() {
         //          join
         //            |
         //         terminal
-        final root = BloomController(10);
+        final root = blooming(10);
         var leftComputes = 0;
         var rightComputes = 0;
         var joinComputes = 0;

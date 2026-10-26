@@ -37,7 +37,7 @@ void main() {
         final item1 = _MutableKeyItem('k1', 10);
         final item2 = _MutableKeyItem('k2', 20);
 
-        final controller = BloomController<List<_MutableKeyItem>>([item1, item2]);
+        final controller = blooming<List<_MutableKeyItem>>([item1, item2]);
         final convertCounts = <String, int>{};
 
         final keyedMapped = controller.bloom.keyed.map(
@@ -70,7 +70,7 @@ void main() {
       });
 
       test('1.2 High-Throughput Oscillating Churn (1,000 Key Oscillations)', () {
-        final controller = BloomController<List<int>>([]);
+        final controller = blooming<List<int>>([]);
         int totalConversions = 0;
 
         final keyed = controller.bloom.keyed.map(
@@ -113,7 +113,7 @@ void main() {
     group('2. 100% Hash Collision Resilience', () {
       test('2.1 Keyed map correctly differentiates colliding hash items', () {
         final items = List.generate(50, (i) => _FixedHashItem('id_$i', i * 10));
-        final controller = BloomController<List<_FixedHashItem>>(items);
+        final controller = blooming<List<_FixedHashItem>>(items);
 
         final keyed = controller.bloom.keyed.map(
           key: (item) => item,
@@ -150,7 +150,7 @@ void main() {
 
         final matrixControllers = List.generate(
           rows,
-          (r) => List.generate(cols, (c) => BloomController<int>((r + 1) * 10 + (c + 1))),
+          (r) => List.generate(cols, (c) => blooming<int>((r + 1) * 10 + (c + 1))),
         );
 
         final rowGroups = matrixControllers.map((row) => Bloom.constant(row.map((ctrl) => ctrl.bloom))).toList();

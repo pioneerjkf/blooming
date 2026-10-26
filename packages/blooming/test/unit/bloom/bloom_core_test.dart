@@ -304,7 +304,7 @@ void main() {
     // =========================================================================
     group('2. Nullable Pipeline & Combinator Soundness', () {
       test('2.1 BloomController with nullable type and computed derivations', () {
-        final controller = BloomController<String?>(null);
+        final controller = blooming<String?>(null);
         final lengthBloom = computed((via) => via(controller.bloom)?.length);
         final upperBloom = computed((via) => via(controller.bloom)?.toUpperCase());
 
@@ -333,7 +333,7 @@ void main() {
       });
 
       test('2.2 Distinct combinator coalesces consecutive null and non-null transitions', () {
-        final controller = BloomController<String?>(null);
+        final controller = blooming<String?>(null);
         int distinctDirtyCount = 0;
 
         final distinctBloom = controller.bloom.distinct();
@@ -364,7 +364,7 @@ void main() {
       });
 
       test('2.3 Fallback and null recovery with Nullable Flows via computed', () {
-        final emptyController = BloomController<String?>.late();
+        final emptyController = blooming.late<String?>();
         final fallbackToDefault = computed((via) {
           final s = via.state(emptyController.bloom).snapshot;
           if (s.isEmpty) return 'DEFAULT_VALUE';
@@ -415,7 +415,7 @@ void main() {
         int activatedCount = 0;
         int deactivatedCount = 0;
 
-        final controller = BloomController<int>(
+        final controller = blooming<int>(
           10,
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,
@@ -440,7 +440,7 @@ void main() {
         int activatedCount = 0;
         int deactivatedCount = 0;
 
-        final controller = BloomController<int>.late(
+        final controller = blooming.late<int>(
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,
         );
@@ -470,7 +470,7 @@ void main() {
     group('4. Bloom Operators & Extensions', () {
       test('4.1 RawBloomTerminal attaches directly to source', () {
         int dirtyCount = 0;
-        final controller = BloomController<int>(10);
+        final controller = blooming<int>(10);
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {
           dirtyCount++;
         });
@@ -486,7 +486,7 @@ void main() {
       });
 
       test('4.2 distinct suppresses duplicate snapshots', () {
-        final controller = BloomController<int>(10);
+        final controller = blooming<int>(10);
         int dirtyCount = 0;
 
         final distinctBloom = controller.bloom.distinct();
@@ -506,7 +506,7 @@ void main() {
       });
 
       test('4.3 computed with distinct projects slice and suppresses duplicate snapshots', () {
-        final controller = BloomController<({String name, int age})>((name: 'Alice', age: 20));
+        final controller = blooming<({String name, int age})>((name: 'Alice', age: 20));
         int dirtyCount = 0;
 
         final nameBloom = computed((via) => via(controller.bloom).name).distinct();
@@ -553,7 +553,7 @@ void main() {
       });
 
       test('4.3.1 equals callback exception in _DistinctEntry safely converges to error state without rethrow', () {
-        final controller = BloomController<int>(
+        final controller = blooming<int>(
           1,
           equals: (prev, next) {
             if (next == 42) throw const FormatException('Forbidden number 42');
@@ -581,7 +581,7 @@ void main() {
       });
 
       test('4.3.2 equals callback exception in _DistinctBloom._pull safely transitions node to error state', () {
-        final source = BloomController<int>(1);
+        final source = blooming<int>(1);
         final distinctBloom = source.bloom.distinct((prev, next) {
           if (next == 99) throw StateError('99 is invalid');
           return prev == next;
@@ -693,8 +693,8 @@ void main() {
     // =========================================================================
     group('5. Reactive Guards via Bloom.computed Comprehensive Matrix', () {
       test('5.1 Repeated controller mutations while isReady == false with terminal reading snapshot', () {
-        final controller = BloomController<int>(0);
-        final isReady = BloomController<bool>(false);
+        final controller = blooming<int>(0);
+        final isReady = blooming<bool>(false);
 
         final guarded = computed(
           (via) => via(controller.bloom),
@@ -735,8 +735,8 @@ void main() {
       });
 
       test('5.2 Dynamic Flapping of isReady Guard Conditions (Blocked <-> Unblocked Cycles)', () {
-        final controller = BloomController<int>(0);
-        final isReady = BloomController<bool>(true);
+        final controller = blooming<int>(0);
+        final isReady = blooming<bool>(true);
 
         final guarded = computed(
           (via) => via(controller.bloom),
@@ -776,8 +776,8 @@ void main() {
       });
 
       test('5.3 Guard with dynamic reason function reflects latest error reason when blocked', () {
-        final controller = BloomController<int>(10);
-        final blockReason = BloomController<String?>('Error 401: Unauthorized');
+        final controller = blooming<int>(10);
+        final blockReason = blooming<String?>('Error 401: Unauthorized');
 
         final guarded = computed(
           (via) => via(controller.bloom),
@@ -815,8 +815,8 @@ void main() {
       });
 
       test('5.4 Guarded pipeline feeding downstream computed transformer', () {
-        final controller = BloomController<int>(5);
-        final isReady = BloomController<bool>(false);
+        final controller = blooming<int>(5);
+        final isReady = blooming<bool>(false);
         int mapExecCount = 0;
 
         final guarded = computed(
@@ -851,10 +851,10 @@ void main() {
       });
 
       test('5.5 Asymmetric Fan-Out: Single Controller with 3 Independent Guarded Branches', () {
-        final controller = BloomController<int>(100);
+        final controller = blooming<int>(100);
 
-        final permAdmin = BloomController<bool>(false);
-        final permUser = BloomController<bool>(true);
+        final permAdmin = blooming<bool>(false);
+        final permUser = blooming<bool>(true);
 
         final rawBranch = controller;
         int rawDirty = 0;
@@ -906,15 +906,15 @@ void main() {
       });
 
       test('5.6 guard throwing an exception is cleanly caught and isolated into Error state', () {
-        final controllerA = BloomController<int>(10);
-        final controllerB = BloomController<int>(20);
+        final controllerA = blooming<int>(10);
+        final controllerB = blooming<int>(20);
 
         final computation = _TestBinaryComputation(
           controllerA.bloom,
           controllerB.bloom,
         );
 
-        final throwInGuard = BloomController<bool>(true);
+        final throwInGuard = blooming<bool>(true);
         final guardedBloom = computed(
           (via) => via(computation.bloom),
           guard: (via) {

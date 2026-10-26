@@ -29,10 +29,10 @@ void main() {
     // =========================================================================
     group('1. computed with dynamic Bloom<List<Bloom<T>>>', () {
       test('1.1 Dynamic insertion, removal & sweep: detached items do not pulse dirty', () {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
-        final w4 = BloomController<int>(40);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
+        final w4 = blooming<int>(40);
 
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -96,9 +96,9 @@ void main() {
       });
 
       test('1.2 Order permutation & duplicate avoidance maintains cursor-aligned edges', () {
-        final w1 = BloomController<int>(1);
-        final w2 = BloomController<int>(2);
-        final w3 = BloomController<int>(3);
+        final w1 = blooming<int>(1);
+        final w2 = blooming<int>(2);
+        final w3 = blooming<int>(3);
 
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
@@ -133,8 +133,8 @@ void main() {
       });
 
       test('1.3 Emptying list sweeps all inner edges; repopulating re-binds cleanly', () {
-        final w1 = BloomController<int>(100);
-        final w2 = BloomController<int>(200);
+        final w1 = blooming<int>(100);
+        final w2 = blooming<int>(200);
 
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -161,8 +161,8 @@ void main() {
         expect(terminal.data, 0);
 
         // Repopulate with brand new items
-        final w3 = BloomController<int>(5);
-        final w4 = BloomController<int>(15);
+        final w3 = blooming<int>(5);
+        final w4 = blooming<int>(15);
         listController.set([w3.bloom, w4.bloom]);
         expect(dirtyCount, 2);
         expect(terminal.data, 20);
@@ -176,7 +176,7 @@ void main() {
       });
 
       test('1.4 Multi-cycle pseudo-random churn with active vs evicted edge validation', () {
-        final pool = List.generate(8, (i) => BloomController<int>((i + 1) * 10));
+        final pool = List.generate(8, (i) => blooming<int>((i + 1) * 10));
 
         final listController = blooming.list<Bloom<int>>([pool[0].bloom, pool[1].bloom, pool[2].bloom]);
 
@@ -239,15 +239,15 @@ void main() {
     // =========================================================================
     group('2. switched with dynamic Bloom<List<Bloom<T>>>', () {
       test('2.1 Switching between two dynamic Bloom node lists sweeps all previous branch inner nodes', () {
-        final mode = BloomController<bool>(true);
+        final mode = blooming<bool>(true);
 
-        final listA1 = BloomController<int>(10);
-        final listA2 = BloomController<int>(20);
+        final listA1 = blooming<int>(10);
+        final listA2 = blooming<int>(20);
         final listControllerA = blooming.list<Bloom<int>>([listA1.bloom, listA2.bloom]);
 
-        final listB1 = BloomController<int>(100);
-        final listB2 = BloomController<int>(200);
-        final listB3 = BloomController<int>(300);
+        final listB1 = blooming<int>(100);
+        final listB2 = blooming<int>(200);
+        final listB3 = blooming<int>(300);
         final listControllerB = blooming.list<Bloom<int>>([listB1.bloom, listB2.bloom, listB3.bloom]);
 
         final switchedPipeline = switched<int>((via) {
@@ -308,13 +308,13 @@ void main() {
       });
 
       test('2.2 switched indexing into dynamic Bloom<List<Bloom<T>>> with out-of-bounds containment', () {
-        final indexController = BloomController<int>(0);
-        final w0 = BloomController<String>('Zero');
-        final w1 = BloomController<String>('One');
-        final w2 = BloomController<String>('Two');
+        final indexController = blooming<int>(0);
+        final w0 = blooming<String>('Zero');
+        final w1 = blooming<String>('One');
+        final w2 = blooming<String>('Two');
 
         final listController = blooming.list<Bloom<String>>([w0.bloom, w1.bloom, w2.bloom]);
-        final fallback = BloomController<String>('FALLBACK');
+        final fallback = blooming<String>('FALLBACK');
 
         final dynamicItemSwitched = switched<String>((via) {
           final list = via(listController.bloom);
@@ -374,9 +374,9 @@ void main() {
     // =========================================================================
     group('3. managed with dynamic Bloom<List<Bloom<T>>>', () {
       test('3.1 Resource update vs dispose/create when Bloom list items change dynamically', () {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
 
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
@@ -472,8 +472,8 @@ void main() {
       });
 
       test('3.2 Re-creation semantics under dynamic collection list clearing', () {
-        final w1 = BloomController<int>(5);
-        final w2 = BloomController<int>(10);
+        final w1 = blooming<int>(5);
+        final w2 = blooming<int>(10);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int createCount = 0;
@@ -529,9 +529,9 @@ void main() {
     // =========================================================================
     group('4. Unified Heterogeneous Pipeline & Batch Churn', () {
       test('4.1 Unified Pipeline: listController -> computed -> switched -> managed', () {
-        final c1 = BloomController<int>(10);
-        final c2 = BloomController<int>(20);
-        final c3 = BloomController<int>(30);
+        final c1 = blooming<int>(10);
+        final c2 = blooming<int>(20);
+        final c3 = blooming<int>(30);
         final listController = blooming.list<Bloom<int>>([c1.bloom, c2.bloom]);
 
         // 1. computed aggregates dynamic list
@@ -541,8 +541,8 @@ void main() {
         });
 
         // 2. switched switches between listSum and a scalar threshold
-        final useSum = BloomController<bool>(true);
-        final threshold = BloomController<int>(1000);
+        final useSum = blooming<bool>(true);
+        final threshold = blooming<int>(1000);
 
         final switchedVal = switched<int>((via) {
           return via(useSum.bloom) ? listSum : threshold.bloom;
@@ -612,9 +612,9 @@ void main() {
     // =========================================================================
     group('5. Asynchronous & Temporal Dynamics with dynamic Bloom<List<Bloom<T>>>', () {
       test('5.1 computed + effect across asynchronous microtask turns: dirty coalescing and sweep', () async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         final sumComputed = computed((via) {
@@ -658,14 +658,14 @@ void main() {
       });
 
       test('5.2 switched + delayed async turns: obsolete branch elements are permanently swept across turns', () async {
-        final branch = BloomController<bool>(true);
+        final branch = blooming<bool>(true);
 
-        final a1 = BloomController<int>(1);
-        final a2 = BloomController<int>(2);
+        final a1 = blooming<int>(1);
+        final a2 = blooming<int>(2);
         final listA = blooming.list<Bloom<int>>([a1.bloom, a2.bloom]);
 
-        final b1 = BloomController<int>(100);
-        final b2 = BloomController<int>(200);
+        final b1 = blooming<int>(100);
+        final b2 = blooming<int>(200);
         final listB = blooming.list<Bloom<int>>([b1.bloom, b2.bloom]);
 
         final activeBranchSum = switched<int>((via) {
@@ -708,9 +708,9 @@ void main() {
 
       test('5.3 managed + delayed async mutations: resource updates on delayed ticks without reacting to swept items',
           () async {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         int updateCalls = 0;
@@ -765,11 +765,11 @@ void main() {
       });
 
       test('5.4 computed.future dynamic resolution: downstream binds inner Blooms asynchronously and sweeps', () async {
-        final wA = BloomController<int>(10);
-        final wB = BloomController<int>(20);
-        final wC = BloomController<int>(30);
+        final wA = blooming<int>(10);
+        final wB = blooming<int>(20);
+        final wC = blooming<int>(30);
 
-        final query = BloomController<String>('pair1');
+        final query = blooming<String>('pair1');
 
         // Async computed that fetches / constructs a List<Bloom<int>> based on query
         final asyncListBloom = computed.future<List<Bloom<int>>>((via) async {
@@ -827,7 +827,7 @@ void main() {
       });
 
       test('5.5 Concurrent async mutations under Future.wait: DAG converges to strictly active nodes', () async {
-        final pool = List.generate(5, (i) => BloomController<int>(i * 10)); // [0, 10, 20, 30, 40]
+        final pool = List.generate(5, (i) => blooming<int>(i * 10)); // [0, 10, 20, 30, 40]
         final listController = blooming.list<Bloom<int>>([pool[0].bloom, pool[1].bloom]);
 
         final sumComputed = computed((via) {
@@ -885,9 +885,9 @@ void main() {
     // =========================================================================
     group('6. Tri-State FSM (Valid, Empty, Error) & Error Containment', () {
       test('6.1 Inner Bloom cycling Valid -> Empty -> Error -> Valid with graceful via.state fallback', () {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
         // Resilient computed aggregator handling valid, empty, and error gracefully
@@ -954,9 +954,9 @@ void main() {
       test(
           '6.2 Direct via(item) on Error inner node: upstream computed transitions to Error and auto-recovers on eviction',
           () {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
-        final w3 = BloomController<int>(30);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
+        final w3 = blooming<int>(30);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom, w3.bloom]);
 
         final unhandledSum = computed<int>((via) {
@@ -998,8 +998,8 @@ void main() {
       });
 
       test('6.3 Outer BloomListController itself transitioning Valid -> Empty -> Error -> Valid', () {
-        final w1 = BloomController<int>(10);
-        final w2 = BloomController<int>(20);
+        final w1 = blooming<int>(10);
+        final w2 = blooming<int>(20);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);
 
         final downstream = computed<String>((via) {
@@ -1047,10 +1047,10 @@ void main() {
       test(
           '7.1 Early return on first Error: loop short-circuits; subsequent nodes unvisited; recovery re-awakens full list',
           () {
-        final w0 = BloomController<int>(10);
-        final w1 = BloomController<int>(20);
-        final w2 = BloomController<int>(30);
-        final w3 = BloomController<int>(40);
+        final w0 = blooming<int>(10);
+        final w1 = blooming<int>(20);
+        final w2 = blooming<int>(30);
+        final w3 = blooming<int>(40);
 
         final listController = blooming.list<Bloom<int>>([w0.bloom, w1.bloom, w2.bloom, w3.bloom]);
 
@@ -1111,10 +1111,10 @@ void main() {
       });
 
       test('7.2 Dynamic multi-mode branching (strict vs lenient vs first_valid) with heterogeneous node states', () {
-        final mode = BloomController<String>('strict');
-        final n0 = BloomController<int>(10);
-        final n1 = BloomController<int>(20);
-        final n2 = BloomController<int>(30);
+        final mode = blooming<String>('strict');
+        final n0 = blooming<int>(10);
+        final n1 = blooming<int>(20);
+        final n2 = blooming<int>(30);
         final listController = blooming.list<Bloom<int>>([n0.bloom, n1.bloom, n2.bloom]);
 
         final multiBranchPipeline = computed<String>((via) {
@@ -1202,9 +1202,9 @@ void main() {
     // =========================================================================
     group('8. Combinatorial Permutation Matrix (Valid, Empty, Error) x Topology Churn', () {
       test('8.1 Exhaustive 27-state matrix of 3 nodes under dynamic membership & sweep', () {
-        final cA = BloomController<int>(1);
-        final cB = BloomController<int>(2);
-        final cC = BloomController<int>(3);
+        final cA = blooming<int>(1);
+        final cB = blooming<int>(2);
+        final cC = blooming<int>(3);
         final controllers = [cA, cB, cC];
 
         final listController = blooming.list<Bloom<int>>([cA.bloom, cB.bloom]);

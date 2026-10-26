@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('LPDAG Target Detachment During Dirty Propagation Suite', () {
     test('Downstream target detachment during _propagateDirty does not drop notifications for subsequent targets', () {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
 
       var countA = 0;
       var countB = 0;
@@ -67,7 +67,7 @@ void main() {
     });
 
     test('Multiple targets deactivating each other during dirty propagation preserves iteration safety', () {
-      final source = BloomController<int>(100);
+      final source = blooming<int>(100);
 
       final events = <String>[];
 
@@ -110,7 +110,7 @@ void main() {
     });
 
     test('Reentrant _propagateDirty on the same source node preserves outer target loop iteration', () {
-      final source = BloomController<int>(0);
+      final source = blooming<int>(0);
 
       var countA = 0;
       var countB = 0;
@@ -151,7 +151,7 @@ void main() {
   // and must never unlink or deactivate other subscribers of the shared source.
   group('LPDAG Target Detachment with Duplicate & Shared Sources Suite', () {
     test('Effect([a, a]) subscribes once and releases the source across repeated lifecycles', () async {
-      final a = BloomController(0);
+      final a = blooming(0);
       var runs = 0;
       final host = _hostEffect(Effect([a.bloom, a.bloom], () => runs++))
         ..activate()
@@ -179,8 +179,8 @@ void main() {
     });
 
     test('Detaching an effect with duplicate sources preserves a subscriber attached after it', () async {
-      final a = BloomController(0);
-      final b = BloomController(0);
+      final a = blooming(0);
+      final b = blooming(0);
       var invalidations = 0;
 
       final host = _hostEffect(Effect([a.bloom, b.bloom, a.bloom], () {}))
@@ -201,7 +201,7 @@ void main() {
     });
 
     test('Detaching an effect with duplicate sources preserves a subscriber attached before it', () async {
-      final a = BloomController(0);
+      final a = blooming(0);
       var invalidations = 0;
       final other = RawBloomTerminal(a.bloom, onInvalidated: () => invalidations++)..activate();
 
@@ -220,9 +220,9 @@ void main() {
     });
 
     test('Dynamic via: repeated reads and branch switch-back attach/detach each source exactly once', () {
-      final a = BloomController(1);
-      final b = BloomController(2);
-      final useA = BloomController(true);
+      final a = blooming(1);
+      final b = blooming(2);
+      final useA = blooming(true);
       final terminal = RawViaTerminal<int>(
         (via) {
           if (via(useA.bloom)) return via(a.bloom) + via(a.bloom);

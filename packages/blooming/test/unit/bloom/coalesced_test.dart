@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 void main() {
   group('Bloom.coalesced() Comprehensive Unit Tests', () {
     test('1. Bursty mutations within same turn coalesce into single trailing notification', () async {
-      final counter = BloomController(0, distinct: false);
+      final counter = blooming(0, distinct: false);
       final coalesced = counter.bloom.coalesced();
 
       int invalidationCount = 0;
@@ -49,7 +49,7 @@ void main() {
     });
 
     test('2. Leading-only coalescing (leading: true, trailing: false) fires immediately and silences burst', () async {
-      final counter = BloomController(0, distinct: false);
+      final counter = blooming(0, distinct: false);
       final coalesced = counter.bloom.coalesced(leading: true, trailing: false);
 
       int invalidationCount = 0;
@@ -82,7 +82,7 @@ void main() {
     });
 
     test('3. Dual-edge coalescing (leading: true, trailing: true) fires leading then trailing after burst', () async {
-      final counter = BloomController(0, distinct: false);
+      final counter = blooming(0, distinct: false);
       final coalesced = counter.bloom.coalesced(leading: true, trailing: true);
 
       int invalidationCount = 0;
@@ -110,7 +110,7 @@ void main() {
     });
 
     test('4. Dual-edge coalescing with solitary mutation fires leading without redundant trailing', () async {
-      final counter = BloomController(0, distinct: false);
+      final counter = blooming(0, distinct: false);
       final coalesced = counter.bloom.coalesced(leading: true, trailing: true);
 
       int invalidationCount = 0;
@@ -130,7 +130,7 @@ void main() {
     });
 
     test('5. Assertion error when both leading and trailing are false', () {
-      final source = BloomController(1);
+      final source = blooming(1);
       expect(
         () => source.bloom.coalesced(leading: false, trailing: false),
         throwsA(isA<AssertionError>()),
@@ -138,7 +138,7 @@ void main() {
     });
 
     test('6. Deactivation cancels pending coalesced notification', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       final coalesced = counter.bloom.coalesced();
 
       int invalidationCount = 0;
@@ -156,7 +156,7 @@ void main() {
     });
 
     test('7. bloom.coalesced factory produces working coalesced relay', () async {
-      final source = BloomController('initial');
+      final source = blooming('initial');
       final coalesced = source.bloom.coalesced();
 
       final values = <String>[];
@@ -178,7 +178,7 @@ void main() {
     });
 
     test('8. Full pipeline integration: source.coalesced() with computed works seamlessly', () async {
-      final source = BloomController(10);
+      final source = blooming(10);
       final coalesced = source.bloom.coalesced();
       final pipeline = computed((via) {
         final doubled = via(coalesced) * 2;
@@ -205,7 +205,7 @@ void main() {
     });
 
     test('9. Coalesced relay integrates with Effect on _Scheduler within single microtask pass', () async {
-      final counter = BloomController(0);
+      final counter = blooming(0);
       final coalesced = counter.bloom.coalesced();
 
       final effectValues = <int>[];

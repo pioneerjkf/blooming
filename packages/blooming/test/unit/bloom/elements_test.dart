@@ -31,7 +31,7 @@ void main() {
     // =========================================================================
     group('1. Collection Elements & Type Factories', () {
       test('1.1 elements.toList converts Bloom<Iterable<T>> into Bloom<List<T>>', () {
-        final setController = BloomController<Set<int>>({1, 2, 3});
+        final setController = blooming<Set<int>>({1, 2, 3});
 
         final listBloomProxy = setController.bloom.elements.toList();
         final proxyTerminal = RawBloomTerminal(listBloomProxy, onInvalidated: () {});
@@ -47,7 +47,7 @@ void main() {
       });
 
       test('1.2 elements.cast downcasts dynamic iterable into Bloom<List<T>>', () {
-        final dynamicListController = BloomController<List<dynamic>>(['a', 'b', 'c']);
+        final dynamicListController = blooming<List<dynamic>>(['a', 'b', 'c']);
 
         final stringListBloomProxy = dynamicListController.bloom.elements.cast<String>();
         final proxyTerminal = RawBloomTerminal(stringListBloomProxy, onInvalidated: () {});
@@ -59,7 +59,7 @@ void main() {
       });
 
       test('1.3 elements.cast adapts List<S> to List<T>', () {
-        final numListController = BloomController<List<num>>([1, 2, 3]);
+        final numListController = blooming<List<num>>([1, 2, 3]);
 
         final castProxyBloom = numListController.bloom.elements.cast<int>();
         final proxyTerminal = RawBloomTerminal(castProxyBloom, onInvalidated: () {});
@@ -79,7 +79,7 @@ void main() {
     // =========================================================================
     group('2. List Elements Operators', () {
       test('2.1 List elements indexing, length, where, map, first and last', () {
-        final controller = BloomController<List<int>>([10, 20, 30, 40]);
+        final controller = blooming<List<int>>([10, 20, 30, 40]);
 
         final lengthBloom = controller.bloom.elements.length;
         final firstBloom = controller.bloom.elements.first;
@@ -132,7 +132,7 @@ void main() {
     // =========================================================================
     group('3. Map Elements Operators', () {
       test('3.1 Map elements indexing, keys, values, containsKey, and containsValue', () {
-        final controller = BloomController<Map<String, int>>({'a': 1, 'b': 2});
+        final controller = blooming<Map<String, int>>({'a': 1, 'b': 2});
 
         final valA = controller.bloom.elements['a'];
         final valNonExistent = controller.bloom.elements['z'];
@@ -195,7 +195,7 @@ void main() {
         final u2 = _UserItem('2', 'Bob');
         final u3 = _UserItem('3', 'Charlie');
 
-        final controller = BloomController<List<_UserItem>>([u1, u2, u3]);
+        final controller = blooming<List<_UserItem>>([u1, u2, u3]);
         int convertCount = 0;
 
         final keyedBloom = controller.bloom.keyed.map(
@@ -246,7 +246,7 @@ void main() {
 
       test('4.2 Empty and Error state transitions reset or preserve cache correctly in keyed.map', () {
         final u1 = _UserItem('1', 'Alice');
-        final controller = BloomController<List<_UserItem>>([u1]);
+        final controller = blooming<List<_UserItem>>([u1]);
         int convertCount = 0;
 
         final keyedBloom = controller.bloom.keyed.map(
@@ -284,14 +284,14 @@ void main() {
       });
 
       test('4.3 Keyed map retains Bloom instances across list mutations and deletions', () {
-        final controller = BloomController<List<String>>(['A', 'B', 'C']);
+        final controller = blooming<List<String>>(['A', 'B', 'C']);
         int builderCount = 0;
 
         final mappedGroup = controller.bloom.keyed.map(
           key: (item) => item,
           convert: (item) {
             builderCount++;
-            return BloomController<String>('Node-$item');
+            return blooming<String>('Node-$item');
           },
         );
 
@@ -332,7 +332,7 @@ void main() {
       test('4.4 Keyed map update callback propagates element updates to cached instances', () {
         final u1 = _UserItem('1', 'Alice');
         final u2 = _UserItem('2', 'Bob');
-        final controller = BloomController<List<_UserItem>>([u1, u2]);
+        final controller = blooming<List<_UserItem>>([u1, u2]);
 
         int convertCount = 0;
         final updateCalls = <String, String>{};
@@ -381,7 +381,7 @@ void main() {
 
       test('4.5 Keyed map update callback exception triggers error state and resets cache', () {
         final u1 = _UserItem('1', 'Alice');
-        final controller = BloomController<List<_UserItem>>([u1]);
+        final controller = blooming<List<_UserItem>>([u1]);
         bool shouldThrow = false;
 
         final keyedBloom = controller.bloom.keyed.map(
@@ -420,7 +420,7 @@ void main() {
       test('4.6 Keyed map triggers assertion error when duplicate keys exist in the same collection snapshot', () {
         final u1 = _UserItem('1', 'Alice');
         final u2 = _UserItem('1', 'Duplicate Alice');
-        final controller = BloomController<List<_UserItem>>([u1, u2]);
+        final controller = blooming<List<_UserItem>>([u1, u2]);
 
         final keyedBloom = controller.bloom.keyed.map(
           key: (u) => u.id,
@@ -442,7 +442,7 @@ void main() {
     // =========================================================================
     group('5. BloomIterableElements Exhaustive Operators', () {
       test('5.1 whereType, indexed, expand, contains, reduce, fold, every, any, join', () {
-        final controller = BloomController<Iterable<Object>>([1, 'two', 3, 'four', 5]);
+        final controller = blooming<Iterable<Object>>([1, 'two', 3, 'four', 5]);
 
         final numbersOnly = controller.bloom.elements.whereType<int>();
         final indexedList = controller.bloom.elements.indexed;
@@ -493,7 +493,7 @@ void main() {
       });
 
       test('5.2 toSet (unmodifiable and mutable), isEmpty, isNotEmpty, take, skip, elementAt', () {
-        final controller = BloomController<Iterable<int>>([1, 2, 2, 3]);
+        final controller = blooming<Iterable<int>>([1, 2, 2, 3]);
 
         final unmodSet = controller.bloom.elements.toSet(unmodifiable: true);
         final modSet = controller.bloom.elements.toSet(unmodifiable: false);
@@ -536,7 +536,7 @@ void main() {
       });
 
       test('5.3 firstOrNull, lastOrNull, single, singleOrNull, firstWhere, lastWhere, singleWhere', () {
-        final controller = BloomController<List<int>>([10, 20, 30, 20]);
+        final controller = blooming<List<int>>([10, 20, 30, 20]);
 
         final firstNullBloom = controller.bloom.elements.firstOrNull;
         final lastNullBloom = controller.bloom.elements.lastOrNull;
@@ -599,7 +599,7 @@ void main() {
     // =========================================================================
     group('6. BloomListElements Additional Operators', () {
       test('6.1 reversed, indexOf, indexWhere, lastIndexWhere, lastIndexOf, sublist, asMap, toUnmodifiable', () {
-        final controller = BloomController<List<String>>(['a', 'b', 'c', 'b']);
+        final controller = blooming<List<String>>(['a', 'b', 'c', 'b']);
 
         final reversedBloom = controller.bloom.elements.reversed;
         final idxOfB = controller.bloom.elements.indexOf('b', 0);
@@ -645,7 +645,7 @@ void main() {
     // =========================================================================
     group('7. BloomSetElements Operators', () {
       test('7.1 lookup, intersection, union, difference, cast, toUnmodifiable, bloom getter', () {
-        final setController = BloomController<Set<int>>({1, 2, 3});
+        final setController = blooming<Set<int>>({1, 2, 3});
 
         final lookup2 = setController.bloom.elements.lookup(2);
         final lookup99 = setController.bloom.elements.lookup(99);
@@ -690,7 +690,7 @@ void main() {
     // =========================================================================
     group('8. BloomMapElements Additional Operators', () {
       test('8.1 map, where, length, isEmpty, isNotEmpty, cast, toUnmodifiable, bloom getter', () {
-        final mapController = BloomController<Map<String, int>>({'apple': 100, 'banana': 200});
+        final mapController = blooming<Map<String, int>>({'apple': 100, 'banana': 200});
 
         final mappedEntries = mapController.bloom.elements.map((k, v) => MapEntry(k.toUpperCase(), v * 2));
         final filteredEntries = mapController.bloom.elements.where((k, v) => v > 150);
@@ -741,10 +741,10 @@ void main() {
     // =========================================================================
     group('9. Bloom.elements.bloom and BloomKeyedIterableElements.bloom consistency', () {
       test('9.1 Bloom Iterable/List/Set/Map .elements & .keyed proxies', () {
-        final BloomController<Iterable<int>> iterCtrl = BloomController<Iterable<int>>([1, 2]);
-        final BloomController<List<int>> listCtrl = BloomController<List<int>>([3, 4]);
-        final BloomController<Set<int>> setCtrl = BloomController<Set<int>>({5, 6});
-        final BloomController<Map<String, int>> mapCtrl = BloomController<Map<String, int>>({'k': 1});
+        final BloomController<Iterable<int>> iterCtrl = blooming<Iterable<int>>([1, 2]);
+        final BloomController<List<int>> listCtrl = blooming<List<int>>([3, 4]);
+        final BloomController<Set<int>> setCtrl = blooming<Set<int>>({5, 6});
+        final BloomController<Map<String, int>> mapCtrl = blooming<Map<String, int>>({'k': 1});
 
         expect(iterCtrl.bloom.elements.bloom, equals(iterCtrl.bloom));
         expect(iterCtrl.bloom.keyed.bloom, equals(iterCtrl.bloom));

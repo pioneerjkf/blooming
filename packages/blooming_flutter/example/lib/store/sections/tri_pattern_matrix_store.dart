@@ -13,10 +13,10 @@ class TriPatternMatrixStore {
       : controller = DurableAnimationController(
           duration: const Duration(seconds: 6),
         ),
-        _isMounted = BloomController<bool>(true),
-        _patternABuildCount = BloomController<int>(0),
-        _patternBBuildCount = BloomController<int>(0),
-        _patternCBuildCount = BloomController<int>(0) {
+        _isMounted = blooming<bool>(true),
+        _patternABuildCount = blooming<int>(0),
+        _patternBBuildCount = blooming<int>(0),
+        _patternCBuildCount = blooming<int>(0) {
     controller.repeat();
   }
 

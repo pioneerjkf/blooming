@@ -295,8 +295,8 @@ When working with dynamic collections where each item is itself an independent r
 1. **`.combine()`**:
    Unifies the data payloads of all member nodes into a single reactive `Bloom<List<T>>`:
    ```dart
-   final c1 = BloomController(1);
-   final c2 = BloomController(2);
+   final c1 = blooming(1);
+   final c2 = blooming(2);
    final group = blooming.list([c1.bloom, c2.bloom]);
 
    final combinedBloom = group.bloom.combine(); // Bloom<List<int>> holding [1, 2]

@@ -9,7 +9,7 @@ import 'package:blooming/blooming.dart';
 void main() {
   group('Bloom Read Surface: untracked and untracked.state', () {
     test('untracked(x) returns value, throws BloomSnapshotExtractionException on Empty/Error', () {
-      final ctrl = BloomController<int>(42);
+      final ctrl = blooming<int>(42);
       expect(untracked(ctrl.bloom), equals(42));
 
       ctrl.set(100);
@@ -29,14 +29,14 @@ void main() {
       //   ctrl.bloom.data       --> Compile-time Error: undefined_getter
       //   ctrl.bloom.isEmpty    --> Compile-time Error: undefined_getter
       // Untracked reads must explicitly route through untracked(x) or untracked.state(x).
-      final ctrl = BloomController<int>(10);
+      final ctrl = blooming<int>(10);
       expect(untracked(ctrl.bloom), equals(10));
       expect(untracked.state(ctrl.bloom).hasData, isTrue);
       expect(untracked.state(ctrl.bloom).isEmpty, isFalse);
     });
 
     test('identical(via.state(x), untracked.state(x)) - both return the node itself', () {
-      final ctrl = BloomController<int>(10);
+      final ctrl = blooming<int>(10);
       BloomState<int>? viaState;
 
       final comp = computed((via) {
@@ -57,7 +57,7 @@ void main() {
 
     test('via.state(x) captured view observes current live state across Valid->Valid and Valid->Empty->Valid',
         () async {
-      final src = BloomController<int>(1);
+      final src = blooming<int>(1);
       final captured = <BloomState<int>>[];
 
       final derived = computed((via) {
@@ -108,7 +108,7 @@ void main() {
     });
 
     test('untracked.state(x).snapshot captures an immutable snapshot unaffected by subsequent mutations', () {
-      final ctrl = BloomController<String>('initial');
+      final ctrl = blooming<String>('initial');
       final snapshot1 = untracked.state(ctrl.bloom).snapshot;
 
       expect(snapshot1.hasData, isTrue);
@@ -130,7 +130,7 @@ void main() {
     });
 
     test('BloomController, RawBloomTerminal, and BloomSnapshot retain BloomState implementation', () {
-      final ctrl = BloomController<int>(7);
+      final ctrl = blooming<int>(7);
       // BloomController implements BloomState
       BloomState<int> stateRef = ctrl;
       expect(stateRef.data, equals(7));

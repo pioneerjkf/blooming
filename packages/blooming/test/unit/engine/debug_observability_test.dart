@@ -8,13 +8,13 @@ import 'package:test/test.dart';
 void main() {
   group('Bloom Observability & Debugging (Step 5)', () {
     test('1.1 debugLabel assigns label and debug.debugLabel retrieves it', () {
-      final counter = BloomController(0).bloom.withDebugLabel('CounterState');
+      final counter = blooming(0).bloom.withDebugLabel('CounterState');
       expect(counter.debug.debugLabel, 'CounterState');
       expect(counter.debugLabel, 'CounterState');
     });
 
     test('1.2 Fluent pipeline chaining with withDebugLabel', () {
-      final base = BloomController(10)..bloom.withDebugLabel('BaseNumber');
+      final base = blooming(10)..bloom.withDebugLabel('BaseNumber');
       final doubled = computed((via) => via(base.bloom) * 2).withDebugLabel('DoubledNumber');
 
       expect(base.bloom.debug.debugLabel, 'BaseNumber');
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('1.3 targetCount and hasTargets reflect active terminal lifecycle', () {
-      final source = BloomController('Hello').bloom.withDebugLabel('Greeting');
+      final source = blooming('Hello').bloom.withDebugLabel('Greeting');
 
       // Initially no targets attached
       expect(source.debug.targetCount, 0);
@@ -61,7 +61,7 @@ void main() {
     });
 
     test('1.4 debug.snapshot() captures structured diagnostic snapshot', () {
-      final node = BloomController(42).bloom.withDebugLabel('AnswerNode');
+      final node = blooming(42).bloom.withDebugLabel('AnswerNode');
       final BloomDebugSnapshot snapshot = node.debug.snapshot();
 
       expect(snapshot.name, 'AnswerNode');
@@ -83,9 +83,9 @@ void main() {
     });
 
     test('1.5 switched node inspection captures activeSource and switchPending', () {
-      final isDark = BloomController(false)..bloom.withDebugLabel('ThemeToggle');
-      final lightTheme = BloomController('Light Theme')..bloom.withDebugLabel('LightThemeNode');
-      final darkTheme = BloomController('Dark Theme')..bloom.withDebugLabel('DarkThemeNode');
+      final isDark = blooming(false)..bloom.withDebugLabel('ThemeToggle');
+      final lightTheme = blooming('Light Theme')..bloom.withDebugLabel('LightThemeNode');
+      final darkTheme = blooming('Dark Theme')..bloom.withDebugLabel('DarkThemeNode');
 
       final currentTheme = switched(
         (via) => via(isDark.bloom) ? darkTheme.bloom : lightTheme.bloom,
@@ -154,7 +154,7 @@ void main() {
     });
 
     test('1.7 describe() returns clean one-line summary', () {
-      final user = BloomController('Alice').bloom.withDebugLabel('CurrentUser');
+      final user = blooming('Alice').bloom.withDebugLabel('CurrentUser');
       final summary = user.debug.describe();
 
       expect(summary, contains('CurrentUser'));
@@ -164,7 +164,7 @@ void main() {
 
     test('1.8 RawTerminalDebugExtension works seamlessly on RawBloomTerminal, RawViaTerminal, and RawComputedTerminal',
         () {
-      final source = BloomController(100);
+      final source = blooming(100);
 
       // 1. RawBloomTerminal test
       final bloomTerminal = RawBloomTerminal<int>(source.bloom, onInvalidated: () {});
@@ -195,8 +195,8 @@ void main() {
     });
 
     test('1.9 ComputationDebugExtension provides debugLabel and debug.snapshot()', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       final comp = _TestAddComputation(a.bloom, b.bloom).withDebugLabel('AddComp');
       expect(comp.debugLabel, 'AddComp');

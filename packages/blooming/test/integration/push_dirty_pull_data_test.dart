@@ -15,7 +15,7 @@ void main() {
         int computationCount = 0;
         int dirtyCount = 0;
 
-        final source = BloomController<int>(0);
+        final source = blooming<int>(0);
         final cascaded = computed((via) {
           computationCount++;
           return via(source.bloom);
@@ -54,7 +54,7 @@ void main() {
       test('1.2 Memoization (Caching): Repeated pulls without source changes return cached data', () {
         int computationCount = 0;
 
-        final source = BloomController<int>(0);
+        final source = blooming<int>(0);
         final cascaded = computed((via) {
           computationCount++;
           return via(source.bloom) * 2;
@@ -77,7 +77,7 @@ void main() {
         int computationCount = 0;
         int dirtyCount = 0;
 
-        final source = BloomController<int>(0);
+        final source = blooming<int>(0);
         final cascaded = computed((via) {
           computationCount++;
           return via(source.bloom) * 10;
@@ -113,7 +113,7 @@ void main() {
     // =========================================================================
     group('2. Multi-Path Wave Collapsing & Short-Circuiting', () {
       test('2.1 Dirty Notification Wave Collapsing across multi-path upstream topology', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
         int dirtyCount = 0;
 
         final diverged = computed((via) {
@@ -145,9 +145,9 @@ void main() {
       });
 
       test('2.2 Dynamic short-circuit computation prevents computation of unread branches', () {
-        final conditionController = BloomController<bool>(true);
-        final branchAController = BloomController<int>(10);
-        final branchBController = BloomController<int>(20);
+        final conditionController = blooming<bool>(true);
+        final branchAController = blooming<int>(10);
+        final branchBController = blooming<int>(20);
 
         int branchAComputeCalls = 0;
         int branchBComputeCalls = 0;
@@ -192,7 +192,7 @@ void main() {
     // =========================================================================
     group('3. Exact Version Invariants (debugVersion)', () {
       test('3.1 Inactive mutation increments version and preserves it upon activation without duplicate flush', () {
-        final controller = BloomController<int>(10);
+        final controller = blooming<int>(10);
         expect(controller.bloom.debugVersion, 0);
 
         controller.set(20);
@@ -207,7 +207,7 @@ void main() {
       });
 
       test('3.2 Multiple inactive mutations increment version accurately and preserve upon activation', () {
-        final controller = BloomController<int>(10);
+        final controller = blooming<int>(10);
         expect(controller.bloom.debugVersion, 0);
 
         controller.set(20);
@@ -224,7 +224,7 @@ void main() {
       });
 
       test('3.3 Deactivate -> Inactive Mutate -> Reactivate cycle preserves exact version', () {
-        final controller = BloomController<String>('A');
+        final controller = blooming<String>('A');
         final terminal = RawBloomTerminal<String>(controller.bloom, onInvalidated: () {});
 
         terminal.activate();

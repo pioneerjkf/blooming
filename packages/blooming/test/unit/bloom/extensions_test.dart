@@ -14,7 +14,7 @@ void main() {
     // -------------------------------------------------------------------------
     group('1. BloomEffectExtension', () {
       test('1.1 Single bloom effect, throttle, and debounce unary dispatch', () async {
-        final a = BloomController<int>(0);
+        final a = blooming<int>(0);
         final observedEffect = <int>[];
         final observedThrottle = <int>[];
         final observedDebounce = <int>[];
@@ -73,15 +73,15 @@ void main() {
     // -------------------------------------------------------------------------
     group('2. BloomRecord2EffectExtension', () {
       test('2.1 blooms getter exposes both nodes', () {
-        final a = BloomController<int>(1);
-        final b = BloomController<String>('x');
+        final a = blooming<int>(1);
+        final b = blooming<String>('x');
         final pair = (a.bloom, b.bloom);
         expect(pair.blooms, [a.bloom, b.bloom]);
       });
 
       test('2.2 (a.bloom, b.bloom).debounce with dual-edge (leading: true, trailing: true)', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
         final observed = <String>[];
 
         final effect = (a.bloom, b.bloom).effect.debounce(
@@ -108,8 +108,8 @@ void main() {
       });
 
       test('2.3 (a.bloom, b.bloom).throttle with dual-edge', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
         var runs = 0;
 
         final effect = (a.bloom, b.bloom).effect.throttle(
@@ -140,9 +140,9 @@ void main() {
     // -------------------------------------------------------------------------
     group('3. Higher Tuple Extensions (Record3, Record4, Record5)', () {
       test('3.1 3-tuple debounce and throttle', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
-        final c = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
+        final c = blooming<int>(0);
         final triplet = (a.bloom, b.bloom, c.bloom);
         expect(triplet.blooms, [a.bloom, b.bloom, c.bloom]);
 
@@ -171,10 +171,10 @@ void main() {
       });
 
       test('3.2 4-tuple debounce and throttle', () async {
-        final a = BloomController<int>(1);
-        final b = BloomController<int>(1);
-        final c = BloomController<int>(1);
-        final d = BloomController<int>(1);
+        final a = blooming<int>(1);
+        final b = blooming<int>(1);
+        final c = blooming<int>(1);
+        final d = blooming<int>(1);
         final quad = (a.bloom, b.bloom, c.bloom, d.bloom);
         expect(quad.blooms, [a.bloom, b.bloom, c.bloom, d.bloom]);
 
@@ -196,11 +196,11 @@ void main() {
       });
 
       test('3.3 5-tuple debounce and throttle', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
-        final c = BloomController<int>(0);
-        final d = BloomController<int>(0);
-        final e = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
+        final c = blooming<int>(0);
+        final d = blooming<int>(0);
+        final e = blooming<int>(0);
         final pentad = (a.bloom, b.bloom, c.bloom, d.bloom, e.bloom);
         expect(pentad.blooms, [a.bloom, b.bloom, c.bloom, d.bloom, e.bloom]);
 
@@ -236,15 +236,15 @@ void main() {
     group('4. BloomIterableEffectExtension', () {
       test('4.1 Iterable blooms getter and debounce with leading & trailing', () async {
         final list = [
-          BloomController<int>(10).bloom,
-          BloomController<int>(20).bloom,
-          BloomController<int>(30).bloom,
+          blooming<int>(10).bloom,
+          blooming<int>(20).bloom,
+          blooming<int>(30).bloom,
         ];
         expect(list.blooms, list);
 
-        final a = BloomController<int>(10);
-        final b = BloomController<int>(20);
-        final c = BloomController<int>(30);
+        final a = blooming<int>(10);
+        final b = blooming<int>(20);
+        final c = blooming<int>(30);
         final bloomList = [a.bloom, b.bloom, c.bloom];
 
         final observed = <int>[];
@@ -276,8 +276,8 @@ void main() {
       });
 
       test('4.2 Iterable throttle with take limit', () async {
-        final a = BloomController<int>(1);
-        final b = BloomController<int>(2);
+        final a = blooming<int>(1);
+        final b = blooming<int>(2);
         final blooms = [a.bloom, b.bloom];
         int runs = 0;
 
@@ -308,8 +308,8 @@ void main() {
     // -------------------------------------------------------------------------
     group('5. Guard & Ticket Preservation with Extensions', () {
       test('5.1 Tuple debounce respects guard condition and preserves take tickets', () async {
-        final a = BloomController<int>(0);
-        final b = BloomController<int>(0);
+        final a = blooming<int>(0);
+        final b = blooming<int>(0);
         bool shouldExecute = false;
         int runs = 0;
 

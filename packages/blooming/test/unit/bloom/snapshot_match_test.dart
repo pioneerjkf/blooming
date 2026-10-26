@@ -97,7 +97,7 @@ void main() {
   // ─────────────────────────────────────────────
   group('Bloom switch (phase) on live node', () {
     test('valid bloom → data branch', () {
-      final node = BloomController(7);
+      final node = blooming(7);
       final res = switch (node.phase) {
         BloomPhase.valid => node.data,
         BloomPhase.empty => 0,
@@ -107,7 +107,7 @@ void main() {
     });
 
     test('late bloom → empty branch', () {
-      final node = BloomController<int>.late();
+      final node = blooming.late<int>();
       final res = switch (node.phase) {
         BloomPhase.valid => node.data,
         BloomPhase.empty => 0,
@@ -117,7 +117,7 @@ void main() {
     });
 
     test('error bloom → error branch', () {
-      final node = BloomController<int>.error(Exception('bloom fail'));
+      final node = blooming.error<int>(Exception('bloom fail'));
       final res = switch (node.phase) {
         BloomPhase.valid => node.data,
         BloomPhase.empty => 0,
@@ -131,8 +131,8 @@ void main() {
   // BloomSnapshot<List<Bloom>> switch (phase)
   // ─────────────────────────────────────────────
   group('BloomSnapshot<List<Bloom>> switch (phase)', () {
-    final g1 = BloomController(1);
-    final g2 = BloomController(2);
+    final g1 = blooming(1);
+    final g2 = blooming(2);
 
     test('hasData → data branch', () {
       final snap = BloomSnapshot([g1, g2]);
@@ -170,7 +170,7 @@ void main() {
   // ─────────────────────────────────────────────
   group('BloomListController switch (phase) on live node', () {
     test('valid group → data branch', () {
-      final c = blooming.list([BloomController(1).bloom, BloomController(2).bloom]);
+      final c = blooming.list([blooming(1).bloom, blooming(2).bloom]);
       final res = switch (c.phase) {
         BloomPhase.valid => c.data.length,
         BloomPhase.empty => 0,
@@ -206,7 +206,7 @@ void main() {
   // ─────────────────────────────────────────────
   group('Reactive pattern matching tracking', () {
     test('switch (via.state(controller.bloom).phase) inside RawViaTerminal registers dependency', () {
-      final controller = BloomController(0);
+      final controller = blooming(0);
       var invalidateCount = 0;
 
       final terminal = RawViaTerminal(
@@ -236,16 +236,16 @@ void main() {
   // ─────────────────────────────────────────────
   group('BloomStateCollectionExtension', () {
     test('allHaveData, hasAnyEmpty, hasAnyError', () {
-      final a = BloomController(1);
-      final b = BloomController(2);
-      final c = BloomController(3);
+      final a = blooming(1);
+      final b = blooming(2);
+      final c = blooming(3);
 
       final listAllData = [a, b, c];
       expect(listAllData.allHaveData(), isTrue);
       expect(listAllData.hasAnyEmpty(), isFalse);
       expect(listAllData.hasAnyError(), isFalse);
 
-      final empty = BloomController<int>.late();
+      final empty = blooming.late<int>();
       final listWithEmpty = [a, empty, c];
       expect(listWithEmpty.allHaveData(), isFalse);
       expect(listWithEmpty.hasAnyEmpty(), isTrue);
@@ -259,9 +259,9 @@ void main() {
     });
 
     test('whereHasData, whereEmpty, whereError filtering', () {
-      final v1 = BloomController('v1');
-      final v2 = BloomController('v2');
-      final e1 = BloomController<String>.late();
+      final v1 = blooming('v1');
+      final v2 = blooming('v2');
+      final e1 = blooming.late<String>();
       final err1 = Bloom<String>.error('error1');
 
       final mixed = [v1, e1, v2, untracked.state(err1)];
@@ -272,9 +272,9 @@ void main() {
     });
 
     test('Works seamlessly with computed(guard)', () {
-      final a = BloomController<int>.late();
-      final b = BloomController<int>.late();
-      final c = BloomController<int>.late();
+      final a = blooming.late<int>();
+      final b = blooming.late<int>();
+      final c = blooming.late<int>();
 
       final comp = computed<int>(
         (via) => (via(a.bloom) + via(b.bloom) + via(c.bloom)).toInt(),
@@ -301,8 +301,8 @@ void main() {
   // ─────────────────────────────────────────────
   group('BloomState Record Tuple Extensions', () {
     test('(a, b) status checks: allHaveData, hasAnyEmpty, hasAnyError', () {
-      final a = BloomController<int>.late();
-      final b = BloomController('hello');
+      final a = blooming.late<int>();
+      final b = blooming('hello');
 
       expect((a, b).allHaveData(), isFalse);
       expect((a, b).hasAnyEmpty(), isTrue);
@@ -315,9 +315,9 @@ void main() {
     });
 
     test('(a, b, c).allHaveData in guard with zero heap allocation', () {
-      final a = BloomController<int>.late();
-      final b = BloomController<int>.late();
-      final c = BloomController<int>.late();
+      final a = blooming.late<int>();
+      final b = blooming.late<int>();
+      final c = blooming.late<int>();
 
       final comp = computed<int>(
         (via) => (via(a.bloom) + via(b.bloom) + via(c.bloom)).toInt(),
@@ -339,15 +339,15 @@ void main() {
     });
 
     test('Record tuple status extensions (2 to 9 elements, heterogeneous)', () {
-      final intBloom = BloomController(10);
-      final strBloom = BloomController('hello');
-      final boolBloom = BloomController<bool>.late();
-      final doubleBloom = BloomController(3.14);
-      final listBloom = BloomController([1, 2]);
-      final mapBloom = BloomController({'key': 'val'});
-      final setBloom = BloomController({1, 2, 3});
-      final symBloom = BloomController(#symbol);
-      final objBloom = BloomController(Object());
+      final intBloom = blooming(10);
+      final strBloom = blooming('hello');
+      final boolBloom = blooming.late<bool>();
+      final doubleBloom = blooming(3.14);
+      final listBloom = blooming([1, 2]);
+      final mapBloom = blooming({'key': 'val'});
+      final setBloom = blooming({1, 2, 3});
+      final symBloom = blooming(#symbol);
+      final objBloom = blooming(Object());
 
       final t2 = (intBloom, strBloom);
       expect(t2.allHaveData(), isTrue);
@@ -384,9 +384,9 @@ void main() {
       expect(t9.hasAnyError(), isFalse);
 
       // Dedicated error and empty branch coverage across tuples 3 to 9
-      final errBloom = BloomController<int>.error(StateError('error'));
-      final emptyBloom = BloomController<int>.late();
-      final validBloom = BloomController(1);
+      final errBloom = blooming.error<int>(StateError('error'));
+      final emptyBloom = blooming.late<int>();
+      final validBloom = blooming(1);
 
       // t3 error
       expect((validBloom, validBloom, errBloom).hasAnyError(), isTrue);

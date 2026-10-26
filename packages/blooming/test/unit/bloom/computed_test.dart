@@ -9,8 +9,8 @@ import '../../test_utils.dart';
 void main() {
   group('computed', () {
     test('computes derived values automatically and lazily', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       var computeCount = 0;
       final sum = computed((via) {
@@ -37,8 +37,8 @@ void main() {
     });
 
     test('supports bloom.computed and Bloom.computed syntax equivalently', () {
-      final firstName = BloomController('John');
-      final lastName = BloomController('Doe');
+      final firstName = blooming('John');
+      final lastName = blooming('Doe');
 
       final fullName1 = computed((via) => '${via(firstName.bloom)} ${via(lastName.bloom)}');
       final fullName2 = computed((via) => '${via(firstName.bloom)} ${via(lastName.bloom)}');
@@ -52,7 +52,7 @@ void main() {
     });
 
     test('supports nested computeds', () {
-      final base = BloomController(2);
+      final base = blooming(2);
       final doubled = computed((via) => via(base.bloom) * 2);
       final quadrupled = computed((via) => via(doubled) * 2);
 
@@ -63,9 +63,9 @@ void main() {
     });
 
     test('dynamically prunes obsolete edges via Epoch diffing in conditional branches', () {
-      final flag = BloomController(true);
-      final branchA = BloomController('A');
-      final branchB = BloomController('B');
+      final flag = blooming(true);
+      final branchA = blooming('A');
+      final branchB = blooming('B');
 
       var computeCount = 0;
       final result = computed((via) {
@@ -98,7 +98,7 @@ void main() {
       //    left   right
       //      \    /
       //       sum
-      final source = BloomController(1);
+      final source = blooming(1);
       final left = computed((via) => via(source.bloom) * 2);
       final right = computed((via) => via(source.bloom) * 3);
 
@@ -117,7 +117,7 @@ void main() {
     });
 
     test('handles errors during compute and encapsulates them into error state', () {
-      final trigger = BloomController(false);
+      final trigger = blooming(false);
       final failing = computed((via) {
         if (via(trigger.bloom)) {
           throw FormatException('Something broke');
@@ -136,7 +136,7 @@ void main() {
     });
 
     test('safely reads dataOrNull and dataOrElse inside computed without throwing', () {
-      final lateBloom = BloomController<int>.late();
+      final lateBloom = blooming.late<int>();
       final fallbackBloom = computed((via) {
         final val = via.state(lateBloom.bloom).dataOrNull ?? 999;
         return 'Value is $val';
@@ -149,7 +149,7 @@ void main() {
     });
 
     test('deep computed pipeline propagates dirty state with lazy evaluation', () {
-      final a = BloomController(1);
+      final a = blooming(1);
       final b = computed((via) => via(a.bloom) + 1);
       final c = computed((via) => via(b) * 2);
       final d = computed((via) => via(c) + 10);
@@ -162,9 +162,9 @@ void main() {
     });
 
     test('computed dynamically tracks collection iteration', () {
-      final item1 = BloomController(10);
-      final item2 = BloomController(20);
-      final item3 = BloomController(30);
+      final item1 = blooming(10);
+      final item2 = blooming(20);
+      final item3 = blooming(30);
       final list = [item1, item2, item3];
 
       final total = computed((via) => list.fold<int>(0, (sum, item) => sum + via(item.bloom)));
@@ -176,8 +176,8 @@ void main() {
     });
 
     test('effect automatically tracks and reacts to computed nodes', () async {
-      final first = BloomController('John');
-      final last = BloomController('Doe');
+      final first = blooming('John');
+      final last = blooming('Doe');
       final fullName = computed((via) => '${via(first.bloom)} ${via(last.bloom)}');
 
       var effectRuns = 0;
@@ -202,8 +202,8 @@ void main() {
     });
 
     test('preserves unvisited edges on computation exception and wakes up on subsequent source mutation', () {
-      final a = BloomController(10);
-      final b = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(20);
 
       final sum = computed((via) {
         final valA = via(a.bloom);

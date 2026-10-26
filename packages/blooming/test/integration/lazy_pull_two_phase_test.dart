@@ -13,7 +13,7 @@ void main() {
     // =========================================================================
     test('1. Zero eager computation during push phase', () {
       int computeCount = 0;
-      final root = BloomController(10);
+      final root = blooming(10);
       final mapped = computed((via) {
         computeCount++;
         return via(root.bloom) * 2;
@@ -51,7 +51,7 @@ void main() {
     // Invariant 2: Bursty Mutation Coalescing (Q1: A)
     // =========================================================================
     test('2. Bursty mutation coalescing (Q1: A) delivers 1 notification during batch transaction', () {
-      final counter = BloomController(0, distinct: false);
+      final counter = blooming(0, distinct: false);
       int invalidations = 0;
       final terminal = RawBloomTerminal(counter.bloom, onInvalidated: () => invalidations++);
       terminal.activate();
@@ -83,7 +83,7 @@ void main() {
     // Invariant 3: Re-activation without Spurious onInvalidated (Q2: B)
     // =========================================================================
     test('3. Re-activation while mutated does NOT trigger onInvalidated (Q2: B)', () {
-      final source = BloomController('Initial');
+      final source = blooming('Initial');
       int invalidations = 0;
       final terminal = RawBloomTerminal(source.bloom, onInvalidated: () => invalidations++);
       terminal.activate();
@@ -138,7 +138,7 @@ void main() {
     // Invariant 5: Diamond Graph Single Evaluation & Version Gating
     // =========================================================================
     test('5. Diamond DAG evaluates exactly once on pull and short-circuits unchanged branches', () {
-      final root = BloomController(1);
+      final root = blooming(1);
 
       int leftComputes = 0;
       final left = computed((via) {
@@ -186,7 +186,7 @@ void main() {
     // Invariant 6: Deferred Resource Disposal in ManagedBloom
     // =========================================================================
     test('6. ManagedBloom defers disposal until pull or deactivation (non-destructive push)', () {
-      final url = BloomController('https://server1.com');
+      final url = blooming('https://server1.com');
       final disposals = <String>[];
       final creations = <String>[];
 
@@ -237,7 +237,7 @@ void main() {
     // Invariant 7: Effect Scheduled Drop on Unchanged Upstream
     // =========================================================================
     test('7. Effect drops scheduled execution if upstream evaluated to unchanged', () async {
-      final user = BloomController((name: 'Alice', age: 25));
+      final user = blooming((name: 'Alice', age: 25));
       final name = computed((via) => via(user.bloom).name).distinct();
 
       int effectRuns = 0;
@@ -281,7 +281,7 @@ void main() {
     // Invariant 8: Downstream Computed Skips Calculation on Distinct Upstream
     // =========================================================================
     test('8. Downstream computed drops re-calculation when intermediate distinct node produces identical state', () {
-      final source = BloomController(0, distinct: false);
+      final source = blooming(0, distinct: false);
       final isEven = computed((via) => via(source.bloom) % 2 == 0).distinct();
 
       int downstreamComputeCount = 0;

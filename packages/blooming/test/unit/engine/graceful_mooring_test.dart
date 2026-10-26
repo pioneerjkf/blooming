@@ -113,7 +113,7 @@ void main() {
         int activatedCount = 0;
         int deactivatedCount = 0;
 
-        final node = BloomController<int>(
+        final node = blooming<int>(
           0,
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,
@@ -139,7 +139,7 @@ void main() {
         int activatedCount = 0;
         int deactivatedCount = 0;
 
-        final node = BloomController<int>(
+        final node = blooming<int>(
           10,
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,
@@ -262,7 +262,7 @@ void main() {
           graceful: Graceful.microtask,
         );
 
-        final writable = BloomController<int>(
+        final writable = blooming<int>(
           0,
           onActivated: () => activatedCount++,
           onDeactivated: () => deactivatedCount++,

@@ -12,7 +12,7 @@ class FoundationBridgeStore {
   final textController = TextEditingController(text: 'Reactive Flutter');
   late final textBloom = textController.toBloomBy((c) => c.text);
 
-  final counterController = BloomController<int>(10);
+  final counterController = blooming<int>(10);
   late final counterListenable = counterController.bloom.toListenable();
 
   void incrementCounter() => counterController.set(counterController.data + 1);
@@ -32,7 +32,7 @@ final textController = TextEditingController();
 late final textBloom = textController.toBloomBy((c) => c.text);
 
 // 2. Output Bridge: Convert Bloom to ValueListenable
-final counter = BloomController<int>(0);
+final counter = blooming<int>(0);
 final ValueListenable<int> listenable = counter.bloom.toListenable();''',
         highlights: const [
           'Listenable.toBloom() / toBloomBy(): Bridges Flutter inputs seamlessly into Bloom pipelines.',

@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('Inactive Node Multi-Read Edge Deduplication & Reuse Tests', () {
     test('Inactive computed node must not create duplicate edges when reading same source multiple times', () {
-      final source = BloomController<int>(10);
+      final source = blooming<int>(10);
 
       // Inactive computed reading the same dependency multiple times
       final doubleCount = computed((via) => via(source.bloom) + via(source.bloom));
@@ -36,7 +36,7 @@ void main() {
     });
 
     test('Inactive computed node with 5 reads of the same source maintains exactly 1 edge', () {
-      final source = BloomController<int>(2);
+      final source = blooming<int>(2);
 
       final quintuple = computed((via) {
         var sum = 0;

@@ -141,9 +141,9 @@ void _performScheduledEager() => _performSwitchGuarded(true);
 To prevent request flooding when multiple upstream parameters mutate in the same synchronous turn:
 
 ```dart
-final userId = BloomController('user_0');
-final filter = BloomController('all');
-final page = BloomController(1);
+final userId = blooming('user_0');
+final filter = blooming('all');
+final page = blooming(1);
 
 final userList = computed.future((via) async {
   final u = via(userId.bloom);

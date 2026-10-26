@@ -8,7 +8,7 @@ void main() {
     test('Uncaught Error propagates to Zone when target detaches during evaluation', () {
       Object? caughtError;
       runZonedGuarded(() {
-        final ctrl = BloomController(0);
+        final ctrl = blooming(0);
         final terminal = RawBloomTerminal<int>(ctrl.bloom, onInvalidated: () {
           throw StateError('Intentional error in onInvalidate');
         });
@@ -22,8 +22,8 @@ void main() {
     });
 
     test('Scheduler _onTask clears processing set in finally block even when task throws', () async {
-      final ctrl1 = BloomController(0);
-      final ctrl2 = BloomController(0);
+      final ctrl1 = blooming(0);
+      final ctrl2 = blooming(0);
 
       Object? caughtError;
       var e2ExecutionCount = 0;
@@ -88,7 +88,7 @@ void main() {
 
     test('Uncaught error in onActivated is handled via _activateOptimistically (line 50)', () {
       Object? capturedError;
-      final ctrl = BloomController<int>(
+      final ctrl = blooming<int>(
         0,
         onActivated: () {
           throw StateError('onActivated failure');
@@ -112,7 +112,7 @@ void main() {
 
     test('Uncaught error in onDeactivated is handled via _deactivateOptimistically (line 60)', () {
       Object? capturedError;
-      final ctrl = BloomController<int>(
+      final ctrl = blooming<int>(
         0,
         onDeactivated: () {
           throw StateError('onDeactivated failure');
@@ -154,7 +154,7 @@ void main() {
     });
 
     test('RawComputedTerminal.debugForceInvalidate resets state and dirty flags', () {
-      final source = BloomController(10);
+      final source = blooming(10);
       final terminal = RawComputedTerminal<int>((via) {
         return via(source.bloom);
       }, onInvalidated: () {});
@@ -208,9 +208,9 @@ void main() {
     });
 
     test('BloomState.equals compares states between reactive nodes', () {
-      final a = BloomController(10);
-      final b = BloomController(10);
-      final c = BloomController(20);
+      final a = blooming(10);
+      final b = blooming(10);
+      final c = blooming(20);
 
       expect(untracked.state(a.bloom).equals(untracked.state(b.bloom)), isTrue);
       expect(untracked.state(a.bloom).equals(untracked.state(c.bloom)), isFalse);
@@ -219,7 +219,7 @@ void main() {
 
     test('Bloom.elements handles error in convert callback and resets cache', () {
       var shouldThrow = false;
-      final source = BloomController([1, 2, 3]);
+      final source = blooming([1, 2, 3]);
 
       final converted = source.bloom.keyed.map<int, String>(
         key: (item) => item,
@@ -255,7 +255,7 @@ void main() {
     test('Bloom.elements handles error in removeWhere equality via outer catch', () {
       final k1 = _ThrowingEqualityKey(1);
       final k2 = _ThrowingEqualityKey(2);
-      final source = BloomController<List<_ThrowingEqualityKey>>([k1, k2]);
+      final source = blooming<List<_ThrowingEqualityKey>>([k1, k2]);
 
       final mapped = source.bloom.keyed.map<_ThrowingEqualityKey, String>(
         key: (k) => k,
@@ -278,7 +278,7 @@ void main() {
     });
 
     test('EffectGroup.run().debugForceInvalidate invalidates composite effects', () async {
-      final source = BloomController(1);
+      final source = blooming(1);
       var runCount = 0;
       final e1 = Effect.via((via) {
         via(source.bloom);
@@ -295,7 +295,7 @@ void main() {
 
     test('Effect.handled catches uncaught error in action via runner', () async {
       Object? caughtError;
-      final source = BloomController(1);
+      final source = blooming(1);
       final runner = source.bloom.effect.handled(
         (handle) {
           throw StateError('Handled unary action failed');
@@ -313,7 +313,7 @@ void main() {
     test('Effect.handledVia honors guard false and catches action error via runner', () async {
       var actionCount = 0;
       Object? caughtError;
-      final source = BloomController(1);
+      final source = blooming(1);
       final runner = Effect.handledVia(
         (via, handle) {
           actionCount++;
@@ -377,7 +377,7 @@ void main() {
     });
 
     test('debugForceInvalidate propagates through unary and switched delta nodes', () {
-      final source = BloomController(1);
+      final source = blooming(1);
       final distinctRelay = source.bloom.distinct();
       final switched = Bloom.switched((via) => Bloom.constant(via(source.bloom)));
 
@@ -471,7 +471,7 @@ void main() {
       var shouldThrow = false;
 
       await runZonedGuarded(() async {
-        final ctrl = BloomController(0);
+        final ctrl = blooming(0);
         // Create an effect that rethrows in onUncaughtError during microtask flush
         final effectHandle = ctrl.bloom.effect(
           () {

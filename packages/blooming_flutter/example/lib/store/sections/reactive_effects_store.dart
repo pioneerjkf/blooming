@@ -17,17 +17,17 @@ class ReactiveEffectsStore {
   // Reactive State Controllers
   // ---------------------------------------------------------------------------
 
-  final _counter = BloomController<int>(0);
-  final _alertThreshold = BloomController<int>(5);
-  final _isTrackingDetails = BloomController<bool>(false);
-  final _detailPayload = BloomController<String>('High Priority Task');
-  final _untrackedNode = BloomController<int>(100);
-  final _isEffectActive = BloomController<bool>(true);
-  final _effectRunCount = BloomController<int>(0);
-  final _lastThresholdAlert = BloomController<String>('None');
-  final _eventLogs = BloomController<List<String>>([]);
-  final _lastBurstCount = BloomController<int>(0);
-  final _lastSavingsCount = BloomController<int>(0);
+  final _counter = blooming<int>(0);
+  final _alertThreshold = blooming<int>(5);
+  final _isTrackingDetails = blooming<bool>(false);
+  final _detailPayload = blooming<String>('High Priority Task');
+  final _untrackedNode = blooming<int>(100);
+  final _isEffectActive = blooming<bool>(true);
+  final _effectRunCount = blooming<int>(0);
+  final _lastThresholdAlert = blooming<String>('None');
+  final _eventLogs = blooming<List<String>>([]);
+  final _lastBurstCount = blooming<int>(0);
+  final _lastSavingsCount = blooming<int>(0);
 
   Bloom<int> get counter => _counter.bloom;
   Bloom<int> get alertThreshold => _alertThreshold.bloom;

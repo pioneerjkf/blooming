@@ -22,7 +22,7 @@ part of '../framework.dart';
 /// ┌────────────────────────────────────────────────────────┐
 /// │                     Store / Service                    │
 /// │                                                        │
-/// │   final _count = BloomController<int>(0); // Producer   │
+/// │   final _count = blooming<int>(0); // Producer   │
 /// │   Bloom<int> get count => _count.bloom;    // Consumer   │
 /// └────────────────────────────────────────────────────────┘
 ///              │                                 │
@@ -54,7 +54,7 @@ part of '../framework.dart';
 /// ```dart
 /// // [Anti-Pattern] Exposing mutable controller handle directly to UI consumers
 /// class CounterStore {
-///   final count = BloomController(0); // Callers can invoke count.set() arbitrarily!
+///   final count = blooming(0); // Callers can invoke count.set() arbitrarily!
 /// }
 /// ```
 ///
@@ -62,7 +62,7 @@ part of '../framework.dart';
 /// ```dart
 /// // [Recommended] Encapsulate producer handle and expose read-only Bloom view
 /// class CounterStore {
-///   final _count = BloomController(0);
+///   final _count = blooming(0);
 ///   Bloom<int> get count => _count.bloom; // Read-only consumer view
 ///
 ///   void increment() => _count.data++;
@@ -71,7 +71,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final counter = BloomController<int>(0);
+/// final counter = blooming<int>(0);
 /// final countView = counter.bloom;
 ///
 /// print(untracked(countView)); // 0
@@ -79,95 +79,8 @@ part of '../framework.dart';
 /// print(untracked(countView)); // 10
 /// ```
 abstract base class BloomController<T> implements BloomState<T> {
-  /// Creates a distinct-filtered [BloomController] initialized with [data].
-  ///
-  /// Filters out duplicate consecutive value assignments using [equals] (or identical / operator ==)
-  /// to suppress redundant downstream dirty pulses.
-  ///
-  /// * [data]: The initial value to populate the node with.
-  /// * [distinct]: When `true`, suppresses dirty notifications on identical values. Defaults to `true`.
-  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
-  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
-  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
-  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
-  ///
-  /// **Ensures:**
-  /// * Returns an active [BloomController<T>] in the Data state ([hasData] == true).
-  ///
-  /// ## Examples
-  /// ```dart
-  /// final controller = BloomController<int>(
-  ///   0,
-  ///   onActivated: () => print('Subscribed'),
-  ///   onDeactivated: () => print('Dormant'),
-  /// );
-  /// ```
-  factory BloomController(
-    T data, {
-    bool distinct,
-    bool Function(T previous, T next)? equals,
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-    Graceful? graceful,
-  }) = _BloomControllerImpl<T>;
-
-  /// Creates a distinct-filtered [BloomController] in an uninitialized (Empty) state.
-  ///
-  /// Useful for asynchronous resources or data fetched after initialization. Reading `.data`
-  /// before setting a value throws [BloomSnapshotExtractionException].
-  ///
-  /// * [reason]: Optional reason explaining why this controller is uninitialized or empty.
-  /// * [distinct]: When `true`, suppresses dirty notifications on identical values. Defaults to `true`.
-  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
-  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
-  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
-  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomController<T>] initialized in the Empty state ([isEmpty] == true).
-  ///
-  /// ## Examples
-  /// ```dart
-  /// final userController = BloomController<User>.late(reason: 'AwaitingLogin');
-  /// print(userController.isEmpty); // true
-  /// print(userController.emptyReason); // 'AwaitingLogin'
-  /// ```
-  factory BloomController.late({
-    Object? reason,
-    bool distinct,
-    bool Function(T previous, T next)? equals,
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-    Graceful? graceful,
-  }) = _BloomControllerImpl<T>.late;
-
-  /// Creates a distinct-filtered [BloomController] initialized in an Error state.
-  ///
-  /// * [error]: The initial exception or error payload.
-  /// * [stackTrace]: Optional stack trace associated with the failure.
-  /// * [distinct]: When `true`, suppresses dirty notifications on identical values. Defaults to `true`.
-  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
-  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
-  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
-  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
-  ///
-  /// **Ensures:**
-  /// * Returns a [BloomController<T>] initialized in the Error state ([hasError] == true).
-  ///
-  /// ## Examples
-  /// ```dart
-  /// final controller = BloomController<String>.error(Exception('Failed to load'));
-  /// print(controller.hasError); // true
-  /// ```
-  factory BloomController.error(
-    Object error, {
-    StackTrace? stackTrace,
-    bool distinct,
-    bool Function(T previous, T next)? equals,
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-    Graceful? graceful,
-  }) = _BloomControllerImpl<T>.error;
+  /// Private constructor preventing direct instantiation; use [blooming] instead.
+  BloomController._();
 
   /// The encapsulated read-only reactive node view exposed to downstream consumers.
   ///
@@ -253,74 +166,27 @@ abstract base class BloomController<T> implements BloomState<T> {
 /// **BAD:**
 /// ```dart
 /// // [Anti-Pattern] Using RawBloomController for immutable primitives wastes distinct suppression
-/// final count = RawBloomController(0);
+/// final count = blooming.raw(0);
 /// count.data = 0; // Triggers redundant downstream rebuilds even when value is unchanged!
 /// ```
 ///
 /// **GOOD:**
 /// ```dart
 /// // [Recommended] Use RawBloomController for in-place mutable collections with manual markDirty
-/// final items = RawBloomController<List<String>>(['initial']);
+/// final items = blooming.raw<List<String>>(['initial']);
 /// items.data.add('new item');
 /// items.markDirty(); // Explicitly notifies downstream subscribers of in-place mutation
 /// ```
 ///
 /// ## Examples
 /// ```dart
-/// final listController = RawBloomController<List<int>>([1, 2, 3]);
+/// final listController = blooming.raw<List<int>>([1, 2, 3]);
 /// listController.data.add(4);
 /// listController.markDirty(); // Explicitly notify downstream subscribers
 /// ```
 abstract base class RawBloomController<T> implements BloomController<T> {
-  /// Creates an unfiltered [RawBloomController] initialized with [data].
-  ///
-  /// * [data]: The initial value to populate the node with.
-  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
-  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
-  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
-  ///
-  /// **Ensures:**
-  /// * Returns an unfiltered [RawBloomController<T>] in the Data state ([hasData] == true).
-  factory RawBloomController(
-    T data, {
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-    Graceful? graceful,
-  }) = _RawBloomControllerImpl<T>;
-
-  /// Creates an unfiltered [RawBloomController] in an uninitialized (Empty) state.
-  ///
-  /// * [reason]: Optional reason explaining why this controller is uninitialized or empty.
-  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
-  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
-  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
-  ///
-  /// **Ensures:**
-  /// * Returns an unfiltered [RawBloomController<T>] initialized in the Empty state.
-  factory RawBloomController.late({
-    Object? reason,
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-    Graceful? graceful,
-  }) = _RawBloomControllerImpl<T>.late;
-
-  /// Creates an unfiltered [RawBloomController] initialized in an Error state.
-  ///
-  /// * [error]: The initial exception or error payload.
-  /// * [stackTrace]: Optional stack trace associated with the failure.
-  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
-  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
-  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
-  ///
-  /// **Ensures:**
-  /// * Returns an unfiltered [RawBloomController<T>] initialized in the Error state.
-  factory RawBloomController.error(
-    Object error, {
-    StackTrace? stackTrace,
-    void Function()? onActivated,
-    void Function()? onDeactivated,
-    Graceful? graceful,
-  }) = _RawBloomControllerImpl<T>.error;
+  /// Private constructor preventing direct instantiation; use `blooming.raw` instead.
+  RawBloomController._();
 
   /// Force-emits a dirty pulse downstream for in-place mutable collections or objects.
   ///

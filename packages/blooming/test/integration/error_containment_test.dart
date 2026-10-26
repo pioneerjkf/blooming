@@ -36,7 +36,7 @@ void main() {
     // =========================================================================
     group('1. Error Isolation & Snapshot Protection', () {
       test('1.1 Runtime Lazy Computation Error yields Error Snapshot safely', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
 
         final cascaded = switched((via) {
           final data = via(source.bloom);
@@ -90,7 +90,7 @@ void main() {
     // =========================================================================
     group('2. Poison-Pill Containment & Self-Healing', () {
       test('2.1 Poison-Pill in Asymmetric Diamond DAG with dataOrElse & Self-Healing', () {
-        final source = BloomController<int>(10);
+        final source = blooming<int>(10);
 
         // Left branch: Throws when value is even (Poison-Pill)
         final leftBranch = computed((via) {
@@ -125,7 +125,7 @@ void main() {
       });
 
       test('2.2 Multi-Level Fault Cascades with Intermediate Fallbacks', () {
-        final source = BloomController<int>(1);
+        final source = blooming<int>(1);
 
         final fragileStage = computed((via) {
           final v = via(source.bloom);
@@ -156,7 +156,7 @@ void main() {
     group('3. Explosive Object Injections & Hostile Object Sabotage', () {
       test('3.1 Explosive Error Object Injections with toString() Sabotage', () {
         final explosiveError = _ExplosiveObject('poison_error', explodeOnToString: true);
-        final controller = BloomController<int>(0);
+        final controller = blooming<int>(0);
 
         final terminal = RawBloomTerminal(controller.bloom, onInvalidated: () {});
         terminal.activate();
@@ -181,7 +181,7 @@ void main() {
         final obj1Dup = _ExplosiveObject('item_1');
         final obj2 = _ExplosiveObject('item_2');
 
-        final controller = BloomController<_ExplosiveObject>(obj1, distinct: false);
+        final controller = blooming<_ExplosiveObject>(obj1, distinct: false);
         int distinctInvalidations = 0;
 
         final distinctBloom = controller.bloom.distinct(
@@ -238,7 +238,7 @@ void main() {
       });
 
       test('2.3 Uncaught error in diamond DAG dispatches to downstream terminal exactly once', () {
-        final source = BloomController<int>(1);
+        final source = blooming<int>(1);
         final branchA = computed((via) => via(source.bloom) * 10);
         final branchB = computed((via) => via(source.bloom) * 100);
 

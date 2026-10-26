@@ -84,7 +84,7 @@ final resourceNode = managed<_TickerDriver<T>>(
 
 ### Invariant 2: Continuous Inline Driving vs. Origin Tick Dropping
 - **Continuous Inline Driving (`composed.drive`)**: Built for direct frame-by-frame UI rendering (e.g., rotational spinners, radar sweeps, physics-driven canvases) where the leaf widget must render on every display refresh. By eliminating `distinct` and `equals` configuration from widget arguments, `composed.drive` guarantees zero widget-update synchronization anomalies and delivers predictable continuous 60fps/120fps frame rendering.
-- **Origin Tick Dropping (`vsync.drive(..., distinct: true)`)**: In Blooming's push-dirty reactive architecture, deduplicating at the origin (`BloomController(distinct: true)`) intercepts hardware ticks and drops identical values before emitting a dirty wave into the DAG.
+- **Origin Tick Dropping (`vsync.drive(..., distinct: true)`)**: In Blooming's push-dirty reactive architecture, deduplicating at the origin (`blooming(distinct: true)`) intercepts hardware ticks and drops identical values before emitting a dirty wave into the DAG.
 - **Outcome**: Continuous animations run at peak 120Hz display refresh rates, while throttled/quantized frame tickers (such as second counters) wake up Flutter widgets strictly when the state value actually changes.
 
 ---

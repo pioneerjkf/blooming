@@ -13,7 +13,7 @@ void main() {
     group('1. Asymmetrical Multi-Path Diamond Graphs', () {
       test('1.1 Asymmetrical 4-Path Bloom List Diamond (Lengths 1, 2, 4, 8) computes once upon pull without glitches',
           () {
-        final root = BloomController<int>(1);
+        final root = blooming<int>(1);
 
         final path1 = computed((via) => via(root.bloom) * 10);
         final path2Step1 = computed((via) => via(root.bloom) + 1);
@@ -66,7 +66,7 @@ void main() {
       });
 
       test('1.2 Asymmetrical Diamond via Bloom.computed with glitch-free evaluation', () {
-        final root = BloomController<int>(5);
+        final root = blooming<int>(5);
 
         final left = computed((via) => via(root.bloom) * 2);
         final rightStep1 = computed((via) => via(root.bloom) + 10);
@@ -97,7 +97,7 @@ void main() {
     // =========================================================================
     group('2. Multi-Source, Multi-Sink Mesh & Lattice Topologies', () {
       test('2.1 N x M Complete Bipartite Mesh DAG with Single Pull Cache Invariant', () {
-        final sources = List.generate(4, (i) => BloomController<int>(i + 1)); // 1, 2, 3, 4
+        final sources = List.generate(4, (i) => blooming<int>(i + 1)); // 1, 2, 3, 4
         final intermediateEvalCounts = List<int>.filled(4, 0);
 
         final intermediates = List.generate(4, (j) {
@@ -146,7 +146,7 @@ void main() {
     // =========================================================================
     group('3. Graph Morphology & Degree Invariants', () {
       test('3.1 Deep Linear Pipeline: lazy evaluation across 12 sequential nodes', () {
-        final source = BloomController<int>(1);
+        final source = blooming<int>(1);
         int deepMapCalls = 0;
 
         Bloom<int> current = source.bloom;
@@ -176,7 +176,7 @@ void main() {
       });
 
       test('3.2 Wide Fan-out (1:25): single source broadcasting to 25 independent active subscribers', () {
-        final source = BloomController<int>(100);
+        final source = blooming<int>(100);
         final dirtyCounts = List<int>.filled(25, 0);
         final terminals = <RawBloomTerminal<int>>[];
 

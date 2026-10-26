@@ -20,7 +20,7 @@ void main() async {
   // 1. bloom.effect().run(): 1:1 State Side-Effect
   // ---------------------------------------------------------------------------
   print('--- 1. bloom.effect().run() ---');
-  final score = BloomController<int>(0);
+  final score = blooming<int>(0);
 
   final scoreRunner = score.bloom.effect(() {
     print('  [Runner] Score updated to: ${untracked(score.bloom)}');
@@ -35,8 +35,8 @@ void main() async {
   // 2. Effect.via + run(): Dynamic BloomVia Terminal Sink
   // ---------------------------------------------------------------------------
   print('--- 2. Effect.via().run() ---');
-  final user = BloomController<String>('Alice');
-  final role = BloomController<String>('Member');
+  final user = blooming<String>('Alice');
+  final role = blooming<String>('Member');
 
   // Executes automatically when any dependency read via [via] mutates
   final auditRunner = Effect.via((via) {
@@ -57,7 +57,7 @@ void main() async {
   // 3. Effect.handled: Cleanup & Teardown Handlers
   // ---------------------------------------------------------------------------
   print('--- 3. Effect.handled with Cleanup ---');
-  final channel = BloomController<String>('general');
+  final channel = blooming<String>('general');
 
   // Runs on mutations and cleans up resources from previous turn
   final channelRunner = channel.bloom.effect.handled((handle) {
@@ -82,7 +82,7 @@ void main() async {
   // 4. bloom.effect.debounce & throttle
   // ---------------------------------------------------------------------------
   print('--- 4. bloom.effect.debounce & throttle ---');
-  final searchInput = BloomController<String>('');
+  final searchInput = blooming<String>('');
 
   final debouncedLogger = searchInput.bloom.effect.debounce(
     const Duration(milliseconds: 30),

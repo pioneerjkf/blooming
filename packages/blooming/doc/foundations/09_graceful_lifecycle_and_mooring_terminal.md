@@ -139,7 +139,7 @@ final userProfile = computed.future(
 ).graceful(const Graceful.period(Duration(seconds: 30)));
 
 // 3. BloomController Direct Attachment:
-final counter = BloomController(
+final counter = blooming(
   0,
   graceful: const Graceful.period(Duration(minutes: 5)),
 );

@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('LpdagReflector & BloomReflector Diagnostic Suite', () {
     test('1. BloomController exposes BloomReflector with source kind and state payload', () {
-      final counter = BloomController(42)..withDebugLabel('Counter');
+      final counter = blooming(42)..withDebugLabel('Counter');
       final reflector = counter.bloom.debugReflector;
 
       expect(reflector, isNotNull);
@@ -23,8 +23,8 @@ void main() {
     });
 
     test('2. computed exposes BloomReflector with derivation kind and upstream sources', () {
-      final a = BloomController(10)..withDebugLabel('A');
-      final b = BloomController(20)..withDebugLabel('B');
+      final a = blooming(10)..withDebugLabel('A');
+      final b = blooming(20)..withDebugLabel('B');
       final sum = computed((via) => via(a.bloom) + via(b.bloom))..withDebugLabel('Sum');
       final terminal = RawBloomTerminal(sum, onInvalidated: () {})..activate();
 
@@ -48,9 +48,9 @@ void main() {
     });
 
     test('3. switched reflector dynamically updates sources across branch transitions', () {
-      final toggle = BloomController(true)..withDebugLabel('Toggle');
-      final branchA = BloomController('Hello')..withDebugLabel('BranchA');
-      final branchB = BloomController('World')..withDebugLabel('BranchB');
+      final toggle = blooming(true)..withDebugLabel('Toggle');
+      final branchA = blooming('Hello')..withDebugLabel('BranchA');
+      final branchB = blooming('World')..withDebugLabel('BranchB');
 
       final current = switched(
         (via) => via(toggle.bloom) ? branchA.bloom : branchB.bloom,
@@ -74,7 +74,7 @@ void main() {
     });
 
     test('4. RawTerminal exposes LpdagReflector with sink kind and active sources', () {
-      final source = BloomController(100)..withDebugLabel('SourceNum');
+      final source = blooming(100)..withDebugLabel('SourceNum');
       final terminal = RawBloomTerminal(source.bloom, onInvalidated: () {})..withDebugLabel('TestTerminal');
       terminal.activate();
 
@@ -90,7 +90,7 @@ void main() {
     });
 
     test('5. BloomReflector observes live state updates cleanly in read-only mode', () {
-      final counter = BloomController(1)..withDebugLabel('ObsCounter');
+      final counter = blooming(1)..withDebugLabel('ObsCounter');
       final doubled = computed((via) => via(counter.bloom) * 2);
       final terminal = RawBloomTerminal(doubled, onInvalidated: () {})..activate();
 
@@ -107,7 +107,7 @@ void main() {
     });
 
     test('6. LpdagReflector.toJson serializes all mandatory DevTools DTO fields', () {
-      final node = (BloomController('test')..withDebugLabel('JsonTest')).bloom;
+      final node = (blooming('test')..withDebugLabel('JsonTest')).bloom;
       final reflector = node.debugReflector!;
       final json = reflector.toJson();
 

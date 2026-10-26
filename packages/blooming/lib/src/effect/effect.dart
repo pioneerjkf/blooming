@@ -73,7 +73,7 @@ part of '../framework.dart';
 ///
 /// ## Examples
 /// ```dart
-/// final room = BloomController('lobby');
+/// final room = blooming('lobby');
 ///
 /// final roomEffect = Effect.handled([room.bloom], (handle) {
 ///   final timer = Timer.periodic(const Duration(seconds: 5), (_) => sendHeartbeat());
@@ -274,7 +274,7 @@ sealed class EffectGroup extends Effect {
 /// **BAD:**
 /// ```dart
 /// // [Anti-Pattern] Synchronously mutating target inside its own effect without an exit condition
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// Effect([counter.bloom], () {
 ///   counter.set(untracked(counter.bloom) + 1); // Triggers infinite invalidation loop!
 /// });
@@ -283,7 +283,7 @@ sealed class EffectGroup extends Effect {
 /// **GOOD:**
 /// ```dart
 /// // [Recommended] Perform external I/O or update distinct downstream state
-/// final counter = BloomController(0);
+/// final counter = blooming(0);
 /// Effect([counter.bloom], () {
 ///   analyticsService.logCounter(untracked(counter.bloom)); // Pure side-effect sink
 /// });
@@ -291,8 +291,8 @@ sealed class EffectGroup extends Effect {
 ///
 /// ## Examples
 /// ```dart
-/// final user = BloomController('Alice');
-/// final auth = BloomController(true);
+/// final user = blooming('Alice');
+/// final auth = blooming(true);
 ///
 /// final syncEffect = Effect(
 ///   [user.bloom, auth.bloom],
@@ -326,7 +326,7 @@ sealed class Effect extends Tether {
   ///
   /// ## Examples
   /// ```dart
-  /// final counter = BloomController(0);
+  /// final counter = blooming(0);
   /// final effect = Effect([counter.bloom], () {
   ///   print('Counter mutated to: ${untracked(counter.bloom)}');
   /// });
@@ -365,7 +365,7 @@ sealed class Effect extends Tether {
   ///
   /// ## Examples
   /// ```dart
-  /// final query = BloomController('');
+  /// final query = blooming('');
   /// final effect = Effect.unary(query.bloom, () {
   ///   analyticsService.logSearch(untracked(query.bloom));
   /// });
@@ -432,7 +432,7 @@ sealed class Effect extends Tether {
   ///
   /// ## Examples
   /// ```dart
-  /// final room = BloomController('lobby');
+  /// final room = blooming('lobby');
   /// final effect = Effect.handled([room.bloom], (handle) {
   ///   final timer = Timer.periodic(const Duration(seconds: 1), (_) => ping());
   ///   handle.onCleanup(timer.cancel);
@@ -470,7 +470,7 @@ sealed class Effect extends Tether {
   ///
   /// ## Examples
   /// ```dart
-  /// final room = BloomController('lobby');
+  /// final room = blooming('lobby');
   /// final effect = Effect.handledUnary(room.bloom, (handle) {
   ///   final sub = eventStream.listen(onEvent);
   ///   handle.onCleanup(sub.cancel);
@@ -596,7 +596,7 @@ sealed class Effect extends Tether {
 /// ```dart
 /// // [Recommended] Define debounce effect at controller/service level or bind via via.tether()
 /// class SearchController {
-///   final query = BloomController('');
+///   final query = blooming('');
 ///   late final searchEffect = query.bloom.effect.debounce(
 ///     const Duration(milliseconds: 300),
 ///     () => apiService.search(untracked(query.bloom)),
@@ -606,7 +606,7 @@ sealed class Effect extends Tether {
 ///
 /// ## Examples
 /// ```dart
-/// final query = BloomController('');
+/// final query = blooming('');
 /// final searchEffect = DebounceEffect(
 ///   [query.bloom],
 ///   const Duration(milliseconds: 300),
@@ -636,7 +636,7 @@ sealed class DebounceEffect extends Effect {
   ///
   /// ## Examples
   /// ```dart
-  /// final query = BloomController('');
+  /// final query = blooming('');
   /// final effect = DebounceEffect(
   ///   [query.bloom],
   ///   const Duration(milliseconds: 300),
@@ -674,7 +674,7 @@ sealed class DebounceEffect extends Effect {
   ///
   /// ## Examples
   /// ```dart
-  /// final query = BloomController('');
+  /// final query = blooming('');
   /// final effect = DebounceEffect.unary(
   ///   query.bloom,
   ///   const Duration(milliseconds: 300),
@@ -752,7 +752,7 @@ sealed class DebounceEffect extends Effect {
 ///
 /// ## Examples
 /// ```dart
-/// final scroll = BloomController(0.0);
+/// final scroll = blooming(0.0);
 /// final scrollThrottle = ThrottleEffect(
 ///   [scroll.bloom],
 ///   const Duration(milliseconds: 100),
@@ -782,7 +782,7 @@ sealed class ThrottleEffect extends Effect {
   ///
   /// ## Examples
   /// ```dart
-  /// final scroll = BloomController(0.0);
+  /// final scroll = blooming(0.0);
   /// final effect = ThrottleEffect(
   ///   [scroll.bloom],
   ///   const Duration(milliseconds: 100),
@@ -820,7 +820,7 @@ sealed class ThrottleEffect extends Effect {
   ///
   /// ## Examples
   /// ```dart
-  /// final scroll = BloomController(0.0);
+  /// final scroll = blooming(0.0);
   /// final effect = ThrottleEffect.unary(
   ///   scroll.bloom,
   ///   const Duration(milliseconds: 100),
