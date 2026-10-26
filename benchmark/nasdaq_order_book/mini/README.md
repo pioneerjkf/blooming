@@ -17,8 +17,8 @@ My initial explanation was that frame/render work might be getting scheduled ahe
 | **Flutter (Pure)** | Flutter SDK 3.47.6 | `ValueNotifier` / `ListenableBuilder` | Native SDK baseline |
 | **Signals** | `signals_flutter` 7.1.0 | Auto-tracked reactive signals | Community package |
 | **Riverpod** | `flutter_riverpod` 3.4.3 | Scoped provider graph | Community package |
-| **Blooming** | `blooming_flutter` 0.1.0 | 2-phase Lazy-Pull DAG (LPDAG) | Experimental; benchmark-author project |
-| **Coralline** | `coralline_flutter` 0.1.3 | Push-Dirty, Pull-Data (CORAL) | Experimental; benchmark-author project |
+| **Blooming** | `blooming_flutter` 0.1.4 | 2-phase Lazy-Pull DAG (LPDAG) | Experimental; benchmark-author project |
+| **Coralline** | `coralline_flutter` 0.1.5 | Push-Dirty, Pull-Data (CORAL) | Experimental; benchmark-author project |
 
 Blooming and Coralline are experimental reactive engines authored by the benchmark author. The implementations use framework-specific update APIs; see the batching caveat below.
 

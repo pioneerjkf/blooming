@@ -30,10 +30,10 @@ This benchmark compares two widely adopted community state managers and Flutter'
   - Decouples global state and ensures testability and lifecycle safety.
 
 ### 🛠️ Author-Designed Experimental Frameworks (Authorship Disclosure)
-* **Blooming** (`blooming` 0.1.0, `blooming_flutter` 0.1.0)
+* **Blooming** (`blooming` 0.1.4, `blooming_flutter` 0.1.4)
   - **Architecture**: Blooming 2-Phase LPDAG (Lazy Pull Directed Acyclic Graph)
   - **Design Philosophy**: Propagates $O(1)$ dirty flags on upstream updates, deferring actual calculation until evaluation (Pull, e.g. at VSync) to prevent redundant intermediate computations and diamond dependency glitches.
-* **Coralline** (`coralline` 0.1.3, `coralline_flutter` 0.1.3)
+* **Coralline** (`coralline` 0.1.3, `coralline_flutter` 0.1.5)
   - **Architecture**: CORAL (Chain of Reactivity And Lazy-computation)
   - **Design Philosophy**: Adopts Flutter's `RenderObject` paradigm (**Push-Dirty, Pull-Data**) for application state management to minimize boilerplate in reactive pipelines.
 
