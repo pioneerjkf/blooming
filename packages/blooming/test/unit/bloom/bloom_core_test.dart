@@ -20,6 +20,13 @@ final class _TestBinaryComputation extends Computation<int> {
   }
 }
 
+final class _ThrowingReason {
+  const _ThrowingReason();
+
+  @override
+  String toString() => throw StateError('Boom in emptyReason.toString()');
+}
+
 void main() {
   group('Bloom Core, Controller, Snapshot & Operators Unit Tests', () {
     // =========================================================================
@@ -94,6 +101,136 @@ void main() {
           () => snapshot.error,
           throwsA(isA<BloomSnapshotStateException>().having((e) => e.state, 'state', 'Empty')),
         );
+      });
+
+      test('1.3.1 Empty state and snapshot preserve emptyReason with actionable AI guide', () {
+        const reason = 'AwaitingAuthCredentials';
+        const snapshot = BloomSnapshot<int>.empty(reason);
+        final emptyBloom = Bloom<int>.empty(reason);
+        final emptyState = untracked.state(emptyBloom);
+
+        // State extraction failure: primary source of truth
+        expect(
+          () => emptyState.data,
+          throwsA(
+            isA<BloomSnapshotExtractionException>()
+                .having((e) => e.state, 'state', 'Empty')
+                .having((e) => e.emptyReason, 'emptyReason', reason)
+                .having((e) => e.toString(), 'toString', contains('DIAGNOSTIC EMPTY REASON:\nAwaitingAuthCredentials'))
+                .having((e) => e.toString(), 'toString', contains('[AI / Developer Action Guide]'))
+                .having((e) => e.toString(), 'toString', contains('DO NOT remove or bypass the precondition guard.')),
+          ),
+        );
+
+        // Snapshot extraction failure: immutable projection
+        expect(
+          () => snapshot.data,
+          throwsA(
+            isA<BloomSnapshotExtractionException>()
+                .having((e) => e.state, 'state', 'Empty')
+                .having((e) => e.emptyReason, 'emptyReason', reason)
+                .having((e) => e.toString(), 'toString', contains('DIAGNOSTIC EMPTY REASON:\nAwaitingAuthCredentials'))
+                .having((e) => e.toString(), 'toString', contains('[AI / Developer Action Guide]')),
+          ),
+        );
+
+        // Error & StackTrace access invariants remain clean static contracts
+        expect(
+          () => emptyState.error,
+          throwsA(isA<BloomSnapshotStateException>().having((e) => e.state, 'state', 'Empty')),
+        );
+        expect(
+          () => emptyState.stackTrace,
+          throwsA(isA<BloomSnapshotStateException>().having((e) => e.state, 'state', 'Empty')),
+        );
+        expect(
+          () => snapshot.error,
+          throwsA(isA<BloomSnapshotStateException>().having((e) => e.state, 'state', 'Empty')),
+        );
+        expect(
+          () => snapshot.stackTrace,
+          throwsA(isA<BloomSnapshotStateException>().having((e) => e.state, 'state', 'Empty')),
+        );
+      });
+
+      test('1.3.2 Robustness: Faulty emptyReason throwing in toString is safely contained', () {
+        const faultyReason = _ThrowingReason();
+        const snapshot = BloomSnapshot<int>.empty(faultyReason);
+        final emptyBloom = Bloom<int>.empty(faultyReason);
+        final emptyState = untracked.state(emptyBloom);
+
+        // Must NOT throw StateError during getter execution (lazy/safe evaluation)
+        late BloomSnapshotExtractionException stateEx;
+        expect(() {
+          try {
+            emptyState.data;
+          } on BloomSnapshotExtractionException catch (e) {
+            stateEx = e;
+            rethrow;
+          }
+        }, throwsA(isA<BloomSnapshotExtractionException>()));
+
+        // Must NOT throw StateError during toString formatting
+        final formattedStateMsg = stateEx.toString();
+        expect(formattedStateMsg, contains('<Unprintable emptyReason: Bad state: Boom in emptyReason.toString()>'));
+        expect(formattedStateMsg, contains('[AI / Developer Action Guide]'));
+
+        // Same for snapshot
+        late BloomSnapshotExtractionException snapshotEx;
+        expect(() {
+          try {
+            snapshot.data;
+          } on BloomSnapshotExtractionException catch (e) {
+            snapshotEx = e;
+            rethrow;
+          }
+        }, throwsA(isA<BloomSnapshotExtractionException>()));
+
+        final formattedSnapshotMsg = snapshotEx.toString();
+        expect(formattedSnapshotMsg, contains('<Unprintable emptyReason: Bad state: Boom in emptyReason.toString()>'));
+      });
+
+      test('1.3.3 Type separation: BloomEmptyExtractionException vs BloomErrorExtractionException selective catching', () {
+        const reason = 'WaitingForConnection';
+        final emptyState = untracked.state(Bloom<int>.empty(reason));
+        final errorState = untracked.state(Bloom<int>.error(StateError('PipelineFailure')));
+
+        // Selective catch on Empty
+        bool caughtEmpty = false;
+        try {
+          emptyState.data;
+        } on BloomEmptyExtractionException catch (e) {
+          caughtEmpty = true;
+          expect(e.emptyReason, reason);
+          expect(e.state, 'Empty');
+          expect(e.error, isNull);
+        } on BloomErrorExtractionException {
+          fail('Should not be caught as BloomErrorExtractionException');
+        }
+        expect(caughtEmpty, isTrue);
+
+        // Selective catch on Error
+        bool caughtError = false;
+        try {
+          errorState.data;
+        } on BloomEmptyExtractionException {
+          fail('Should not be caught as BloomEmptyExtractionException');
+        } on BloomErrorExtractionException catch (e) {
+          caughtError = true;
+          expect(e.error, isA<StateError>());
+          expect(e.state, 'Error');
+          expect(e.emptyReason, isNull);
+        }
+        expect(caughtError, isTrue);
+
+        // Factory constructor compatibility test
+        final legacyEmpty = BloomSnapshotExtractionException('Empty', 'Details', emptyReason: 'Reason');
+        expect(legacyEmpty, isA<BloomEmptyExtractionException>());
+        expect(legacyEmpty.emptyReason, 'Reason');
+
+        final legacyError = BloomSnapshotExtractionException('Error', 'Details', error: 'Err');
+        expect(legacyError, isA<BloomErrorExtractionException>());
+        expect((legacyError as BloomErrorExtractionException).error, 'Err');
       });
 
       test('1.4 Error Snapshot invariants, error payload, and fail-fast extraction', () {

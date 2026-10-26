@@ -231,7 +231,10 @@ final class _EmptyBloomState<T> extends _BloomState<T> {
 
   @override
   @pragma('vm:prefer-inline')
-  T get data => throw BloomSnapshotExtractionException('Empty', 'No data available in this empty state.');
+  T get data => throw BloomEmptyExtractionException(
+        'No data available in this empty state.',
+        emptyReason: emptyReason,
+      );
 
   @override
   @pragma('vm:prefer-inline')
@@ -294,8 +297,7 @@ final class _ErrorBloomState<T> extends _BloomState<T> {
 
   @override
   @pragma('vm:prefer-inline')
-  T get data => throw BloomSnapshotExtractionException(
-        'Error',
+  T get data => throw BloomErrorExtractionException(
         'This state contains an error instead of data.',
         error: error,
         stackTrace: stackTrace,

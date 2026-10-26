@@ -86,8 +86,7 @@ base class _ErrorBloomSnapshot<T> implements BloomSnapshot<T> {
 
   @override
   @pragma('vm:prefer-inline')
-  T get data => throw BloomSnapshotExtractionException(
-        'Error',
+  T get data => throw BloomErrorExtractionException(
         'This BloomSnapshot<$T> contains an error instead of data.',
         error: error,
         stackTrace: stackTrace,
@@ -150,7 +149,10 @@ base class _EmptyBloomSnapshot<T> implements BloomSnapshot<T> {
 
   @override
   @pragma('vm:prefer-inline')
-  T get data => throw BloomSnapshotExtractionException('Empty', 'No data available in this empty BloomSnapshot<$T>.');
+  T get data => throw BloomEmptyExtractionException(
+        'No data available in this empty BloomSnapshot<$T>.',
+        emptyReason: emptyReason,
+      );
 
   @override
   @pragma('vm:prefer-inline')
