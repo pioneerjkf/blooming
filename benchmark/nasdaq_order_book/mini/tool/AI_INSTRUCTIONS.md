@@ -11,46 +11,44 @@ First, present the configuration parameters (or the recommended presets) below, 
 
 ### Configuration Parameters to Clarify
 
-1. **Warmup Duration (`--warmup=<seconds>`)**:
-   - Recommended Default: `10` seconds (essential for JIT/AOT memory pool warmup and GC stabilization)
-   - Fast Smoke Test: `1` second
+1. **Target Workload TPS (`--tps=<number>`)**:
+   - Recommended Default: `1000000000` (10억 TPS / 1B TPS saturated stress workload)
+   - Alternative: `100000` (100K TPS) or `10000000` (10M TPS)
 2. **Measurement Duration (`--duration=<seconds>`)**:
    - Recommended Default: `30` seconds (allows convergence to steady-state and reveals backlog/leak behaviors)
    - Fast Smoke Test: `3` seconds
-3. **Number of Multi-Set Iterations (`--sets=<count>`)**:
-   - Recommended Default: `3` or `10` sets (reduces single-run variance; required for Trimmed Mean)
-   - Single Run: `1` set
-4. **Randomized Execution Order (`--shuffle`)**:
-   - Recommended Default: `true` (randomizes framework execution order per set to prevent thermal throttling and OS caching bias)
-5. **Target Workload TPS (`--tps=<number>`)**:
-   - Standard Test: `100000` (100K TPS)
-   - Saturated Stress Test: `10000000` (10M TPS) or `1000000000` (1B TPS)
+3. **Warmup Duration (`--warmup=<seconds>`)**:
+   - Recommended Default: `5` seconds (essential for JIT/AOT memory pool warmup and GC stabilization)
+   - Fast Smoke Test: `1` second
+4. **Number of Multi-Set Iterations (`--sets=<count>`)**:
+   - Recommended Default: `10` sets (reduces single-run variance; required for Trimmed Mean and P99 stability)
+   - Smoke Test / Single Run: `1` set
+5. **Randomized Execution Order (`--shuffle` / `--no-shuffle`)**:
+   - Recommended Default: `true` (`--shuffle`, randomizes framework execution order per set to prevent thermal throttling and OS caching bias)
 6. **Order Book Scroll Animation (`--scroll-anim` / `--no-scroll-anim`)**:
-   - Recommended Default: `false` (`--no-scroll-anim`, static viewport focusing on pure stream/state processing)
-   - Dynamic VSync Animation: `true` (`--scroll-anim`, oscillating sinusoidal viewport scroll)
+   - Recommended Default: `true` (`--scroll-anim`, Dynamic VSync Animation with oscillating sinusoidal viewport scroll)
+   - Static Center Viewport: `false` (`--no-scroll-anim`)
+7. **Execution Mode (`--mode=<drive|subprocess>`)**:
+   - Recommended Default: `drive` (Flutter Driver mode on real desktop window with GPU/VSync frame timings)
+   - Headless Isolate: `subprocess` (Fast pure isolate pipeline)
 
 ---
 
 ## Standard CLI Execution Commands
 
-Once the parameters are confirmed with the user, launch the runner:
+Once the parameters are confirmed with the user (or when executing with the standard defaults):
 
-### 1. Recommended Official Multi-Set Benchmark (Randomized Order)
+### 1. Recommended Official Multi-Set Benchmark (Default Configuration)
 ```bash
 cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=100000 --duration=30 --warmup=10 --sets=3 --shuffle
+dart run tool/run_all_benchmarks.dart --tps=1000000000 --duration=30 --warmup=5 --sets=10 --shuffle --scroll-anim --mode=drive
 ```
+*(Note: Because the script defaults in `run_all_benchmarks.dart` match these exact parameters, `dart run tool/run_all_benchmarks.dart` executes the same standard configuration).*
 
-### 2. High-Frequency Stress Test (Saturated Workload)
+### 2. Fast Smoke Test (CI / Quick Sanity Check)
 ```bash
 cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=10000000 --duration=30 --warmup=10 --sets=3 --shuffle
-```
-
-### 3. Fast Smoke Test (CI / Quick Sanity Check)
-```bash
-cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=100000 --duration=3 --warmup=1 --sets=1
+dart run tool/run_all_benchmarks.dart --tps=100000 --duration=3 --warmup=1 --sets=1 --no-scroll-anim
 ```
 
 ---

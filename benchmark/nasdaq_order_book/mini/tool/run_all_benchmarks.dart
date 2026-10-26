@@ -149,11 +149,11 @@ void main(List<String> args) async {
   print('⚡ NASDAQ ORDER BOOK MINI - COMPREHENSIVE BENCHMARK SUITE');
   print('================================================================');
 
-  List<int> tpsScenarios = [100000];
-  int durationSec = 3;
-  int warmupSec = 1;
-  int setsCount = 1;
-  bool shuffleOrder = false;
+  List<int> tpsScenarios = [1000000000];
+  int durationSec = 30;
+  int warmupSec = 5;
+  int setsCount = 10;
+  bool shuffleOrder = true;
   bool scrollAnimation = true;
   String outputDir = 'results';
   String mode =
@@ -186,6 +186,10 @@ void main(List<String> args) async {
           .toList();
     } else if (arg == '--shuffle' || arg == '--random-order') {
       shuffleOrder = true;
+    } else if (arg == '--no-shuffle') {
+      shuffleOrder = false;
+    } else if (arg.startsWith('--shuffle=')) {
+      shuffleOrder = arg.split('=').last.toLowerCase() == 'true';
     } else if (arg == '--scroll-anim' || arg == '--scroll') {
       scrollAnimation = true;
     } else if (arg == '--no-scroll-anim' || arg == '--no-scroll') {

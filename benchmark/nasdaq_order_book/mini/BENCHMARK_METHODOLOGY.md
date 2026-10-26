@@ -110,7 +110,7 @@ Run the driver suite from the mini application root:
 
 ```bash
 cd benchmark/nasdaq_order_book/mini
-dart run tool/run_all_benchmarks.dart --tps=100000 --duration=20 --warmup=3 --sets=10 --shuffle
+dart run tool/run_all_benchmarks.dart --tps=1000000000 --duration=30 --warmup=5 --sets=10 --shuffle --scroll-anim --mode=drive
 ```
 
 Results will be generated in `results/<YYYYMMDD_HHMMSS_SEQ>/`:
