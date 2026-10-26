@@ -67,6 +67,7 @@ part 'bloom/async.dart';
 part 'bloom/collection.dart';
 part 'bloom/computed.dart';
 part 'bloom/controller.dart';
+part 'bloom/blooming.dart';
 part 'bloom/coupler.dart';
 part 'bloom/elements.dart';
 part 'bloom/exception.dart';

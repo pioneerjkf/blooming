@@ -67,12 +67,13 @@ Copy and run directly with `dart run main.dart`:
 
 ```dart
 import 'package:blooming/blooming.dart';
+import 'package:blooming/effect.dart';
 
 void main() async {
-  // 1. Create reactive producer controllers (Separation of Producer & Consumer)
-  final price = BloomController<int>(100);
-  final quantity = BloomController<int>(2);
-  final discount = BloomController<int>(10);
+  // 1. Create reactive producer controllers via blooming (Separation of Producer & Consumer)
+  final price = blooming(100);
+  final quantity = blooming(2);
+  final discount = blooming(10);
 
   // 2. Pure Synchronous Derivation via Explicit BloomVia
   // Topological pipeline: total pulls from subtotal and discount, where subtotal pulls from price & quantity
@@ -117,10 +118,12 @@ Bloom's reactive engine is organized around three foundational pillars: **Reacti
 ├────────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
 │  1. Reactive Nodes (State & Derivation Topology)                           │
-│     ├── Source Handles (Producers)                                         │
-│     │    ├── BloomController<T>                 (data) ──(.bloom)──> Bloom<T>  │
-│     │    ├── RawBloomController<T>              (data) ──(.bloom)──> Bloom<T>  │
-│     │    └── BloomSignalController              ()     ──(.bloom)──> BloomSignal│
+│     ├── State Producers (Unified blooming Functors & Controllers)          │
+│     │    ├── blooming(...)                      (scalar distinct, .late)   │
+│     │    ├── blooming.raw(...)                  (unfiltered hot-path)      │
+│     │    ├── blooming.list / .set / .map        (transactional draft)      │
+│     │    ├── blooming.signal                    (discrete tick pulse)      │
+│     │    └── BloomController<T>                 (data) ──(.bloom)──> Bloom │
 │     │                                                                      │
 │     ├── The Dynamic Triad (Unified Functors)                               │
 │     │    ├── computed                          ((via) => ...)              │
@@ -152,30 +155,104 @@ Bloom's reactive engine is organized around three foundational pillars: **Reacti
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1. Separation of Producer and Consumer
+### 1. State Declaration: The Hierarchical `blooming` Functor Ecosystem
 
-Bloom enforces strict encapsulation between state mutation and state observation:
+Bloom unifies state producer instantiation under a cohesive hierarchical functor family: **`blooming`**.
 
-```dart
-// The Producer Handle: owns mutation methods (set, empty, setError)
-final BloomController<String> userController = BloomController('Alice');
+Rather than directly invoking disparate controller constructors, state producers and discrete event triggers can be declared through a unified dot-notation namespace:
 
-// The Consumer Handle: read-only, safe to expose across API boundaries
-final userBloom = userController.bloom;
-
-// Zero-overhead raw read:
-print(untracked(userBloom)); // "Alice" (0-allocation, direct read)
-
-// Mutation via controller:
-userController.set('Bob');
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│           The Hierarchical blooming Functor Pathways & Taxonomy            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  blooming(...)             ──> Distinct scalar (BloomController)           │
+│    ├── .late(...)          ──> Uninitialized empty scalar                  │
+│    ├── .error(...)         ──> Pre-faulted error scalar                    │
+│    │                                                                       │
+│    ├── .raw(...)           ──> Unfiltered raw (RawBloomController)         │
+│    │     ├── .late(...)    ──> Uninitialized raw state                     │
+│    │     └── .error(...)   ──> Pre-faulted raw state                       │
+│    │                                                                       │
+│    ├── .list(...)          ──> Transactional list (BloomListController)    │
+│    │     ├── .late(...)    ──> Uninitialized reactive list                 │
+│    │     └── .error(...)   ──> Pre-faulted reactive list                   │
+│    │                                                                       │
+│    ├── .set(...)           ──> Transactional set (BloomSetController)      │
+│    │     ├── .late(...)    ──> Uninitialized reactive set                  │
+│    │     └── .error(...)   ──> Pre-faulted reactive set                    │
+│    │                                                                       │
+│    ├── .map(...)           ──> Transactional map (BloomMapController)      │
+│    │     ├── .late(...)    ──> Uninitialized reactive map                  │
+│    │     └── .error(...)   ──> Pre-faulted reactive map                    │
+│    │                                                                       │
+│    └── .signal(...)        ──> Discrete pulse (BloomSignalController)      │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-For ultra-hot paths where nullable-wrapping overhead must be eliminated, use `RawBloomController<T>`:
+#### State Instantiation Matrix
+
+| Category | Immediate Value (`call`) | Uninitialized (`.late`) | Pre-faulted (`.error`) | Return Type | Primary Use Case |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Scalar (Distinct)** | `blooming(0)` | `blooming.late<int>()` | `blooming.error<int>(e)` | `BloomController<T>` | Primitive & domain values with distinct dirty suppression. |
+| **Raw (No distinct)** | `blooming.raw('data')` | `blooming.raw.late<String>()` | `blooming.raw.error<String>(e)` | `RawBloomController<T>` | Ultra-hot paths, buffers, mutable objects with manual `.markDirty()`. |
+| **Reactive List** | `blooming.list([1, 2])` | `blooming.list.late<int>()` | `blooming.list.error<int>(e)` | `BloomListController<T>` | Immutable lists with atomic transactional `.edit((draft) => ...)`. |
+| **Reactive Set** | `blooming.set({'a'})` | `blooming.set.late<String>()` | `blooming.set.error<String>(e)` | `BloomSetController<E>` | Unique element sets with atomic transactional `.edit((draft) => ...)`. |
+| **Reactive Map** | `blooming.map({'k': 'v'})` | `blooming.map.late<K, V>()` | `blooming.map.error<K, V>(e)` | `BloomMapController<K, V>` | Key-value dictionaries with atomic transactional `.edit((draft) => ...)`. |
+| **Event Signal** | `blooming.signal()` | — | — | `BloomSignalController` | Discrete void notifications emitting version ticks on `.emit()`. |
+
+#### Idiomatic Usage Examples
 
 ```dart
-final rawController = RawBloomController<int>(0);
-// Producer mutation: property assignment shorthand for rawController.set(10)
-rawController.data = 10;
+// 1. Primitive scalar state
+final count = blooming(0);
+count.data++; // Push-dirty invalidation
+
+// 2. Uninitialized asynchronous resource
+final userProfile = blooming.late<UserProfile>(reason: 'AwaitingLogin');
+
+// 3. Transactional collection with draft editing
+final todos = blooming.list<String>(['Buy milk']);
+todos.edit((draft) {
+  draft.add('Read book');
+  draft.removeAt(0);
+}); // Single atomic dirty pulse, frozen as unmodifiable list
+
+// 4. Ultra-hot path raw mutation (in-place modification)
+final buffer = blooming.raw(<int>[1, 2, 3]);
+buffer.data.add(4);
+buffer.markDirty();
+
+// 5. Discrete event pulse trigger
+final refreshTrigger = blooming.signal();
+refreshTrigger.emit(); // Emits monotonically increasing version tick
+```
+
+#### Strict Separation of Producer and Consumer
+
+Bloom enforces strict **Has-a encapsulation** between state mutation and state observation:
+- State creation functors (`blooming(...)`) instantiate and return **Producer Handles** (`BloomController`, `RawBloomController`, `BloomListController`, etc.) owning mutation methods (`set`, `.data =`, `empty`, `setError`, `.edit`). Concrete constructors (`BloomController(...)`) remain fully accessible for direct object-oriented instantiation.
+- Downstream UI widgets and derivations only receive **Consumer Handles** (`Bloom<T>`) exposed via `.bloom`.
+
+```dart
+class CounterStore {
+  // Encapsulated producer handle:
+  final _count = blooming(0);
+
+  // Read-only consumer view: safe to expose across API boundaries
+  Bloom<int> get count => _count.bloom;
+
+  void increment() => _count.data++;
+}
+
+void main() {
+  final store = CounterStore();
+  // In consumer code / UI / derivations:
+  print(untracked(store.count)); // "0" (0-allocation, direct read)
+  store.increment();
+  print(untracked(store.count)); // "1"
+}
 ```
 
 ---
@@ -224,9 +301,9 @@ final status = switch (userState.phase) {
 };
 
 // 2. Multi-Input Guarding via Zero-Allocation Record Tuple
-final inputA = BloomController<int>(1).bloom;
-final inputB = BloomController<int>(2).bloom;
-final inputC = BloomController<int>(3).bloom;
+final inputA = blooming(1).bloom;
+final inputB = blooming(2).bloom;
+final inputC = blooming(3).bloom;
 
 final total = computed(
   (via) => via(inputA) + via(inputB) + via(inputC),
@@ -284,8 +361,8 @@ The core reactive graph in Bloom is driven by three unified functors:
 Derives a new reactive state synchronously from one or more upstream nodes. Supports dynamic edge pruning, precondition gating (`guard`), and declarative signal triggers via `via(signal.bloom)`:
 
 ```dart
-final searchQuery = BloomController('');
-final refreshTrigger = BloomSignalController();
+final searchQuery = blooming('');
+final refreshTrigger = blooming.signal();
 
 // Guarded Synchronous Derivation:
 // Gates evaluation until query has >= 2 characters; emits Empty('QueryTooShort') without throwing:
@@ -300,9 +377,9 @@ final searchResults = computed(
 
 * **Dynamic Edge Pruning (1-Pass Epoch Sweeping)**: If a branch is skipped in a conditional evaluation, Bloom automatically detaches the unused dependency in $O(\text{edges})$:
   ```dart
-  final isDev = BloomController(true);
-  final devConfig = BloomController('Debug Config');
-  final prodConfig = BloomController('Release Config');
+  final isDev = blooming(true);
+  final devConfig = blooming('Debug Config');
+  final prodConfig = blooming('Release Config');
 
   final activeConfig = computed((via) {
     // When isDev is true, prodConfig edge is completely detached!
@@ -316,8 +393,8 @@ final searchResults = computed(
 Dynamically switches between entirely different upstream `Bloom<T>` pipelines based on runtime state, flattening branch switches into a single continuous edge:
 
 ```dart
-final selectedTab = BloomController(0);
-final isLoggedIn = BloomController(false);
+final selectedTab = blooming(0);
+final isLoggedIn = blooming(false);
 
 // Subtree Gating: Entire feed graph is uninstantiated until user is authenticated
 final currentFeed = switched(
@@ -327,15 +404,15 @@ final currentFeed = switched(
 ```
 
 * **Zero-Cost Lazy Switching**: Evaluates the target branch strictly on-demand (`eager: false` by default). Use `eager: true` for pre-emptive evaluation.
-* **⚠️ Anti-Pattern Prevention**: Switch between *pre-existing, stable* `Bloom` branches. Do NOT instantiate new `Bloom` nodes inside `switched(...)` without memoization, as it allocates orphan subgraphs on every dependency tick.
+* **Warning (Anti-Pattern Prevention)**: Switch between *pre-existing, stable* `Bloom` branches. Do NOT instantiate new `Bloom` nodes inside `switched(...)` without memoization, as it allocates orphan subgraphs on every dependency tick.
 
 #### C. `managed`: External Resource Lifecycle Management
 
 Supervises external synchronous resources (timers, sockets, hardware handles) strictly coupled to subscriber presence. Supports in-place instance updates (`update`), precondition gating (`guard`), and declarative signal triggers via `via(signal.bloom)`:
 
 ```dart
-final serverPort = BloomController(8080);
-final reconnectTrigger = BloomSignalController();
+final serverPort = blooming(8080);
+final reconnectTrigger = blooming.signal();
 
 final apiClient = managed<ApiClient>(
   create: (via) {
@@ -368,8 +445,8 @@ Bloom establishes **Precondition Guarding** as a first-class algebraic fault bar
 
 ```dart
 // 1. Declarative ApiClient: Automatically disposes upon logout without imperative hooks!
-final tokenBloom = BloomController<String>('token_123').bloom;
-final loggedInBloom = BloomController<bool>(true).bloom;
+final tokenBloom = blooming('token_123').bloom;
+final loggedInBloom = blooming(true).bloom;
 
 final clientHandle = managed<ApiClient>(
   create: (via) => ApiClient(port: 8080),
@@ -380,8 +457,8 @@ final clientHandle = managed<ApiClient>(
 );
 
 // 2. Multi-Input Gating & Granular Diagnostic Reasons:
-final cartBloom = BloomController<Cart>(Cart()).bloom;
-final addressBloom = BloomController<Address>(const Address()).bloom;
+final cartBloom = blooming(Cart()).bloom;
+final addressBloom = blooming(const Address()).bloom;
 
 final orderSummary = computed(
   (via) => OrderPricing(total: via(cartBloom).items.length * 10.0),
@@ -402,11 +479,11 @@ final orderSummary = computed(
 
 ### 5. Discrete Reactive Signals (`BloomSignal`)
 
-For discrete, stateless event pulses (e.g. user taps, manual refresh triggers, socket reconnects), Bloom provides `BloomSignalController` and `BloomSignal`, eliminating the anti-pattern of mutating dummy state values (such as `counter++`):
+For discrete, stateless event pulses (e.g. user taps, manual refresh triggers, socket reconnects), Bloom provides `blooming.signal` (instantiating `BloomSignalController`) and `BloomSignal`, eliminating the anti-pattern of mutating dummy state values (such as `counter++`):
 
 ```dart
 // 1. The Producer Handle: emits discrete event pulses
-final refreshTrigger = BloomSignalController(
+final refreshTrigger = blooming.signal(
   onActivated: () => print('Downstream observers connected'),
   onDeactivated: () => print('All observers detached; entered dormancy'),
 );
@@ -442,7 +519,7 @@ Bloom provides specialized reactive collection controllers (`BloomListController
 ```
 
 ```dart
-final todoList = BloomListController<TodoItem>([]);
+final todoList = blooming.list<TodoItem>([]); // or BloomListController<TodoItem>([])
 
 // 1. Atomic Draft Transaction: batches multiple operations into at most 1 invalidation pulse
 todoList.edit((draft) {
@@ -460,9 +537,9 @@ todoList.editGuarded((draft) {
 });
 
 // 4. Declarative aggregation operators across Bloom nodes
-final priceNodes = BloomController<List<Bloom<int>>>([
-  BloomController(100).bloom,
-  BloomController(250).bloom,
+final priceNodes = blooming<List<Bloom<int>>>([
+  blooming(100).bloom,
+  blooming(250).bloom,
 ]);
 final totalSum = priceNodes.bloom.sum();
 ```
@@ -507,8 +584,8 @@ Bloom completely separates side-effects into declarative first-class entities wi
 Tethering binds an effect's lifespan directly to an enclosing reactive scope. When the scope deactivates, tethered effects automatically sleep (Zero-Leak):
 
 ```dart
-final searchQuery = BloomController('');
-final filter = BloomController('all');
+final searchQuery = blooming('');
+final filter = blooming('all');
 
 final searchPipeline = computed((via) {
   // Automatically activated and deactivated in lockstep with searchPipeline:
@@ -566,8 +643,8 @@ Bloom seamlessly bridges asynchronous primitives and provides hot-swappable 1-ti
 
 ```dart
 // 1. computed.future with SWR caching & discrete refresh triggers
-final selectedUserId = BloomController('user_123');
-final refreshTrigger = BloomSignalController();
+final selectedUserId = blooming('user_123');
+final refreshTrigger = blooming.signal();
 
 final userProfileBloom = computed.future((via) async {
   via(refreshTrigger.bloom);
@@ -575,7 +652,7 @@ final userProfileBloom = computed.future((via) async {
 });
 
 // 2. computed.stream with automatic subscription lifecycle management
-final activeSymbol = BloomController('AAPL');
+final activeSymbol = blooming('AAPL');
 final liveStockPricesBloom = computed.stream((via) {
   final symbol = via(activeSymbol.bloom);
   return stockMarketChannel.streamFor(symbol);
@@ -661,6 +738,7 @@ To understand the mathematical and architectural foundations of Bloom's LPDAG en
 
 | Symbol | Category | Description |
 | :--- | :--- | :--- |
+| `blooming(...)` | Core | Unified declarative state producer instantiation functor (`.raw`, `.list`, `.set`, `.map`, `.signal`). |
 | `Bloom<T>` | Core | Read-only, observation-only reactive node interface in the LPDAG graph. |
 | `BloomController<T>` | Core | Producer handle owning mutation methods (`set`, `empty`, `setError`). |
 | `RawBloomController<T>` | Core | Unboxed, ultra-hot path state producer for non-nullable values. |

@@ -30,6 +30,25 @@ part of '../framework.dart';
 /// 3. **Explicit BloomVia Dependency Manifest**: Dynamically records dependencies via `via(node)` with zero dynamic tracking stack overhead.
 /// 4. **$O(S)$ Freshness Invariant**: Verifies freshness directly against its $S$ immediate upstream sources.
 ///
+/// ## Sub-Functor & Computation Pathways
+/// ```text
+/// computed(...)                  ──> Synchronous derivation ([Bloom])
+///   │                                  ├─ Fast-path zero-allocation inline evaluation
+///   │                                  └─ Precondition gating via [BloomGuard]
+///   │
+///   ├─ .future(...)              ──> Single-shot asynchronous request with SWR ([Bloom])
+///   │    │                             ├─ Auto-refetch on reactive dependency mutation
+///   │    │                             ├─ Instant SWR cache preload ([initialFactory])
+///   │    │                             └─ Error fallback recovery ([onError])
+///   │    │
+///   │    └─ .async(...)          ──> Inlined keyword alias for [future]
+///   │
+///   └─ .stream(...)              ──> Continuous real-time stream subscription ([Bloom])
+///                                      ├─ Auto-switching & async* generator synthesis
+///                                      ├─ Graceful retention across routes ([Graceful.period])
+///                                      └─ Duplicate event filtering ([distinct], [equals])
+/// ```
+///
 /// ## Execution Modes
 ///
 /// | Mode | Target Use Case | Key Capabilities |
