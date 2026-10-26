@@ -109,22 +109,19 @@ base class _PragueVltava<T> {
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
   }) : _stream = stream {
+    _pendingController = BloomController<bool>(
+      false,
+      distinct: distinct,
+    );
     if (initialFactory != null) {
-      _pendingController = BloomController<bool>(
-        false,
-        distinct: distinct,
-        graceful: graceful,
-        onActivated: _handleActivated,
-        onDeactivated: _handleDeactivated,
-      );
       try {
         _controller = BloomController<T>(
           initialFactory(),
           distinct: distinct,
           equals: equals,
           graceful: graceful,
-          onActivated: _handleActivated,
-          onDeactivated: _handleDeactivated,
+          onActivated: _subscribe,
+          onDeactivated: _unsubscribe,
         );
       } catch (e, s) {
         _controller = BloomController<T>.error(
@@ -133,32 +130,22 @@ base class _PragueVltava<T> {
           distinct: distinct,
           equals: equals,
           graceful: graceful,
-          onActivated: _handleActivated,
-          onDeactivated: _handleDeactivated,
+          onActivated: _subscribe,
+          onDeactivated: _unsubscribe,
         );
       }
     } else {
-      _pendingController = BloomController<bool>(
-        true,
-        distinct: distinct,
-        graceful: graceful,
-        onActivated: _handleActivated,
-        onDeactivated: _handleDeactivated,
-      );
       _controller = BloomController<T>.late(
         distinct: distinct,
         equals: equals,
         graceful: graceful,
-        onActivated: _handleActivated,
-        onDeactivated: _handleDeactivated,
+        onActivated: _subscribe,
+        onDeactivated: _unsubscribe,
       );
     }
     _doneController = BloomController<bool>(
       false,
       distinct: distinct,
-      graceful: graceful,
-      onActivated: _handleActivated,
-      onDeactivated: _handleDeactivated,
     );
   }
 
@@ -174,26 +161,10 @@ base class _PragueVltava<T> {
 
   bool _isDone = false;
 
-  bool get _isActive => _controller.isActive || _pendingController.isActive || _doneController.isActive;
-
-  void _handleActivated() {
-    if (_subscription == null) {
-      _subscribe();
-    }
-  }
-
-  void _handleDeactivated() {
-    if (!_isActive) {
-      _unsubscribe();
-    }
-  }
-
   void _subscribe() {
-    if (_isDone) return;
+    if (_isDone || _subscription != null) return;
 
-    if (_subscription != null) {
-      throw StateError('Already subscribed to Stream(-> $_stream).');
-    }
+    _pendingController.set(true);
 
     try {
       _subscription = _stream.listen(
@@ -219,7 +190,6 @@ base class _PragueVltava<T> {
         },
         onDone: () {
           _isDone = true;
-          _pendingController.set(false);
           _doneController.set(true);
           _unsubscribe();
         },
@@ -246,6 +216,7 @@ base class _PragueVltava<T> {
   void _unsubscribe() {
     _subscription?.cancel();
     _subscription = null;
+    _pendingController.set(false);
   }
 
   Bloom<T> get bloom => _controller.bloom;
@@ -255,8 +226,6 @@ base class _PragueVltava<T> {
   Bloom<bool> get done => _doneController.bloom;
 
   ({Bloom<T> data, Bloom<bool> pending}) get tuple => (data: bloom, pending: pending);
-
-  bool get isActive => _isActive;
 }
 
 /// Formal reactive bridge connecting a native Dart [Stream] to the [Bloom] topology.

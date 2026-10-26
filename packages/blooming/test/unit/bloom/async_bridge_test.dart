@@ -353,17 +353,20 @@ void main() {
         await controller.close();
       });
 
-      test('3.8 toBloomTuple with initialFactory initializes pending to false', () async {
+      test('3.8 toBloomTuple with initialFactory keeps pending true while awaiting first event', () async {
         final controller = StreamController<String>();
         final (data: dataBloom, pending: pendingBloom) = controller.stream.toBloomTuple(
           initialFactory: () => 'Initial',
         );
 
+        // Before activation, pending is passive false
+        expect(untracked(pendingBloom), isFalse);
+
         final terminal = RawBloomTerminal(dataBloom, onInvalidated: () {});
         terminal.activate();
 
         expect(terminal.data, 'Initial');
-        expect(untracked(pendingBloom), isFalse);
+        expect(untracked(pendingBloom), isTrue);
 
         controller.add('Event 1');
         await Future<void>.delayed(Duration.zero);
@@ -375,12 +378,18 @@ void main() {
         await controller.close();
       });
 
-      test('3.9 toBloomTuple transitions pending to false on error', () async {
+      test('3.9 toBloomTuple transitions pending to false on error when data is active', () async {
         final controller = StreamController<int>();
-        final (data: _, pending: pendingBloom) = controller.stream.toBloomTuple();
+        final (data: dataBloom, pending: pendingBloom) = controller.stream.toBloomTuple();
 
-        final terminal = RawBloomTerminal(pendingBloom, onInvalidated: () {});
-        terminal.activate();
+        final tData = RawBloomTerminal(dataBloom, onInvalidated: () {});
+        final tPending = RawBloomTerminal(pendingBloom, onInvalidated: () {});
+
+        // Prior to data activation, pending is passive false
+        expect(untracked(pendingBloom), isFalse);
+
+        tData.activate();
+        tPending.activate();
 
         expect(untracked(pendingBloom), isTrue);
 
@@ -388,7 +397,35 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(untracked(pendingBloom), isFalse);
 
-        terminal.deactivate();
+        tData.deactivate();
+        tPending.deactivate();
+        await controller.close();
+      });
+
+      test('3.10 multiple terminals activating data node is idempotent and does not throw', () async {
+        final controller = StreamController<int>();
+        final asyncBloom = controller.stream.toBloom();
+
+        final t1 = RawBloomTerminal(asyncBloom, onInvalidated: () {});
+        final t2 = RawBloomTerminal(asyncBloom, onInvalidated: () {});
+
+        t1.activate();
+        expect(controller.hasListener, isTrue);
+
+        // Activating second terminal on the same bloom node must be idempotent and not throw StateError
+        expect(() => t2.activate(), returnsNormally);
+
+        controller.add(42);
+        await Future<void>.delayed(Duration.zero);
+        expect(t1.data, 42);
+        expect(t2.data, 42);
+
+        t1.deactivate();
+        expect(controller.hasListener, isTrue);
+
+        t2.deactivate();
+        expect(controller.hasListener, isFalse);
+
         await controller.close();
       });
     });
@@ -555,27 +592,30 @@ void main() {
         tPending.deactivate();
       });
 
-      test('6.4 Stream.toBloomTuple() with initialFactory seeds pending as false', () async {
+      test('6.4 Stream.toBloomTuple() with initialFactory seeds pending as false when dormant', () async {
         final controller = StreamController<int>();
         final (:data, :pending) = controller.stream.toBloomTuple(
           initialFactory: () => 100,
         );
 
         expect(untracked(data), 100);
-        expect(untracked(pending), isFalse); // initialFactory seeds pending as false
+        expect(untracked(pending), isFalse); // dormant: pending is false
 
         final terminal = RawBloomTerminal(data, onInvalidated: () {});
         terminal.activate();
 
+        expect(untracked(pending), isTrue); // active: waiting for first stream event
+
         controller.add(200);
         await Future<void>.delayed(Duration.zero);
         expect(terminal.data, 200);
+        expect(untracked(pending), isFalse);
 
         await controller.close();
         terminal.deactivate();
       });
 
-      test('6.5 Stream.toBloomTuple() activates upstream on demand and unbinds when both nodes deactivate', () async {
+      test('6.5 Stream.toBloomTuple() activates upstream only when data is active and pending is a passive facet', () async {
         var isSubscribed = false;
         late final StreamController<String> controller;
         controller = StreamController<String>(
@@ -589,22 +629,25 @@ void main() {
         final tData = RawBloomTerminal(dataBloom, onInvalidated: () {});
         final tPending = RawBloomTerminal(pendingBloom, onInvalidated: () {});
 
+        // Activating pending alone does NOT trigger upstream listen (passive observer guarantee)
+        tPending.activate();
+        expect(isSubscribed, isFalse);
+        expect(tPending.data, isFalse);
+
+        // Activating data triggers upstream listen and transitions pending to true
         tData.activate();
         expect(isSubscribed, isTrue);
+        expect(tPending.data, isTrue);
 
-        tPending.activate();
-        expect(isSubscribed, isTrue);
-
-        // Deactivating one leaves upstream subscribed
+        // Deactivating data unbinds upstream immediately, even if pending is still observed
         tData.deactivate();
-        expect(isSubscribed, isTrue);
-
-        // Deactivating the second unbinds upstream cleanly
-        tPending.deactivate();
         expect(isSubscribed, isFalse);
+        expect(tPending.data, isFalse);
 
+        tPending.deactivate();
         await controller.close();
       });
     });
   });
 }
+
