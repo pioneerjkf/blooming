@@ -1,3 +1,9 @@
+## 0.1.5
+
+- **Analysis**: Optimized analysis options to prevent custom_lint background daemon leak.
+- **Type Checker**: Aligned `BloomTypeChecker` resolution for tuple and async primitives.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.1.5.
+
 ## 0.1.4
 
 - **Rules**: Differentiated `prefer_composed_child` diagnostics with dedicated messages for high-frequency frame animation closures (`composed.animate`, `composed.drive`) and static layout containers (`Column`, `Row`, `Stack`, `Flex`, `Wrap`, `ListView`).

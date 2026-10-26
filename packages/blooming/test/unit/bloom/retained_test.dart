@@ -503,7 +503,8 @@ void main() {
       );
     });
 
-    test('11.1 retainedTuple() returns ({data, pending}) named record and retains prior data without coupler', () async {
+    test('11.1 retainedTuple() returns ({data, pending}) named record and retains prior data without coupler',
+        () async {
       final query = BloomController('alpha');
       Completer<String>? activeCompleter;
 
@@ -565,4 +566,3 @@ void main() {
     });
   });
 }
-

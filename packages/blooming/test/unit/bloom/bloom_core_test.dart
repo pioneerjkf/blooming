@@ -190,7 +190,8 @@ void main() {
         expect(formattedSnapshotMsg, contains('<Unprintable emptyReason: Bad state: Boom in emptyReason.toString()>'));
       });
 
-      test('1.3.3 Type separation: BloomEmptyExtractionException vs BloomErrorExtractionException selective catching', () {
+      test('1.3.3 Type separation: BloomEmptyExtractionException vs BloomErrorExtractionException selective catching',
+          () {
         const reason = 'WaitingForConnection';
         final emptyState = untracked.state(Bloom<int>.empty(reason));
         final errorState = untracked.state(Bloom<int>.error(StateError('PipelineFailure')));

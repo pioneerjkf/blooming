@@ -1,3 +1,10 @@
+## 0.1.5
+
+- **Async UI**: Introduced `BloomAsyncBuilder.tuple` constructor supporting direct declarative binding of paired `(data, pending)` or `(data, status)` tuples.
+- **Branding**: Standardized documentation and naming to "Blooming Flutter".
+- **Examples**: Updated showcase `AsyncSwrBuilderSection` with tuple-based stream patterns and SWR builders.
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.1.5`.
+
 ## 0.1.4
 
 - **Assets & Branding**: Adjusted bottom padding on extended vector banner assets.

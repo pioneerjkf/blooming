@@ -615,7 +615,8 @@ void main() {
         terminal.deactivate();
       });
 
-      test('6.5 Stream.toBloomTuple() activates upstream only when data is active and pending is a passive facet', () async {
+      test('6.5 Stream.toBloomTuple() activates upstream only when data is active and pending is a passive facet',
+          () async {
         var isSubscribed = false;
         late final StreamController<String> controller;
         controller = StreamController<String>(
@@ -691,7 +692,9 @@ void main() {
         tDone.deactivate();
       });
 
-      test('6.7 Stream.toBloomTriple() activates upstream only on data demand and preserves passive pending/done facets', () async {
+      test(
+          '6.7 Stream.toBloomTriple() activates upstream only on data demand and preserves passive pending/done facets',
+          () async {
         var isSubscribed = false;
         late final StreamController<String> controller;
         controller = StreamController<String>(
@@ -731,4 +734,3 @@ void main() {
     });
   });
 }
-
