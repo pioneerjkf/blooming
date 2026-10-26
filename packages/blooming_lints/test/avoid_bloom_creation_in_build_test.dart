@@ -166,19 +166,3 @@ class _MethodInvocationVisitor extends RecursiveAstVisitor<void> {
   }
 }
 
-class _FunctionInvocationVisitor extends RecursiveAstVisitor<void> {
-  _FunctionInvocationVisitor(this.functionName, this.onFound);
-  final String functionName;
-  final void Function(FunctionExpressionInvocation) onFound;
-
-  @override
-  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
-    final function = node.function;
-    final name =
-        function is SimpleIdentifier ? function.name : function.toSource();
-    if (name == functionName) {
-      onFound(node);
-    }
-    super.visitFunctionExpressionInvocation(node);
-  }
-}
