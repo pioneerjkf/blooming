@@ -244,11 +244,11 @@ so confirm against each project's documentation.
 
 ## Benchmarks
 
-No published results yet. A micro-benchmark lives in
+A comparative NASDAQ order-book benchmark run and its limitations are documented in
+[`benchmark/nasdaq_order_book/ASSESSMENT.md`](benchmark/nasdaq_order_book/ASSESSMENT.md). The current
+run measures event-loop responsiveness under a capped batched workload; it does not establish
+actual billion-TPS throughput or prove data correctness. A micro-benchmark also lives in
 [`packages/blooming/benchmark/million_ticks_benchmark.dart`](packages/blooming/benchmark/million_ticks_benchmark.dart).
-Please treat performance statements elsewhere in the docs as design goals until comparative,
-reproducible numbers are published here.
-<!-- TODO: add a results table (machine, SDK version, scenario, Blooming vs Riverpod vs signals.dart) -->
 
 ---
 

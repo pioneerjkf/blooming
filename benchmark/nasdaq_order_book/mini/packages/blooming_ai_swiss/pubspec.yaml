@@ -1,0 +1,27 @@
+name: nasdaq_order_benchmark_blooming_ai_swiss
+description: "High-throughput 100,000,000 TPS NASDAQ 50-Level Order Book Mini benchmark using blooming and blooming_flutter."
+publish_to: 'none'
+
+# resolution: workspace
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  blooming: ^0.1.4
+  blooming_flutter: ^0.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  blooming_lints: ^0.1.4
+  custom_lint: ^0.8.1
+
+flutter:
+  uses-material-design: true
+

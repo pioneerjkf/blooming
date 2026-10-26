@@ -1,0 +1,241 @@
+import 'package:coralline_flutter/coralline_flutter.dart';
+import 'package:flutter/material.dart';
+
+import 'benchmark_hud_panel.dart';
+import 'theme.dart';
+
+// =============================================================================
+// SECTION 1: SWISS INTEGRATED INSTRUMENT CONTROL PANEL COMPONENT
+// =============================================================================
+
+/// Top Navigation Bar Component incorporating the Theme Auto Rotation Controller & Theme Switcher.
+/// Built with Coralline declarative [BuildComponent] and Swiss Art Series aesthetics (24px height).
+final class ThemeRotationBar extends BuildComponent
+    with CorallineTerminalIntentAware, CorallineBuildContextAware {
+  ThemeRotationBar();
+
+  late final Coral<NasdaqThemeData> themeCoral = coralOf<NasdaqThemeData>();
+  late final CoralBroadcaster<NasdaqThemeStore> _themeStoreProvider =
+      coralOf<NasdaqThemeStore>().toBroadcaster();
+  late final Coral<NasdaqThemeStore> themeStoreCoral =
+      _themeStoreProvider.coral;
+
+  late final Coral<bool> _isAutoRotatingCoral =
+      _themeStoreProvider.cascade((s) => s.isAutoRotatingCoral);
+  late final Coral<int> _rotationIntervalIndexCoral =
+      _themeStoreProvider.cascade((s) => s.rotationIntervalIndexCoral);
+
+  @override
+  Iterable<CoralNode> manifest() => [
+        _isAutoRotatingCoral,
+        _rotationIntervalIndexCoral,
+        themeStoreCoral,
+        themeCoral,
+      ];
+
+  @override
+  Widget build() {
+    final effectiveThemeStore = themeStoreCoral.data;
+    final theme = themeCoral.data;
+    final isAutoRotating = _isAutoRotatingCoral.data;
+    final intervalIndex = _rotationIntervalIndexCoral.data;
+    final intervalMs = effectiveThemeStore.currentRotationIntervalMs;
+
+    return Container(
+      width: 1060,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: theme.textPrimary, width: 1.2),
+          bottom: BorderSide(color: theme.surfaceBorder, width: 1.0),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Left Editorial Title
+          Text(
+            'THEME ROTATION // SWISS ART SERIES',
+            style: TextStyle(
+              fontSize: 9.0,
+              fontWeight: FontWeight.w800,
+              color: theme.textSecondary,
+              letterSpacing: 1.0,
+              fontFamily: 'monospace',
+            ),
+          ),
+
+          // Unified Swiss Integrated Instrument Panel (Height 24px)
+          Container(
+            height: 24,
+            decoration: BoxDecoration(
+              color: theme.cardBackground,
+              border: Border.all(
+                color: theme.surfaceBorder,
+                width: 1.0,
+                strokeAlign: BorderSide.strokeAlignInside,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Current Theme Label (Label style: transparent background)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  alignment: Alignment.center,
+                  color: Colors.transparent,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'THEME:',
+                        style: TextStyle(
+                          fontSize: 8.0,
+                          fontWeight: FontWeight.w800,
+                          color: theme.textMuted,
+                          fontFamily: 'monospace',
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        theme.mode.label,
+                        style: TextStyle(
+                          fontSize: 9.0,
+                          fontWeight: FontWeight.w900,
+                          color: theme.textPrimary,
+                          fontFamily: 'monospace',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Hairline Divider
+                Container(width: 1.0, color: theme.surfaceBorder),
+
+                // 2. Previous Theme Arrow Button (Button style: filled chip background)
+                InkWell(
+                  onTap: effectiveThemeStore.togglePreviousTheme,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    alignment: Alignment.center,
+                    color: theme.chipBg,
+                    child: Icon(
+                      Icons.chevron_left,
+                      size: 14,
+                      color: theme.chipText,
+                    ),
+                  ),
+                ),
+
+                // Hairline Divider
+                Container(width: 1.0, color: theme.surfaceBorder),
+
+                // 3. Next Theme Arrow Button (Button style: filled chip background)
+                InkWell(
+                  onTap: effectiveThemeStore.toggleNextTheme,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    alignment: Alignment.center,
+                    color: theme.chipBg,
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 14,
+                      color: theme.chipText,
+                    ),
+                  ),
+                ),
+
+                // Hairline Divider
+                Container(width: 1.0, color: theme.surfaceBorder),
+
+                // 4. Auto Rotation Interval Slider Controls (4x length: 240px)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        _formatMs(intervalMs),
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          color: theme.bidGreen,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      SliderTheme(
+                        data: SliderThemeData(
+                          activeTrackColor: theme.textPrimary,
+                          inactiveTrackColor: theme.gridLine,
+                          thumbColor: theme.textPrimary,
+                          overlayColor:
+                              theme.textPrimary.withValues(alpha: 0.1),
+                          trackHeight: 3.0,
+                          thumbShape: const SwissRectSliderThumbShape(
+                              enabledThumbRadius: 5.5),
+                        ),
+                        child: SizedBox(
+                          width: 120,
+                          height: 22,
+                          child: Slider(
+                            value: intervalIndex.toDouble(),
+                            min: 0,
+                            max: (NasdaqThemeStore
+                                        .rotationIntervalPresetsMs.length -
+                                    1)
+                                .toDouble(),
+                            divisions: NasdaqThemeStore
+                                    .rotationIntervalPresetsMs.length -
+                                1,
+                            onChanged: (val) {
+                              effectiveThemeStore
+                                  .setRotationIntervalIndex(val.round());
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Hairline Divider
+                Container(width: 1.0, color: theme.surfaceBorder),
+
+                // 5. Rotation Toggle Action Button
+                InkWell(
+                  onTap: effectiveThemeStore.toggleAutoRotation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    alignment: Alignment.center,
+                    color: isAutoRotating ? theme.askRed : theme.chipBg,
+                    child: Text(
+                      isAutoRotating ? 'STOP ROTATION' : 'START ROTATION',
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                        color: isAutoRotating ? Colors.white : theme.chipText,
+                        fontFamily: 'monospace',
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatMs(double ms) {
+    if (ms >= 1000) {
+      final s = ms / 1000;
+      return '${s % 1 == 0 ? s.toInt() : s.toStringAsFixed(1)}s';
+    }
+    return '${ms % 1 == 0 ? ms.toInt() : ms.toStringAsFixed(2)}ms';
+  }
+}

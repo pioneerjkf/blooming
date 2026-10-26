@@ -1,0 +1,22 @@
+analyzer:
+  plugins:
+    - custom_lint
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+  errors:
+    analysis_options_deprecated_plugins: ignore
+    prefer_const_constructors_in_immutables: ignore
+    unused_element_parameter: ignore
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    avoid_print: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true

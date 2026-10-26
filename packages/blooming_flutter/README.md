@@ -918,43 +918,15 @@ For deep-dive architectural specifications, mathematical invariants, and interna
 
 ## High-Frequency Stream Benchmark (NASDAQ 50-Level Order Book)
 
-To validate UI thread responsiveness and event loop integrity under extreme high-frequency event ingestion, `blooming_flutter` was benchmarked against major Flutter state management frameworks using a 50-level full-depth NASDAQ Order Book simulation.
+The October 26, 2026 comparison and its interpretation are documented in the repository's
+[`NASDAQ order-book benchmark assessment`](../../benchmark/nasdaq_order_book/ASSESSMENT.md).
 
-### Hardware & Software Environment
-
-| Specification | Details |
-| :--- | :--- |
-| **Processor** | Apple M5 Max (18 Cores) |
-| **Memory** | 36 GB Unified Memory |
-| **Operating System** | macOS 26.4 (Build 25E246) |
-| **Flutter SDK** | Flutter 3.47.6 (Channel stable, revision `5fc346839b`) |
-| **Dart SDK** | Dart 3.13.5 |
-| **Execution Engine** | Real macOS GPU Window (`flutter drive -d macos --profile`) |
-| **Target Load** | 1,000,000,000 TPS (Extreme Ingestion Scenario) |
-| **Test Parameters** | Duration: 30s · Warmup: 3s · 10 Shuffled Sets (60 total runs) |
-| **Sampling Mechanism** | 33ms interval `Timer.run()` lag probe across full 30s window (~915 samples/run in pre-allocated `Float64List`) |
-
-### Tested Framework Profiles
-
-| Framework | Node Topology | Release Status | Architectural Characteristic |
-| :--- | :---: | :--- | :--- |
-| **Blooming** | **1 : N** | **Published on pub.dev** ([`blooming_flutter`](https://pub.dev/packages/blooming_flutter)) | 2-Phase LPDAG (Push-Dirty, Lazy-Pull) multi-subscriber graph with surgical leaf rebuilds. |
-| **Coralline** | **1 : 1** | **Published on pub.dev** ([`coralline`](https://pub.dev/packages/coralline)) | Ultra-high throughput 1:1 direct chain node reactive graph. |
-| **Signals** | **1 : N** | Published on pub.dev ([`signals_flutter`](https://pub.dev/packages/signals_flutter) `^7.1.0`) | Fine-grained computed reactive primitives (community open-source). |
-| **Riverpod** | **1 : N** | Published on pub.dev ([`flutter_riverpod`](https://pub.dev/packages/flutter_riverpod) `^3.4.2`) | Ecosystem standard provider-based dependency graph (community open-source). |
-
-### Main Isolate Responsiveness: Event Loop Lag (10-Set Aggregated)
-
-> **Event Loop Lag**: Delay until a scheduled `Timer.run()` executes on Dart's main event loop ($\Delta t = T_{executed} - T_{scheduled}$). As the main event loop services both timer callbacks and UI rendering pipeline events on the main isolate, maintaining minimal event loop lag serves as a key proxy metric ensuring the UI thread remains unblocked and stutter-free during high-frequency ingestion.
-
-| Framework | Node Topology | Lag Median | Lag Trimmed Mean | Lag Mean | P99 Lag | Max Lag | Memory (RSS) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Blooming** | 1 : N | 0.060 ms | 0.154 ms | 0.157 ms | 3.391 ms | 4.070 ms | 194.4 MB |
-| **Coralline** | 1 : 1 | **0.058 ms** | **0.151 ms** | **0.150 ms** | 3.429 ms | 4.029 ms | 201.2 MB |
-| **Signals** | 1 : N | 0.061 ms | 0.154 ms | 0.155 ms | 3.394 ms | **3.961 ms** | **194.2 MB** |
-| **Riverpod** | 1 : N | 0.294 ms | 0.450 ms | 0.448 ms | **3.285 ms** | 4.676 ms | 201.1 MB |
-
-*Note: Bold numbers highlight the best metric in each column. Differences under 0.01 ms among reactive graph engines (Bloom, Coralline, Signals) are within system run-to-run noise, whereas traditional provider graphs exhibit ~4–5× higher event loop latency under heavy load. Sustained TPS is intentionally omitted as the arithmetic tick accumulator does not discriminate between frameworks.*
+The run compares event-loop probe latency under a capped, batched workload. Its configured target
+of 1,000,000,000 TPS is **not measured throughput**: the generator simulates at most 200 ticks per
+1 ms batch and counts the remainder arithmetically. The probe is a responsiveness signal, not a
+guarantee of input responsiveness, frame stability, event delivery, or data correctness. The report
+also describes per-run tail variation and differences in framework batching policies. Do not use
+this run alone to claim an overall framework performance winner.
 
 ---
 

@@ -1,0 +1,65 @@
+# =============================================================================
+# Gitignore for Benchmark Suite
+# =============================================================================
+
+# Operating System & Filesystem Junk
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log
+*.swp
+*.class
+*.pyc
+
+# IDE & Editor Files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Dart & Flutter Build Artifacts / Package Caches
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+pubspec.lock
+build/
+coverage/
+*.lcov
+**/doc/api/
+.flutter-plugins
+.flutter-plugins-dependencies
+.widget_preview/
+
+# Flutter macOS / iOS Ephemeral & Workspace User Data
+**/Flutter/ephemeral/
+**/Pods/
+**/xcuserdata/
+**/ios/Flutter/.last_build_id
+
+# Flutter Windows Generated & Ephemeral Files
+**/windows/flutter/ephemeral/
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+x64/
+x86/
+*.[Cc]ache
+!*.[Cc]ache/
+
+# Obfuscation & Symbolication Outputs
+app.*.symbols
+app.*.map.json
+
+# Staged / Temporary Test Outputs (real benchmark runs are saved in results/)
+benchmark_results/
+test_check/
