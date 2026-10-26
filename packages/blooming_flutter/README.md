@@ -919,7 +919,7 @@ For deep-dive architectural specifications, mathematical invariants, and interna
 ## High-Frequency Stream Benchmark (NASDAQ 50-Level Order Book)
 
 The October 26, 2026 comparison and its interpretation are documented in the repository's
-[`NASDAQ order-book benchmark assessment`](../../benchmark/nasdaq_order_book/ASSESSMENT.md).
+[`NASDAQ order-book benchmark assessment`](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/ASSESSMENT.md).
 
 The run compares event-loop probe latency under a capped, batched workload. Its configured target
 of 1,000,000,000 TPS is **not measured throughput**: the generator simulates at most 200 ticks per
