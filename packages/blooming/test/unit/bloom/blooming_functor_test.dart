@@ -144,10 +144,6 @@ void main() {
           draft.remove('A');
         });
         expect(todos.data, ['B', 'C']);
-
-        // Direct namespace test
-        final direct = BloomDraftController.list<int>([1, 2]);
-        expect(direct, isA<BloomDraftController<List<int>>>());
       });
 
       test('4.2 blooming.list.late() and blooming.list.error()', () {
@@ -179,10 +175,6 @@ void main() {
           draft.remove('alpha');
         });
         expect(tags.data, {'beta', 'gamma'});
-
-        // Direct namespace test
-        final direct = BloomDraftController.setOf<String>({'x'});
-        expect(direct, isA<BloomDraftController<Set<String>>>());
       });
 
       test('5.2 blooming.set.late() and blooming.set.error()', () {
@@ -214,10 +206,6 @@ void main() {
           draft['timeout'] = 60;
         });
         expect(config.data, {'timeout': 60, 'retries': 3});
-
-        // Direct namespace test
-        final direct = BloomDraftController.map<String, int>({'a': 1});
-        expect(direct, isA<BloomDraftController<Map<String, int>>>());
       });
 
       test('6.2 blooming.map.late() and blooming.map.error()', () {

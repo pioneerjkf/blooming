@@ -59,11 +59,10 @@ part of '../framework.dart';
 /// });
 /// print(numbers.data); // [2, 3, 4]
 ///
-/// // Direct namespace construction
-/// final tags = BloomDraftController.set({'flutter', 'dart'});
+/// final tags = blooming.set({'flutter', 'dart'});
 /// tags.edit((draft) => draft.add('reactive'));
 ///
-/// final scores = BloomDraftController.map({'Alice': 90});
+/// final scores = blooming.map({'Alice': 90});
 /// scores.edit((draft) => draft['Bob'] = 85);
 /// ```
 abstract base class BloomDraftController<C> implements BloomController<C> {
@@ -81,27 +80,6 @@ abstract base class BloomDraftController<C> implements BloomController<C> {
 
   @override
   Bloom<C> get bloom;
-
-  // ===========================================================================
-  // Namespace Functors
-  // ===========================================================================
-
-  /// Sub-functor managing transactional reactive list state producers.
-  static const list = BloomingListFunctor();
-
-  /// Alias for [list] adhering to standard collection naming.
-  static const listOf = BloomingListFunctor();
-
-  /// Sub-functor managing transactional reactive set state producers.
-  ///
-  /// Named `setOf` to prevent colliding with inherited instance method [BloomController.set].
-  static const setOf = BloomingSetFunctor();
-
-  /// Sub-functor managing transactional reactive map state producers.
-  static const map = BloomingMapFunctor();
-
-  /// Alias for [map] adhering to standard collection naming.
-  static const mapOf = BloomingMapFunctor();
 }
 
 

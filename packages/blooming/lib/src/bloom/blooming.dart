@@ -43,14 +43,14 @@ part of '../framework.dart';
 ///   │    ├─ .late(...)        ──> Uninitialized raw state ([RawBloomController.late])
 ///   │    └─ .error(...)       ──> Pre-faulted raw state ([RawBloomController.error])
 ///   ├─ .list(...)             ──> Transactional reactive list ([BloomDraftController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive list ([BloomDraftController.list.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive list ([BloomDraftController.list.error])
+///   │    ├─ .late(...)        ──> Uninitialized reactive list ([BloomingListFunctor.late])
+///   │    └─ .error(...)       ──> Pre-faulted reactive list ([BloomingListFunctor.error])
 ///   ├─ .set(...)              ──> Transactional reactive set ([BloomDraftController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive set ([BloomDraftController.set.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive set ([BloomDraftController.set.error])
+///   │    ├─ .late(...)        ──> Uninitialized reactive set ([BloomingSetFunctor.late])
+///   │    └─ .error(...)       ──> Pre-faulted reactive set ([BloomingSetFunctor.error])
 ///   ├─ .map(...)              ──> Transactional reactive map ([BloomDraftController])
-///   │    ├─ .late(...)        ──> Uninitialized reactive map ([BloomDraftController.map.late])
-///   │    └─ .error(...)       ──> Pre-faulted reactive map ([BloomDraftController.map.error])
+///   │    ├─ .late(...)        ──> Uninitialized reactive map ([BloomingMapFunctor.late])
+///   │    └─ .error(...)       ──> Pre-faulted reactive map ([BloomingMapFunctor.error])
 ///   └─ .signal(...)           ──> Discrete event notification signal ([BloomSignalController])
 /// ```
 ///
@@ -331,7 +331,7 @@ final class BloomingRawFunctor {
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingListFunctor {
-  /// Const constructor for top-level blooming and [BloomDraftController.list].
+  /// Const constructor for [BloomingFunctor.list].
   const BloomingListFunctor();
 
   /// Creates a [BloomDraftController] initialized with [data].
@@ -398,7 +398,7 @@ final class BloomingListFunctor {
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingSetFunctor {
-  /// Const constructor for top-level blooming and [BloomDraftController.set].
+  /// Const constructor for [BloomingFunctor.set].
   const BloomingSetFunctor();
 
   /// Creates a [BloomDraftController] initialized with [data].
@@ -465,7 +465,7 @@ final class BloomingSetFunctor {
 /// automatic unmodifiable freezing.
 @immutable
 final class BloomingMapFunctor {
-  /// Const constructor for top-level blooming and [BloomDraftController.map].
+  /// Const constructor for [BloomingFunctor.map].
   const BloomingMapFunctor();
 
   /// Creates a [BloomDraftController] initialized with [data].

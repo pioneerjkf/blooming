@@ -519,7 +519,7 @@ Bloom provides specialized reactive draft collection controllers (`BloomDraftCon
 ```
 
 ```dart
-final todoList = blooming.list<TodoItem>([]); // or BloomDraftController.list<TodoItem>([])
+final todoList = blooming.list<TodoItem>([]);
 
 // 1. Atomic Draft Transaction: batches multiple operations into at most 1 invalidation pulse
 todoList.edit((draft) {
