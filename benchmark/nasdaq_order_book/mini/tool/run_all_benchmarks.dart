@@ -354,11 +354,6 @@ void main(List<String> args) async {
       methodologyRelPath: '../../BENCHMARK_METHODOLOGY.md');
   final mdFile = File('${outDir.path}/SUMMARY_REPORT.md');
   mdFile.writeAsStringSync(mdReportSub);
-
-  final mdReportRoot = _generateMediumMarkdownReport(
-      allResults, tpsScenarios, durationSec, mode, setsCount, scrollAnimation,
-      methodologyRelPath: '../BENCHMARK_METHODOLOGY.md');
-  File('${rootOutDir.path}/SUMMARY_REPORT.md').writeAsStringSync(mdReportRoot);
   print('  ✅ Generated Medium Markdown Report: ${mdFile.path}');
 
   // 2. Generate JSON Matrix
@@ -367,15 +362,12 @@ void main(List<String> args) async {
   final jsonFile = File('${outDir.path}/benchmark_matrix.json');
   jsonFile.writeAsStringSync(
       const JsonEncoder.withIndent('  ').convert(jsonReport));
-  File('${rootOutDir.path}/benchmark_matrix.json').writeAsStringSync(
-      const JsonEncoder.withIndent('  ').convert(jsonReport));
   print('  ✅ Generated JSON Matrix Dataset:    ${jsonFile.path}');
 
   // 3. Generate CSV
   final csvReport = _generateCsv(allResults);
   final csvFile = File('${outDir.path}/benchmark_summary.csv');
   csvFile.writeAsStringSync(csvReport);
-  File('${rootOutDir.path}/benchmark_summary.csv').writeAsStringSync(csvReport);
   print('  ✅ Generated CSV Dataset:            ${csvFile.path}');
 
   print('\n🎉 All 100% pure hardware benchmarks completed successfully!\n');
