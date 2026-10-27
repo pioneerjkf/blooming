@@ -714,6 +714,28 @@ extension DurableAnimationControllerObserveExtension
         equals: equals,
         graceful: graceful,
       );
+
+  /// Observes this controller's animation [status] as a reactive [Bloom<AnimationStatus>].
+  ///
+  /// ### Caution: VSYNC Coupling (Passive Observer)
+  /// [observeStatus] is a **passive observer** of this controller's timeline and does NOT
+  /// generate physical VSYNC ticks on its own.
+  ///
+  /// * [distinct]: When `true` (default), suppresses pulses if animated status does not change.
+  /// * [graceful]: Optional teardown deferral policy.
+  ///
+  /// **Ensures:**
+  /// * Emits updated [AnimationStatus] values whenever the controller's animation status updates.
+  /// * Subscribes to status updates demand-driven while active, and automatically unsubscribes on
+  ///   deactivation to prevent listener memory leaks.
+  Bloom<AnimationStatus> observeStatus({
+    bool distinct = true,
+    Graceful? graceful,
+  }) =>
+      _view.toStatusBloom(
+        distinct: distinct,
+        graceful: graceful,
+      );
 }
 
 /// Lifecycle control extension for [DurableAnimationController], exposed strictly

@@ -11,6 +11,7 @@
 /// and ticker schedulers.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:blooming/blooming.dart';
@@ -36,6 +37,8 @@ part 'src/widgets/_internal/_inline.dart';
 part 'src/widgets/_internal/_listener.dart';
 
 // Framework Animation
+part 'src/animation/animation.dart';
+part 'src/animation/_internal/_animation.dart';
 part 'src/animation/durable/controller.dart';
 part 'src/animation/durable/_internal/_controller.dart';
 part 'src/animation/durable/_internal/_delegate.dart';

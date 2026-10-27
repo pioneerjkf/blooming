@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
+import 'package:blooming_flutter_example/sections/composite_motion_section.dart';
 import 'package:blooming_flutter_example/sections/dormant_thrashing_section.dart';
 import 'package:blooming_flutter_example/sections/dual_engine_battle_section.dart';
 import 'package:blooming_flutter_example/sections/physics_bounds_section.dart';
@@ -337,5 +338,131 @@ void main() {
 
     store.sections.simulationFlapping.frozenPhysicsCtrl.stop();
     store.sections.simulationFlapping.catchUpPhysicsCtrl.stop();
+  });
+
+  testWidgets(
+      'CompositeMotionSection CatchUp: full dormancy catch-up across unmount and remount',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    var currentTime = DateTime(2026, 1, 1, 12, 0, 0);
+    final showcaseStore = ShowcaseStore(clock: () => currentTime);
+    final store = showcaseStore.sections.compositeMotion;
+
+    await tester.pumpWidget(
+      Bloom.constant(showcaseStore).provide(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CompositeMotionSectionDemo(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+
+    store.setPolicy(DurabilityPolicy.catchUp);
+    await tester.pump(const Duration(milliseconds: 50));
+
+    if (untracked(store.isPingPong)) {
+      store.togglePingPong();
+    }
+    await tester.pump(const Duration(milliseconds: 50));
+
+    store.playForward();
+    await tester.pump();
+
+    final forwardMs = 704;
+    currentTime = currentTime.add(Duration(milliseconds: forwardMs));
+    await tester.pump(Duration(milliseconds: forwardMs));
+
+    store.setMounted(false);
+    await tester.pump();
+
+    final dormantMs = 3000;
+    currentTime = currentTime.add(Duration(milliseconds: dormantMs));
+    await tester.pump(Duration(milliseconds: dormantMs));
+
+    store.setMounted(true);
+    await tester.pump();
+
+    expect(untracked(store.masterProgress), equals(1.0));
+    expect(untracked(store.masterCtrl).value, equals(1.0));
+    expect(untracked(store.masterCtrl).isAnimating, isFalse);
+    expect(untracked(store.isPlaying), isFalse);
+  });
+
+  testWidgets(
+      'CompositeMotionSection CatchUp: partial dormancy catch-up and continuous resume',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    var currentTime = DateTime(2026, 1, 1, 12, 0, 0);
+    final showcaseStore = ShowcaseStore(clock: () => currentTime);
+    final store = showcaseStore.sections.compositeMotion;
+
+    await tester.pumpWidget(
+      Bloom.constant(showcaseStore).provide(
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CompositeMotionSectionDemo(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+
+    store.setPolicy(DurabilityPolicy.catchUp);
+    await tester.pump(const Duration(milliseconds: 50));
+
+    if (untracked(store.isPingPong)) {
+      store.togglePingPong();
+    }
+    await tester.pump(const Duration(milliseconds: 50));
+
+    store.playForward();
+    await tester.pump();
+
+    final forwardMs = 704;
+    currentTime = currentTime.add(Duration(milliseconds: forwardMs));
+    await tester.pump(Duration(milliseconds: forwardMs));
+
+    final preUnmountVal = untracked(store.masterCtrl).value;
+    expect(preUnmountVal, greaterThan(0.2));
+
+    store.setMounted(false);
+    await tester.pump();
+
+    final dormantMs = 237;
+    currentTime = currentTime.add(Duration(milliseconds: dormantMs));
+    await tester.pump(Duration(milliseconds: dormantMs));
+
+    store.setMounted(true);
+    await tester.pump();
+
+    expect(untracked(store.masterProgress), greaterThan(preUnmountVal));
+    expect(untracked(store.masterCtrl).isAnimating, isTrue);
+    expect(untracked(store.isPlaying), isTrue);
+
+    // Advance past completion
+    currentTime = currentTime.add(const Duration(milliseconds: 2000));
+    await tester.pump(const Duration(milliseconds: 2000));
+
+    expect(untracked(store.masterProgress), equals(1.0));
+    expect(untracked(store.masterCtrl).isAnimating, isFalse);
+    expect(untracked(store.isPlaying), isFalse);
   });
 }

@@ -35,6 +35,13 @@ class CompositeMotionStore {
             clock: clock ?? DateTime.now,
           ),
         ) {
+    _statusRunner = masterStatus.effect(() {
+      final status = untracked(masterStatus);
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        _isPlaying.set(false);
+      }
+    }).start();
     _masterCtrl.data.repeat(reverse: true);
   }
 
@@ -49,6 +56,12 @@ class CompositeMotionStore {
   Bloom<DurableAnimationController> get masterCtrl => _masterCtrl.bloom;
 
   DurableAnimationController get _ctrl => _masterCtrl.data;
+
+  late final EffectRunner _statusRunner;
+
+  void dispose() {
+    _statusRunner.stop();
+  }
 
   // View & Presentation State
   final BloomController<int> _activeTab;
@@ -95,6 +108,16 @@ class CompositeMotionStore {
     eager: true,
   );
 
+  /// Passive reactive bridge observing the master controller's animation status,
+  /// seamlessly hot-swapping whenever [masterCtrl] updates with zero listener leaks.
+  late final Bloom<AnimationStatus> masterStatus = switched(
+    (via) {
+      final ctrl = via(masterCtrl);
+      return ctrl.observeStatus();
+    },
+    eager: true,
+  );
+
   /// Changes the durability policy and re-instantiates the controller fresh with clean resource disposal.
   void setPolicy(DurabilityPolicy newPolicy) {
     if (_policy.data == newPolicy) return;
@@ -132,8 +155,12 @@ class CompositeMotionStore {
   void setMounted(bool value) {
     if (_isMounted.data == value) return;
     _isMounted.set(value);
-    if (value && _policy.data == DurabilityPolicy.reset && _isPlaying.data) {
-      _ctrl.repeat(reverse: _isPingPong.data);
+    if (value) {
+      if (_policy.data == DurabilityPolicy.reset && _isPlaying.data) {
+        _ctrl.repeat(reverse: _isPingPong.data);
+      } else if (!_ctrl.isAnimating) {
+        _isPlaying.set(false);
+      }
     }
   }
 
@@ -161,22 +188,12 @@ class CompositeMotionStore {
 
   void playForward() {
     _isPlaying.set(true);
-    final future = _ctrl.forward(from: _ctrl.value >= 1.0 ? 0.0 : null);
-    future.orCancel.then((_) {
-      if (!_ctrl.isAnimating) {
-        _isPlaying.set(false);
-      }
-    }, onError: (_) {});
+    _ctrl.forward(from: _ctrl.value >= 1.0 ? 0.0 : null);
   }
 
   void playReverse() {
     _isPlaying.set(true);
-    final future = _ctrl.reverse(from: _ctrl.value <= 0.0 ? 1.0 : null);
-    future.orCancel.then((_) {
-      if (!_ctrl.isAnimating) {
-        _isPlaying.set(false);
-      }
-    }, onError: (_) {});
+    _ctrl.reverse(from: _ctrl.value <= 0.0 ? 1.0 : null);
   }
 
   void reset() {

@@ -1157,10 +1157,15 @@ base class _CatchUpDormantControlDelegate
   void applyElapsedCompensation(Duration elapsed) {
     if (elapsed <= Duration.zero) return;
     final projection = _projectMotion(elapsed);
+    final previousValue = _value;
     _value = projection.value;
     _stagedMotion = projection.stagedMotion;
+    deactivatedAt = null;
+    if (_value != previousValue) {
+      scheduleMicrotask(onNotifyListeners);
+    }
     if (projection.isDone) {
-      onNotifyStatusListeners(projection.status);
+      scheduleMicrotask(() => onNotifyStatusListeners(projection.status));
     }
   }
 
@@ -1172,7 +1177,6 @@ base class _CatchUpDormantControlDelegate
     if (_stagedMotion.mode != _StagedMotionMode.idle && deactivatedAt != null) {
       final elapsed = clock().difference(deactivatedAt!);
       applyElapsedCompensation(elapsed);
-      deactivatedAt = null;
     }
 
     final engine = AnimationController(
@@ -1192,6 +1196,7 @@ base class _CatchUpDormantControlDelegate
       onNotifyListeners: onNotifyListeners,
       onNotifyStatusListeners: onNotifyStatusListeners,
       initialMotion: isAnimating ? _stagedMotion : null,
+      initialStatus: !isAnimating ? status : null,
     );
 
     if (isAnimating) {
@@ -1225,12 +1230,14 @@ base class _ActiveAnimationControlDelegate
     required VoidCallback onNotifyListeners,
     required ValueChanged<AnimationStatus> onNotifyStatusListeners,
     _StagedMotion? initialMotion,
+    AnimationStatus? initialStatus,
   })  : _vsync = vsync,
         _notifyListeners = onNotifyListeners,
         _notifyStatusListeners = onNotifyStatusListeners,
         _initialMotion = initialMotion,
         _lastMotion = initialMotion ?? const _StagedMotion.idle(),
-        _baseElapsedDuration = initialMotion?.elapsedDuration ?? Duration.zero {
+        _baseElapsedDuration = initialMotion?.elapsedDuration ?? Duration.zero,
+        _overrideStatus = initialStatus {
     _engine.addListener(_handleEngineTick);
     _engine.addStatusListener(_handleStatusChanged);
   }
