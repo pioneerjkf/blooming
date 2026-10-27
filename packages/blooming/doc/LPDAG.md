@@ -133,7 +133,7 @@ The clarity of an LPDAG depends on maintaining strict separation between topolog
 │    • Consumer Gateways: RawBloomTerminal<T>, RawViaTerminal<T>           │
 │    • Reactive UI Bindings: BloomWidget, composed, BloomListener           │
 │    • Side-Effect Sinks (package:blooming/effect.dart):                      │
-│      effect Functor, Effect, EffectScope, EffectRunner                 │
+│      Effect, EffectScope, EffectRunner                                  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -143,7 +143,7 @@ The clarity of an LPDAG depends on maintaining strict separation between topolog
 * Nodes must be pure state carriers with deterministic topological dependencies.
 
 ### Blooming Does NOT Belong in the Pure LPDAG?
-1. **Side-Effects (`effect`, `Effect`, `EffectScope`)**:
+1. **Side-Effects (`Effect`, `EffectScope`, `EffectRunner`)**:
    * Effects are terminal sinks. They consume dirty notifications to execute external side-effects (analytics, logging, haptics, I/O), but they **produce no `.data`** to be pulled by downstream DAG nodes. Hence, they reside in `package:blooming/effect.dart` and terminate without cascading DAG cycles.
 
 ---

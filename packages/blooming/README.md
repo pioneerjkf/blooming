@@ -577,16 +577,16 @@ final liveClient = managed<ApiClient>(
 
 ---
 
-### 8. Side-Effects: `effect` Functor, `via.tether`, `EffectRunner` & `EffectScope`
+### 8. Side-Effects: `Effect`, `via.tether`, `EffectRunner` & `EffectScope`
 
 Bloom completely separates side-effects into declarative first-class entities with strict lifecycle binding and asynchronous race-condition guards.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                    The Hierarchical effect Functor Family                  │
+│                    The Canonical Effect Sub-Factory Family                 │
 ├────────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
-│  effect(...)                ──> Manifest N-ary effect (Effect)             │
+│  Effect(...)                ──> Manifest N-ary effect (Effect)             │
 │    ├── .unary(...)          ──> Fast-path single-target unary effect       │
 │    ├── .via(...)            ──> Dynamic discovery effect via BloomVia      │
 │    │                                                                       │
@@ -625,7 +625,7 @@ final searchPipeline = computed((via) {
 Outside UI scopes, run standalone effects with full pause and resume capability:
 
 ```dart
-final syncEffect = effect.debounce(
+final syncEffect = Effect.debounce(
   [userBloom],
   const Duration(milliseconds: 300),
   () => cloudSync(untracked(userBloom)),
@@ -642,10 +642,10 @@ runner.start();
 ```
 
 #### C. In-Flight Race Guards & Multi-Cleanup RAII (`EffectScope`)
-Using `effect.scoped` protects against stale asynchronous overwrites and setup failures:
+Using `Effect.scoped` protects against stale asynchronous overwrites and setup failures:
 
 ```dart
-effect.scoped([roomId.bloom], (scope) async {
+Effect.scoped([roomId.bloom], (scope) async {
   // 1. Multi-Registration RAII: register cleanups immediately adjacent to resource acquisition
   final timer = Timer.periodic(const Duration(seconds: 1), (_) => ping());
   scope.onCleanup(timer.cancel);

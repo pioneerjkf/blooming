@@ -54,9 +54,9 @@ void main() async {
   print('');
 
   // ---------------------------------------------------------------------------
-  // 3. effect.scoped: Cleanup & Teardown Handlers
+  // 3. Effect.scoped: Cleanup & Teardown Handlers
   // ---------------------------------------------------------------------------
-  print('--- 3. effect.scoped with Cleanup ---');
+  print('--- 3. Effect.scoped with Cleanup ---');
   final channel = blooming<String>('general');
 
   // Runs on mutations and cleans up resources from previous turn

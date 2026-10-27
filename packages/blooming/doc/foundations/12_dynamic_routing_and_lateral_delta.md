@@ -443,7 +443,7 @@ final activeStockFeed = switched<List<String>>(
 
 // 4. Downstream consumers receive uninterrupted stream continuity across branch switches
 void main() {
-  final monitor = effect.via((via) {
+  final monitor = Effect.via((via) {
     final quotes = via(activeStockFeed);
     print('Active stock quotes: $quotes');
   }).start();

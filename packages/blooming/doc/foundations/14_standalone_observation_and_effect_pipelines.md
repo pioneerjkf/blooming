@@ -48,17 +48,17 @@ The Bloom Framework resolves this with **Declarative Side-Effects ([`Effect`](..
 ### 2.1 The Declarative Effect Hierarchy (`Effect`)
 Every side-effect in Bloom is represented as a declarative blueprint extending `Tether`:
 
-1. **Manifest Unary (`effect.unary`, `target.effect(...)`)**:  
+1. **Manifest Unary (`Effect.unary`, `target.effect(...)`)**:  
    Bound strictly to a single `Bloom<T>` target. Skips initial evaluation on mount and executes upon subsequent mutations.
-2. **Manifest N-ary (`effect(...)`, `targets.effect(...)`, `(a, b).effect(...)`)**:  
+2. **Manifest N-ary (`Effect(...)`, `targets.effect(...)`, `(a, b).effect(...)`)**:  
    Bound to an explicit collection or Dart 3 Record tuple of targets (`Bloom` nodes).
-3. **Scoped Manifest (`effect.scoped`, `effect.scoped.unary`)**:  
+3. **Scoped Manifest (`Effect.scoped`, `Effect.scoped.unary`)**:  
    Provides an [`EffectScope`](../../lib/src/effect/effect.dart) for cleanups (`onCleanup`), execution turn status flags (`isActive`, `isCancelled`), and RAII lifecycle teardowns.
-4. **Dynamic Discovery (`effect.via`, `effect.scoped.via`)**:  
+4. **Dynamic Discovery (`Effect.via`, `Effect.scoped.via`)**:  
    Explicit dependency discovery via `BloomVia` with 1-pass monotonic epoch sweeping.
-5. **Rate-Limited Sinks (`effect.debounce`, `effect.throttle`)**:  
+5. **Rate-Limited Sinks (`Effect.debounce`, `Effect.throttle`)**:  
    Time-domain rate limiting with configurable `leading` and `trailing` edge policies.
-6. **Composite Groups (`effect.group(...)`, `(e1, e2).group`)**:  
+6. **Composite Groups (`Effect.group(...)`, `(e1, e2).group`)**:  
    Coordinates multiple constituent effects as a single composite lifecycle terminal.
 
 ### 2.2 Standalone Imperative Execution (`EffectRunner`)
@@ -130,7 +130,7 @@ The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) coord
 1. `_SchedulerBase`: Resets `_isScheduled = false`.
 2. `_CoalescedSchedulerMixin`: Flushes trailing coalesced state pulses (`bloom.coalesced()`) in the DAG first.
 3. `_EagerSchedulerMixin`: Resolves eager dynamic routing nodes (`computed.future`, `computed.stream`, `switched`) next.
-4. `_TerminalSchedulerMixin`: Flushes active scheduled terminals (`Effect`, `effect.debounce`, `effect.throttle`).
+4. `_TerminalSchedulerMixin`: Flushes active scheduled terminals (`Effect`, `Effect.debounce`, `Effect.throttle`).
 5. `_GracefulSchedulerMixin`: Executes deactivation cleanups (`_MicrotaskGraceHandle`) LAST.
 
 > [!NOTE]
@@ -286,7 +286,7 @@ void main() async {
 }
 ```
 
-### 6.2 Dynamic Conditional Side-Effects (`effect.via` + `start()`)
+### 6.2 Dynamic Conditional Side-Effects (`Effect.via` + `start()`)
 ```dart
 import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
@@ -295,7 +295,7 @@ final speedBloom = blooming<int>(50).bloom;
 final limitBloom = blooming<int>(60).bloom;
 
 // Evaluates dependencies dynamically, triggering alerts only when condition holds
-final speedMonitor = effect.via((via) {
+final speedMonitor = Effect.via((via) {
   final currentSpeed = via(speedBloom);
   final speedLimit = via(limitBloom);
 
