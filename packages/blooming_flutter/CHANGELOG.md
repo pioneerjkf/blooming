@@ -1,3 +1,11 @@
+## 0.2.1
+
+- **Durable Animation Status Observation**: Introduced `DurableAnimationController.observeStatus()` demand-driven reactive Bloom pipe to observe `AnimationStatus` without manual listener lifecycle management or leaks.
+- **CatchUp Animation Fixes**: Resolved dormancy completion synchronization in `CatchUpAnimationController` by safely dispatching microtask completions and injecting `initialStatus` on completed reactivation.
+- **Effect API Alignment**: Migrated internal widget bindings, stores, and showcases to canonical `Effect.*` sub-factories.
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.2.1`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.1.
+
 ## 0.2.0
 
 - **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.2.0`.

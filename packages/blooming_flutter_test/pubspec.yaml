@@ -10,7 +10,7 @@ topics:
   - widgets
   - reactive
 
-version: 0.2.0
+version: 0.2.1
 
 resolution: workspace
 
@@ -24,9 +24,9 @@ dependencies:
   flutter_test:
     sdk: flutter
   meta: ^1.18.0
-  blooming: ^0.2.0
-  blooming_flutter: ^0.2.0
-  blooming_test: ^0.2.0
+  blooming: ^0.2.1
+  blooming_flutter: ^0.2.1
+  blooming_test: ^0.2.1
 
 dev_dependencies:
   flutter_lints: ^6.0.0
