@@ -31,15 +31,11 @@ void main(List<String> args) async {
 
   // Real measurement stage
   final startTicks = untracked(pipeline.snapshotBloom).totalTicksProcessed;
+  pipeline.lagRecorder.reset();
   final stopwatch = Stopwatch()..start();
-  final List<double> lags = [];
-
-  final timer = Timer.periodic(const Duration(milliseconds: 20), (_) {
-    lags.add(untracked(pipeline.eventLoopLagBloom));
-  });
 
   await Future.delayed(Duration(seconds: durationSec));
-  timer.cancel();
+  final lagStats = pipeline.lagRecorder.stats();
   stopwatch.stop();
 
   final endTicks = untracked(pipeline.snapshotBloom).totalTicksProcessed;
@@ -51,13 +47,7 @@ void main(List<String> args) async {
   pipeline.stopSimulation();
   pipeline.dispose();
 
-  lags.sort();
-  final double? avgLag =
-      lags.isEmpty ? null : lags.reduce((a, b) => a + b) / lags.length;
-  final double? p95Lag =
-      lags.isEmpty ? null : lags[((lags.length - 1) * 0.95).floor()];
-  final double? p99Lag =
-      lags.isEmpty ? null : lags[((lags.length - 1) * 0.99).floor()];
+  double? lagStat(String k) => (lagStats[k] as num?)?.toDouble();
 
   final result = {
     'framework': 'Blooming',
@@ -65,12 +55,22 @@ void main(List<String> args) async {
     'target_tps': targetTps,
     'sustained_tps': sustainedTps,
     'total_ticks': actualTicks,
-    'avg_event_loop_lag_ms':
-        avgLag != null ? double.parse(avgLag.toStringAsFixed(2)) : null,
-    'p95_event_loop_lag_ms':
-        p95Lag != null ? double.parse(p95Lag.toStringAsFixed(2)) : null,
-    'p99_event_loop_lag_ms':
-        p99Lag != null ? double.parse(p99Lag.toStringAsFixed(2)) : null,
+    'avg_event_loop_lag_ms': lagStat('mean') == null
+        ? null
+        : double.parse(lagStat('mean')!.toStringAsFixed(3)),
+    'median_event_loop_lag_ms': lagStat('median') == null
+        ? null
+        : double.parse(lagStat('median')!.toStringAsFixed(3)),
+    'p95_event_loop_lag_ms': lagStat('p95') == null
+        ? null
+        : double.parse(lagStat('p95')!.toStringAsFixed(3)),
+    'p99_event_loop_lag_ms': lagStat('p99') == null
+        ? null
+        : double.parse(lagStat('p99')!.toStringAsFixed(3)),
+    'max_event_loop_lag_ms': lagStat('max') == null
+        ? null
+        : double.parse(lagStat('max')!.toStringAsFixed(3)),
+    'lag_sample_count': lagStats['count'] ?? 0,
     'latency_ms': double.parse(latency.toStringAsFixed(2)),
     'duration_sec': durationSec,
   };

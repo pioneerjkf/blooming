@@ -81,7 +81,7 @@ class CorallineBenchmarkMetricsSnapshot {
     buffer.writeln(
         '| **Throughput** | Total Ingested Ticks | `${_formatNum(totalTicksProcessed)} ticks` | High Frequency Stream |');
     buffer.writeln(
-        '| **UI Latency** | Tick-to-UI Latency | `${latencyMs.toStringAsFixed(2)} ms` | ${latencyMs < 16.6 ? '⚡ Zero Jank (<16.6ms)' : '⚠️ High Latency'} |');
+        '| **UI Latency** | Tick-to-UI Latency | `${latencyMs.toStringAsFixed(2)} ms` | ${latencyMs < 8.33 ? '⚡ Zero Jank (<8.33ms)' : '⚠️ High Latency'} |');
     buffer.writeln(
         '| **Responsiveness** | Event Loop Lag (Current) | `${eventLoopLagMs.toStringAsFixed(2)} ms` | Main Thread Smoothness |');
     buffer.writeln(

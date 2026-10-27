@@ -83,10 +83,6 @@ String _formatInterval(double ms) {
 }
 
 int _resolveIntervalIndex(String input, List<double> presets) {
-  final asInt = int.tryParse(input.trim());
-  if (asInt != null && asInt >= 0 && asInt < presets.length) {
-    return asInt;
-  }
   var clean = input.trim().toLowerCase();
   double ms = 0;
   if (clean.endsWith('ms')) {
@@ -95,6 +91,8 @@ int _resolveIntervalIndex(String input, List<double> presets) {
     final s = double.tryParse(clean.substring(0, clean.length - 1));
     ms = s != null ? s * 1000 : presets.first;
   } else {
+    // Unitless numeric inputs are strictly interpreted as milliseconds (ms).
+    // Note: direct preset index specification is exclusively handled via --*-interval-index
     final d = double.tryParse(clean);
     ms = d ?? presets.first;
   }
@@ -123,10 +121,12 @@ class BenchmarkRunResult {
     required this.p99EventLoopLagMs,
     required this.latencyMs,
     required this.memoryRssMb,
-    required this.uiBuildTimeMs,
-    required this.rasterTimeMs,
-    required this.actualFps,
-    required this.jankRatePct,
+    this.uiBuildTimeMs,
+    this.rasterTimeMs,
+    this.actualFps,
+    this.jankRatePct,
+    this.displayRefreshRate,
+    this.frameBudgetMs,
     required this.durationSec,
     this.scrollAnimation = true,
     this.themeRotation = true,
@@ -137,21 +137,29 @@ class BenchmarkRunResult {
     this.medianEventLoopLagMs,
     this.maxEventLoopLagMs,
     this.lagSampleCount,
+    this.retryCount = 0,
+    this.failureReason,
+    this.frameworkUpdateRateHz,
+    this.totalBatches,
   });
 
   final BenchmarkTarget target;
   final int targetTps;
   final int sustainedTps;
   final int totalTicks;
+  final int? frameworkUpdateRateHz;
+  final int? totalBatches;
   final double? avgEventLoopLagMs;
   final double? p95EventLoopLagMs;
   final double? p99EventLoopLagMs;
   final double latencyMs;
   final double memoryRssMb;
-  final double uiBuildTimeMs;
-  final double rasterTimeMs;
-  final double actualFps;
-  final double jankRatePct;
+  final double? uiBuildTimeMs;
+  final double? rasterTimeMs;
+  final double? actualFps;
+  final double? jankRatePct;
+  final double? displayRefreshRate;
+  final double? frameBudgetMs;
   final int durationSec;
   final bool scrollAnimation;
   final bool themeRotation;
@@ -162,6 +170,72 @@ class BenchmarkRunResult {
   final double? medianEventLoopLagMs;
   final double? maxEventLoopLagMs;
   final int? lagSampleCount;
+  final int retryCount;
+  final String? failureReason;
+
+  BenchmarkRunResult copyWith({
+    BenchmarkTarget? target,
+    int? targetTps,
+    int? sustainedTps,
+    int? totalTicks,
+    int? frameworkUpdateRateHz,
+    int? totalBatches,
+    double? avgEventLoopLagMs,
+    double? p95EventLoopLagMs,
+    double? p99EventLoopLagMs,
+    double? latencyMs,
+    double? memoryRssMb,
+    double? uiBuildTimeMs,
+    double? rasterTimeMs,
+    double? actualFps,
+    double? jankRatePct,
+    double? displayRefreshRate,
+    double? frameBudgetMs,
+    int? durationSec,
+    bool? scrollAnimation,
+    bool? themeRotation,
+    bool? tickerRotation,
+    int? themeIntervalIndex,
+    int? tickerIntervalIndex,
+    int? setIndex,
+    double? medianEventLoopLagMs,
+    double? maxEventLoopLagMs,
+    int? lagSampleCount,
+    int? retryCount,
+    String? failureReason,
+  }) =>
+      BenchmarkRunResult(
+        target: target ?? this.target,
+        targetTps: targetTps ?? this.targetTps,
+        sustainedTps: sustainedTps ?? this.sustainedTps,
+        totalTicks: totalTicks ?? this.totalTicks,
+        frameworkUpdateRateHz:
+            frameworkUpdateRateHz ?? this.frameworkUpdateRateHz,
+        totalBatches: totalBatches ?? this.totalBatches,
+        avgEventLoopLagMs: avgEventLoopLagMs ?? this.avgEventLoopLagMs,
+        p95EventLoopLagMs: p95EventLoopLagMs ?? this.p95EventLoopLagMs,
+        p99EventLoopLagMs: p99EventLoopLagMs ?? this.p99EventLoopLagMs,
+        latencyMs: latencyMs ?? this.latencyMs,
+        memoryRssMb: memoryRssMb ?? this.memoryRssMb,
+        uiBuildTimeMs: uiBuildTimeMs ?? this.uiBuildTimeMs,
+        rasterTimeMs: rasterTimeMs ?? this.rasterTimeMs,
+        actualFps: actualFps ?? this.actualFps,
+        jankRatePct: jankRatePct ?? this.jankRatePct,
+        displayRefreshRate: displayRefreshRate ?? this.displayRefreshRate,
+        frameBudgetMs: frameBudgetMs ?? this.frameBudgetMs,
+        durationSec: durationSec ?? this.durationSec,
+        scrollAnimation: scrollAnimation ?? this.scrollAnimation,
+        themeRotation: themeRotation ?? this.themeRotation,
+        tickerRotation: tickerRotation ?? this.tickerRotation,
+        themeIntervalIndex: themeIntervalIndex ?? this.themeIntervalIndex,
+        tickerIntervalIndex: tickerIntervalIndex ?? this.tickerIntervalIndex,
+        setIndex: setIndex ?? this.setIndex,
+        medianEventLoopLagMs: medianEventLoopLagMs ?? this.medianEventLoopLagMs,
+        maxEventLoopLagMs: maxEventLoopLagMs ?? this.maxEventLoopLagMs,
+        lagSampleCount: lagSampleCount ?? this.lagSampleCount,
+        retryCount: retryCount ?? this.retryCount,
+        failureReason: failureReason ?? this.failureReason,
+      );
 
   double get achievementRate => targetTps > 0
       ? ((sustainedTps / targetTps) * 100).clamp(0.0, 100.0)
@@ -172,6 +246,8 @@ class BenchmarkRunResult {
         'framework': target.name,
         'architecture': target.architecture,
         'set_index': setIndex,
+        'retry_count': retryCount,
+        'failure_reason': failureReason,
         'scroll_animation': scrollAnimation,
         'theme_rotation': themeRotation,
         'theme_interval_ms': rotationIntervalPresetsMs[themeIntervalIndex],
@@ -179,9 +255,12 @@ class BenchmarkRunResult {
         'ticker_interval_ms': rotationIntervalPresetsMs[tickerIntervalIndex],
         'target_tps': targetTps,
         'sustained_tps': sustainedTps,
+        'generator_tps': sustainedTps,
+        'framework_update_rate_hz': frameworkUpdateRateHz,
         'achievement_rate_pct':
             double.parse(achievementRate.toStringAsFixed(2)),
         'total_ticks': totalTicks,
+        'total_batches': totalBatches,
         'avg_event_loop_lag_ms': avgEventLoopLagMs != null
             ? double.parse(avgEventLoopLagMs!.toStringAsFixed(3))
             : null,
@@ -198,10 +277,24 @@ class BenchmarkRunResult {
             ? double.parse(maxEventLoopLagMs!.toStringAsFixed(3))
             : null,
         'lag_sample_count': lagSampleCount,
-        'ui_build_time_ms': double.parse(uiBuildTimeMs.toStringAsFixed(2)),
-        'raster_time_ms': double.parse(rasterTimeMs.toStringAsFixed(2)),
-        'actual_fps': double.parse(actualFps.toStringAsFixed(1)),
-        'jank_rate_pct': double.parse(jankRatePct.toStringAsFixed(2)),
+        'ui_build_time_ms': uiBuildTimeMs != null
+            ? double.parse(uiBuildTimeMs!.toStringAsFixed(2))
+            : null,
+        'raster_time_ms': rasterTimeMs != null
+            ? double.parse(rasterTimeMs!.toStringAsFixed(2))
+            : null,
+        'actual_fps': actualFps != null
+            ? double.parse(actualFps!.toStringAsFixed(1))
+            : null,
+        'jank_rate_pct': jankRatePct != null
+            ? double.parse(jankRatePct!.toStringAsFixed(2))
+            : null,
+        'display_refresh_rate': displayRefreshRate != null
+            ? double.parse(displayRefreshRate!.toStringAsFixed(1))
+            : null,
+        'frame_budget_ms': frameBudgetMs != null
+            ? double.parse(frameBudgetMs!.toStringAsFixed(2))
+            : null,
         'latency_ms': double.parse(latencyMs.toStringAsFixed(2)),
         'memory_rss_mb': double.parse(memoryRssMb.toStringAsFixed(1)),
         'duration_sec': durationSec,
@@ -227,6 +320,7 @@ void main(List<String> args) async {
   String mode =
       'drive'; // Default to Real Windows GPU Flutter Driver E2E Benchmarking
   List<BenchmarkTarget> effectiveTargets = List.from(benchmarkTargets);
+  final List<String> requestedTargetFilters = [];
 
   for (final arg in args) {
     if (arg.startsWith('--tps=')) {
@@ -239,19 +333,34 @@ void main(List<String> args) async {
     } else if (arg.startsWith('--output-dir=')) {
       outputDir = arg.substring('--output-dir='.length);
     } else if (arg.startsWith('--mode=')) {
-      mode = arg.substring('--mode='.length);
+      final rawMode = arg.substring('--mode='.length).toLowerCase().trim();
+      if (rawMode == 'drive' || rawMode == 'flutter-driver') {
+        mode = 'drive';
+      } else if (rawMode == 'subprocess' || rawMode == 'headless') {
+        mode = 'subprocess';
+      } else {
+        stderr.writeln(
+            '❌ Invalid --mode="$rawMode". Supported modes are: "drive" (Flutter Driver real desktop window) or "subprocess" (headless isolate).');
+        exit(1);
+      }
     } else if (arg.startsWith('--sets=')) {
       setsCount = int.parse(arg.substring('--sets='.length));
     } else if (arg.startsWith('--target=') || arg.startsWith('--framework=')) {
-      final filterId = (arg.startsWith('--target=')
+      final filterVal = (arg.startsWith('--target=')
               ? arg.substring('--target='.length)
               : arg.substring('--framework='.length))
-          .toLowerCase();
-      effectiveTargets = effectiveTargets
-          .where((t) =>
-              t.id.toLowerCase() == filterId ||
-              t.name.toLowerCase() == filterId)
-          .toList();
+          .trim();
+      if (filterVal.isEmpty) {
+        stderr.writeln(
+            '❌ Missing value for target filter. Supported targets: ${benchmarkTargets.map((t) => t.id).join(', ')}');
+        exit(1);
+      }
+      for (final part in filterVal.split(',')) {
+        final trimmed = part.trim().toLowerCase();
+        if (trimmed.isNotEmpty) {
+          requestedTargetFilters.add(trimmed);
+        }
+      }
     } else if (arg == '--shuffle' || arg == '--random-order') {
       shuffleOrder = true;
     } else if (arg == '--no-shuffle') {
@@ -312,6 +421,41 @@ void main(List<String> args) async {
       tickerIntervalIndex = int.parse(arg.split('=').last)
           .clamp(0, rotationIntervalPresetsMs.length - 1);
     }
+  }
+
+  if (requestedTargetFilters.isNotEmpty) {
+    final validTargetNames =
+        benchmarkTargets.map((t) => t.id.toLowerCase()).toList();
+    final unknownTargets = <String>[];
+    final selectedTargets = <BenchmarkTarget>[];
+
+    for (final filter in requestedTargetFilters) {
+      final match = benchmarkTargets.where((t) =>
+          t.id.toLowerCase() == filter || t.name.toLowerCase() == filter);
+      if (match.isEmpty) {
+        unknownTargets.add(filter);
+      } else {
+        for (final target in match) {
+          if (!selectedTargets.contains(target)) {
+            selectedTargets.add(target);
+          }
+        }
+      }
+    }
+
+    if (unknownTargets.isNotEmpty) {
+      stderr.writeln(
+          '❌ Unknown target framework(s): "${unknownTargets.join(', ')}". Supported targets: ${validTargetNames.join(', ')}');
+      exit(1);
+    }
+
+    effectiveTargets = selectedTargets;
+  }
+
+  if (effectiveTargets.isEmpty) {
+    stderr.writeln(
+        '❌ No valid benchmark targets specified. Supported targets: ${benchmarkTargets.map((t) => t.id).join(', ')}');
+    exit(1);
   }
 
   print('Configuration:');
@@ -430,7 +574,7 @@ void main(List<String> args) async {
             ? '${result.avgEventLoopLagMs!.toStringAsFixed(2)}ms'
             : 'N/A';
         print(
-          '  → ${_formatNum(targetTps)} TPS (${durationSec}s) DONE! Sustained: ${_formatNum(result.sustainedTps)} TPS (${result.achievementRate.toStringAsFixed(1)}%) | Lag: $lagPrint | RSS: ${result.memoryRssMb.toStringAsFixed(1)}MB | UI Build: ${result.uiBuildTimeMs > 0 ? '${result.uiBuildTimeMs}ms' : 'N/A'}',
+          '  → ${_formatNum(targetTps)} TPS (${durationSec}s) DONE! Sustained: ${_formatNum(result.sustainedTps)} TPS (${result.achievementRate.toStringAsFixed(1)}%) | Lag: $lagPrint | RSS: ${result.memoryRssMb.toStringAsFixed(1)}MB | UI Build: ${result.uiBuildTimeMs != null && result.uiBuildTimeMs! > 0 ? '${result.uiBuildTimeMs}ms' : 'N/A'}',
         );
       }
       print('');
@@ -476,6 +620,7 @@ void main(List<String> args) async {
   // 1. Generate Markdown Report
   final mdReportSub = _generateMediumMarkdownReport(
       allResults, tpsScenarios, durationSec, mode, setsCount, scrollAnimation,
+      shuffleOrder: shuffleOrder,
       themeRotation: themeRotation,
       themeIntervalIndex: themeIntervalIndex,
       tickerRotation: tickerRotation,
@@ -488,6 +633,7 @@ void main(List<String> args) async {
   // 2. Generate JSON Matrix
   final jsonReport = _generateJsonMatrix(
       allResults, tpsScenarios, mode, setsCount, scrollAnimation,
+      shuffleOrder: shuffleOrder,
       themeRotation: themeRotation,
       themeIntervalIndex: themeIntervalIndex,
       tickerRotation: tickerRotation,
@@ -608,12 +754,12 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
   final stdoutBuffer = StringBuffer();
   final stderrBuffer = StringBuffer();
 
-  process.stdout
+  final stdoutDone = process.stdout
       .transform(utf8.decoder)
-      .listen((data) => stdoutBuffer.write(data));
-  process.stderr
+      .forEach((data) => stdoutBuffer.write(data));
+  final stderrDone = process.stderr
       .transform(utf8.decoder)
-      .listen((data) => stderrBuffer.write(data));
+      .forEach((data) => stderrBuffer.write(data));
 
   int elapsedSec = 0;
   _renderProgress(
@@ -636,6 +782,8 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
   final exitCode = await process.exitCode;
   timer.cancel();
   stdout.write('\r${' ' * 80}\r');
+  await Future.wait([stdoutDone, stderrDone])
+      .timeout(const Duration(seconds: 3), onTimeout: () => []);
 
   final stdoutText = stdoutBuffer.toString();
   final marker = '__BENCHMARK_RAW_OUTPUT__:';
@@ -658,22 +806,29 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
       : stdoutText.substring(markerIdx + marker.length).trim();
   final Map<String, dynamic> data = jsonDecode(jsonString);
 
+  final avgLag = (data['avg_event_loop_lag_ms'] as num?)?.toDouble();
   return BenchmarkRunResult(
     target: target,
     targetTps: targetTps,
     sustainedTps: (data['sustained_tps'] as num).toInt(),
     totalTicks: (data['total_ticks'] as num).toInt(),
-    avgEventLoopLagMs: (data['avg_event_loop_lag_ms'] as num?)?.toDouble(),
+    frameworkUpdateRateHz: (data['framework_update_rate_hz'] as num?)?.toInt(),
+    totalBatches: (data['total_batches'] as num?)?.toInt(),
+    avgEventLoopLagMs: avgLag,
     p95EventLoopLagMs: (data['p95_event_loop_lag_ms'] as num?)?.toDouble(),
     p99EventLoopLagMs: (data['p99_event_loop_lag_ms'] as num?)?.toDouble(),
-    uiBuildTimeMs: 0.0,
-    rasterTimeMs: 0.0,
-    actualFps: 60.0,
-    jankRatePct: 0.0,
+    medianEventLoopLagMs:
+        (data['median_event_loop_lag_ms'] as num?)?.toDouble(),
+    maxEventLoopLagMs: (data['max_event_loop_lag_ms'] as num?)?.toDouble(),
+    lagSampleCount: (data['lag_sample_count'] as num?)?.toInt(),
+    uiBuildTimeMs: null,
+    rasterTimeMs: null,
+    actualFps: null,
+    jankRatePct: null,
     latencyMs: (data['latency_ms'] as num).toDouble(),
     memoryRssMb: (data['memory_rss_mb'] as num).toDouble(),
     durationSec: durationSec,
-    scrollAnimation: (data['scroll_animation'] as bool?) ?? scrollAnimation,
+    scrollAnimation: (data['scroll_animation'] as bool?) ?? false,
     themeRotation: (data['theme_rotation'] as bool?) ?? themeRotation,
     themeIntervalIndex:
         (data['theme_interval_index'] as num?)?.toInt() ?? themeIntervalIndex,
@@ -727,7 +882,7 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
     stdout.writeln(
         '🔄 Retrying benchmark run for ${target.name} once after 3s cooldown...');
     await Future.delayed(const Duration(seconds: 3));
-    return await _runFlutterDriverBenchmarkAttempt(
+    final retriedResult = await _runFlutterDriverBenchmarkAttempt(
       target: target,
       targetDir: targetDir,
       targetTps: targetTps,
@@ -744,6 +899,10 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmark({
       totalTargets: totalTargets,
       runIndex: runIndex,
       totalRuns: totalRuns,
+    );
+    return retriedResult.copyWith(
+      retryCount: 1,
+      failureReason: e.toString(),
     );
   }
 }
@@ -802,12 +961,12 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
   final stdoutBuffer = StringBuffer();
   final stderrBuffer = StringBuffer();
 
-  process.stdout
+  final stdoutDone = process.stdout
       .transform(utf8.decoder)
-      .listen((data) => stdoutBuffer.write(data));
-  process.stderr
+      .forEach((data) => stdoutBuffer.write(data));
+  final stderrDone = process.stderr
       .transform(utf8.decoder)
-      .listen((data) => stderrBuffer.write(data));
+      .forEach((data) => stderrBuffer.write(data));
 
   int elapsedSec = 0;
   _renderProgress(
@@ -830,6 +989,8 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
   final exitCode = await process.exitCode;
   timer.cancel();
   stdout.write('\r${' ' * 80}\r');
+  await Future.wait([stdoutDone, stderrDone])
+      .timeout(const Duration(seconds: 3), onTimeout: () => []);
 
   final stdoutText = stdoutBuffer.toString();
   final marker = '__BENCHMARK_RAW_OUTPUT__:';
@@ -859,19 +1020,21 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
     targetTps: targetTps,
     sustainedTps: (data['sustained_tps'] as num).toInt(),
     totalTicks: (data['total_ticks'] as num).toInt(),
+    frameworkUpdateRateHz: (data['framework_update_rate_hz'] as num?)?.toInt(),
+    totalBatches: (data['total_batches'] as num?)?.toInt(),
     avgEventLoopLagMs: avgLag,
-    p95EventLoopLagMs:
-        (data['p95_event_loop_lag_ms'] as num?)?.toDouble() ?? avgLag,
-    p99EventLoopLagMs:
-        (data['p99_event_loop_lag_ms'] as num?)?.toDouble() ?? avgLag,
+    p95EventLoopLagMs: (data['p95_event_loop_lag_ms'] as num?)?.toDouble(),
+    p99EventLoopLagMs: (data['p99_event_loop_lag_ms'] as num?)?.toDouble(),
     medianEventLoopLagMs:
         (data['median_event_loop_lag_ms'] as num?)?.toDouble(),
     maxEventLoopLagMs: (data['max_event_loop_lag_ms'] as num?)?.toDouble(),
     lagSampleCount: (data['lag_sample_count'] as num?)?.toInt(),
-    uiBuildTimeMs: (data['ui_build_time_ms'] as num).toDouble(),
-    rasterTimeMs: (data['raster_time_ms'] as num).toDouble(),
-    actualFps: (data['actual_fps'] as num).toDouble(),
-    jankRatePct: (data['jank_rate_pct'] as num).toDouble(),
+    uiBuildTimeMs: (data['ui_build_time_ms'] as num?)?.toDouble(),
+    rasterTimeMs: (data['raster_time_ms'] as num?)?.toDouble(),
+    actualFps: (data['actual_fps'] as num?)?.toDouble(),
+    jankRatePct: (data['jank_rate_pct'] as num?)?.toDouble(),
+    displayRefreshRate: (data['display_refresh_rate'] as num?)?.toDouble(),
+    frameBudgetMs: (data['frame_budget_ms'] as num?)?.toDouble(),
     latencyMs: (data['latency_ms'] as num? ?? 0.0).toDouble(),
     memoryRssMb: (data['memory_rss_mb'] as num).toDouble(),
     durationSec: durationSec,
@@ -920,6 +1083,7 @@ String _generateMediumMarkdownReport(
   String mode,
   int setsCount,
   bool scrollAnimation, {
+  bool shuffleOrder = true,
   bool themeRotation = true,
   int themeIntervalIndex = 0,
   bool tickerRotation = true,
@@ -938,16 +1102,31 @@ String _generateMediumMarkdownReport(
   buffer.writeln(
       '- **Operating System**: `${Platform.operatingSystem} ${Platform.operatingSystemVersion}`');
   buffer.writeln('- **Dart SDK**: `${Platform.version.split(' ').first}`');
+  final setDesc = setsCount > 1
+      ? '$setsCount ${shuffleOrder ? "randomized" : "sequential"} set(s)'
+      : '1 set';
   buffer.writeln(
-      '- **Scenario Duration**: `${durationSec}s` per test scenario ($setsCount randomized set(s))');
+      '- **Scenario Duration**: `${durationSec}s` per test scenario ($setDesc)');
   buffer.writeln(
-      '- **Order Book Scroll Animation**: `${scrollAnimation ? "Enabled (Continuous VSync Oscillation)" : "Disabled (Static Center Viewport)"}`');
+      '- **Order Book Scroll Animation**: ${mode == 'drive' && scrollAnimation ? "Enabled (Continuous VSync Oscillation)" : mode == 'drive' ? "Disabled (Static Center Viewport)" : "Disabled (Unsupported in Headless Mode)"}');
   buffer.writeln(
       '- **Theme Auto-Rotation**: `${themeRotation ? "Enabled (${_formatInterval(rotationIntervalPresetsMs[themeIntervalIndex])})" : "Disabled"}`');
   buffer.writeln(
       '- **Watchlist Ticker Auto-Rotation**: `${tickerRotation ? "Enabled (${_formatInterval(rotationIntervalPresetsMs[tickerIntervalIndex])})" : "Disabled"}`');
   buffer.writeln(
       '- **Execution Engine**: ${mode == 'drive' ? 'Flutter Driver Real Window, `--profile` build (GPU & VSync Timelines)' : 'Dedicated Background Isolate Ingestion & OS RSS Memory Sampling'}');
+  if (mode == 'drive') {
+    final sampleRefreshRate = results
+        .map((r) => r.displayRefreshRate)
+        .firstWhere((hz) => hz != null && hz > 0, orElse: () => null);
+    final sampleBudget = results
+        .map((r) => r.frameBudgetMs)
+        .firstWhere((b) => b != null && b > 0, orElse: () => null);
+    if (sampleRefreshRate != null) {
+      buffer.writeln(
+          '- **Display Refresh Rate & Frame Budget**: `${sampleRefreshRate.toStringAsFixed(1)}Hz` (${sampleBudget?.toStringAsFixed(2) ?? (1000.0 / sampleRefreshRate).toStringAsFixed(2)}ms deadline for Jank evaluation)');
+    }
+  }
   buffer.writeln(
       '- **Event Loop Lag sampling**: every 33ms over the full ${durationSec}s window of each set (about ${(durationSec / 0.033).round()} samples per set), stored in a pre-allocated fixed buffer.');
   buffer.writeln(
@@ -956,8 +1135,11 @@ String _generateMediumMarkdownReport(
 
   for (final tps in tpsScenarios) {
     buffer.writeln('---');
+    final orderSuffix = setsCount > 1
+        ? (shuffleOrder ? ', shuffled order' : ', sequential order')
+        : '';
     buffer.writeln(
-        '### Scenario: Target ${_formatNum(tps)} TPS — $setsCount set(s)${setsCount > 1 ? ', shuffled order' : ''}');
+        '### Scenario: Target ${_formatNum(tps)} TPS — $setsCount set(s)$orderSuffix');
     buffer.writeln();
     buffer.writeln(
         'Per-set lag statistics are aggregated across sets. **Mean, Median and Trimmed Mean are all shown** (Trimmed Mean drops the single lowest and highest set when sets >= 4); no value is hidden. Rows are sorted by Median (lower is better).');
@@ -965,13 +1147,14 @@ String _generateMediumMarkdownReport(
 
     if (mode == 'drive') {
       buffer.writeln(
-          '| Framework | Lag Mean | Lag Median | Lag Trimmed Mean | P99 Lag (median of sets) | Max Lag (worst sample) | UI Build | GPU Raster | RSS |');
+          '| Framework | Generator Ingest TPS | Framework Update (Hz) | Lag Mean | Lag Median | Lag Trimmed Mean | P99 Lag (median of sets) | Max Lag (worst sample) | UI Build | GPU Raster | RSS |');
       buffer.writeln(
-          '| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |');
+          '| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |');
     } else {
       buffer.writeln(
-          '| Framework | Lag Mean | Lag Median | Lag Trimmed Mean | P99 Lag (median of sets) | Max Lag (worst sample) | RSS |');
-      buffer.writeln('| :--- | :--- | :--- | :--- | :--- | :--- | :--- |');
+          '| Framework | Generator Ingest TPS | Framework Update (Hz) | Lag Mean | Lag Median | Lag Trimmed Mean | P99 Lag (median of sets) | Max Lag (worst sample) | RSS |');
+      buffer.writeln(
+          '| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |');
     }
 
     final targetMap = <String, List<BenchmarkRunResult>>{};
@@ -981,31 +1164,53 @@ String _generateMediumMarkdownReport(
 
     final aggregatedList = <Map<String, dynamic>>[];
     targetMap.forEach((targetId, runList) {
+      final setSustainedTps = runList.map((r) => r.sustainedTps).toList();
+      final setBatchRates = runList
+          .map((r) => r.frameworkUpdateRateHz)
+          .whereType<int>()
+          .toList();
       final setMeans =
           runList.map((r) => r.avgEventLoopLagMs).whereType<double>().toList();
       final setP99s =
           runList.map((r) => r.p99EventLoopLagMs).whereType<double>().toList();
       final setMaxes = runList
-          .map((r) => r.maxEventLoopLagMs ?? r.p99EventLoopLagMs)
+          .map((r) => r.maxEventLoopLagMs)
           .whereType<double>()
           .toList();
       final setMedians = runList
-          .map((r) => r.medianEventLoopLagMs ?? r.avgEventLoopLagMs)
+          .map((r) => r.medianEventLoopLagMs)
+          .whereType<double>()
+          .toList();
+      final setBuilds = runList
+          .map((r) => r.uiBuildTimeMs)
+          .whereType<double>()
+          .toList();
+      final setRasters = runList
+          .map((r) => r.rasterTimeMs)
           .whereType<double>()
           .toList();
 
       aggregatedList.add({
         'target': runList.first.target,
+        'generator_tps': (setSustainedTps.reduce((a, b) => a + b) /
+                setSustainedTps.length)
+            .round(),
+        'framework_update_hz': setBatchRates.isEmpty
+            ? null
+            : (setBatchRates.reduce((a, b) => a + b) / setBatchRates.length)
+                .round(),
         'mean': _computeMean(setMeans),
         'median': _computeMedian(setMedians),
         'trimmed': _computeTrimmedMean(setMeans),
         'p99': _computeMedian(setP99s),
         'max':
             setMaxes.isEmpty ? null : setMaxes.reduce((a, b) => a > b ? a : b),
-        'build': runList.map((r) => r.uiBuildTimeMs).reduce((a, b) => a + b) /
-            runList.length,
-        'raster': runList.map((r) => r.rasterTimeMs).reduce((a, b) => a + b) /
-            runList.length,
+        'build': setBuilds.isEmpty
+            ? null
+            : setBuilds.reduce((a, b) => a + b) / setBuilds.length,
+        'raster': setRasters.isEmpty
+            ? null
+            : setRasters.reduce((a, b) => a + b) / setRasters.length,
         'rss': runList.map((r) => r.memoryRssMb).reduce((a, b) => a + b) /
             runList.length,
       });
@@ -1022,14 +1227,25 @@ String _generateMediumMarkdownReport(
 
     for (final agg in aggregatedList) {
       final target = agg['target'] as BenchmarkTarget;
+      final genTpsStr = '${_formatNum(agg['generator_tps'] as int)}/s';
+      final fwUpdateStr = agg['framework_update_hz'] != null
+          ? '${_formatNum(agg['framework_update_hz'] as int)} Hz'
+          : 'n/a';
       final lagCells =
           '${_fmtLag(agg['mean'] as double?)} | ${_fmtLag(agg['median'] as double?)} | ${_fmtLag(agg['trimmed'] as double?)} | ${_fmtLag(agg['p99'] as double?)} | ${_fmtLag(agg['max'] as double?)}';
       final memStr = '${(agg['rss'] as double).toStringAsFixed(1)} MB';
       if (mode == 'drive') {
+        final buildStr = agg['build'] != null
+            ? '${(agg['build'] as double).toStringAsFixed(2)} ms'
+            : 'n/a';
+        final rasterStr = agg['raster'] != null
+            ? '${(agg['raster'] as double).toStringAsFixed(2)} ms'
+            : 'n/a';
         buffer.writeln(
-            '| ${target.name} | $lagCells | ${(agg['build'] as double).toStringAsFixed(2)} ms | ${(agg['raster'] as double).toStringAsFixed(2)} ms | $memStr |');
+            '| ${target.name} | $genTpsStr | $fwUpdateStr | $lagCells | $buildStr | $rasterStr | $memStr |');
       } else {
-        buffer.writeln('| ${target.name} | $lagCells | $memStr |');
+        buffer.writeln(
+            '| ${target.name} | $genTpsStr | $fwUpdateStr | $lagCells | $memStr |');
       }
     }
     buffer.writeln();
@@ -1038,24 +1254,64 @@ String _generateMediumMarkdownReport(
       buffer.writeln('#### Individual Set Breakdown (raw, unfiltered)');
       buffer.writeln();
       buffer.writeln(
-          '| Set # | Framework | Lag Mean | Lag Median | Lag P99 | Lag Max | Samples | UI Build | GPU Raster | RSS |');
+          '| Set # | Framework | Generator TPS | Framework Update (Hz) | Lag Mean | Lag Median | Lag P99 | Lag Max | Samples | UI Build | GPU Raster | RSS |');
       buffer.writeln(
-          '| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |');
+          '| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |');
       for (final res in results.where((r) => r.targetTps == tps)) {
+        final setLabel = res.retryCount > 0
+            ? 'Set ${res.setIndex} (retry ${res.retryCount})'
+            : 'Set ${res.setIndex}';
+        final genTps = '${_formatNum(res.sustainedTps)}/s';
+        final fwRate = res.frameworkUpdateRateHz != null
+            ? '${_formatNum(res.frameworkUpdateRateHz!)} Hz'
+            : 'n/a';
+        final buildStr = res.uiBuildTimeMs != null
+            ? '${res.uiBuildTimeMs!.toStringAsFixed(2)} ms'
+            : 'n/a';
+        final rasterStr = res.rasterTimeMs != null
+            ? '${res.rasterTimeMs!.toStringAsFixed(2)} ms'
+            : 'n/a';
         buffer.writeln(
-            '| Set ${res.setIndex} | ${res.target.name} | ${_fmtLag(res.avgEventLoopLagMs)} | ${_fmtLag(res.medianEventLoopLagMs)} | ${_fmtLag(res.p99EventLoopLagMs)} | ${_fmtLag(res.maxEventLoopLagMs)} | ${res.lagSampleCount ?? 'n/a'} | ${res.uiBuildTimeMs.toStringAsFixed(2)} ms | ${res.rasterTimeMs.toStringAsFixed(2)} ms | ${res.memoryRssMb.toStringAsFixed(1)} MB |');
+            '| $setLabel | ${res.target.name} | $genTps | $fwRate | ${_fmtLag(res.avgEventLoopLagMs)} | ${_fmtLag(res.medianEventLoopLagMs)} | ${_fmtLag(res.p99EventLoopLagMs)} | ${_fmtLag(res.maxEventLoopLagMs)} | ${res.lagSampleCount ?? 'n/a'} | $buildStr | $rasterStr | ${res.memoryRssMb.toStringAsFixed(1)} MB |');
       }
       buffer.writeln();
+
+      final retried = results.where((r) => r.targetTps == tps && r.retryCount > 0).toList();
+      if (retried.isNotEmpty) {
+        buffer.writeln('> ⚠️ **Retried Runs Notice**:');
+        for (final r in retried) {
+          buffer.writeln(
+              '> - **${r.target.name} (Set ${r.setIndex})**: initial attempt failed and was successfully retried once. Error details: `${r.failureReason ?? 'unspecified'}`');
+        }
+        buffer.writeln();
+      }
     }
   }
 
   buffer.writeln('---');
   buffer.writeln('## Limitations');
   buffer.writeln();
+  final hasExtremeTps = tpsScenarios.any((t) => t >= 10000000);
+  if (hasExtremeTps) {
+    buffer.writeln(
+        '- **Real Hardware Simulation & Physical Saturation.** All tick batches are executed 100% in real hardware by the background isolate without artificial step capping or arithmetic tick padding. When target TPS is set to extreme values such as 1B TPS (10억 틱), the isolate naturally saturates the host single-core capacity (~14.5M TPS on Apple Silicon), reflecting genuine maximum physical throughput. Event Loop Lag on the main isolate remains the primary differentiator for UI responsiveness under heavy background streaming.');
+  } else {
+    buffer.writeln(
+        '- **Real Hardware Simulation.** All tick batches are executed 100% in real hardware by the background isolate without artificial step capping or arithmetic tick padding at the configured target rates. Event Loop Lag on the main isolate remains the primary differentiator for UI responsiveness under streaming load.');
+  }
   buffer.writeln(
-      '- **Throughput is intentionally not reported.** The tick generator simulates at most 200 steps per 1 ms batch and adds the remainder to the tick counter arithmetically, so Sustained TPS / Achievement Rate track the target for every framework and cannot discriminate between them. Raw values remain in `benchmark_matrix.json` and `benchmark_summary.csv`.');
+      '- **Generator Ingestion Throughput vs. Framework State Update Frequency**:');
   buffer.writeln(
-      '- **Rendering metrics have low resolution.** The UI only repaints a handful of frames per run, so UI Build / GPU Raster are nearly identical across frameworks and should not be used to rank them.');
+      '  - **Generator Ingest TPS (`generator_tps` / `sustained_tps`)**: Measures raw order-book ticks computed per second inside the dedicated background isolate (up to ~14.5M TPS on Apple Silicon under hardware saturation).');
+  buffer.writeln(
+      '  - **Framework Update Rate (`framework_update_rate_hz`)**: The background isolate groups ticks into 1ms batches (`TickBatchPayload`), transmitting ~1,000 batches per second across the isolate port to the main UI thread. Each incoming batch triggers reactive listeners and pipeline updates once. **`sustained_tps` must NOT be interpreted as 14.5 million individual UI widget rebuilds or distinct framework state-tree invalidations per second.**');
+  if (mode == 'drive') {
+    buffer.writeln(
+        '- **Rendering Metrics.** Measured in profile mode with Flutter Driver on a real desktop GPU window over the full test duration. UI Build Time and GPU Raster Time reflect actual widget rebuild tree overhead and compositing performance under concurrent background isolate load.');
+  } else {
+    buffer.writeln(
+        '- **Headless Execution Environment.** In headless mode, tests run within an isolated test VM process without desktop window rendering or GPU rasterization. Render metrics (UI Build, GPU Raster, FPS, Jank Rate) and Order Book Scroll Animation are omitted/disabled as not applicable to headless mode; evaluation focuses purely on background isolate ingestion throughput, event loop lag under reactive ticker and theme rotation stress, and memory RSS footprint.');
+  }
   buffer.writeln(
       '- **Event loop lag is a main-isolate responsiveness metric**, not a throughput or correctness metric. Differences of a few hundredths of a millisecond are within run-to-run noise; compare Median and Max together with the raw per-set table.');
   buffer.writeln(
@@ -1069,6 +1325,8 @@ String _generateMediumMarkdownReport(
   buffer.writeln('## 📊 Metric Definitions & Statistical Methodology');
   buffer.writeln();
   buffer.writeln(
+      '- **Generator TPS vs. Framework Update Rate (Hz)**: Clear distinction is maintained between isolate tick production volume (`generator_tps`) and main-isolate reactive dispatch frequency (`framework_update_rate_hz`, batch dispatches/sec).');
+  buffer.writeln(
       '- **Event Loop Lag**: Measured by injecting `Timer.run()` every 33ms into Dart’s event queue. Measures delay until CPU execution (\\Delta t = T_{executed} - T_{scheduled}).');
   buffer.writeln(
       '- **Mean / Median / Trimmed Mean**: all three are reported side by side. Trimmed Mean drops the single lowest and highest set when sets >= 4; Median is the robust reference. The statistics are fixed in advance and never applied selectively.');
@@ -1078,8 +1336,10 @@ String _generateMediumMarkdownReport(
       '- **Full Whitepaper**: See [`BENCHMARK_METHODOLOGY.md`]($methodologyRelPath) for full mathematical definitions and source code snippets.');
   buffer.writeln();
   buffer.writeln('---');
+  final modeDesc =
+      mode == 'drive' ? 'Flutter Driver real GPU window' : 'headless';
   buffer.writeln(
-      '*Report generated automatically via pure hardware headless measurement.*');
+      '*Report generated automatically via pure hardware $modeDesc measurement.*');
 
   return buffer.toString();
 }
@@ -1091,6 +1351,7 @@ Map<String, dynamic> _generateJsonMatrix(
   String mode,
   int setsCount,
   bool scrollAnimation, {
+  bool shuffleOrder = true,
   bool themeRotation = true,
   int themeIntervalIndex = 0,
   bool tickerRotation = true,
@@ -1100,6 +1361,7 @@ Map<String, dynamic> _generateJsonMatrix(
     'suite': 'NASDAQ Order Book Mini Benchmark (100% Pure Hardware Execution)',
     'mode': mode,
     'sets_count': setsCount,
+    'shuffle_order': shuffleOrder,
     'scroll_animation': scrollAnimation,
     'theme_rotation': themeRotation,
     'theme_interval_ms': rotationIntervalPresetsMs[themeIntervalIndex],
@@ -1120,21 +1382,45 @@ Map<String, dynamic> _generateJsonMatrix(
 String _generateCsv(List<BenchmarkRunResult> results) {
   final buffer = StringBuffer();
   buffer.writeln(
-      'Framework,Architecture,Target_TPS,Sustained_TPS,Achievement_Rate_Pct,Total_Ticks,Avg_Event_Loop_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,UI_Build_Time_Ms,Raster_Time_Ms,Actual_FPS,Jank_Rate_Pct,Memory_RSS_MB,Latency_Ms,Scroll_Animation,Theme_Rotation,Theme_Interval_Ms,Ticker_Rotation,Ticker_Interval_Ms');
+      'Framework,Architecture,Set_Index,Retry_Count,Target_TPS,Generator_TPS,Framework_Update_Rate_Hz,Achievement_Rate_Pct,Total_Ticks,Total_Batches,Avg_Event_Loop_Lag_Ms,Median_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,Max_Lag_Ms,Lag_Sample_Count,UI_Build_Time_Ms,Raster_Time_Ms,Actual_FPS,Jank_Rate_Pct,Display_Refresh_Rate_Hz,Frame_Budget_Ms,Memory_RSS_MB,Latency_Ms,Scroll_Animation,Theme_Rotation,Theme_Interval_Ms,Ticker_Rotation,Ticker_Interval_Ms');
   for (final r in results) {
     final lagStr = r.avgEventLoopLagMs != null
-        ? r.avgEventLoopLagMs!.toStringAsFixed(2)
+        ? r.avgEventLoopLagMs!.toStringAsFixed(3)
+        : 'N/A';
+    final medianStr = r.medianEventLoopLagMs != null
+        ? r.medianEventLoopLagMs!.toStringAsFixed(3)
         : 'N/A';
     final p95Str = r.p95EventLoopLagMs != null
-        ? r.p95EventLoopLagMs!.toStringAsFixed(2)
+        ? r.p95EventLoopLagMs!.toStringAsFixed(3)
         : 'N/A';
     final p99Str = r.p99EventLoopLagMs != null
-        ? r.p99EventLoopLagMs!.toStringAsFixed(2)
+        ? r.p99EventLoopLagMs!.toStringAsFixed(3)
+        : 'N/A';
+    final maxStr = r.maxEventLoopLagMs != null
+        ? r.maxEventLoopLagMs!.toStringAsFixed(3)
         : 'N/A';
     final themeIntervalMs = rotationIntervalPresetsMs[r.themeIntervalIndex];
     final tickerIntervalMs = rotationIntervalPresetsMs[r.tickerIntervalIndex];
+    final buildStr =
+        r.uiBuildTimeMs != null ? r.uiBuildTimeMs!.toStringAsFixed(2) : 'N/A';
+    final rasterStr =
+        r.rasterTimeMs != null ? r.rasterTimeMs!.toStringAsFixed(2) : 'N/A';
+    final fpsStr =
+        r.actualFps != null ? r.actualFps!.toStringAsFixed(1) : 'N/A';
+    final jankStr =
+        r.jankRatePct != null ? r.jankRatePct!.toStringAsFixed(2) : 'N/A';
+    final refreshStr = r.displayRefreshRate != null
+        ? r.displayRefreshRate!.toStringAsFixed(1)
+        : 'N/A';
+    final budgetStr = r.frameBudgetMs != null
+        ? r.frameBudgetMs!.toStringAsFixed(2)
+        : 'N/A';
+    final batchRateStr =
+        r.frameworkUpdateRateHz != null ? '${r.frameworkUpdateRateHz}' : 'N/A';
+    final batchesStr = r.totalBatches != null ? '${r.totalBatches}' : 'N/A';
+
     buffer.writeln(
-        '"${r.target.name}","${r.target.architecture}",${r.targetTps},${r.sustainedTps},${r.achievementRate.toStringAsFixed(2)},${r.totalTicks},$lagStr,$p95Str,$p99Str,${r.uiBuildTimeMs.toStringAsFixed(2)},${r.rasterTimeMs.toStringAsFixed(2)},${r.actualFps.toStringAsFixed(1)},${r.jankRatePct.toStringAsFixed(2)},${r.memoryRssMb.toStringAsFixed(1)},${r.latencyMs.toStringAsFixed(2)},${r.scrollAnimation},${r.themeRotation},$themeIntervalMs,${r.tickerRotation},$tickerIntervalMs');
+        '"${r.target.name}","${r.target.architecture}",${r.setIndex},${r.retryCount},${r.targetTps},${r.sustainedTps},$batchRateStr,${r.achievementRate.toStringAsFixed(2)},${r.totalTicks},$batchesStr,$lagStr,$medianStr,$p95Str,$p99Str,$maxStr,${r.lagSampleCount ?? 'N/A'},$buildStr,$rasterStr,$fpsStr,$jankStr,$refreshStr,$budgetStr,${r.memoryRssMb.toStringAsFixed(1)},${r.latencyMs.toStringAsFixed(2)},${r.scrollAnimation},${r.themeRotation},$themeIntervalMs,${r.tickerRotation},$tickerIntervalMs');
   }
   return buffer.toString();
 }

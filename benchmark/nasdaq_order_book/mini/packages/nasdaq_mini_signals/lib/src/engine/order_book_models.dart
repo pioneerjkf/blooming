@@ -3170,20 +3170,78 @@ class OrderBookSnapshot {
   final int totalTicksProcessed;
   final int timestampMs;
 
-  /// Creates initial OrderBookSnapshot populated with realistic sample data walls and spreads.
-  static OrderBookSnapshot initial(
-      {String ticker = 'NVDA', double basePrice = 135.50}) {
+  OrderBookSnapshot copyWith({
+    String? ticker,
+    double? lastPrice,
+    double? priceChange,
+    double? priceChangePct,
+    List<OrderBookRowData>? asks,
+    List<OrderBookRowData>? bids,
+    int? maxVolume,
+    int? totalVolume,
+    int? totalTicksProcessed,
+    int? timestampMs,
+  }) =>
+      OrderBookSnapshot(
+        ticker: ticker ?? this.ticker,
+        lastPrice: lastPrice ?? this.lastPrice,
+        priceChange: priceChange ?? this.priceChange,
+        priceChangePct: priceChangePct ?? this.priceChangePct,
+        asks: asks ?? this.asks,
+        bids: bids ?? this.bids,
+        maxVolume: maxVolume ?? this.maxVolume,
+        totalVolume: totalVolume ?? this.totalVolume,
+        totalTicksProcessed: totalTicksProcessed ?? this.totalTicksProcessed,
+        timestampMs: timestampMs ?? this.timestampMs,
+      );
+
+  /// Creates initial OrderBookSnapshot populated with realistic sample data walls and spreads,
+  /// uniquely seeded and scaled per ticker symbol and base price.
+  static OrderBookSnapshot initial({
+    String ticker = 'NVDA',
+    double basePrice = 135.50,
+    int totalTicksProcessed = 0,
+  }) {
+    // Deterministic seed based on ticker symbol characters
+    final seed =
+        ticker.codeUnits.fold<int>(17, (acc, c) => (acc * 37 + c) & 0x7FFFFFFF);
+
+    // Realistic volume scale inversely proportional to share price:
+    // High-priced stocks (e.g. BKNG $3820, COST $845) trade in fewer shares with tighter depth.
+    // Lower-priced stocks (e.g. INTC $30, NVDA $135) trade in massive share volumes.
+    final nominalWallShares =
+        (250000000.0 / basePrice).clamp(2500.0, 5000000.0);
+    final nominalNormalShares =
+        (15000000.0 / basePrice).clamp(250.0, 300000.0);
+    final nominalThinShares = (1000000.0 / basePrice).clamp(25.0, 25000.0);
+
+    // Dynamic wall & thin level modulos unique to each ticker
+    final wallModAsk = 4 + (seed % 3); // 4, 5, or 6
+    final wallOffsetAsk = seed % wallModAsk;
+    final thinModAsk = 3 + ((seed >> 2) % 3);
+
+    final wallModBid = 4 + ((seed >> 4) % 3);
+    final wallOffsetBid = (seed >> 3) % wallModBid;
+    final thinModBid = 3 + ((seed >> 5) % 3);
+
     int maxVol = 1;
     int totalVol = 0;
 
     final asks = List<OrderBookRowData>.generate(25, (i) {
       final level = 25 - i;
       final price = basePrice + (level * 0.05);
-      final isWall = (i % 6 == 1) || (i == 12) || (i == 24);
-      final isThin = (i % 4 == 0);
-      final vol = isWall
-          ? 1800000 + (i * 95000)
-          : (isThin ? 8500 + (i * 1200) : 120000 + (i * 24000));
+      final isWall =
+          (i % wallModAsk == wallOffsetAsk) || (i == (10 + (seed % 5)));
+      final isThin = !isWall && (i % thinModAsk == 0);
+
+      final rowSeed = (seed + i * 13) % 100;
+      final variance = 0.8 + (rowSeed / 250.0); // 0.8 ~ 1.2
+      final vol = (isWall
+              ? (nominalWallShares * variance)
+              : (isThin
+                  ? (nominalThinShares * variance)
+                  : (nominalNormalShares * variance)))
+          .round();
 
       if (vol > maxVol) maxVol = vol;
       totalVol += vol;
@@ -3200,11 +3258,18 @@ class OrderBookSnapshot {
     final bids = List<OrderBookRowData>.generate(25, (i) {
       final level = i + 1;
       final price = basePrice - (level * 0.05);
-      final isWall = (i % 5 == 2) || (i == 10) || (i == 20);
-      final isThin = (i % 3 == 1);
-      final vol = isWall
-          ? 1650000 + (i * 88000)
-          : (isThin ? 9200 + (i * 1500) : 105000 + (i * 21000));
+      final isWall = (i % wallModBid == wallOffsetBid) ||
+          (i == (8 + ((seed >> 3) % 7)));
+      final isThin = !isWall && (i % thinModBid == 0);
+
+      final rowSeed = (seed + (i + 25) * 17) % 100;
+      final variance = 0.8 + (rowSeed / 250.0); // 0.8 ~ 1.2
+      final vol = (isWall
+              ? (nominalWallShares * variance)
+              : (isThin
+                  ? (nominalThinShares * variance)
+                  : (nominalNormalShares * variance)))
+          .round();
 
       if (vol > maxVol) maxVol = vol;
       totalVol += vol;
@@ -3228,16 +3293,19 @@ class OrderBookSnapshot {
           .copyWith(volumeRatio: (bids[i].volume / maxVol).clamp(0.05, 1.0));
     });
 
+    final priceChange = double.parse((basePrice * 0.012).toStringAsFixed(2));
+    const priceChangePct = 1.20;
+
     return OrderBookSnapshot(
       ticker: ticker,
       lastPrice: basePrice,
-      priceChange: 1.85,
-      priceChangePct: 1.38,
+      priceChange: priceChange,
+      priceChangePct: priceChangePct,
       asks: asksWithRatio,
       bids: bidsWithRatio,
       maxVolume: maxVol,
       totalVolume: totalVol,
-      totalTicksProcessed: 0,
+      totalTicksProcessed: totalTicksProcessed,
       timestampMs: DateTime.now().millisecondsSinceEpoch,
     );
   }

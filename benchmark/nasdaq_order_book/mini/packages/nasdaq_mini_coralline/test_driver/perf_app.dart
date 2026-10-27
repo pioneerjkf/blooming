@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:coralline_flutter/coralline_flutter.dart';
 import 'package:flutter/material.dart';
@@ -11,13 +12,45 @@ void main() {
   late NasdaqThemeStore themeStore;
   late OrderBookPipeline pipeline;
 
+  int measurementStartTicks = 0;
+  int measurementStartBatches = 0;
+  int measurementStartMs = 0;
+
   enableFlutterDriverExtension(
     handler: (message) async {
       if (message == 'get_metrics') {
         final rssMb = ProcessInfo.currentRss / (1024 * 1024);
+        double refreshRate = 120.0;
+        try {
+          final views = WidgetsBinding.instance.platformDispatcher.views;
+          if (views.isNotEmpty) {
+            refreshRate = views.first.display.refreshRate;
+          }
+        } catch (_) {}
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        final elapsedSec =
+            measurementStartMs > 0 ? (nowMs - measurementStartMs) / 1000.0 : 0.0;
+        final currentTicks = pipeline.totalTicksProcessed;
+        final currentBatches = pipeline.totalBatchesProcessed;
+        final windowTicks = measurementStartMs > 0
+            ? max(0, currentTicks - measurementStartTicks)
+            : currentTicks;
+        final windowBatches = measurementStartMs > 0
+            ? max(0, currentBatches - measurementStartBatches)
+            : currentBatches;
+        final sustainedTps = elapsedSec > 0
+            ? (windowTicks / elapsedSec).round()
+            : pipeline.actualTpsValue;
+        final batchRate =
+            elapsedSec > 0 ? (windowBatches / elapsedSec).round() : 0;
+
         return jsonEncode({
-          'sustained_tps': pipeline.actualTpsValue,
-          'total_ticks': pipeline.snapshotValue.totalTicksProcessed,
+          'display_refresh_rate': refreshRate,
+          'sustained_tps': sustainedTps,
+          'generator_tps': sustainedTps,
+          'framework_update_rate_hz': batchRate,
+          'total_ticks': windowTicks,
+          'total_batches': windowBatches,
           'avg_event_loop_lag_ms': pipeline.eventLoopLagValue,
           'lag_stats': pipeline.lagRecorder.stats(),
           'latency_ms': pipeline.latencyMsValue,
@@ -27,6 +60,9 @@ void main() {
           'memory_rss_mb': rssMb,
         });
       } else if (message == 'lag_reset') {
+        measurementStartTicks = pipeline.totalTicksProcessed;
+        measurementStartBatches = pipeline.totalBatchesProcessed;
+        measurementStartMs = DateTime.now().millisecondsSinceEpoch;
         pipeline.lagRecorder.reset();
         return 'OK';
       } else if (message?.startsWith('set_tps:') == true) {

@@ -290,7 +290,7 @@ class _EventLoopBarChartPainter extends CustomPainter {
       final y = size.height - normalizedHeight;
 
       final rect = Rect.fromLTWH(x, y, barWidth, normalizedHeight);
-      canvas.drawRect(rect, val > 16.67 ? warningPaint : barPaint);
+      canvas.drawRect(rect, val > 8.33 ? warningPaint : barPaint);
     }
   }
 

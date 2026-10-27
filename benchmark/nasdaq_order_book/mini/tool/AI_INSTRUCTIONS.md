@@ -12,8 +12,8 @@ First, present the configuration parameters (or the recommended presets) below, 
 ### Configuration Parameters to Clarify
 
 1. **Target Workload TPS (`--tps=<number>`)**:
-   - Recommended Default: `1000000000` (10억 TPS / 1B TPS saturated stress workload)
-   - Alternative: `100000` (100K TPS) or `10000000` (10M TPS)
+   - Recommended Default: `1000000000` (10억 TPS / 1B TPS full real hardware saturation workload)
+   - Alternative: `100000` (100K TPS), `1000000` (1M TPS), or `10000000` (10M TPS)
 2. **Measurement Duration (`--duration=<seconds>`)**:
    - Recommended Default: `30` seconds (allows convergence to steady-state and reveals backlog/leak behaviors)
    - Fast Smoke Test: `3` seconds
@@ -37,6 +37,9 @@ First, present the configuration parameters (or the recommended presets) below, 
 9. **Execution Mode (`--mode=<drive|subprocess>`)**:
    - Recommended Default: `drive` (Flutter Driver mode on real desktop window with GPU/VSync frame timings)
    - Headless Isolate: `subprocess` (Fast pure isolate pipeline)
+10. **Target Framework Filter (`--target=<framework|comma-separated>` / `--framework=...`)**:
+   - Default: All frameworks (`blooming, coralline, signals, riverpod, flutter`)
+   - Specific frameworks: e.g. `--target=blooming` or `--target=blooming,flutter`
 
 ---
 
@@ -64,7 +67,7 @@ dart run tool/run_all_benchmarks.dart --tps=100000 --duration=3 --warmup=1 --set
 Upon benchmark completion, synthesize and report the findings adhering strictly to the following standards:
 
 1. **Randomized Execution Order**: Report the sequence of execution for each set (e.g., `Set 1: Blooming -> Coralline -> Signals -> Riverpod -> Flutter`).
-2. **Aggregated Statistics Table**: Report Event Loop Lag (Mean, Median, Trimmed Mean, P99, Max) and RSS Memory side-by-side. **Do not report Sustained TPS or Achievement Rate** as primary metrics since the synthetic tick generator caps execution and arithmetically increments the rest (see `BENCHMARK_METHODOLOGY.md`).
+2. **Aggregated Statistics Table**: Report Event Loop Lag (Mean, Median, Trimmed Mean, P99, Max) and RSS Memory side-by-side. **Hardware Throughput (Sustained TPS / Achievement Rate)** is 100% physically computed by the isolate without capping or synthetic padding; at extreme target workloads (e.g. 100M TPS), clarify that host single-core throughput naturally saturates (~14.5M TPS on Apple Silicon). Event Loop Lag remains the primary differentiator for UI responsiveness under load.
 3. **Set Breakdown**: Provide the unfiltered per-set measurements.
 4. **Artifact Links**: Link to the generated files (`SUMMARY_REPORT.md`, `benchmark_summary.csv`, `benchmark_matrix.json`).
 5. **Neutral Framing & Limitations**:

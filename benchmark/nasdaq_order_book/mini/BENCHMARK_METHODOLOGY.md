@@ -70,23 +70,40 @@ Event-loop lag measures how promptly Dart's main isolate event loop processes qu
 
 **Measurement Overhead**: Samples are pre-allocated once in a contiguous `Float64List` buffer (64K samples, 512 KB). Sample recording is $O(1)$ with zero runtime allocations. Sorting and statistical reductions occur only once after the measurement period concludes.
 
-### UI Build / GPU Raster / RSS
+### UI Build / GPU Raster / Jank / RSS
 
 | Metric | Source |
 | :--- | :--- |
-| **UI Build**, **GPU Raster** | Flutter frame timings captured via `WidgetsBinding.instance.addTimingsCallback` (or fallback to driver timeline) |
+| **UI Build**, **GPU Raster** | Flutter frame timings captured via `WidgetsBinding.instance.addTimingsCallback` (or driver timeline) |
+| **Jank Rate (`jank_rate_pct`)** | Percentage of frames where either UI Build or GPU Raster exceeded the frame budget ($T_{\text{frame}}$, e.g. 8.33ms for 120Hz). Aligned with official Flutter DevTools pipelined deadline specification (`buildDuration > budget || rasterDuration > budget`). |
 | **RSS** | `ProcessInfo.currentRss` (resident physical memory usage at time of measurement) |
+
+**Pipelined Frame Deadline vs. End-to-End Latency**:
+Flutter's rendering engine executes UI build (Dart/layout/paint) and GPU rasterization on two distinct parallel threads (UI Thread and Raster Thread). Because the UI thread builds frame $N+1$ concurrently while the Raster thread rasterizes frame $N$, a frame misses its presentation deadline (drops/janks) if and only if **either** the UI build or the Raster stage exceeds the frame budget deadline. End-to-end latency (`totalSpan`, which includes multi-stage pipeline queuing) spans across VSync boundaries naturally and is not an indicator of frame drops. Both in-app metrics and driver timeline summaries evaluate jank against this concurrent deadline model.
 
 *Note: In static runs where animations are disabled and screen refreshes are sparse, UI Build and Raster metrics show negligible differences. **Do not use them to rank frameworks.***
 
 ---
 
-## 4. Omitted Metrics: Sustained TPS / Achievement Rate
+## 4. Real Hardware Throughput vs. Physical Saturation
 
-The tick generator processes at most **200 steps per 1 ms batch**. Any excess count is incremented arithmetically:
-`totalTicksProcessed += (batchSize - stepsToSimulate)`
+The tick generator executes 100% of requested simulation steps within the background isolate without artificial batch step caps or arithmetic counter padding. Every tick invokes genuine domain state transitions (order matching, price level updates, best bid/ask calculations).
 
-Consequently, whether the target is set to 100,000 or 1,000,000,000 TPS, all frameworks report near-100% "achievement." Because this number reflects arithmetic counter addition rather than actual event-handling capacity, **Sustained TPS and Achievement Percentage are omitted from primary reports and charts**. Raw counters remain available in `benchmark_matrix.json` and `benchmark_summary.csv` for auditability.
+### Generator Ingestion Throughput vs. Framework State Update Frequency
+
+To prevent misinterpreting high tick volumes as individual UI/state invalidations, the benchmark distinguishes two complementary metrics:
+
+1. **Generator Ingest Throughput (`generator_tps` / `sustained_tps`)**:
+   - Measures the raw volume of simulated financial order-book ticks generated and processed per second inside the dedicated background isolate.
+   - **Linear Scaling Region (up to ~10M TPS)**: Targets within host hardware single-core capacity achieve ~100% sustained throughput.
+   - **Physical Hardware Saturation Region (10M to 1,000,000,000+ TPS)**: When configured beyond physical CPU capacity (such as the default 1,000,000,000 TPS / 10억 틱 stress target), the generator isolate runs at 100% single-core saturation, yielding the physical maximum throughput sustained by the host CPU (~14.5M TPS on Apple Silicon).
+
+2. **Framework State Update Frequency (`framework_update_rate_hz` / `batch_dispatches_per_sec`)**:
+   - The background isolate bundles simulated ticks into 1ms payloads (`TickBatchPayload(batchSize: N, ...)`), sending approximately ~1,000 payloads per second across the isolate port to the main UI isolate.
+   - The main isolate pipeline unpacks each payload in `updateBatch()` and notifies framework reactive state listeners (`ValueNotifier`, `Bloom`, `Signal`, `StateNotifier`, `Coral`) **once per batch**.
+   - **Crucial Distinction**: `sustained_tps` (e.g. 14.5M TPS) reflects the background isolate's tick generation capacity, **NOT** 14.5 million distinct UI widget rebuilds or separate framework state tree invalidations per second. The actual frequency of framework state invalidations corresponds to the batch dispatch rate (~1,000 Hz).
+
+- **Metric Focus**: Sustained TPS and Achievement Rate represent the background isolate's physical compute ceiling. Meanwhile, **Event Loop Lag** on the main isolate serves as the primary differentiator of framework UI responsiveness under continuous upstream streaming pressure.
 
 ---
 

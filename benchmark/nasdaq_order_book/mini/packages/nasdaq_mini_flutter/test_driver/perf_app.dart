@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:nasdaq_mini_flutter/main.dart';
@@ -10,22 +11,57 @@ void main() {
   late NasdaqThemeStore themeStore;
   late OrderBookPipeline pipeline;
 
+  int measurementStartTicks = 0;
+  int measurementStartBatches = 0;
+  int measurementStartMs = 0;
+
   enableFlutterDriverExtension(
     handler: (message) async {
       if (message == 'get_metrics') {
+        double displayRefreshRate = 120.0;
+        try {
+          final views = WidgetsBinding.instance.platformDispatcher.views;
+          if (views.isNotEmpty && views.first.display.refreshRate > 0) {
+            displayRefreshRate = views.first.display.refreshRate;
+          }
+        } catch (_) {}
         final rssMb = ProcessInfo.currentRss / (1024 * 1024);
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        final elapsedSec =
+            measurementStartMs > 0 ? (nowMs - measurementStartMs) / 1000.0 : 0.0;
+        final currentTicks = pipeline.totalTicksProcessed;
+        final currentBatches = pipeline.totalBatchesProcessed;
+        final windowTicks = measurementStartMs > 0
+            ? max(0, currentTicks - measurementStartTicks)
+            : currentTicks;
+        final windowBatches = measurementStartMs > 0
+            ? max(0, currentBatches - measurementStartBatches)
+            : currentBatches;
+        final sustainedTps = elapsedSec > 0
+            ? (windowTicks / elapsedSec).round()
+            : pipeline.actualTps;
+        final batchRate =
+            elapsedSec > 0 ? (windowBatches / elapsedSec).round() : 0;
+
         return jsonEncode({
-          'sustained_tps': pipeline.actualTps,
-          'total_ticks': pipeline.snapshot.totalTicksProcessed,
+          'sustained_tps': sustainedTps,
+          'generator_tps': sustainedTps,
+          'framework_update_rate_hz': batchRate,
+          'total_ticks': windowTicks,
+          'total_batches': windowBatches,
           'avg_event_loop_lag_ms': pipeline.eventLoopLag,
           'lag_stats': pipeline.lagRecorder.stats(),
           'latency_ms': pipeline.latencyMs,
           'ui_build_time_ms': pipeline.uiBuildTimeMs,
           'raster_time_ms': pipeline.rasterTimeMs,
           'jank_rate_pct': pipeline.jankRatePct,
+          'display_refresh_rate': displayRefreshRate,
           'memory_rss_mb': rssMb,
         });
       } else if (message == 'lag_reset') {
+        measurementStartTicks = pipeline.totalTicksProcessed;
+        measurementStartBatches = pipeline.totalBatchesProcessed;
+        measurementStartMs = DateTime.now().millisecondsSinceEpoch;
         pipeline.lagRecorder.reset();
         return 'OK';
       } else if (message?.startsWith('set_tps:') == true) {

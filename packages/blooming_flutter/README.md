@@ -918,15 +918,14 @@ For deep-dive architectural specifications, mathematical invariants, and interna
 
 ## High-Frequency Stream Benchmark (NASDAQ 50-Level Order Book)
 
-The October 26, 2026 comparison and its interpretation are documented in the repository's
-[`NASDAQ order-book benchmark assessment`](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/ASSESSMENT.md).
+Blooming includes an extensive high-frequency benchmark suite comparing 5 Flutter state-management architectures under heavy batched order-book stream updates. It focuses on state pipeline responsiveness and main event-loop latency under sustained loads.
 
-The run compares event-loop probe latency under a capped, batched workload. Its configured target
-of 1,000,000,000 TPS is **not measured throughput**: the generator simulates at most 200 ticks per
-1 ms batch and counts the remainder arithmetically. The probe is a responsiveness signal, not a
-guarantee of input responsiveness, frame stability, event delivery, or data correctness. The report
-also describes per-run tail variation and differences in framework batching policies. Do not use
-this run alone to claim an overall framework performance winner.
+For architecture details, measurement methodology, and execution instructions:
+- [NASDAQ Order Book Mini Suite](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/mini/README.md)
+- [Methodology & Statistical Rigor](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/mini/BENCHMARK_METHODOLOGY.md)
+- [Benchmark Assessments & Runs Index](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/ASSESSMENT.md)
+
+Historical benchmark results have been cleared. Fresh benchmark runs and statistical artifacts will be generated upon executing the driver suite.
 
 ---
 

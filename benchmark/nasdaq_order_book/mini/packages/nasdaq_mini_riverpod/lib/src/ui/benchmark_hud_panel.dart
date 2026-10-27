@@ -20,7 +20,7 @@ class BenchmarkHudPanel extends ConsumerWidget {
 
   final OrderBookPipeline pipeline;
 
-  /// Preset target TPS values ranging from 100 TPS to 100,000,000 TPS (1억건/초)
+  /// Preset target TPS values ranging from 100 TPS to 1,000,000,000 TPS (10억건/초)
   static const List<int> tpsPresets = [
     100,
     1000,
@@ -33,6 +33,7 @@ class BenchmarkHudPanel extends ConsumerWidget {
     10000000,
     50000000,
     100000000,
+    1000000000,
   ];
 
   @override

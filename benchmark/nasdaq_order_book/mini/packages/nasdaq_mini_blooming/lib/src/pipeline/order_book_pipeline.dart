@@ -85,9 +85,16 @@ class OrderBookPipeline {
   final List<TradeTick> _tradeTicks = [];
   final Map<String, double> _latestStockPrices = {};
   final Map<String, double> _latestStockChanges = {};
+  final Map<String, OrderBookSnapshot> _stockSnapshots = {};
+  final Map<String, List<double>> _stockPriceHistories = {};
+  final Map<String, List<TradeTick>> _stockTradeTicks = {};
 
   Timer? _rotationTimer;
   int _totalTicksSinceMeasurement = 0;
+  int _totalBatchesProcessed = 0;
+  int get totalBatchesProcessed => _totalBatchesProcessed;
+  int _totalTicksProcessed = 0;
+  int get totalTicksProcessed => _totalTicksProcessed;
   int _lastMeasurementTimestamp = DateTime.now().millisecondsSinceEpoch;
 
   final Stopwatch _eventLoopStopwatch = Stopwatch()..start();
@@ -106,6 +113,7 @@ class OrderBookPipeline {
 
   OrderBookPipeline() {
     final initialSnapshot = OrderBookSnapshot.initial();
+    _stockSnapshots[initialSnapshot.ticker] = initialSnapshot;
 
     // Initialize Order Book Snapshot Controller
     _snapshotController = BloomController<OrderBookSnapshot>(initialSnapshot);
@@ -114,6 +122,7 @@ class OrderBookPipeline {
     _priceHistory.addAll(List.generate(40, (i) {
       return initialSnapshot.lastPrice - ((39 - i) * 0.04);
     }));
+    _stockPriceHistories[initialSnapshot.ticker] = List.from(_priceHistory);
     _priceHistoryController =
         RawBloomController<List<double>>(UnmodifiableListView(_priceHistory));
 
@@ -232,6 +241,17 @@ class OrderBookPipeline {
   double get rasterTimeMs => _lastRasterTimeMs;
   double get jankRatePct => _lastJankRatePct;
 
+  int _getFrameBudgetUs() {
+    try {
+      final views = WidgetsBinding.instance.platformDispatcher.views;
+      if (views.isNotEmpty) {
+        final rate = views.first.display.refreshRate;
+        if (rate > 0) return (1000000.0 / rate).round();
+      }
+    } catch (_) {}
+    return 8333;
+  }
+
   void _onFrameTimings(List<FrameTiming> timings) {
     _recentTimings.addAll(timings);
     if (_recentTimings.length > 60) {
@@ -241,12 +261,14 @@ class OrderBookPipeline {
       double totalBuild = 0.0;
       double totalRaster = 0.0;
       int jankCount = 0;
+      final budgetUs = _getFrameBudgetUs();
       for (final t in _recentTimings) {
         final buildMs = t.buildDuration.inMicroseconds / 1000.0;
         final rasterMs = t.rasterDuration.inMicroseconds / 1000.0;
         totalBuild += buildMs;
         totalRaster += rasterMs;
-        if (t.totalSpan.inMicroseconds > 16666) {
+        if (t.buildDuration.inMicroseconds > budgetUs ||
+            t.rasterDuration.inMicroseconds > budgetUs) {
           jankCount++;
         }
       }
@@ -374,15 +396,36 @@ class OrderBookPipeline {
     _selectedStockIndexController.set(index);
     final stock = stocks[index];
 
-    final newSnapshot = OrderBookSnapshot.initial(
-      ticker: stock.symbol,
-      basePrice: stock.basePrice,
-    );
+    // 1. Cache current active stock state
+    final currentSnap = _snapshotController.data;
+    _stockSnapshots[currentSnap.ticker] = currentSnap;
+    _stockPriceHistories[currentSnap.ticker] = List.from(_priceHistory);
+    _stockTradeTicks[currentSnap.ticker] = List.from(_tradeTicks);
+
+    // 2. Retrieve or initialize the selected stock's state
+    final cachedSnap = _stockSnapshots[stock.symbol];
+    final OrderBookSnapshot newSnapshot;
+    if (cachedSnap != null) {
+      newSnapshot = cachedSnap.copyWith(totalTicksProcessed: _totalTicksProcessed);
+    } else {
+      newSnapshot = OrderBookSnapshot.initial(
+        ticker: stock.symbol,
+        basePrice: stock.basePrice,
+        totalTicksProcessed: _totalTicksProcessed,
+      );
+      _stockSnapshots[stock.symbol] = newSnapshot;
+    }
     _snapshotController.set(newSnapshot);
 
     _priceHistory.clear();
-    _priceHistory
-        .addAll(List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04)));
+    final cachedHistory = _stockPriceHistories[stock.symbol];
+    if (cachedHistory != null && cachedHistory.isNotEmpty) {
+      _priceHistory.addAll(cachedHistory);
+    } else {
+      _priceHistory.addAll(
+          List.generate(40, (i) => stock.basePrice - ((39 - i) * 0.04)));
+      _stockPriceHistories[stock.symbol] = List.from(_priceHistory);
+    }
     _priceHistoryController.markDirty();
 
     for (int i = 0; i < 25; i++) {
@@ -391,19 +434,25 @@ class OrderBookPipeline {
     }
 
     _tradeTicks.clear();
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
-    _tradeTicks.addAll(List.generate(10, (i) {
-      return TradeTick(
-        price: double.parse(
-            (stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
-        volume: (10 + (i * 3)) * 100,
-        isBuy: i % 2 == 0,
-        timestampMs: nowMs - (i * 800),
-      );
-    }));
+    final cachedTrades = _stockTradeTicks[stock.symbol];
+    if (cachedTrades != null && cachedTrades.isNotEmpty) {
+      _tradeTicks.addAll(cachedTrades);
+    } else {
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      _tradeTicks.addAll(List.generate(10, (i) {
+        return TradeTick(
+          price: double.parse(
+              (stock.basePrice + ((i % 3 - 1) * 0.05)).toStringAsFixed(2)),
+          volume: (10 + (i * 3)) * 100,
+          isBuy: i % 2 == 0,
+          timestampMs: nowMs - (i * 800),
+        );
+      }));
+      _stockTradeTicks[stock.symbol] = List.from(_tradeTicks);
+    }
     _tradeTicksController.markDirty();
 
-    _isolateEngine.setStockPrice(stock.basePrice);
+    _isolateEngine.setStock(stock.symbol, stock.basePrice);
   }
 
   /// Selects the next stock in circular order.
@@ -482,6 +531,8 @@ class OrderBookPipeline {
       final nowMs = DateTime.now().millisecondsSinceEpoch;
 
       _totalTicksSinceMeasurement += payload.batchSize;
+      _totalBatchesProcessed++;
+      _totalTicksProcessed = payload.totalTicksProcessed;
       final elapsed = nowMs - _lastMeasurementTimestamp;
 
       if (elapsed >= 500) {
@@ -494,6 +545,14 @@ class OrderBookPipeline {
 
         _totalTicksSinceMeasurement = 0;
         _lastMeasurementTimestamp = nowMs;
+      }
+
+      final activeTicker = _snapshotController.data.ticker;
+      if (payload.ticker.isNotEmpty && payload.ticker != activeTicker) {
+        // In-flight batch for a previously active stock during rotation:
+        // Update background cache for that stock without clobbering active UI
+        _updateCachedStockState(payload);
+        return;
       }
 
       // 1. Update rolling price history for real-time mini chart
@@ -524,7 +583,6 @@ class OrderBookPipeline {
 
       // 4. Update overall snapshot & multi-asset watchlist live price ticks
       final currentSnap = _snapshotController.data;
-      final activeTicker = currentSnap.ticker;
       _updateStockPriceState(
           activeTicker, payload.latestPrice, payload.priceChangePct);
 
@@ -542,8 +600,8 @@ class OrderBookPipeline {
         }
       }
 
-      _snapshotController.set(OrderBookSnapshot(
-        ticker: currentSnap.ticker,
+      final updatedSnap = OrderBookSnapshot(
+        ticker: activeTicker,
         lastPrice: payload.latestPrice,
         priceChange: payload.priceChange,
         priceChangePct: payload.priceChangePct,
@@ -553,8 +611,31 @@ class OrderBookPipeline {
         totalVolume: currentSnap.totalVolume + payload.batchSize * 100,
         totalTicksProcessed: payload.totalTicksProcessed,
         timestampMs: payload.timestampMs,
-      ));
+      );
+      _snapshotController.set(updatedSnap);
+      _stockSnapshots[activeTicker] = updatedSnap;
     });
+  }
+
+  void _updateCachedStockState(TickBatchPayload payload) {
+    _totalTicksProcessed = payload.totalTicksProcessed;
+    final sym = payload.ticker;
+    _updateStockPriceState(sym, payload.latestPrice, payload.priceChangePct);
+    final cachedSnap = _stockSnapshots[sym];
+    if (cachedSnap != null) {
+      _stockSnapshots[sym] = OrderBookSnapshot(
+        ticker: sym,
+        lastPrice: payload.latestPrice,
+        priceChange: payload.priceChange,
+        priceChangePct: payload.priceChangePct,
+        asks: payload.updatedAsks,
+        bids: payload.updatedBids,
+        maxVolume: cachedSnap.maxVolume,
+        totalVolume: cachedSnap.totalVolume + payload.batchSize * 100,
+        totalTicksProcessed: payload.totalTicksProcessed,
+        timestampMs: payload.timestampMs,
+      );
+    }
   }
 
   // ===========================================================================
