@@ -13,12 +13,12 @@ void main() {
       final query = blooming<String>('initial');
       final observed = <String>[];
 
-      final effect = ThrottleEffect.unary(
+      final myEffect = Effect.throttle.unary(
         query.bloom,
         const Duration(milliseconds: 50),
         () => observed.add(query.data),
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -44,13 +44,13 @@ void main() {
       final click = blooming<int>(0);
       int runs = 0;
 
-      final effect = ThrottleEffect.unary(
+      final myEffect = Effect.throttle.unary(
         click.bloom,
         const Duration(milliseconds: 50),
         () => runs++,
         trailing: false,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -80,13 +80,13 @@ void main() {
       final text = blooming<String>('');
       final observed = <String>[];
 
-      final effect = ThrottleEffect.unary(
+      final myEffect = Effect.throttle.unary(
         text.bloom,
         const Duration(milliseconds: 50),
         () => observed.add(text.data),
         leading: false,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -107,13 +107,13 @@ void main() {
       final count = blooming<int>(0);
       int runs = 0;
 
-      final effect = ThrottleEffect.unary(
+      final myEffect = Effect.throttle.unary(
         count.bloom,
         const Duration(milliseconds: 40),
         () => runs++,
         take: 2,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -140,12 +140,12 @@ void main() {
       final b = blooming<int>(0);
       int runs = 0;
 
-      final effect = ThrottleEffect(
+      final myEffect = Effect.throttle(
         [a.bloom, b.bloom],
         const Duration(milliseconds: 50),
         () => runs++,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -164,12 +164,12 @@ void main() {
       final source = blooming<int>(0);
       int runs = 0;
 
-      final effect = ThrottleEffect.unary(
+      final myEffect = Effect.throttle.unary(
         source.bloom,
         const Duration(milliseconds: 50),
         () => runs++,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -191,13 +191,13 @@ void main() {
       final query = blooming<String>('initial');
       final observed = <String>[];
 
-      final effect = query.bloom.effect.throttle(
+      final myEffect = query.bloom.effect.throttle(
         const Duration(milliseconds: 40),
         () => observed.add(query.data),
       );
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(myEffect);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -213,27 +213,27 @@ void main() {
       terminal.deactivate();
     });
 
-    test('8. Throttle with leading: false and trailing: false throws AssertionError', () {
+    test('8. Throttle with leading: false and trailing: false throws ArgumentError', () {
       final click = blooming<int>(0);
       expect(
-        () => ThrottleEffect.unary(
+        () => Effect.throttle.unary(
           click.bloom,
           const Duration(milliseconds: 50),
           () {},
           leading: false,
           trailing: false,
         ),
-        throwsA(isA<AssertionError>()),
+        throwsA(isA<ArgumentError>()),
       );
       expect(
-        () => ThrottleEffect(
+        () => Effect.throttle(
           [click.bloom],
           const Duration(milliseconds: 50),
           () {},
           leading: false,
           trailing: false,
         ),
-        throwsA(isA<AssertionError>()),
+        throwsA(isA<ArgumentError>()),
       );
     });
 
@@ -241,7 +241,7 @@ void main() {
       final click = blooming<int>(0);
       Object? caughtError;
 
-      final effect = click.bloom.effect.throttle(
+      final myEffect = click.bloom.effect.throttle(
         const Duration(milliseconds: 30),
         () => throw StateError('Throttle action failed'),
         onUncaughtError: (error, stack) {
@@ -249,7 +249,7 @@ void main() {
         },
       );
 
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 

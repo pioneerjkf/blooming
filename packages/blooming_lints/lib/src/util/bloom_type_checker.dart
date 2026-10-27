@@ -84,11 +84,8 @@ abstract final class BloomTypeChecker {
 
     // 5. Effect Domain
     'Effect',
-    'EffectHandle',
-    'EffectGroup',
+    'EffectScope',
     'EffectRunner',
-    'ThrottleEffect',
-    'DebounceEffect',
 
     // 6. Flutter UI & Widgets
     'BloomWidget',
@@ -730,6 +727,7 @@ abstract final class BloomTypeChecker {
 
   static const _terminalCallbackMethods = {
     'effect',
+    'scoped',
     'handled',
     'throttle',
     'debounce',

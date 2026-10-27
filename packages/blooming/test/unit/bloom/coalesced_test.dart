@@ -129,11 +129,11 @@ void main() {
       terminal.deactivate();
     });
 
-    test('5. Assertion error when both leading and trailing are false', () {
+    test('5. ArgumentError when both leading and trailing are false', () {
       final source = blooming(1);
       expect(
         () => source.bloom.coalesced(leading: false, trailing: false),
-        throwsA(isA<AssertionError>()),
+        throwsA(isA<ArgumentError>()),
       );
     });
 

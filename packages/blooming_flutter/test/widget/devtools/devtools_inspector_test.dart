@@ -146,7 +146,7 @@ void main() {
     testWidgets('exposes tethered effects in inspector properties',
         (tester) async {
       final counter = blooming(10)..debugLabel = 'counter';
-      final effect =
+      final eff =
           Effect([counter.bloom], () {}).withDebugLabel('CounterLogger');
 
       await tester.pumpWidget(
@@ -154,7 +154,7 @@ void main() {
           textDirection: TextDirection.ltr,
           child: _InspectorProbeWidget(
             builder: (context, via) {
-              via.tether(effect);
+              via.tether(eff);
               return Text('Count: ${via(counter.bloom)}');
             },
           ),

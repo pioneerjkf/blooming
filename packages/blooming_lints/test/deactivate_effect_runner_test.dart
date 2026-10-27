@@ -18,7 +18,7 @@ class _MyWidgetState extends State<MyWidget> {
   @override
   void initState() {
     super.initState();
-    _runner = counterBloom.effect(() => print(counterBloom.data)).run();
+    _runner = counterBloom.effect(() => print(counterBloom.data)).start();
   }
 
   @override
@@ -45,12 +45,39 @@ class _MyWidgetState extends State<MyWidget> {
   @override
   void initState() {
     super.initState();
-    _runner = counterBloom.effect(() => print(counterBloom.data)).run();
+    _runner = counterBloom.effect(() => print(counterBloom.data)).start();
   }
 
   @override
   void dispose() {
     _runner?.deactivate();
+    super.dispose();
+  }
+}
+''').unit;
+
+      ClassDeclaration? clazz;
+      unit.visitChildren(_ClassVisitor((node) => clazz = node));
+
+      expect(clazz, isNotNull);
+      final uncancelled = DeactivateEffectRunner.findUncancelledRunners(clazz!);
+      expect(uncancelled, isEmpty);
+    });
+
+    test('permits properly stopped EffectRunner in dispose()', () {
+      final unit = parseString(content: '''
+class _MyWidgetState extends State<MyWidget> {
+  EffectRunner? _runner;
+
+  @override
+  void initState() {
+    super.initState();
+    _runner = counterBloom.effect(() => print(counterBloom.data)).start();
+  }
+
+  @override
+  void dispose() {
+    _runner?.stop();
     super.dispose();
   }
 }
@@ -72,7 +99,7 @@ class _MyWidgetState extends State<MyWidget> {
   @override
   void initState() {
     super.initState();
-    _runner = counterBloom.effect(() => print(counterBloom.data)).run();
+    _runner = counterBloom.effect(() => print(counterBloom.data)).start();
   }
 
   @override

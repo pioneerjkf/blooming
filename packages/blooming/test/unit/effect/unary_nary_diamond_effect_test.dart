@@ -19,7 +19,7 @@ void main() {
       final captured = <int>[];
       final runner = distinctSum.effect(() {
         captured.add(untracked(distinctSum));
-      }).run();
+      }).start();
 
       expect(runner.isActive, isTrue);
       expect(captured, isEmpty, reason: 'Initial run must be skipped');
@@ -45,7 +45,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, [35, 40, 45]);
 
-      runner.deactivate();
+      runner.stop();
       a.data = 30;
       await Future<void>.delayed(Duration.zero);
       expect(captured, [35, 40, 45], reason: 'Deactivated runner must not capture');
@@ -64,7 +64,7 @@ void main() {
       final captured = <int>[];
       final runner = distinctJoin.effect(() {
         captured.add(untracked(distinctJoin));
-      }).run();
+      }).start();
 
       expect(runner.isActive, isTrue);
       expect(captured, isEmpty, reason: 'Initial run skipped');
@@ -79,7 +79,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, [330, 440]);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('3. Unary nodes inside Diamond branches feeding N-ary join facing Effect', () async {
@@ -92,7 +92,7 @@ void main() {
       final captured = <int>[];
       final runner = join.effect(() {
         captured.add(untracked(join));
-      }).run();
+      }).start();
 
       expect(runner.isActive, isTrue);
       expect(captured, isEmpty);
@@ -101,7 +101,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, [20]);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('4. Multi-hop Unary chain (distinct -> debounced) with N-ary upstream', () async {
@@ -114,7 +114,7 @@ void main() {
       final captured = <int>[];
       final runner = debouncedSum.effect(() {
         captured.add(untracked(debouncedSum));
-      }).run();
+      }).start();
 
       expect(runner.isActive, isTrue);
       expect(captured, isEmpty);
@@ -128,7 +128,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 35));
       expect(captured, [30]);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('5. Unary node with N-ary upstream: inactive mutation then activation', () async {
@@ -143,7 +143,7 @@ void main() {
       final captured = <int>[];
       final runner = distinctSum.effect(() {
         captured.add(untracked(distinctSum));
-      }).run();
+      }).start();
 
       expect(captured, isEmpty, reason: 'Initial run must be skipped even after pre-activation mutation');
 
@@ -151,7 +151,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, [15]);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('6. Uneven Diamond with short direct path and long Unary/N-ary branch', () async {
@@ -165,7 +165,7 @@ void main() {
       final captured = <int>[];
       final runner = distinctJoin.effect(() {
         captured.add(untracked(distinctJoin));
-      }).run();
+      }).start();
 
       expect(captured, isEmpty);
 
@@ -179,7 +179,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, [22, 55]);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('7. Diamond with one distinct branch dropping mutation while other branch updates', () async {
@@ -195,7 +195,7 @@ void main() {
       final captured = <String>[];
       final runner = unary.effect(() {
         captured.add(untracked(unary));
-      }).run();
+      }).start();
 
       expect(captured, isEmpty);
 
@@ -209,7 +209,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, ['p:1, s:30', 'p:0, s:40']);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('8. Diamond with switched & managed dynamic triad under unary distinct node', () async {
@@ -237,7 +237,7 @@ void main() {
       final captured = <String>[];
       final runner = distinctResource.effect(() {
         captured.add(untracked(distinctResource));
-      }).run();
+      }).start();
 
       expect(managedCreated, 1, reason: 'Activation must prime managed resource through unary chain');
       expect(captured, isEmpty);
@@ -253,7 +253,7 @@ void main() {
       expect(captured, ['Pool(5)', 'StaticFallback']);
       expect(managedDisposed, 2);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('9. Handled Effect with Unary wrapping Diamond Upstream and cleanup lifecycle', () async {
@@ -266,13 +266,13 @@ void main() {
       final captured = <int>[];
       final cleanups = <int>[];
 
-      final runner = distinctJoin.effect.handled((handle) {
+      final runner = distinctJoin.effect.scoped((scope) {
         final val = untracked(distinctJoin);
         captured.add(val);
-        handle.onCleanup(() {
+        scope.onCleanup(() {
           cleanups.add(val);
         });
-      }).run();
+      }).start();
 
       expect(captured, isEmpty);
       expect(cleanups, isEmpty);
@@ -290,7 +290,7 @@ void main() {
       expect(cleanups, [10], reason: 'Previous turn cleanup must be called before next execution');
 
       // Deactivation disposes active cleanup
-      runner.deactivate();
+      runner.stop();
       expect(cleanups, [10, 15]);
     });
 
@@ -305,7 +305,7 @@ void main() {
       int runCount = 0;
       final runner = (diamondUnary, independent.bloom).effect(() {
         runCount++;
-      }).run();
+      }).start();
 
       expect(runCount, 0);
 
@@ -319,7 +319,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(runCount, 2);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('11. Direct BloomController leaf facing Effect', () async {
@@ -328,7 +328,7 @@ void main() {
       final captured = <int>[];
       final runner = ctrl.bloom.effect(() {
         captured.add(ctrl.data);
-      }).run();
+      }).start();
 
       expect(captured, isEmpty);
 
@@ -336,7 +336,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(captured, [200]);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('12. Static Bloom.constant leaf facing Effect', () async {
@@ -345,7 +345,7 @@ void main() {
       var runCount = 0;
       final runner = constantNode.effect(() {
         runCount++;
-      }).run();
+      }).start();
 
       expect(runner.isActive, isTrue);
       expect(runCount, 0);
@@ -353,7 +353,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(runCount, 0, reason: 'Constant node never emits mutations');
 
-      runner.deactivate();
+      runner.stop();
     });
   });
 }

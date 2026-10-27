@@ -56,12 +56,12 @@ This directory provides the definitive engineering specifications for the Bloom 
     - Declarative branch switching (`switched`) and imperative relay socket bridging (`BloomCoupler`).
 
 13. [**Two-Tier Temporal Architecture: State-Domain Smoothing vs. Effect-Domain Rate Limiting**](13_two_tier_temporal_architecture_and_scheduling.md)
-    - Orthogonal separation between state-domain buffering (`debounced`, `throttled`, `coalesced`) and effect-domain execution rate limiting (`Effect.debounce`/`throttle`).
+    - Orthogonal separation between state-domain buffering (`debounced`, `throttled`, `coalesced`) and effect-domain execution rate limiting (`effect.debounce`/`throttle`).
     - Elimination of the Initial Evaluation Dilemma and intermediate topological limbo states.
 
 14. [**Standalone Observation & Side-Effect Pipelines: Effect, EffectRunner, and Microtask Batching**](14_standalone_observation_and_effect_pipelines.md)
     - Framework-independent declarative side-effects (`Effect`) and execution-oriented pipelines (`EffectRunner`).
-    - Resource Acquisition Is Initialization (RAII) guarantees via `EffectHandle.onCleanup` and declarative Record extensions.
+    - Resource Acquisition Is Initialization (RAII) guarantees via `EffectScope.onCleanup` and declarative Record extensions.
 
 15. [**Zero-Allocation Reactive Graph: Dart VM Optimization & Intrusive Data Structures**](15_dart_vm_low_overhead_memory_engineering.md)
     - Intrusive doubly linked lists (`_TargetEdge`, `_Edge`) achieving zero heap allocation on hot invalidation paths.

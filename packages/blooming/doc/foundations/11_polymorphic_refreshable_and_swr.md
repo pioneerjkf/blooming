@@ -177,7 +177,7 @@ void main() async {
     } else if (state.hasError) {
       print('[SWR] Revalidation error: ${state.error}');
     }
-  }).run();
+  }).start();
 
   // 3. Trigger asynchronous refresh
   refreshSignal.emit();
@@ -186,7 +186,7 @@ void main() async {
   await Future<void>.delayed(const Duration(milliseconds: 20));
 
   // 4. Teardown when complete
-  runner.deactivate();
+  runner.stop();
 }
 ```
 

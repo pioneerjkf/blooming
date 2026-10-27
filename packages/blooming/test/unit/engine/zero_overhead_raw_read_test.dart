@@ -114,13 +114,13 @@ void main() {
       int effectRuns = 0;
       int observedValue = -1;
 
-      final effect = Effect.via((via) {
+      final eff = Effect.via((via) {
         effectRuns++;
         observedValue = via(counter.bloom);
       });
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
 
       terminal.activate();

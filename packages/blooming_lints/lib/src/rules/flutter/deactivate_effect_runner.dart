@@ -4,22 +4,22 @@
 
 part of '../../../blooming_lints.dart';
 
-/// A lint rule ensuring `EffectRunner` instances held in `State` classes are explicitly deactivated in `dispose()`.
+/// A lint rule ensuring `EffectRunner` instances held in `State` classes are explicitly stopped in `dispose()`.
 ///
 /// ### Rationale:
 /// `EffectRunner` subscriptions hold strong listener references in upstream `Effect` and `Bloom` nodes.
-/// Failing to call `runner.deactivate()` inside `State.dispose()` retains the unmounted `State` instance
+/// Failing to call `runner.stop()` inside `State.dispose()` retains the unmounted `State` instance
 /// and its associated BuildContext in memory, causing severe memory leaks.
 ///
 /// **BAD:**
 /// ```dart
 /// class _MyState extends State<MyWidget> {
-///   EffectRunner? _runner; // [Anti-Pattern] Never deactivated in dispose!
+///   EffectRunner? _runner; // [Anti-Pattern] Never stopped in dispose!
 ///
 ///   @override
 ///   void initState() {
 ///     super.initState();
-///     _runner = counterBloom.effect(() => print(untracked(counterBloom))).run();
+///     _runner = counterBloom.effect(() => print(untracked(counterBloom))).start();
 ///   }
 /// }
 /// ```
@@ -32,12 +32,12 @@ part of '../../../blooming_lints.dart';
 ///   @override
 ///   void initState() {
 ///     super.initState();
-///     _runner = counterBloom.effect(() => print(untracked(counterBloom))).run();
+///     _runner = counterBloom.effect(() => print(untracked(counterBloom))).start();
 ///   }
 ///
 ///   @override
 ///   void dispose() {
-///     _runner?.deactivate(); // [Recommended] Explicitly deactivated
+///     _runner?.stop(); // [Recommended] Explicitly stopped
 ///     super.dispose();
 ///   }
 /// }
@@ -48,9 +48,9 @@ class DeactivateEffectRunner extends DartLintRule {
   static const _code = LintCode(
     name: 'deactivate_effect_runner',
     problemMessage:
-        'The EffectRunner \'{0}\' must be deactivated in State.dispose() to prevent memory leaks.',
+        'The EffectRunner \'{0}\' must be stopped in State.dispose() to prevent memory leaks.',
     correctionMessage:
-        'Call \'{0}?.deactivate();\' inside the dispose() method of this State class.',
+        'Call \'{0}?.stop();\' inside the dispose() method of this State class.',
     errorSeverity: DiagnosticSeverity.WARNING,
   );
 
@@ -125,6 +125,7 @@ class _DeactivateInvocationVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitMethodInvocation(MethodInvocation node) {
     if (node.methodName.name == 'deactivate' ||
+        node.methodName.name == 'stop' ||
         node.methodName.name == 'cancel') {
       final target = node.target;
       if (target is SimpleIdentifier) {

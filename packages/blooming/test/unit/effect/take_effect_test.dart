@@ -13,10 +13,10 @@ void main() {
       final counter = blooming<int>(0);
       int runs = 0;
 
-      final effect = Effect.unary(counter.bloom, () {
+      final eff = Effect.unary(counter.bloom, () {
         runs++;
       }, take: 1);
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -39,10 +39,10 @@ void main() {
       final counter = blooming<int>(0);
       int runs = 0;
 
-      final effect = Effect.unary(counter.bloom, () {
+      final eff = Effect.unary(counter.bloom, () {
         runs++;
       }, take: 1);
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -66,10 +66,10 @@ void main() {
       final source = blooming<int>(0);
       final observed = <int>[];
 
-      final effect = Effect.unary(source.bloom, () {
+      final eff = Effect.unary(source.bloom, () {
         observed.add(source.data);
       }, take: 3);
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -97,10 +97,10 @@ void main() {
       final source = blooming<int>(0);
       int runs = 0;
 
-      final effect = Effect.unary(source.bloom, () {
+      final eff = Effect.unary(source.bloom, () {
         runs++;
       }, take: 0);
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -128,10 +128,10 @@ void main() {
       final b = blooming<int>(0);
       int runs = 0;
 
-      final effect = Effect([a.bloom, b.bloom], () {
+      final eff = Effect([a.bloom, b.bloom], () {
         runs++;
       }, take: 2);
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 

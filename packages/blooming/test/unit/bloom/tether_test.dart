@@ -10,16 +10,16 @@ void main() {
   group('Tether Declarative Lifecycle Contract Suite', () {
     test('1. Effect inherits from Tether and preserves generic typing in via.tether()', () {
       final source = blooming(1);
-      final effect = Effect([source.bloom], () {});
+      final eff = Effect([source.bloom], () {});
 
       // Verify inheritance
-      expect(effect, isA<Tether>());
+      expect(eff, isA<Tether>());
 
       // Verify via.tether typing
       final terminal = RawViaTerminal<int>((via) {
-        final tethered = via.tether(effect);
+        final tethered = via.tether(eff);
         // Statically and dynamically verifies identical reference and Effect type
-        expect(identical(tethered, effect), isTrue);
+        expect(identical(tethered, eff), isTrue);
         expect(tethered, isA<Effect>());
         return via(source.bloom);
       }, onInvalidated: () {})
@@ -28,21 +28,21 @@ void main() {
       expect(terminal.evaluate(), equals(1));
       expect(terminal.debugTethers.length, equals(1));
       expect(terminal.debugTethers.first, isA<Tether>());
-      expect(identical(terminal.debugTethers.first, effect), isTrue);
+      expect(identical(terminal.debugTethers.first, eff), isTrue);
 
       terminal.deactivate();
     });
 
     test('2. TetherDebugExtension provides label, location, and chaining with exact type preservation', () {
       final trigger = blooming(0);
-      final effect = Effect([trigger.bloom], () {}).withDebugLabel('analyticsTether');
+      final eff = Effect([trigger.bloom], () {}).withDebugLabel('analyticsTether');
 
       // Static typing check: withDebugLabel preserves Effect
-      expect(effect.debugLabel, equals('analyticsTether'));
+      expect(eff.debugLabel, equals('analyticsTether'));
 
-      effect.debugTrace('traceLabel');
-      expect(effect.debugLabel, equals('traceLabel'));
-      expect(effect.debugCreationLocation, isNotNull);
+      eff.debugTrace('traceLabel');
+      expect(eff.debugLabel, equals('traceLabel'));
+      expect(eff.debugCreationLocation, isNotNull);
     });
 
     test('3. Dynamic epoch sweeping detaches and deactivates swept tethers', () async {
@@ -94,11 +94,11 @@ void main() {
       var effectRuns = 0;
       var terminalEvaluations = 0;
 
-      final effect = Effect([trigger.bloom], () => effectRuns++);
+      final eff = Effect([trigger.bloom], () => effectRuns++);
 
       final terminal = RawViaTerminal<int>((via) {
         terminalEvaluations++;
-        via.tether(effect);
+        via.tether(eff);
         return 100;
       }, onInvalidated: () {
         fail('Terminal must NOT be invalidated when tether triggers independently');
@@ -118,9 +118,9 @@ void main() {
     });
 
     test('5. Tether reports _isNewerThan as false during source dirty resolution', () {
-      final effect = Effect([], () {});
+      final eff = Effect([], () {});
       final comp = Bloom.computed<int>((via) {
-        via.tether(effect);
+        via.tether(eff);
         return 42;
       });
 

@@ -53,13 +53,13 @@ void main() async {
   // Reactively observe aggregations
   final runner = sumBloom.effect(() {
     print('Sum updated: ${untracked(sumBloom)}');
-  }).run();
+  }).start();
 
   // Mutating the upstream collection triggers lightweight on-demand evaluation
   numbersController.set([5.0, 15.0, 25.0, 35.0]);
 
   await Future<void>.delayed(Duration.zero);
-  runner.deactivate();
+  runner.stop();
 }
 ```
 

@@ -54,7 +54,7 @@ final class _ManifestEffect extends Effect {
 final class _HandledUnaryManifestEffect extends Effect {
   _HandledUnaryManifestEffect(
     Bloom source,
-    void Function(EffectHandle handle) action, {
+    void Function(EffectScope scope) action, {
     bool Function()? guard,
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
@@ -75,7 +75,7 @@ final class _HandledUnaryManifestEffect extends Effect {
 final class _HandledManifestEffect extends Effect {
   _HandledManifestEffect(
     Iterable<Bloom> targets,
-    void Function(EffectHandle handle) action, {
+    void Function(EffectScope scope) action, {
     bool Function()? guard,
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
@@ -93,7 +93,7 @@ final class _HandledManifestEffect extends Effect {
 }
 
 /// Concrete composite group implementation of [Effect] composing an [_EffectGroupTerminal].
-final class _EffectGroup extends EffectGroup {
+final class _EffectGroup extends Effect {
   _EffectGroup(Iterable<Effect> effects) : this._(List.unmodifiable(effects.toSet()));
 
   _EffectGroup._(List<Effect> uniqueEffects)
@@ -101,7 +101,6 @@ final class _EffectGroup extends EffectGroup {
         _terminal = _EffectGroupTerminal(uniqueEffects),
         super._();
 
-  @override
   final List<Effect> effects;
 
   @override
@@ -128,7 +127,7 @@ final class _ViaEffect extends Effect {
 /// Concrete implementation of [Effect] composing a [_HandledViaEffectTerminal].
 final class _HandledViaEffect extends Effect {
   _HandledViaEffect(
-    void Function(BloomVia via, EffectHandle handle) action, {
+    void Function(BloomVia via, EffectScope scope) action, {
     bool Function(BloomVia via)? guard,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   })  : _terminal = _HandledViaEffectTerminal(
@@ -147,7 +146,7 @@ final class _HandledViaEffect extends Effect {
 // =============================================================================
 
 /// Concrete unary debounce manifest effect composing a [_UnaryDebounceEffectTerminal].
-final class _UnaryManifestDebounceEffect extends DebounceEffect {
+final class _UnaryManifestDebounceEffect extends Effect {
   _UnaryManifestDebounceEffect(
     Bloom source,
     Duration duration,
@@ -172,18 +171,15 @@ final class _UnaryManifestDebounceEffect extends DebounceEffect {
   @override
   final _UnaryDebounceEffectTerminal _terminal;
 
-  @override
   Duration get duration => _terminal.duration;
 
-  @override
   bool get leading => _terminal.leading;
 
-  @override
   bool get trailing => _terminal.trailing;
 }
 
 /// Concrete n-ary debounce manifest effect composing a [_NaryDebounceEffectTerminal].
-final class _ManifestDebounceEffect extends DebounceEffect {
+final class _ManifestDebounceEffect extends Effect {
   _ManifestDebounceEffect(
     Iterable<Bloom> targets,
     Duration duration,
@@ -208,18 +204,15 @@ final class _ManifestDebounceEffect extends DebounceEffect {
   @override
   final _NaryDebounceEffectTerminal _terminal;
 
-  @override
   Duration get duration => _terminal.duration;
 
-  @override
   bool get leading => _terminal.leading;
 
-  @override
   bool get trailing => _terminal.trailing;
 }
 
 /// Concrete unary throttle manifest effect composing a [_UnaryThrottleEffectTerminal].
-final class _UnaryManifestThrottleEffect extends ThrottleEffect {
+final class _UnaryManifestThrottleEffect extends Effect {
   _UnaryManifestThrottleEffect(
     Bloom source,
     Duration duration,
@@ -244,18 +237,15 @@ final class _UnaryManifestThrottleEffect extends ThrottleEffect {
   @override
   final _UnaryThrottleEffectTerminal _terminal;
 
-  @override
   Duration get duration => _terminal.duration;
 
-  @override
   bool get leading => _terminal.leading;
 
-  @override
   bool get trailing => _terminal.trailing;
 }
 
 /// Concrete n-ary throttle manifest effect composing a [_NaryThrottleEffectTerminal].
-final class _ManifestThrottleEffect extends ThrottleEffect {
+final class _ManifestThrottleEffect extends Effect {
   _ManifestThrottleEffect(
     Iterable<Bloom> targets,
     Duration duration,
@@ -280,12 +270,9 @@ final class _ManifestThrottleEffect extends ThrottleEffect {
   @override
   final _NaryThrottleEffectTerminal _terminal;
 
-  @override
   Duration get duration => _terminal.duration;
 
-  @override
   bool get leading => _terminal.leading;
 
-  @override
   bool get trailing => _terminal.trailing;
 }

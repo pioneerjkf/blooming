@@ -36,7 +36,7 @@ void main() async {
   // 3. Reactive Terminal: Side-Effect Runner (Push-dirty scheduled dispatch)
   final resultsRunner = searchResults.effect(() {
     print('[UI Terminal] Fresh Results: ${untracked(searchResults)}');
-  }).run();
+  }).start();
 
   // 4. Execution & Side-Effects (Zero-cycle terminal sink from package:blooming/effect.dart)
   final analyticsRunner = searchController.bloom.effect.debounce(
@@ -47,7 +47,7 @@ void main() async {
         print('[Side-Effect] 📊 Logged search analytics: "$query"');
       }
     },
-  ).run();
+  ).start();
 
   // 5. State Mutation Upstream
   print('-> Updating query to "dart"');
@@ -74,7 +74,7 @@ void main() async {
   await Future<void>.delayed(Duration.zero);
 
   // 8. Clean up: Detach upstream edges (Zero-leak Inactive Dormancy)
-  print('\n-> Deactivating terminals');
-  resultsRunner.deactivate();
-  analyticsRunner.deactivate();
+  print('\n-> Stopping runners');
+  resultsRunner.stop();
+  analyticsRunner.stop();
 }

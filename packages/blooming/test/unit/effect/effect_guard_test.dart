@@ -18,12 +18,12 @@ void main() {
         bool isAllowed = false;
         int actionRunCount = 0;
 
-        final effect = Effect.unary(
+        final eff = Effect.unary(
           target.bloom,
           () => actionRunCount++,
           guard: () => isAllowed,
         );
-        final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+        final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
           ..activate()
           ..evaluate();
 
@@ -59,13 +59,13 @@ void main() {
         bool isAllowed = false;
         int actionRunCount = 0;
 
-        final effect = Effect.unary(
+        final eff = Effect.unary(
           target.bloom,
           () => actionRunCount++,
           take: 2,
           guard: () => isAllowed,
         );
-        final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+        final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
           ..activate()
           ..evaluate();
 
@@ -113,12 +113,12 @@ void main() {
         bool allowed = false;
         int runs = 0;
 
-        final effect = Effect(
+        final eff = Effect(
           [a.bloom, b.bloom],
           () => runs++,
           guard: () => allowed,
         );
-        final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+        final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
           ..activate()
           ..evaluate();
 
@@ -180,14 +180,14 @@ void main() {
         int executionCount = 0;
         String? observed;
 
-        final effect = Effect.via(
+        final eff = Effect.via(
           (via) {
             executionCount++;
             observed = via(payload.bloom);
           },
           guard: (via) => via(gate.bloom),
         );
-        final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+        final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
           ..activate()
           ..evaluate();
 
@@ -235,14 +235,14 @@ void main() {
         bool allowed = false;
         int runs = 0;
 
-        final effect = ThrottleEffect.unary(
+        final eff = Effect.throttle.unary(
           target.bloom,
           const Duration(milliseconds: 20),
           () => runs++,
           take: 1,
           guard: () => allowed,
         );
-        final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+        final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
           ..activate()
           ..evaluate();
 
@@ -268,14 +268,14 @@ void main() {
         bool allowed = false;
         int runs = 0;
 
-        final effect = DebounceEffect.unary(
+        final eff = Effect.debounce.unary(
           target.bloom,
           const Duration(milliseconds: 20),
           () => runs++,
           take: 1,
           guard: () => allowed,
         );
-        final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+        final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
           ..activate()
           ..evaluate();
 
@@ -339,7 +339,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.2 Effect.via with guard in RawViaTerminal', () async {
+      test('5.2 effect.via with guard in RawViaTerminal', () async {
         final gate = blooming<bool>(false);
         final val = blooming<int>(100);
         int runs = 0;

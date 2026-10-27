@@ -5,14 +5,14 @@
 part of '../../framework.dart';
 
 // =============================================================================
-// EffectHandle Internal Implementation
+// EffectScope Internal Implementation
 // =============================================================================
 
-/// Internal implementation of [EffectHandle].
-final class _EffectHandleImpl implements EffectHandle {
-  _EffectHandleImpl(this._handleUncaughtError);
+/// Internal implementation of [EffectScope].
+final class _EffectScopeImpl implements EffectScope {
+  _EffectScopeImpl(this._terminal);
 
-  final void Function(Object error, StackTrace stackTrace) _handleUncaughtError;
+  final _Terminal _terminal;
   bool _isCancelled = false;
   void Function()? _cleanup;
 
@@ -30,7 +30,7 @@ final class _EffectHandleImpl implements EffectHandle {
       try {
         cleanup();
       } catch (error, stackTrace) {
-        _handleUncaughtError(error, stackTrace);
+        _terminal._handleUncaughtError(error, stackTrace);
       }
       return;
     }
@@ -64,7 +64,7 @@ final class _EffectHandleImpl implements EffectHandle {
       try {
         cleanup();
       } catch (error, stackTrace) {
-        _handleUncaughtError(error, stackTrace);
+        _terminal._handleUncaughtError(error, stackTrace);
       }
     }
   }
@@ -110,19 +110,23 @@ abstract base class _ManifestEffectTerminal extends _Terminal with _ScheduledTer
         if (!e._resolveDirty()) return; // Drop/Abort if upstream didn't actually mutate
         e._pullVersion();
       }
+      _executeAction();
+    }
+  }
 
-      if (_takeLimit != null && _remaining <= 0) return;
-      var executed = false;
-      try {
-        if (_guard?.call() == false) return;
-        executed = true;
-        _action();
-      } catch (error, stackTrace) {
-        _handleUncaughtError(error, stackTrace);
-      } finally {
-        if (executed && _takeLimit != null && --_remaining <= 0) {
-          deactivate(); // Early Teardown
-        }
+  @pragma('vm:prefer-inline')
+  void _executeAction() {
+    if (_takeLimit != null && _remaining <= 0) return;
+    var executed = false;
+    try {
+      if (_guard?.call() == false) return;
+      executed = true;
+      _action();
+    } catch (error, stackTrace) {
+      _handleUncaughtError(error, stackTrace);
+    } finally {
+      if (executed && _takeLimit != null && --_remaining <= 0) {
+        deactivate(); // Early Teardown
       }
     }
   }
@@ -189,7 +193,7 @@ base class _NaryManifestEffectTerminal extends _ManifestEffectTerminal
   }
 }
 
-/// Abstract base terminal for manifest handled effects providing [EffectHandle].
+/// Abstract base terminal for manifest handled effects providing [EffectScope].
 abstract base class _HandledManifestEffectTerminal extends _Terminal with _ScheduledTerminalMixin {
   _HandledManifestEffectTerminal(
     this._action, {
@@ -204,11 +208,11 @@ abstract base class _HandledManifestEffectTerminal extends _Terminal with _Sched
     }
   }
 
-  final void Function(EffectHandle handle) _action;
+  final void Function(EffectScope scope) _action;
   final int? _takeLimit;
   final bool Function()? _guard;
   int _remaining;
-  _EffectHandleImpl? _currentHandle;
+  _EffectScopeImpl? _currentScope;
 
   @override
   void activate() {
@@ -219,8 +223,8 @@ abstract base class _HandledManifestEffectTerminal extends _Terminal with _Sched
   @mustCallSuper
   @override
   void _deactivate() {
-    _currentHandle?._dispose();
-    _currentHandle = null;
+    _currentScope?._dispose();
+    _currentScope = null;
     super._deactivate();
   }
 
@@ -236,19 +240,19 @@ abstract base class _HandledManifestEffectTerminal extends _Terminal with _Sched
       if (_takeLimit != null && _remaining <= 0) return;
       if (_guard?.call() == false) return;
 
-      _currentHandle?._dispose();
-      final handle = _EffectHandleImpl(_handleUncaughtError);
-      _currentHandle = handle;
+      _currentScope?._dispose();
+      final scope = _EffectScopeImpl(this);
+      _currentScope = scope;
 
       var executed = false;
       try {
         executed = true;
-        _action(handle);
+        _action(scope);
       } catch (error, stackTrace) {
         _handleUncaughtError(error, stackTrace);
       } finally {
         if (executed && _takeLimit != null && --_remaining <= 0) {
-          deactivate(); // Early Teardown triggers _deactivate -> disposes _currentHandle
+          deactivate(); // Early Teardown triggers _deactivate -> disposes _currentScope
         }
       }
     }
@@ -288,7 +292,7 @@ base class _HandledNaryManifestEffectTerminal extends _HandledManifestEffectTerm
   }
 }
 
-/// Internal terminal for composite [EffectGroup] orchestration.
+/// Internal terminal for composite effect group orchestration.
 final class _EffectGroupTerminal extends _Terminal with _NaryEdgeMixin<_Node> {
   _EffectGroupTerminal(List<Effect> effects) {
     _addSourceEdges(effects);
@@ -360,7 +364,7 @@ base class _ViaEffectTerminal extends _Terminal
   }
 }
 
-/// Internal terminal executing dynamic [BloomVia] tracking handled effects providing [EffectHandle].
+/// Internal terminal executing dynamic [BloomVia] tracking handled effects providing [EffectScope].
 base class _HandledViaEffectTerminal extends _Terminal
     with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ScheduledTerminalMixin {
   _HandledViaEffectTerminal(
@@ -369,10 +373,10 @@ base class _HandledViaEffectTerminal extends _Terminal
     super.onUncaughtError,
   }) : _guard = guard;
 
-  final void Function(BloomVia via, EffectHandle handle) _action;
+  final void Function(BloomVia via, EffectScope scope) _action;
   final bool Function(BloomVia via)? _guard;
   bool _needsInitialEvaluation = true;
-  _EffectHandleImpl? _currentHandle;
+  _EffectScopeImpl? _currentScope;
 
   @mustCallSuper
   @override
@@ -385,8 +389,8 @@ base class _HandledViaEffectTerminal extends _Terminal
   @mustCallSuper
   @override
   void _deactivate() {
-    _currentHandle?._dispose();
-    _currentHandle = null;
+    _currentScope?._dispose();
+    _currentScope = null;
     super._deactivate();
   }
 
@@ -398,11 +402,11 @@ base class _HandledViaEffectTerminal extends _Terminal
       if (_guard case final guard?) {
         if (!guard(_via)) return;
       }
-      _currentHandle?._dispose();
-      final handle = _EffectHandleImpl(_handleUncaughtError);
-      _currentHandle = handle;
+      _currentScope?._dispose();
+      final scope = _EffectScopeImpl(this);
+      _currentScope = scope;
 
-      _action(_via, handle);
+      _action(_via, scope);
     } on _ViaShortCircuit {
       succeeded = true;
       return;
@@ -433,25 +437,59 @@ base class _HandledViaEffectTerminal extends _Terminal
 // Temporal (Debounce & Throttle) Terminals
 // =============================================================================
 
-/// Foundational base terminal for debounce logic used by [DebounceEffect].
-abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
-  _DebounceEffectTerminal(
+/// Foundational base terminal for temporal (Debounce & Throttle) manifest effects.
+abstract base class _TemporalEffectTerminal extends _ManifestEffectTerminal {
+  _TemporalEffectTerminal(
     super.action, {
     required this.duration,
     super.guard,
-    this.leading = false,
-    this.trailing = true,
+    required this.leading,
+    required this.trailing,
     super.take,
     super.onUncaughtError,
-  }) : assert(leading || trailing, 'At least one of leading or trailing must be true.');
+  }) {
+    if (!leading && !trailing) {
+      throw ArgumentError('At least one of leading or trailing must be true.');
+    }
+  }
 
   final Duration duration;
   final bool leading;
   final bool trailing;
 
+  bool _hasTrailingPending = false;
+  bool _isTrailingExecution = false;
+
+  @override
+  @pragma('vm:prefer-inline')
+  void _performScheduled() {
+    if (_lifecycle.isActive) {
+      final isTrailing = _isTrailingExecution;
+      _isTrailingExecution = false;
+      if (this case final _DirtySyncable e) {
+        final isDirty = e._resolveDirty();
+        if (!isDirty && !isTrailing) return;
+        e._pullVersion();
+      }
+      _executeAction();
+    }
+  }
+}
+
+/// Foundational base terminal for debounce logic used by [EffectDebounceFunctor].
+abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
+  _DebounceEffectTerminal(
+    super.action, {
+    required super.duration,
+    super.guard,
+    super.leading = false,
+    super.trailing = true,
+    super.take,
+    super.onUncaughtError,
+  });
+
   Timer? _debounceTimer;
   bool _isLeadingCooldown = false;
-  bool _hasTrailingPending = false;
 
   @override
   @pragma('vm:prefer-inline')
@@ -480,6 +518,7 @@ abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
 
     if (_hasTrailingPending && trailing) {
       _hasTrailingPending = false;
+      _isTrailingExecution = true;
       _Scheduler.instance._scheduleTerminal(this);
     }
   }
@@ -491,6 +530,7 @@ abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
     _debounceTimer = null;
     _isLeadingCooldown = false;
     _hasTrailingPending = false;
+    _isTrailingExecution = false;
     super._deactivate();
   }
 }
@@ -540,24 +580,19 @@ base class _NaryDebounceEffectTerminal extends _DebounceEffectTerminal
   }
 }
 
-/// Foundational base terminal for throttle logic used by [ThrottleEffect].
-abstract base class _ThrottleEffectTerminal extends _ManifestEffectTerminal {
+/// Foundational base terminal for throttle logic used by [EffectThrottleFunctor].
+abstract base class _ThrottleEffectTerminal extends _TemporalEffectTerminal {
   _ThrottleEffectTerminal(
     super.action, {
-    required this.duration,
+    required super.duration,
     super.guard,
-    this.leading = true,
-    this.trailing = true,
+    super.leading = true,
+    super.trailing = true,
     super.take,
     super.onUncaughtError,
-  }) : assert(leading || trailing, 'At least one of leading or trailing must be true.');
-
-  final Duration duration;
-  final bool leading;
-  final bool trailing;
+  });
 
   Timer? _throttleTimer;
-  bool _hasTrailingPending = false;
 
   @override
   @pragma('vm:prefer-inline')
@@ -586,6 +621,7 @@ abstract base class _ThrottleEffectTerminal extends _ManifestEffectTerminal {
 
     if (_hasTrailingPending && trailing) {
       _hasTrailingPending = false;
+      _isTrailingExecution = true;
       _Scheduler.instance._scheduleTerminal(this);
       _throttleTimer = Timer(duration, _onThrottleTimerExpired);
     }
@@ -597,6 +633,7 @@ abstract base class _ThrottleEffectTerminal extends _ManifestEffectTerminal {
     _throttleTimer?.cancel();
     _throttleTimer = null;
     _hasTrailingPending = false;
+    _isTrailingExecution = false;
     super._deactivate();
   }
 }

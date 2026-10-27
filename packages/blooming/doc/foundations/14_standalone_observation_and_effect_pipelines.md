@@ -36,9 +36,9 @@ The Bloom Framework resolves this with **Declarative Side-Effects ([`Effect`](..
 │                reference-counted scope lifecycle                       │
 │                                                                        │
 │   [ Domain 2: Standalone Imperative Execution (EffectRunner) ]         │
-│   • Core Class: EffectRunner (implements RawTerminal)                  │
+│   • Core Class: EffectRunner (implements LpdagStatus)                  │
 │   • Purpose: Imperative lifecycle control outside UI tethers           │
-│   • Invocation: effect.run(), runner.activate(), runner.deactivate()   │
+│   • Invocation: effect.start(), runner.start(), runner.stop()          │
 │   • Invariant: Subscriber-driven dormancy, true dormancy when all      │
 │                tethers and runners detach                              │
 │                                                                        │
@@ -48,17 +48,17 @@ The Bloom Framework resolves this with **Declarative Side-Effects ([`Effect`](..
 ### 2.1 The Declarative Effect Hierarchy (`Effect`)
 Every side-effect in Bloom is represented as a declarative blueprint extending `Tether`:
 
-1. **Manifest Unary (`Effect.unary`, `target.effect(...)`)**:  
+1. **Manifest Unary (`effect.unary`, `target.effect(...)`)**:  
    Bound strictly to a single `Bloom<T>` target. Skips initial evaluation on mount and executes upon subsequent mutations.
-2. **Manifest N-ary (`Effect(...)`, `targets.effect(...)`, `(a, b).effect(...)`)**:  
+2. **Manifest N-ary (`effect(...)`, `targets.effect(...)`, `(a, b).effect(...)`)**:  
    Bound to an explicit collection or Dart 3 Record tuple of targets (`Bloom` nodes).
-3. **Handled Manifest (`Effect.handled`, `Effect.handledUnary`)**:  
-   Provides an [`EffectHandle`](../../lib/src/effect/effect.dart) for cleanups (`onCleanup`), execution turn status flags (`isActive`, `isCancelled`), and RAII lifecycle teardowns.
-4. **Dynamic Discovery (`Effect.via`, `Effect.handledVia`)**:  
+3. **Scoped Manifest (`effect.scoped`, `effect.scoped.unary`)**:  
+   Provides an [`EffectScope`](../../lib/src/effect/effect.dart) for cleanups (`onCleanup`), execution turn status flags (`isActive`, `isCancelled`), and RAII lifecycle teardowns.
+4. **Dynamic Discovery (`effect.via`, `effect.scoped.via`)**:  
    Explicit dependency discovery via `BloomVia` with 1-pass monotonic epoch sweeping.
-5. **Rate-Limited Sinks (`DebounceEffect`, `ThrottleEffect`)**:  
+5. **Rate-Limited Sinks (`effect.debounce`, `effect.throttle`)**:  
    Time-domain rate limiting with configurable `leading` and `trailing` edge policies.
-6. **Composite Groups (`EffectGroup`, `Effect.group(...)`, `(e1, e2).group()`)**:  
+6. **Composite Groups (`effect.group(...)`, `(e1, e2).group`)**:  
    Coordinates multiple constituent effects as a single composite lifecycle terminal.
 
 ### 2.2 Standalone Imperative Execution (`EffectRunner`)
@@ -66,15 +66,11 @@ While declarative `Effect` instances are typically bound to tracking scopes via 
 
 ```dart
 // packages/blooming/lib/src/effect/runner.dart
-abstract interface class EffectRunner implements RawTerminal {
-  factory EffectRunner(Effect effect, {bool autoStart}) = _EffectRunnerImpl;
+abstract interface class EffectRunner implements LpdagStatus {
+  factory EffectRunner(Effect effect) = _EffectRunnerImpl;
 
-  @override
-  void activate();
-
-  @override
-  void deactivate();
-
+  void start();
+  void stop();
   Effect get effect;
 
   @override
@@ -134,7 +130,7 @@ The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) coord
 1. `_SchedulerBase`: Resets `_isScheduled = false`.
 2. `_CoalescedSchedulerMixin`: Flushes trailing coalesced state pulses (`bloom.coalesced()`) in the DAG first.
 3. `_EagerSchedulerMixin`: Resolves eager dynamic routing nodes (`computed.future`, `computed.stream`, `switched`) next.
-4. `_TerminalSchedulerMixin`: Flushes active scheduled terminals (`Effect`, `DebounceEffect`, `ThrottleEffect`).
+4. `_TerminalSchedulerMixin`: Flushes active scheduled terminals (`Effect`, `effect.debounce`, `effect.throttle`).
 5. `_GracefulSchedulerMixin`: Executes deactivation cleanups (`_MicrotaskGraceHandle`) LAST.
 
 > [!NOTE]
@@ -150,41 +146,41 @@ The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) coord
 ```dart
 final sensorStream = Stream<double>.periodic(const Duration(seconds: 1), (i) => 25.0 + i);
 final sensorData = computed.stream((via) => sensorStream);
-final runner = sensorData.bloom.effect(() => print(untracked(sensorData.bloom))).run();
+final runner = sensorData.bloom.effect(() => print(untracked(sensorData.bloom))).start();
 
 // 1. While runner is active:
 //    sensorData maintains an active terminal, keeping the physical stream subscription open.
 
-// 2. Deactivating runner:
-runner.deactivate();
+// 2. Stopping runner:
+runner.stop();
 
-// 3. Immediately on deactivation:
+// 3. Immediately on stopping:
 //    Downstream count hits 0 -> sensorData cancels the stream subscription
 //    and enters 0-I/O cold dormancy. Zero background leaks.
 ```
 
 ### 4.2 Shared Multi-Scope Ownership
 If the same `Effect` instance is shared between a tracking scope (`via.tether(effect)`) and an `EffectRunner`:
-* Deactivating the runner leaves the effect active as long as the tethering scope remains active.
+* Stopping the runner leaves the effect active as long as the tethering scope remains active.
 * Unmounting the tethering scope leaves the effect active if the runner is still running.
 * The underlying effect enters true dormancy only when **all** observing terminals and runners have detached.
 
-### 4.3 Multi-Registration and RAII Safety (`EffectHandle.onCleanup`)
+### 4.3 Multi-Registration and RAII Safety (`EffectScope.onCleanup`)
 
-The [`EffectHandle`](../../lib/src/effect/effect.dart) interface enables registering teardown callbacks to be invoked when an execution turn completes or when the effect deactivates:
+The [`EffectScope`](../../lib/src/effect/effect.dart) interface enables registering teardown callbacks to be invoked when an execution turn completes or when the effect deactivates:
 
 ```dart
 final roomIdBloom = blooming('room_101').bloom;
 
-final roomManager = roomIdBloom.effect.handled((handle) {
+final roomManager = roomIdBloom.effect.scoped((scope) {
   // Resource 1: Acquired and immediately guarded
   final timer = Timer.periodic(const Duration(seconds: 1), (_) => ping());
-  handle.onCleanup(timer.cancel);
+  scope.onCleanup(timer.cancel);
 
   // Resource 2: Acquired and immediately guarded
   final socket = WebSocket.connect(url);
-  handle.onCleanup(socket.close);
-}).run();
+  scope.onCleanup(socket.close);
+}).start();
 ```
 
 ```dart
@@ -221,7 +217,7 @@ void onCleanup(void Function() cleanup) {
 
 #### Three Architectural Rationales for Multi-Registration
 1. **Exception Safety during Setup**: If an exception is thrown while acquiring a subsequent resource (e.g. `WebSocket.connect` fails), previously registered cleanups (e.g. `timer.cancel`) remain securely intact and execute deterministically.
-2. **Modular Subroutine Composition**: `EffectHandle` can be passed to independent helper functions (e.g. `bindCancelToken(handle)`), allowing each to register its own teardown safely without overwriting previous cleanups.
+2. **Modular Subroutine Composition**: `EffectScope` can be passed to independent helper functions (e.g. `bindCancelToken(scope)`), allowing each to register its own teardown safely without overwriting previous cleanups.
 3. **Clean Conditional Branching**: Resources acquired inside `if` blocks can register their respective teardowns directly in-place without uninitialized nullable variables.
 
 ---
@@ -232,7 +228,7 @@ The Bloom Framework leverages Dart 3 Record extensions (arity 2 through 5) and z
 
 ```text
 targets.effect                 ((action) => ...)
- ├── .handled                  ((handle) => ...)
+ ├── .scoped                   ((scope) => ...)
  ├── .throttle                 (duration, (action) => ...)
  └── .debounce                 (duration, (action) => ...)
 ```
@@ -247,15 +243,15 @@ final userId = blooming('usr_1');
 final authToken = blooming('tok_abc');
 final syncStatus = blooming('idle');
 
-// Multi-target handled effect on 3-tuple:
-final sessionRunner = (userId.bloom, authToken.bloom, syncStatus.bloom).effect.handled((handle) {
+// Multi-target scoped effect on 3-tuple:
+final sessionRunner = (userId.bloom, authToken.bloom, syncStatus.bloom).effect.scoped((scope) {
   final user = untracked(userId.bloom);
   final token = untracked(authToken.bloom);
   final status = untracked(syncStatus.bloom);
   
   final client = ApiClient.authenticate(user, token);
-  handle.onCleanup(client.dispose);
-}).run();
+  scope.onCleanup(client.dispose);
+}).start();
 ```
 
 ---
@@ -280,17 +276,17 @@ void main() async {
     if (status == ServerHealth.critical) {
       triggerEmergencyAlert();
     }
-  }).run();
+  }).start();
 
-  // Gracefully deactivate upon OS signal:
+  // Gracefully stop upon OS signal:
   ProcessSignal.sigterm.watch().listen((_) {
-    healthRunner.deactivate();
+    healthRunner.stop();
     exit(0);
   });
 }
 ```
 
-### 6.2 Dynamic Conditional Side-Effects (`Effect.via` + `run()`)
+### 6.2 Dynamic Conditional Side-Effects (`effect.via` + `start()`)
 ```dart
 import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
@@ -299,14 +295,14 @@ final speedBloom = blooming<int>(50).bloom;
 final limitBloom = blooming<int>(60).bloom;
 
 // Evaluates dependencies dynamically, triggering alerts only when condition holds
-final speedMonitor = Effect.via((via) {
+final speedMonitor = effect.via((via) {
   final currentSpeed = via(speedBloom);
   final speedLimit = via(limitBloom);
 
   if (currentSpeed > speedLimit) {
     print('WARNING: Speed limit exceeded! ($currentSpeed > $speedLimit)');
   }
-}).run();
+}).start();
 ```
 
 ### 6.3 Throttled Multi-Target Analytics Pipeline
@@ -323,7 +319,7 @@ final analyticsRunner = (scrollOffset.bloom, pageIndex.bloom).effect.throttle(
   () => sendAnalytics(untracked(scrollOffset.bloom), untracked(pageIndex.bloom)),
   leading: true,
   trailing: true,
-).run();
+).start();
 ```
 
 ---
@@ -339,9 +335,9 @@ final analyticsRunner = (scrollOffset.bloom, pageIndex.bloom).effect.throttle(
 4. **Glitch-Free Diamond Consistency**:  
    In diamond topologies where multiple upstream dependencies mutate in the same turn, active effect terminals evaluate only after all state transactions settle, eliminating transient split-brain reads.
 5. **Zero-Leak Inactive Cold Dormancy**:  
-   Deactivating an `EffectRunner` relinquishes its subscription edge immediately. When all subscribers detach, underlying `Bloom` sources cascade into 0-I/O dormancy.
+   Stopping an `EffectRunner` relinquishes its subscription edge immediately. When all subscribers detach, underlying `Bloom` sources cascade into 0-I/O dormancy.
 6. **Deterministic RAII Teardown**:  
-   Cleanups registered via `handle.onCleanup` execute in reverse acquisition order with recursive `try-finally` safety prior to the next evaluation turn or upon deactivation.
+   Cleanups registered via `scope.onCleanup` execute in reverse acquisition order with recursive `try-finally` safety prior to the next evaluation turn or upon deactivation.
 
 ---
 

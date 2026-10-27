@@ -115,12 +115,12 @@ void main() {
       expect(source, isDormant);
 
       // 2. Observing wakes up the node via effect runner
-      final runner = derived.effect(() {}).run();
+      final runner = derived.effect(() {}).start();
       expect(derived, isActive);
       expect(derived, hasSubscribers(1));
 
       // 3. Deactivating runner synchronously drops subscribers back to 0 (dormant)
-      runner.deactivate();
+      runner.stop();
       expect(derived, isDormant);
     });
 

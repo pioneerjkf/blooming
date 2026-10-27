@@ -101,7 +101,7 @@ final paginationEffect = isNearBottom.effect(() {
   if (nearBottom && !untracked(store.isLoading)) {
     store.fetchNextPage();
   }
-}).run();
+}).start();
 ```
 
 ---

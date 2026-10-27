@@ -9,32 +9,32 @@ import 'package:blooming/blooming.dart';
 /// Showcase 4: Execution & Side-Effects (1-Tick Compressed)
 ///
 /// Demonstrates Bloom's terminal side-effects architecture:
-/// 1. `bloom.effect().run()`: Standalone active runner dedicated to executing a 1:1 single node side-effect
-/// 2. [Effect.via] with [EffectRunner]: Dynamic [BloomVia] dependency tracking with standalone execution
-/// 3. [Effect.handled]: Declarative effect providing [EffectHandle] for teardown / cleanup callbacks
-/// 4. `bloom.effect().debounce()` & `bloom.effect().throttle()`: Time-domain rate limiters
+/// 1. `bloom.effect().start()`: Standalone active runner dedicated to executing a 1:1 single node side-effect
+/// 2. [Effect] via [EffectRunner]: Dynamic [BloomVia] dependency tracking with standalone execution
+/// 3. [EffectScope]: Declarative effect providing [EffectScope] for teardown / cleanup callbacks
+/// 4. `bloom.effect.debounce()` & `bloom.effect.throttle()`: Time-domain rate limiters
 void main() async {
   print('=== Execution & Side-Effects ===\n');
 
   // ---------------------------------------------------------------------------
-  // 1. bloom.effect().run(): 1:1 State Side-Effect
+  // 1. bloom.effect().start(): 1:1 State Side-Effect
   // ---------------------------------------------------------------------------
-  print('--- 1. bloom.effect().run() ---');
+  print('--- 1. bloom.effect().start() ---');
   final score = blooming<int>(0);
 
   final scoreRunner = score.bloom.effect(() {
     print('  [Runner] Score updated to: ${untracked(score.bloom)}');
-  }).run();
+  }).start();
 
   score.data = 10;
   await Future<void>.delayed(Duration.zero); // Microtask batch flush
-  scoreRunner.deactivate();
+  scoreRunner.stop();
   print('');
 
   // ---------------------------------------------------------------------------
-  // 2. Effect.via + run(): Dynamic BloomVia Terminal Sink
+  // 2. Effect.via + start(): Dynamic BloomVia Terminal Sink
   // ---------------------------------------------------------------------------
-  print('--- 2. Effect.via().run() ---');
+  print('--- 2. Effect.via().start() ---');
   final user = blooming<String>('Alice');
   final role = blooming<String>('Member');
 
@@ -43,31 +43,31 @@ void main() async {
     final currentName = via(user.bloom);
     final currentRole = via(role.bloom);
     print('  [Audit Runner] 📝 Logging: User $currentName has role $currentRole');
-  }).run();
+  }).start();
 
   await Future<void>.delayed(Duration.zero); // Initial run
 
   role.data = 'SuperAdmin';
   await Future<void>.delayed(Duration.zero); // Reacts to role change
 
-  auditRunner.deactivate();
+  auditRunner.stop();
   print('');
 
   // ---------------------------------------------------------------------------
-  // 3. Effect.handled: Cleanup & Teardown Handlers
+  // 3. effect.scoped: Cleanup & Teardown Handlers
   // ---------------------------------------------------------------------------
-  print('--- 3. Effect.handled with Cleanup ---');
+  print('--- 3. effect.scoped with Cleanup ---');
   final channel = blooming<String>('general');
 
   // Runs on mutations and cleans up resources from previous turn
-  final channelRunner = channel.bloom.effect.handled((handle) {
+  final channelRunner = channel.bloom.effect.scoped((scope) {
     final currentChannel = channel.data;
     print('  [Channel Runner] 📡 Subscribing to #$currentChannel');
 
-    handle.onCleanup(() {
+    scope.onCleanup(() {
       print('  [Channel Cleanup] 🛑 Leaving channel #$currentChannel');
     });
-  }).run();
+  }).start();
 
   channel.data = 'announcements';
   await Future<void>.delayed(Duration.zero);
@@ -75,7 +75,7 @@ void main() async {
   channel.data = 'random';
   await Future<void>.delayed(Duration.zero);
 
-  channelRunner.deactivate();
+  channelRunner.stop();
   print('');
 
   // ---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ void main() async {
     () {
       print('  [Debounced Effect] 🚀 Search API Request: "${searchInput.data}"');
     },
-  ).run();
+  ).start();
 
   // Bursty input
   searchInput.data = 'fl';
@@ -99,6 +99,6 @@ void main() async {
 
   // Wait for debounce silence window
   await Future<void>.delayed(const Duration(milliseconds: 50));
-  debouncedLogger.deactivate();
+  debouncedLogger.stop();
   print('\n=== End Showcase ===');
 }

@@ -61,11 +61,11 @@ void main() {
 
       final terminal = RawViaTerminal(
         (via) {
-          final effect = via.tether(Effect.via((via) {
+          final eff = via.tether(Effect.via((via) {
             runs++;
             final _ = via(text.bloom);
           }));
-          capturedEffect = effect;
+          capturedEffect = eff;
           return true;
         },
         onInvalidated: () {},

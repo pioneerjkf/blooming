@@ -16,7 +16,7 @@ base class ReactiveEffectsSectionDemo extends BloomWidget {
     final store = via.of<ShowcaseStore>(context).sections.reactiveEffects;
     final isActive = via(store.isEffectActive);
 
-    // [Lifecycle] Declarative Scoped EffectGroup: Automatically bound to Section 07's lifecycle!
+    // [Lifecycle] Declarative Scoped Effect.group: Automatically bound to Section 07's lifecycle!
     if (isActive) {
       via.tether(store.effects);
     }

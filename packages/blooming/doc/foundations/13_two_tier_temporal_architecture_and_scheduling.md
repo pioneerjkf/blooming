@@ -36,7 +36,7 @@ To resolve these defects at the architectural level, Blooming separates time-dom
 │                                                                        │
 │   [ Tier 2: Effect Domain ]                                            │
 │   • Target: Terminal Execution Sinks (Side-Effects)                    │
-│   • Primitives: DebounceEffect, ThrottleEffect, target.effect.*        │
+│   • Primitives: effect.debounce, effect.throttle, target.effect.*       │
 │   • Core Class: _DebounceEffectTerminal, _ThrottleEffectTerminal       │
 │   • Mechanism: Upstream Priming (0 runs on mount), Timer scheduling    │
 │   • Invariant: Zero state production, Early Teardown, Clean disposal   │
@@ -200,12 +200,12 @@ final class _DebouncedBloom<T> extends _TemporalRelayBloom<T> {
 
 ---
 
-## 4. Tier 2: Effect Domain Temporal Sinks (`DebounceEffect`, `ThrottleEffect`)
+## 4. Tier 2: Effect Domain Temporal Sinks (`effect.debounce`, `effect.throttle`)
 
 The Effect Domain governs **terminal execution sinks** (analytics logging, audio/haptic feedback, disk storage, network dispatches) that produce zero reactive state and consume only side-effects:
 
 ```text
-[Explicit Bloom Target] ──(Invalidation Pulse)──► [DebounceEffect / ThrottleEffect]
+[Explicit Bloom Target] ──(Invalidation Pulse)──► [effect.debounce / effect.throttle]
                                                           │
                                                           ├── [Leading Edge: Schedules in microtask]
                                                           ├── [Cooldown: Manages isolated Timer]
@@ -288,8 +288,8 @@ final searchEffect = searchInput.bloom.effect.debounce(
 );
 
 // Standalone execution outside widget lifecycles:
-final runner = searchEffect.run();
-runner.deactivate(); // Cancels internal timer and detaches edge
+final runner = searchEffect.start();
+runner.stop(); // Cancels internal timer and detaches edge
 ```
 
 ---
@@ -316,7 +316,7 @@ effect((via) {
 
 **Definitive Engineering Principle:**
 * **"What to Observe" (Topological Edge Tracking)**: Must be determined **synchronously**.
-* **"When to Notify" (Notification Timing)**: Must be damped within **intermediate state relay nodes** (`bloom.debounced`) or **explicit manifest effect sinks** (`DebounceEffect`).
+* **"When to Notify" (Notification Timing)**: Must be damped within **intermediate state relay nodes** (`bloom.debounced`) or **explicit manifest effect sinks** (`effect.debounce`).
 
 ---
 
@@ -402,10 +402,10 @@ final clickTracker = buttonClickCount.bloom.effect.throttle(
   () => analyticsService.logEvent('button_tap', count: untracked(buttonClickCount.bloom)),
   leading: true,
   trailing: false,
-).run();
+).start();
 
 // Clean up when service or controller is disposed:
-void dispose() => clickTracker.deactivate();
+void dispose() => clickTracker.stop();
 ```
 
 ---
@@ -430,5 +430,5 @@ void dispose() => clickTracker.deactivate();
 The **Two-Tier Temporal Architecture** resolves the long-standing tension between asynchronous rate-limiting and synchronous reactive consistency:
 
 1. **State Domain Immunity**: By embedding pulse attenuation into intermediate relay nodes (`_GatedRelayBloom<T>`), state pipelines preserve the single-source-of-truth cache invariant and guarantee that uncommitted mutations never contaminate downstream computations.
-2. **Effect Domain Clarity**: Terminal sinks (`DebounceEffect`, `ThrottleEffect`) operate strictly on explicit targets with upstream priming, completely resolving the Initial Evaluation Dilemma and isolating side-effects cleanly from the reactive data graph.
+2. **Effect Domain Clarity**: Terminal sinks (`effect.debounce`, `effect.throttle`) operate strictly on explicit targets with upstream priming, completely resolving the Initial Evaluation Dilemma and isolating side-effects cleanly from the reactive data graph.
 3. **Unified Performance Excellence**: Microtask coalescing (`bloom.coalesced()`) and timer damping operate with zero heap overhead and zero GC pressure, upholding the Bloom Framework's foundational LPDAG guarantees.

@@ -20,7 +20,7 @@
 ///
 /// 3. **Effect Domain (`src/effect/`)**:
 ///    The non-propagating side-effect sink tier containing declarative effects ([Effect])
-///    and rate limiters ([DebounceEffect], [ThrottleEffect]).
+///    and rate limiters ([EffectDebounceFunctor], [EffectThrottleFunctor]).
 ///
 /// 4. **Reflector Domain (`src/reflector/`)**:
 ///    The DevTools and diagnostic inspection tier containing zero-overhead reflection

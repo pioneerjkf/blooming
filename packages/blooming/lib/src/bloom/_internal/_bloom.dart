@@ -119,7 +119,11 @@ abstract base class _GatedRelayBloom<T> extends _StaticUnaryRelay<Bloom<T>>
     super.source, {
     required this.leading,
     required this.trailing,
-  }) : assert(leading || trailing, 'At least one of leading or trailing must be true.');
+  }) {
+    if (!leading && !trailing) {
+      throw ArgumentError('At least one of leading or trailing must be true.');
+    }
+  }
 
   final bool leading;
   final bool trailing;

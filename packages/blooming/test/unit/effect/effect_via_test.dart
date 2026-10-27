@@ -271,7 +271,7 @@ void main() {
       var runCount = 0;
       var observed = -1;
 
-      final effect = Effect.via((via) {
+      final eff = Effect.via((via) {
         runCount++;
         observed = via(source.bloom);
       });
@@ -280,7 +280,7 @@ void main() {
       expect(runCount, 0, reason: 'Must NOT evaluate on construction while inactive');
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
 
       // 2. Evaluates when scope activates:

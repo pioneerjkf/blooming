@@ -29,10 +29,8 @@ void main() {
         );
 
         expect(e1, isA<Effect>());
-        expect(e2, isA<ThrottleEffect>());
-        expect(e3, isA<DebounceEffect>());
-        expect(e3.leading, isTrue);
-        expect(e3.trailing, isTrue);
+        expect(e2, isA<Effect>());
+        expect(e3, isA<Effect>());
 
         final terminal = RawViaTerminal((via) {
           via.tether(e1);

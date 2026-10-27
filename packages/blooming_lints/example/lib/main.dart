@@ -244,7 +244,7 @@ class _LeakyRunnerState extends State<LeakyRunner> {
   @override
   void initState() {
     super.initState();
-    _runner = count.effect(() => debugPrint('${untracked(count)}')).run();
+    _runner = count.effect(() => debugPrint('${untracked(count)}')).start();
   }
 
   @override
@@ -265,12 +265,12 @@ class _CleanRunnerState extends State<CleanRunner> {
   @override
   void initState() {
     super.initState();
-    _runner = count.effect(() => debugPrint('${untracked(count)}')).run();
+    _runner = count.effect(() => debugPrint('${untracked(count)}')).start();
   }
 
   @override
   void dispose() {
-    _runner.deactivate();
+    _runner.stop();
     super.dispose();
   }
 

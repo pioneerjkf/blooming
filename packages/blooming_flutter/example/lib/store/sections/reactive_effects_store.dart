@@ -51,8 +51,8 @@ class ReactiveEffectsStore {
   /// Single Bloom direct effect on [counter].
   late final Effect singleEffect;
 
-  /// Composite [EffectGroup] bundling all showcase effects into a single lifecycle terminal.
-  late final EffectGroup effects;
+  /// Composite [Effect] bundling all showcase effects into a single lifecycle terminal.
+  late final Effect effects;
 
   void _initEffects() {
     // 1. Dynamic Discovery BloomVia Effect
@@ -102,7 +102,7 @@ class ReactiveEffectsStore {
       );
     });
 
-    // 4. Composite EffectGroup bundling all effects via tuple extension
+    // 4. Composite Effect.group bundling all effects via tuple extension
     effects = (watchEffect, tupleEffect, singleEffect).group;
   }
 
@@ -204,7 +204,7 @@ class ReactiveEffectsStore {
     _isEffectActive.set(activate);
     if (activate) {
       _recordLog(
-          'Lifecycle: Scoped effects ACTIVATED via effect() in BloomWidget');
+          'Lifecycle: Scoped effects ACTIVATED via tether() in BloomWidget');
     } else {
       _recordLog(
           'Lifecycle: Scoped effects DORMANT (swept from reactive scope)');
@@ -255,9 +255,9 @@ final watchEffect = Effect.via((via) {
   final untracked = unobservedNode.data; // Untracked boundary
 });
 
-// 3. EffectGroup for Clean Batch Tethering
+// 3. Effect.group for Clean Batch Tethering
 // In your Store or Controller, bundle effects without managing disposers:
-final effects = EffectGroup([
+final effects = Effect.group([
   watchEffect,
   counter.effect(() => print('Counter changed!')),
 ]);
@@ -268,7 +268,7 @@ final effects = EffectGroup([
           'Zero-Dispose via.tether(): Automatically anchors effects to widget lifecycle with zero manual dispose() boilerplate or memory leak trauma.',
           'Zero UI Dirty Pulses: Executes pure side-effects without triggering widget tree rebuilds.',
           'Dynamic Dependency Discovery: Explicit BloomVia branch pruning & untracked execution boundary.',
-          'Declarative EffectGroup: Bundles multiple store effects for zero-cost batch lifecycle tethering.',
+          'Declarative Effect.group: Bundles multiple store effects for zero-cost batch lifecycle tethering.',
         ],
         roadmapTree: '''
 [Bloom Reactive Effect Pipeline]
@@ -276,7 +276,7 @@ final effects = EffectGroup([
  ├── Effect.via((via) => ...)          -> Dynamic Discovery with 1-Pass Epoch Sweeping
  ├── (s1, s2).effect(() => ...)        -> Explicit Tuple Effect (0 initial run)
  ├── source.effect(() => ...)          -> Explicit Single Bloom Effect
- └── EffectGroup([e1, e2, ...])        -> Zero-Cost Batch Lifecycle Management
+ └── Effect.group([e1, e2, ...])       -> Zero-Cost Batch Lifecycle Management
 ''',
         builder: () => ReactiveEffectsSectionDemo(),
       );

@@ -11,9 +11,9 @@ void main() async {
 
   // 3. Actively observe collection aggregations using EffectRunner
   final sumRunner =
-      sumBloom.effect(() => print('Sum: ${untracked(sumBloom)}')).run();
+      sumBloom.effect(() => print('Sum: ${untracked(sumBloom)}')).start();
   final avgRunner =
-      avgBloom.effect(() => print('Average: ${untracked(avgBloom)}')).run();
+      avgBloom.effect(() => print('Average: ${untracked(avgBloom)}')).start();
 
   // 4. Update collection reactively
   numbersController.set([5.0, 15.0, 25.0, 35.0]);
@@ -22,6 +22,6 @@ void main() async {
   await Future<void>.delayed(Duration.zero);
 
   // 6. Cleanup
-  sumRunner.deactivate();
-  avgRunner.deactivate();
+  sumRunner.stop();
+  avgRunner.stop();
 }

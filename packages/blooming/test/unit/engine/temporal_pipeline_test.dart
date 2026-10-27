@@ -246,7 +246,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('4.2 Invalid configuration assert(leading || trailing) fails early', () {
+      test('4.2 Invalid configuration (leading: false, trailing: false) throws ArgumentError', () {
         final source = blooming(42);
         expect(
           () => source.bloom.debounced(
@@ -254,7 +254,7 @@ void main() {
             leading: false,
             trailing: false,
           ),
-          throwsA(isA<AssertionError>()),
+          throwsA(isA<ArgumentError>()),
         );
 
         expect(
@@ -263,7 +263,7 @@ void main() {
             leading: false,
             trailing: false,
           ),
-          throwsA(isA<AssertionError>()),
+          throwsA(isA<ArgumentError>()),
         );
       });
     });

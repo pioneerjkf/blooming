@@ -241,7 +241,7 @@ base class RawComputedTerminal<T> extends _RawTerminal
 /// push wave or batch ([batch]) are coalesced into a single synchronous dispatch.
 ///
 /// For asynchronous microtask-coalesced observations and side-effects, use [Effect]
-/// (e.g. `node.effect(() => ...).run()`).
+/// (e.g. `node.effect(() => ...).start()`).
 ///
 /// ## Data Flow
 /// ```text

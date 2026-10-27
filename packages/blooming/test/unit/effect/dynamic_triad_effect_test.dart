@@ -21,7 +21,7 @@ void main() {
         final captured = <int>[];
         final runner = doubled.effect(() {
           captured.add(untracked(doubled));
-        }).run();
+        }).start();
 
         expect(runner.isActive, isTrue);
         expect(captured, isEmpty, reason: 'Must skip initial execution');
@@ -34,7 +34,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, [40, 60]);
 
-        runner.deactivate();
+        runner.stop();
         count.data = 40;
         await Future<void>.delayed(Duration.zero);
         expect(captured, [40, 60], reason: 'Deactivated runner must not capture mutations');
@@ -52,7 +52,7 @@ void main() {
         final captured = <String>[];
         final runner = activeFeed.effect(() {
           captured.add(untracked(activeFeed));
-        }).run();
+        }).start();
 
         expect(captured, isEmpty);
 
@@ -81,7 +81,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['Normal 2', 'VIP 2', 'VIP 3']);
 
-        runner.deactivate();
+        runner.stop();
       });
 
       test('1.3 managed -> EffectRunner: creates resource upon activation, disposes on deactivation', () async {
@@ -108,7 +108,7 @@ void main() {
         final captured = <String>[];
         final runner = server.effect(() {
           captured.add(untracked(server));
-        }).run();
+        }).start();
 
         expect(created, 1, reason: 'Activation must prime managed resource');
         expect(captured, isEmpty, reason: 'Effect action must skip initial run');
@@ -119,7 +119,7 @@ void main() {
         expect(updated, 1);
         expect(captured, ['Server(:9090)']);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 2, reason: 'Old resource disposed on update, active resource disposed on runner deactivation');
       });
     });
@@ -139,7 +139,7 @@ void main() {
         final captured = <String>[];
         final runner = status.effect(() {
           captured.add(untracked(status));
-        }).run();
+        }).start();
 
         expect(captured, isEmpty);
 
@@ -153,7 +153,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['PASS', 'PASS (HONORS)']);
 
-        runner.deactivate();
+        runner.stop();
       });
 
       test('2.2 switched -> computed -> EffectRunner (computed derives from dynamic branch output)', () async {
@@ -167,7 +167,7 @@ void main() {
         final captured = <String>[];
         final runner = price.effect(() {
           captured.add(untracked(price));
-        }).run();
+        }).start();
 
         expect(captured, isEmpty);
 
@@ -181,7 +181,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['120.0', '150.0']);
 
-        runner.deactivate();
+        runner.stop();
       });
 
       test('2.3 managed -> computed -> EffectRunner (computed derives from managed resource)', () async {
@@ -202,7 +202,7 @@ void main() {
         final captured = <String>[];
         final runner = poolSummary.effect(() {
           captured.add(untracked(poolSummary));
-        }).run();
+        }).start();
 
         expect(created, 1);
         expect(captured, isEmpty);
@@ -211,7 +211,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['Pool size: 8']);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 2, reason: 'Disposed once on replacement, once on runner deactivation');
       });
 
@@ -234,7 +234,7 @@ void main() {
         final captured = <String>[];
         final runner = client.effect(() {
           captured.add(untracked(client));
-        }).run();
+        }).start();
 
         expect(created, 1);
         expect(captured, isEmpty);
@@ -245,7 +245,7 @@ void main() {
         expect(disposed, 1);
         expect(captured, ['HttpClient(http://api.example.com)']);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 2);
       });
 
@@ -279,7 +279,7 @@ void main() {
         final captured = <String>[];
         final runner = activeDb.effect(() {
           captured.add(untracked(activeDb));
-        }).run();
+        }).start();
 
         expect(devCreated, 1);
         expect(prodCreated, 0, reason: 'Inactive prod branch must stay dormant');
@@ -293,7 +293,7 @@ void main() {
         expect(prodCreated, 1, reason: 'Newly selected prod branch must be created');
         expect(captured, ['ProdDatabase']);
 
-        runner.deactivate();
+        runner.stop();
         expect(prodDisposed, 1, reason: 'Deactivating runner must dispose active prod branch');
       });
 
@@ -319,7 +319,7 @@ void main() {
         final captured = <String>[];
         final runner = limiter.effect(() {
           captured.add(untracked(limiter));
-        }).run();
+        }).start();
 
         expect(created, 1);
         expect(captured, isEmpty);
@@ -334,7 +334,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['Limiter(15)', 'Limiter(100)']);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 3);
       });
     });
@@ -378,7 +378,7 @@ void main() {
         final captured = <String>[];
         final runner = currentConnection.effect(() {
           captured.add(untracked(currentConnection));
-        }).run();
+        }).start();
 
         // 1. Priming: primary is active, backup is dormant
         expect(primaryCreated, 1);
@@ -403,7 +403,7 @@ void main() {
         expect(captured, ['Active: PrimaryDb(:5434)', 'Active: BackupDb(:5433)', 'Active: BackupDb(:9999)']);
 
         // 5. Cleanup
-        runner.deactivate();
+        runner.stop();
         expect(backupDisposed, 2);
       });
 
@@ -429,7 +429,7 @@ void main() {
         final captured = <String>[];
         final runner = session.effect(() {
           captured.add(untracked(session));
-        }).run();
+        }).start();
 
         expect(allocated, 1);
         expect(captured, isEmpty);
@@ -444,7 +444,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['Session(quota: 1000)', 'Session(quota: 5000)']);
 
-        runner.deactivate();
+        runner.stop();
         expect(released, 3);
       });
     });
@@ -453,7 +453,7 @@ void main() {
     // 4. Multi-Target (N-ary) Tuples x EffectRunner
     // =========================================================================
     group('4. Multi-Target (N-ary) Tuples x EffectRunner', () {
-      test('4.1 (computed, switched).effect(...).run(): both prime and trigger independently', () async {
+      test('4.1 (computed, switched).effect(...).start(): both prime and trigger independently', () async {
         final a = blooming<int>(1);
         final comp = computed((via) => via(a.bloom) * 10);
 
@@ -465,7 +465,7 @@ void main() {
         var runs = 0;
         final runner = (comp, sw).effect(() {
           runs++;
-        }).run();
+        }).start();
 
         expect(runs, 0);
 
@@ -477,10 +477,11 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(runs, 2);
 
-        runner.deactivate();
+        runner.stop();
       });
 
-      test('4.2 (computed, managed).effect(...).run(): primes computation and allocates resource atomically', () async {
+      test('4.2 (computed, managed).effect(...).start(): primes computation and allocates resource atomically',
+          () async {
         final numCtrl = blooming<int>(5);
         final doubled = computed((via) => via(numCtrl.bloom) * 2);
 
@@ -497,7 +498,7 @@ void main() {
         var runs = 0;
         final runner = (doubled, res).effect(() {
           runs++;
-        }).run();
+        }).start();
 
         expect(created, 1);
         expect(runs, 0);
@@ -506,11 +507,11 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(runs, 1);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 1);
       });
 
-      test('4.3 (computed, switched, managed).effect(...).run(): 3-tuple primes all 3 Dynamic Triad primitives',
+      test('4.3 (computed, switched, managed).effect(...).start(): 3-tuple primes all 3 Dynamic Triad primitives',
           () async {
         final numCtrl = blooming<int>(1);
         final comp = computed((via) => via(numCtrl.bloom) + 100);
@@ -533,7 +534,7 @@ void main() {
         var runs = 0;
         final runner = (comp, sw, res).effect(() {
           runs++;
-        }).run();
+        }).start();
 
         expect(created, 1);
         expect(runs, 0);
@@ -553,7 +554,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(runs, 3);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 1);
       });
     });
@@ -572,7 +573,7 @@ void main() {
         final captured = <String>[];
         final runner = feed.effect.debounce(const Duration(milliseconds: 30), () {
           captured.add(untracked(feed));
-        }).run();
+        }).start();
 
         expect(captured, isEmpty);
 
@@ -587,7 +588,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 35));
         expect(captured, ['Feed 1.3']);
 
-        runner.deactivate();
+        runner.stop();
       });
 
       test('5.2 managed.effect.throttle primes, throttles, and maintains lifecycle', () async {
@@ -606,7 +607,7 @@ void main() {
         final captured = <String>[];
         final runner = timerResource.effect.throttle(const Duration(milliseconds: 50), () {
           captured.add(untracked(timerResource));
-        }).run();
+        }).start();
 
         expect(created, 1);
         expect(captured, isEmpty);
@@ -627,7 +628,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['Timer(20ms)', 'Timer(40ms)']);
 
-        runner.deactivate();
+        runner.stop();
         expect(disposed, 3);
       });
     });
@@ -666,7 +667,7 @@ void main() {
               () => captured.add(untracked(activeSource)),
               take: 2,
             )
-            .run();
+            .start();
 
         expect(runner.isActive, isTrue);
         expect(managedCreated, 1);
@@ -704,7 +705,7 @@ void main() {
     // 7. Inactive Dormancy & Full Lifecycle Roundtrip (autoStart, deactivate, reactivate)
     // =========================================================================
     group('7. Inactive Dormancy & Full Lifecycle Roundtrip', () {
-      test('7.1 autoStart: false -> activate -> mutate -> deactivate -> dormant mutation -> reactivate', () async {
+      test('7.1 dormant runner -> start -> mutate -> stop -> dormant mutation -> reactivate', () async {
         final factor = blooming<int>(2);
         int managedCreated = 0;
         int managedDisposed = 0;
@@ -722,13 +723,13 @@ void main() {
 
         final runner = derived.effect(() {
           runnerCaptures.add(untracked(derived));
-        }).run(autoStart: false);
+        }).runner;
 
         expect(runner.isActive, isFalse);
-        expect(managedCreated, 0, reason: 'autoStart: false must maintain zero-leak inactive dormancy');
+        expect(managedCreated, 0, reason: 'dormant runner must maintain zero-leak inactive dormancy');
 
         // 1. Activate
-        runner.activate();
+        runner.start();
         expect(runner.isActive, isTrue);
         expect(managedCreated, 1, reason: 'Activation primes the pipeline');
         expect(runnerCaptures, isEmpty, reason: 'Initial skip');
@@ -741,7 +742,7 @@ void main() {
         expect(managedDisposed, 1);
 
         // 3. Deactivate
-        runner.deactivate();
+        runner.stop();
         expect(runner.isActive, isFalse);
         expect(managedDisposed, 2); // 1 on update + 1 on deactivation
 
@@ -752,7 +753,7 @@ void main() {
         expect(managedCreated, 2, reason: 'No resource creation during dormancy');
 
         // 5. Reactivate
-        runner.activate();
+        runner.start();
         expect(runner.isActive, isTrue);
         expect(managedCreated, 3, reason: 'Reactivation re-primes with latest state');
         expect(runnerCaptures, ['Value: 30'],
@@ -764,7 +765,7 @@ void main() {
         expect(runnerCaptures, ['Value: 30', 'Value: 70']);
         expect(managedCreated, 4);
 
-        runner.deactivate();
+        runner.stop();
         expect(managedDisposed, 4); // 2 previous + 1 on update + 1 on final deactivation
       });
     });
@@ -790,7 +791,7 @@ void main() {
               guard: () => allowRuns,
               take: 2,
             )
-            .run();
+            .start();
 
         // 1. Mutate while guard == false
         numA.data = 11;
@@ -842,7 +843,7 @@ void main() {
         final captured = <String>[];
         final runner = join.effect(() {
           captured.add(untracked(join));
-        }).run();
+        }).start();
 
         expect(captured, isEmpty);
 
@@ -857,7 +858,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(captured, ['20:102', '50:105']);
 
-        runner.deactivate();
+        runner.stop();
       });
 
       test('9.2 Diamond Topology with Switched & Managed: clean resource switching without glitches', () async {
@@ -892,7 +893,7 @@ void main() {
         final captured = <String>[];
         final runner = status.effect(() {
           captured.add(untracked(status));
-        }).run();
+        }).start();
 
         expect(managedLeftCreated, 1);
         expect(managedRightCreated, 0, reason: 'Inactive right branch must remain dormant');
@@ -906,7 +907,7 @@ void main() {
         expect(managedLeftDisposed, 1, reason: 'Swept left branch must be disposed');
         expect(managedRightCreated, 1, reason: 'Activated right branch must be created');
 
-        runner.deactivate();
+        runner.stop();
         expect(managedRightDisposed, 1, reason: 'Right resource disposed on runner teardown');
       });
     });
@@ -937,14 +938,14 @@ void main() {
 
         final pipeline = computed((via) => 'Wrapped(${via(resource)})');
 
-        final runner = pipeline.effect.handled((handle) {
+        final runner = pipeline.effect.scoped((scope) {
           final current = untracked(pipeline);
           log.add('effect:run:$current');
 
-          handle.onCleanup(() {
+          scope.onCleanup(() {
             log.add('effect:cleanup:$current');
           });
-        }).run();
+        }).start();
 
         expect(log, ['managed:create:ConfigA']);
 
@@ -967,7 +968,7 @@ void main() {
         expect(idxCleanupB < idxRunC, isTrue, reason: 'onCleanup must execute before subsequent effect action');
 
         // Deactivate runner
-        runner.deactivate();
+        runner.stop();
 
         expect(log, contains('effect:cleanup:Wrapped(Resource(ConfigC))'));
         expect(log, contains('managed:dispose:Resource(ConfigC)'));

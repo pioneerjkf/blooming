@@ -214,12 +214,12 @@ void main() {
         }).distinct();
 
         var effectRuns = 0;
-        final effect = Effect.via((via) {
+        final eff = Effect.via((via) {
           effectRuns++;
           via(distinctName);
         });
 
-        final host = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {});
+        final host = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {});
         host.activate();
         host.evaluate();
         await Future<void>.delayed(Duration.zero);
@@ -259,12 +259,12 @@ void main() {
 
         var effectRuns = 0;
         var capturedValue = 0;
-        final effect = Effect.unary(lazySource, () {
+        final eff = Effect.unary(lazySource, () {
           effectRuns++;
           capturedValue = untracked(lazySource);
         });
 
-        final host = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {});
+        final host = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {});
         host.activate();
         host.evaluate();
         await Future<void>.delayed(Duration.zero);

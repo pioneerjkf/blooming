@@ -49,7 +49,7 @@ String _getOrAssignNodeId(Object node) {
 
 String _classifyNodeKind(Object node) {
   if (node is _ManagedBloom) return 'resource';
-  if (node is RawTerminal || node is Effect) return 'sink';
+  if (node is RawTerminal || node is Effect || node is EffectRunner) return 'sink';
   if (node is Tether) return 'tether';
   if (node is _Entry || node is BloomSignal || node is BloomController) return 'source';
   if (node is _Node && _countSources(node) > 0) return 'derivation';
@@ -82,6 +82,10 @@ List<LpdagReflector> _collectReflectorSources(Object target) {
       if (snap.node case final LpdagStatus lpdag) {
         if (lpdag.debugReflector case final r?) list.add(r);
       }
+    }
+  } else if (target case final EffectRunner runner) {
+    if (runner.effect case final LpdagStatus lpdag) {
+      if (lpdag.debugReflector case final r?) list.add(r);
     }
   }
   return list;
@@ -211,6 +215,8 @@ class _LpdagReflectorImpl implements LpdagReflector {
       node._debugForceInvalidate(<_Node>{});
     } else if (_targetNode case final RawTerminal term) {
       term.debugForceInvalidate();
+    } else if (_targetNode case final _EffectRunnerImpl runner) {
+      runner._terminal.debugForceInvalidate();
     }
   }
 

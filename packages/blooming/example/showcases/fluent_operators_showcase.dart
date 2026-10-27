@@ -28,7 +28,7 @@ void main() async {
   final distinctRunner = distinctCount.effect(() {
     distinctNotifications++;
     print('  [Distinct Runner] Received: ${untracked(distinctCount)} (Total ticks: $distinctNotifications)');
-  }).run();
+  }).start();
 
   count.data = 1;
   await Future<void>.delayed(Duration.zero); // Fires tick 1
@@ -39,7 +39,7 @@ void main() async {
   count.data = 2; // Fresh value, fires tick 2
   await Future<void>.delayed(Duration.zero);
 
-  distinctRunner.deactivate();
+  distinctRunner.stop();
   print('Distinct finished: Expected 2 notifications, Got $distinctNotifications\n');
 
   // ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ void main() async {
 
   final debounceRunner = debouncedInput.effect(() {
     print('  [Debounce Runner] Finalized Query: "${untracked(debouncedInput)}"');
-  }).run();
+  }).start();
 
   // Rapid typing burst
   searchInput.data = 'd';
@@ -63,7 +63,7 @@ void main() async {
   print('  Typing in progress... (no notification yet)');
 
   await Future<void>.delayed(const Duration(milliseconds: 40)); // Silence reached
-  debounceRunner.deactivate();
+  debounceRunner.stop();
   print('');
 
   // ---------------------------------------------------------------------------
@@ -79,14 +79,14 @@ void main() async {
 
   final throttleRunner = throttledScroll.effect(() {
     print('  [Throttle Runner] Offset: ${untracked(throttledScroll)}');
-  }).run();
+  }).start();
 
   scrollOffset.data = 10.0; // Leading edge fires immediately
   scrollOffset.data = 20.0;
   scrollOffset.data = 30.0; // Trailing edge buffered
 
   await Future<void>.delayed(const Duration(milliseconds: 40));
-  throttleRunner.deactivate();
+  throttleRunner.stop();
   print('');
 
   // ---------------------------------------------------------------------------
@@ -114,10 +114,10 @@ void main() async {
     const Graceful.period(Duration(milliseconds: 30)),
   );
 
-  final resRunner = resilientResource.effect(() {}).run();
+  final resRunner = resilientResource.effect(() {}).start();
   print('Connected to resilient resource');
 
   // Deactivate: Graceful mooring timer begins, preventing immediate tear-down
-  resRunner.deactivate();
+  resRunner.stop();
   print('Resilient resource gracefully moored against rapid re-subscription');
 }

@@ -24,19 +24,19 @@ part of '../framework.dart';
 /// ┌────────────────────────────────────────────────────────┐
 /// │                      EffectRunner                      │
 /// ├────────────────────────────────────────────────────────┤
-/// │ • activate()   ──> Attaches edge, resumes execution    │
-/// │ • deactivate() ──> Relinquishes edge (Dormancy)        │
-/// │ • isActive     ──> Dual-state health verification      │
+/// │ • start()               ──> Attaches edge, resumes runs │
+/// │ • stop()                ──> Relinquishes edge (Dormancy)│
+/// │ • isActive             ──> Dual-state health check     │
 /// └────────────────────────────────────────────────────────┘
 /// ```
 ///
 /// ## Key Invariants & Architectural Benefits
-/// 1. **Zero-Leak Inactive Dormancy**: When deactivated via [deactivate] (or before `autoStart`),
+/// 1. **Zero-Leak Inactive Dormancy**: When stopped via [stop],
 ///    immediately relinquishes its subscription edge, guaranteeing dormant upstream subgraphs when unobserved.
 /// 2. **Imperative Standalone Lifecycle**: Controls reactive side-effect execution in services,
 ///    view models, or CLI tasks outside widget lifecycles.
 /// 3. **Subscriber-Driven Dormancy Invariant**: If the same [Effect] instance is shared between
-///    a tracking scope (`via.tether`) and an [EffectRunner], deactivating the runner leaves the
+///    a tracking scope (`via.tether`) and an [EffectRunner], stopping the runner leaves the
 ///    effect active as long as the tethering scope remains active. The underlying effect enters
 ///    true dormancy only when **all** observing terminals and tethers have detached.
 /// 4. **Dual-State Health Invariant**: [isActive] reflects both the runner's lifecycle state
@@ -44,14 +44,14 @@ part of '../framework.dart';
 ///    exhausting its `take` ticket quota (Early Teardown), [isActive] transitions to `false` automatically.
 ///
 /// **Warning (Anti-Pattern Prevention):**
-/// - Do NOT call `.run()` repeatedly inside Flutter build methods or reactive derivations without
-///   deactivating; unmanaged runners stay attached to upstream effects and cause memory leaks.
+/// - Do NOT call `.start()` repeatedly inside Flutter build methods or reactive derivations without
+///   stopping; unmanaged runners stay attached to upstream effects and cause memory leaks.
 ///
 /// **BAD:**
 /// ```dart
 /// // [Anti-Pattern] Spawning effect runners inside build method causes memory leaks
 /// Widget build(BuildContext context) {
-///   searchEffect.run(); // New runner created on every render frame!
+///   searchEffect.start(); // New runner created on every render frame!
 ///   return Text('Searching...');
 /// }
 /// ```
@@ -63,97 +63,88 @@ part of '../framework.dart';
 ///   late final EffectRunner _runner;
 ///
 ///   void init() {
-///     _runner = searchEffect.run();
+///     _runner = searchEffect.start();
 ///   }
 ///
-///   void dispose() => _runner.deactivate();
+///   void dispose() => _runner.stop();
 /// }
 /// ```
 ///
 /// ## Examples
 /// ```dart
 /// final query = blooming('');
-/// final searchEffect = query.bloom.effect.debounce(
+/// final searchEffect = Effect.debounce(
+///   [query.bloom],
 ///   const Duration(milliseconds: 300),
 ///   () => apiService.search(untracked(query.bloom)),
 /// );
 ///
 /// // Start standalone execution:
-/// final runner = searchEffect.run();
+/// final runner = searchEffect.start();
 ///
 /// // Pause observation:
-/// runner.deactivate();
+/// runner.stop();
 ///
 /// // Resume observation:
-/// runner.activate();
+/// runner.start();
 /// ```
-abstract interface class EffectRunner implements RawTerminal {
-  /// Creates an [EffectRunner] managing standalone execution of [effect].
+abstract interface class EffectRunner implements LpdagStatus {
+  /// Creates an inactive, dormant [EffectRunner] managing execution of [effect].
   ///
   /// * [effect]: The target declarative [Effect] to execute.
-  /// * [autoStart]: Whether to activate execution immediately upon construction. Defaults to `true`.
   ///
   /// **Ensures:**
-  /// * Attaches an active subscription edge to [effect] if [autoStart] is `true`.
-  /// * Returns an active [EffectRunner] governing execution of [effect].
+  /// * Returns a dormant [EffectRunner] (`isActive == false`) governing execution of [effect].
+  /// * Observation and execution begin only upon calling [start].
   ///
   /// ## Examples
   /// ```dart
-  /// final runner = EffectRunner(myEffect, autoStart: false);
-  /// // Start execution later:
-  /// runner.activate();
+  /// final runner = EffectRunner(myEffect);
+  /// expect(runner.isActive, isFalse);
+  ///
+  /// // Start execution:
+  /// runner.start();
+  /// expect(runner.isActive, isTrue);
   /// ```
-  factory EffectRunner(
-    Effect effect, {
-    bool autoStart,
-  }) = _EffectRunnerImpl;
+  factory EffectRunner(Effect effect) = _EffectRunnerImpl;
 
-  /// Activates or resumes observation and execution of the underlying effect.
-  ///
-  /// **Ensures:**
-  /// * Attaches an active subscription edge to [effect] and activates the underlying terminal.
-  @override
-  void activate();
+  /// Starts or resumes observation and execution of the underlying effect.
+  void start();
 
-  /// Deactivates observation and execution, relinquishing this runner's subscription edge.
-  ///
-  /// **Ensures:**
-  /// * Relinquishes this runner's subscription edge and transitions to inactive dormancy.
-  @override
-  void deactivate();
+  /// Stops or pauses observation and execution, relinquishing this runner's subscription edge.
+  void stop();
 
   /// The underlying [Effect] executed by this runner.
   Effect get effect;
 
   /// Whether both this runner and its underlying effect terminal are currently active.
   ///
-  /// Returns `false` if this runner has been deactivated via [deactivate], or if
+  /// Returns `false` if this runner has been stopped via [stop], or if
   /// the underlying effect terminal has completed early teardown (e.g. exhausted `take` tickets).
   @override
   bool get isActive;
 }
 
 // =============================================================================
-// EffectRunExtension
+// EffectStartExtension
 // =============================================================================
 
 /// Extension granting declarative [Effect] instances direct invocation of an [EffectRunner].
-extension EffectRunExtension on Effect {
-  /// Runs this declarative [Effect] as a standalone execution terminal governed by an [EffectRunner].
-  ///
-  /// * [autoStart]: Whether to activate execution immediately upon construction. Defaults to `true`.
+extension EffectStartExtension on Effect {
+  /// Instantiates an [EffectRunner] and immediately starts observation and execution.
   ///
   /// **Ensures:**
-  /// * Returns an [EffectRunner] managing standalone execution of this effect.
+  /// * Attaches an active subscription edge to this [Effect].
+  /// * Returns an active [EffectRunner] (`isActive == true`).
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT invoke `.run()` inside Flutter build methods or reactive derivations without deactivating.
+  /// - Do NOT invoke `.start()` inside Flutter build methods or reactive derivations without stopping.
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Calling .run() on every frame rebuild
+  /// // [Anti-Pattern] Calling .start() on every frame rebuild
   /// Widget build(BuildContext context) {
-  ///   loggingEffect.run(); // Re-creates and leaks runner
+  ///   loggingEffect.start(); // Re-creates and leaks runner
   ///   return Container();
   /// }
   /// ```
@@ -163,8 +154,8 @@ extension EffectRunExtension on Effect {
   /// // [Recommended] Run standalone effect in service lifecycle
   /// class LoggingService {
   ///   late final EffectRunner _runner;
-  ///   void start() => _runner = loggingEffect.run();
-  ///   void stop() => _runner.deactivate();
+  ///   void init() => _runner = loggingEffect.start();
+  ///   void dispose() => _runner.stop();
   /// }
   /// ```
   ///
@@ -172,11 +163,19 @@ extension EffectRunExtension on Effect {
   /// ```dart
   /// final counter = blooming(0);
   /// final loggingEffect = counter.bloom.effect(() => log(untracked(counter.bloom)));
-  /// final runner = loggingEffect.run();
+  /// final runner = loggingEffect.start();
   ///
   /// // Clean up when finished:
-  /// runner.deactivate();
+  /// runner.stop();
   /// ```
+  @useResult
   @pragma('vm:prefer-inline')
-  EffectRunner run({bool autoStart = true}) => EffectRunner(this, autoStart: autoStart);
+  EffectRunner start() => EffectRunner(this)..start();
+
+  /// Creates a dormant, unstarted [EffectRunner] for this effect.
+  ///
+  /// Call [EffectRunner.start] on the returned runner to begin observation and execution.
+  @useResult
+  @pragma('vm:prefer-inline')
+  EffectRunner get runner => EffectRunner(this);
 }

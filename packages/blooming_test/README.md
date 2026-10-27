@@ -142,12 +142,12 @@ test('proves derived node enters zero-leak dormancy when unobserved', () {
   expect(count, isDormant);
 
   // 2. Active observation wakes up the node
-  final runner = doubled.effect(() {}).run();
+  final runner = doubled.effect(() {}).start();
   expect(doubled, isActive);
   expect(doubled, hasSubscribers(1));
 
   // 3. Deactivating the runner returns the graph to dormant state
-  runner.deactivate();
+  runner.stop();
   expect(doubled, isDormant);
 });
 ```

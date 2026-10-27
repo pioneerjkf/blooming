@@ -9,16 +9,16 @@ import 'package:blooming/effect.dart';
 import 'package:blooming/blooming.dart';
 
 void main() {
-  group('EffectHandle Lifecycle & Cancellation Suite', () {
-    test('1. Effect.handled executes with active handle via runner', () async {
+  group('EffectScope Lifecycle & Cancellation Suite', () {
+    test('1. effect.scoped executes with active scope via runner', () async {
       final counter = blooming(0);
-      EffectHandle? capturedHandle;
+      EffectScope? capturedScope;
       var runCount = 0;
 
-      final runner = counter.bloom.effect.handled((handle) {
+      final runner = counter.bloom.effect.scoped((scope) {
         runCount++;
-        capturedHandle = handle;
-      }).run();
+        capturedScope = scope;
+      }).start();
 
       expect(runCount, 0); // Effects skip initial evaluation
 
@@ -26,88 +26,88 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(runCount, 1);
-      expect(capturedHandle, isNotNull);
-      expect(capturedHandle!.isActive, isTrue);
-      expect(capturedHandle!.isCancelled, isFalse);
+      expect(capturedScope, isNotNull);
+      expect(capturedScope!.isActive, isTrue);
+      expect(capturedScope!.isCancelled, isFalse);
 
-      runner.deactivate();
-      expect(capturedHandle!.isActive, isFalse);
-      expect(capturedHandle!.isCancelled, isTrue);
+      runner.stop();
+      expect(capturedScope!.isActive, isFalse);
+      expect(capturedScope!.isCancelled, isTrue);
     });
 
     test('2. Invariant 1: onCleanup is called before subsequent turn begins', () async {
       final query = blooming('a');
       final log = <String>[];
-      final handles = <EffectHandle>[];
+      final scopes = <EffectScope>[];
 
-      final runner = query.bloom.effect.handled((handle) {
-        handles.add(handle);
+      final runner = query.bloom.effect.scoped((scope) {
+        scopes.add(scope);
         final current = untracked(query.bloom);
         log.add('run: $current');
 
-        handle.onCleanup(() {
+        scope.onCleanup(() {
           log.add('cleanup: $current');
-          expect(handle.isActive, isFalse);
-          expect(handle.isCancelled, isTrue);
+          expect(scope.isActive, isFalse);
+          expect(scope.isCancelled, isTrue);
         });
-      }).run();
+      }).start();
 
       // First trigger
       query.set('b');
       await Future<void>.delayed(Duration.zero);
 
       expect(log, ['run: b']);
-      expect(handles.first.isActive, isTrue);
+      expect(scopes.first.isActive, isTrue);
 
       // Second trigger: should clean up previous before running new
       query.set('c');
       await Future<void>.delayed(Duration.zero);
 
       expect(log, ['run: b', 'cleanup: b', 'run: c']);
-      expect(handles[0].isActive, isFalse);
-      expect(handles[0].isCancelled, isTrue);
-      expect(handles[1].isActive, isTrue);
+      expect(scopes[0].isActive, isFalse);
+      expect(scopes[0].isCancelled, isTrue);
+      expect(scopes[1].isActive, isTrue);
 
-      runner.deactivate();
+      runner.stop();
     });
 
     test('3. Invariant 2: onCleanup is called on deactivation / unmount', () async {
       final target = blooming(10);
       var cleanedUp = false;
-      EffectHandle? currentHandle;
+      EffectScope? currentScope;
 
-      final runner = target.bloom.effect.handled((handle) {
-        currentHandle = handle;
-        handle.onCleanup(() {
+      final runner = target.bloom.effect.scoped((scope) {
+        currentScope = scope;
+        scope.onCleanup(() {
           cleanedUp = true;
         });
-      }).run();
+      }).start();
 
       target.set(20);
       await Future<void>.delayed(Duration.zero);
 
       expect(cleanedUp, isFalse);
-      expect(currentHandle!.isActive, isTrue);
+      expect(currentScope!.isActive, isTrue);
 
       // Deactivate effect
-      runner.deactivate();
+      runner.stop();
 
       expect(cleanedUp, isTrue);
-      expect(currentHandle!.isActive, isFalse);
-      expect(currentHandle!.isCancelled, isTrue);
+      expect(currentScope!.isActive, isFalse);
+      expect(currentScope!.isCancelled, isTrue);
     });
 
-    test('4. Multi-target Effect.handled with tuple', () async {
+    test('4. Multi-target effect.scoped with tuple', () async {
       final a = blooming(1);
       final b = blooming(2);
       final cleanupOrder = <int>[];
 
-      final runner = (a.bloom, b.bloom).effect.handled((handle) {
+      final runner = (a.bloom, b.bloom).effect.scoped((scope) {
         final int sum = untracked(a.bloom) + untracked(b.bloom);
-        handle.onCleanup(() {
+        scope.onCleanup(() {
           cleanupOrder.add(sum);
         });
-      }).run();
+      }).start();
 
       a.set(10);
       await Future<void>.delayed(Duration.zero);
@@ -117,25 +117,25 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(cleanupOrder, [12]); // Previous sum was 10 + 2 = 12
 
-      runner.deactivate();
+      runner.stop();
       expect(cleanupOrder, [12, 30]); // Current sum was 10 + 20 = 30
     });
 
-    test('5. Dynamic Effect.handledVia with 1-Pass Epoch Sweeping', () async {
+    test('5. Dynamic Effect.scoped.via with 1-Pass Epoch Sweeping', () async {
       final condition = blooming(true);
       final left = blooming('L1');
       final right = blooming('R1');
       final log = <String>[];
 
-      final runner = Effect.handledVia((via, handle) {
+      final runner = Effect.scoped.via((via, scope) {
         final cond = via(condition.bloom);
         final value = cond ? via(left.bloom) : via(right.bloom);
         log.add('via run: $value');
 
-        handle.onCleanup(() {
+        scope.onCleanup(() {
           log.add('via cleanup: $value');
         });
-      }).run();
+      }).start();
 
       // Initial run happens via scheduler microtask
       await Future<void>.delayed(Duration.zero);
@@ -162,7 +162,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(log.length, 5); // Unchanged
 
-      runner.deactivate();
+      runner.stop();
       expect(log.last, 'via cleanup: R1');
     });
 
@@ -171,37 +171,37 @@ void main() {
       final executed = <String>[];
 
       // 1. Verify exact LIFO execution order: 3 -> 2 -> 1
-      final runner = counter.bloom.effect.handled((handle) {
-        handle.onCleanup(() => executed.add('cleanup 1'));
-        handle.onCleanup(() => executed.add('cleanup 2'));
-        handle.onCleanup(() => executed.add('cleanup 3'));
-      }).run();
+      final runner = counter.bloom.effect.scoped((scope) {
+        scope.onCleanup(() => executed.add('cleanup 1'));
+        scope.onCleanup(() => executed.add('cleanup 2'));
+        scope.onCleanup(() => executed.add('cleanup 3'));
+      }).start();
 
       counter.set(1);
       await Future<void>.delayed(Duration.zero);
 
-      runner.deactivate();
+      runner.stop();
       expect(executed, ['cleanup 3', 'cleanup 2', 'cleanup 1']);
 
       // 2. Verify exception safety under LIFO teardown
       // Even if a newer cleanup (cleanup B) throws, older cleanups (cleanup A) must still execute
       final errorLog = <String>[];
-      final safetyRunner = counter.bloom.effect.handled((handle) {
-        handle.onCleanup(() {
+      final safetyRunner = counter.bloom.effect.scoped((scope) {
+        scope.onCleanup(() {
           errorLog.add('cleanup A');
         });
-        handle.onCleanup(() {
+        scope.onCleanup(() {
           errorLog.add('cleanup B');
           throw Exception('Intentional failure in cleanup B');
         });
       }, onUncaughtError: (error, st) {
         errorLog.add('handled error: $error');
-      }).run();
+      }).start();
 
       counter.set(2);
       await Future<void>.delayed(Duration.zero);
 
-      safetyRunner.deactivate();
+      safetyRunner.stop();
       expect(errorLog, [
         'cleanup B',
         'cleanup A',
@@ -209,40 +209,40 @@ void main() {
       ]);
     });
 
-    test('7. Registering onCleanup on an already cancelled handle executes immediately', () {
+    test('7. Registering onCleanup on an already cancelled scope executes immediately', () {
       final counter = blooming(0);
-      EffectHandle? storedHandle;
+      EffectScope? storedScope;
 
-      final runner = counter.bloom.effect.handled((handle) {
-        storedHandle = handle;
-      }).run();
+      final runner = counter.bloom.effect.scoped((scope) {
+        storedScope = scope;
+      }).start();
 
       counter.set(1);
       // Wait for execution
       Future<void>.delayed(Duration.zero).then((_) {
-        runner.deactivate();
-        expect(storedHandle!.isCancelled, isTrue);
+        runner.stop();
+        expect(storedScope!.isCancelled, isTrue);
 
         var called = false;
-        storedHandle!.onCleanup(() {
+        storedScope!.onCleanup(() {
           called = true;
         });
         expect(called, isTrue);
       });
     });
 
-    test('8. Guard returning false preserves previous handle and skips execution', () async {
+    test('8. Guard returning false preserves previous scope and skips execution', () async {
       final counter = blooming(0);
       var runCount = 0;
       var cleanups = 0;
 
-      final runner = counter.bloom.effect.handled(
-        (handle) {
+      final runner = counter.bloom.effect.scoped(
+        (scope) {
           runCount++;
-          handle.onCleanup(() => cleanups++);
+          scope.onCleanup(() => cleanups++);
         },
         guard: () => untracked(counter.bloom).isEven,
-      ).run();
+      ).start();
 
       counter.set(2); // Even -> runs
       await Future<void>.delayed(Duration.zero);
@@ -259,22 +259,22 @@ void main() {
       expect(runCount, 2);
       expect(cleanups, 1);
 
-      runner.deactivate();
+      runner.stop();
       expect(cleanups, 2);
     });
 
-    test('9. take: N automatically triggers early teardown and cleans up last handle', () async {
+    test('9. take: N automatically triggers early teardown and cleans up last scope', () async {
       final counter = blooming(0);
       var runCount = 0;
       var cleanups = 0;
 
-      final runner = counter.bloom.effect.handled(
-        (handle) {
+      final runner = counter.bloom.effect.scoped(
+        (scope) {
           runCount++;
-          handle.onCleanup(() => cleanups++);
+          scope.onCleanup(() => cleanups++);
         },
         take: 2,
-      ).run();
+      ).start();
 
       counter.set(1); // Turn 1
       await Future<void>.delayed(Duration.zero);
@@ -296,17 +296,17 @@ void main() {
       final query = blooming('first');
       final receivedResults = <String>[];
 
-      final runner = query.bloom.effect.handled((handle) async {
+      final runner = query.bloom.effect.scoped((scope) async {
         final currentQuery = untracked(query.bloom);
         final delayMs = currentQuery == 'first' ? 50 : 10;
 
         // Simulate async I/O
         await Future<void>.delayed(Duration(milliseconds: delayMs));
 
-        if (handle.isActive) {
+        if (scope.isActive) {
           receivedResults.add(currentQuery);
         }
-      }).run();
+      }).start();
 
       // Trigger 1: 'first' (takes 50ms)
       query.set('first');
@@ -320,39 +320,39 @@ void main() {
       // Wait for all async tasks to settle
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      // 'first' must have been aborted by handle.isActive check; only 'second' survived!
+      // 'first' must have been aborted by scope.isActive check; only 'second' survived!
       expect(receivedResults, ['second']);
-      runner.deactivate();
+      runner.stop();
     });
 
     test('11. Cleanup errors after cancellation or disposal are routed to onUncaughtError', () async {
       final counter = blooming(0);
-      EffectHandle? capturedHandle;
+      EffectScope? capturedScope;
       final errors = <Object>[];
 
-      final runner = counter.bloom.effect.handled(
-        (handle) {
-          capturedHandle = handle;
-          handle.onCleanup(() {
+      final runner = counter.bloom.effect.scoped(
+        (scope) {
+          capturedScope = scope;
+          scope.onCleanup(() {
             throw StateError('Teardown failure');
           });
         },
         onUncaughtError: (error, stack) {
           errors.add(error);
         },
-      ).run();
+      ).start();
 
       counter.set(1);
       await Future<void>.delayed(Duration.zero);
 
-      // Deactivating disposes the current handle, triggering onCleanup exception
-      runner.deactivate();
+      // Deactivating disposes the current scope, triggering onCleanup exception
+      runner.stop();
 
       expect(errors.length, 1);
       expect(errors.first, isA<StateError>());
 
       // Calling onCleanup after cancellation also catches and forwards to onUncaughtError
-      capturedHandle!.onCleanup(() {
+      capturedScope!.onCleanup(() {
         throw StateError('Late cleanup error');
       });
 

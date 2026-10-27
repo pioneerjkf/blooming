@@ -386,11 +386,11 @@ void main() {
         var factor = 2;
         final mapped = computed((via) => via(ctrl.bloom) * factor);
 
-        final effect = Effect([mapped], () {});
+        final eff = Effect([mapped], () {});
 
         final parentTerminal = RawViaTerminal<void>(
           (via) {
-            via.tether(effect);
+            via.tether(eff);
           },
           onInvalidated: () {},
         );

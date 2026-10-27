@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 import 'package:blooming/blooming.dart';
-import 'package:blooming/effect.dart';
+import 'package:blooming/effect.dart' as b;
 
 /// Test utility for testing reactive tracking in unit tests.
 void Function() effect(Function callback) {
   final term = RawViaTerminal((via) {
     via.tether(
-      Effect.via(
+      b.Effect.via(
         callback is void Function(BloomVia) ? callback : (v) => (callback as dynamic)(),
       ),
     );

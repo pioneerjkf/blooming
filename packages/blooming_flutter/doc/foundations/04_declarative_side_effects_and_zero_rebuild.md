@@ -169,7 +169,7 @@ Depending on whether the side effect is intrinsically tied to the UI element tre
 | Pattern | Execution Context | Example Use Case | Recommended Tool |
 |---|---|---|---|
 | **Widget-Level One-Shot** | UI Presentation Tree | Screen navigation, modal alerts, SnackBars | `BloomListener(target, action, take: 1)` |
-| **Domain / Controller-Level One-Shot** | Background Business Logic | Analytics telemetry, initial handshake sync | `Effect.unary(target, action, take: 1)` |
+| **Domain / Controller-Level One-Shot** | Background Business Logic | Analytics telemetry, initial handshake sync | `effect.unary(target, action, take: 1)` |
 | **Consumable Event in State** | Shared Cross-Screen Flow | Multi-step wizard results, global deep link | `state.event.consume()` / `state = state.copyWith(event: null)` |
 
 ---

@@ -243,12 +243,12 @@ void main() {
       int effectRuns = 0;
       String? observedName;
 
-      final effect = Effect.via((via) {
+      final eff = Effect.via((via) {
         effectRuns++;
         observedName = via(name);
       });
       final terminal = RawViaTerminal(
-        (via) => via.tether(effect),
+        (via) => via.tether(eff),
         onInvalidated: () {},
       )
         ..activate()

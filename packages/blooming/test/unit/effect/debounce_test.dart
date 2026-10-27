@@ -14,12 +14,12 @@ void main() {
       final input = blooming<String>('');
       final observed = <String>[];
 
-      final effect = DebounceEffect.unary(
+      final myEffect = Effect.debounce.unary(
         input.bloom,
         const Duration(milliseconds: 50),
         () => observed.add(input.data),
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -50,14 +50,14 @@ void main() {
       final query = blooming<String>('');
       final observed = <String>[];
 
-      final effect = DebounceEffect.unary(
+      final myEffect = Effect.debounce.unary(
         query.bloom,
         const Duration(milliseconds: 50),
         () => observed.add(query.data),
         leading: true,
         trailing: false,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -87,13 +87,13 @@ void main() {
       final search = blooming<String>('');
       int runs = 0;
 
-      final effect = DebounceEffect.unary(
+      final myEffect = Effect.debounce.unary(
         search.bloom,
         const Duration(milliseconds: 40),
         () => runs++,
         take: 1,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -114,12 +114,12 @@ void main() {
       final maxPrice = blooming<int>(100);
       int runs = 0;
 
-      final effect = DebounceEffect(
+      final myEffect = Effect.debounce(
         [minPrice.bloom, maxPrice.bloom],
         const Duration(milliseconds: 50),
         () => runs++,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -140,12 +140,12 @@ void main() {
       final source = blooming<int>(0);
       int runs = 0;
 
-      final effect = DebounceEffect.unary(
+      final myEffect = Effect.debounce.unary(
         source.bloom,
         const Duration(milliseconds: 50),
         () => runs++,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -163,13 +163,13 @@ void main() {
       final input = blooming<String>('');
       final observed = <String>[];
 
-      final effect = input.bloom.effect.debounce(
+      final myEffect = input.bloom.effect.debounce(
         const Duration(milliseconds: 40),
         () => observed.add(input.data),
       );
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(myEffect);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -190,14 +190,14 @@ void main() {
       final search = blooming<String>('');
       final observed = <String>[];
 
-      final effect = DebounceEffect.unary(
+      final myEffect = Effect.debounce.unary(
         search.bloom,
         const Duration(milliseconds: 50),
         () => observed.add(search.data),
         leading: true,
         trailing: true,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -226,27 +226,27 @@ void main() {
       terminal.deactivate();
     });
 
-    test('8. Debounce with leading: false and trailing: false throws AssertionError', () {
+    test('8. Debounce with leading: false and trailing: false throws ArgumentError', () {
       final source = blooming<int>(0);
       expect(
-        () => DebounceEffect.unary(
+        () => Effect.debounce.unary(
           source.bloom,
           const Duration(milliseconds: 50),
           () {},
           leading: false,
           trailing: false,
         ),
-        throwsA(isA<AssertionError>()),
+        throwsA(isA<ArgumentError>()),
       );
       expect(
-        () => DebounceEffect(
+        () => Effect.debounce(
           [source.bloom],
           const Duration(milliseconds: 50),
           () {},
           leading: false,
           trailing: false,
         ),
-        throwsA(isA<AssertionError>()),
+        throwsA(isA<ArgumentError>()),
       );
     });
 
@@ -254,7 +254,7 @@ void main() {
       final source = blooming<int>(0);
       Object? caughtError;
 
-      final effect = source.bloom.effect.debounce(
+      final myEffect = source.bloom.effect.debounce(
         const Duration(milliseconds: 30),
         () => throw StateError('Debounce action failed'),
         onUncaughtError: (error, stack) {
@@ -262,7 +262,7 @@ void main() {
         },
       );
 
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(myEffect), onInvalidated: () {})
         ..activate()
         ..evaluate();
 

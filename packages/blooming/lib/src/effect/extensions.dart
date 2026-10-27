@@ -16,7 +16,7 @@ part of '../framework.dart';
 /// ## Sub-Functor & Invocation Pathways
 /// ```text
 /// targets.effect                 ((action) => ...)
-///  ├── .handled                  ((handle) => ...)
+///  ├── .scoped                   ((scope) => ...)
 ///  ├── .throttle                 (duration, (action) => ...)
 ///  └── .debounce                 (duration, (action) => ...)
 /// ```
@@ -36,7 +36,7 @@ part of '../framework.dart';
 ///   [BloomEffectScope Namespace]
 ///               │
 ///        ┌──────┴──────────────────────────┬────────────────────────┐
-///        │ .call() / .handled()            │ .throttle()            │ .debounce()
+///        │ .call() / .scoped()             │ .throttle()            │ .debounce()
 ///        ▼                                 ▼                        ▼
 /// [N-ary Manifest Terminal]     [N-ary Throttle Terminal] [N-ary Debounce Terminal]
 ///        │                                 │                        │
@@ -47,7 +47,7 @@ part of '../framework.dart';
 ///
 /// ## Architectural Benefits
 /// 1. **Zero Heap Overhead**: Erases entirely at compile time to static terminal constructor calls.
-/// 2. **Fluent Method-Chaining Ergonomics**: Enables chaining `.handled`, `.throttle`, and `.debounce`
+/// 2. **Fluent Method-Chaining Ergonomics**: Enables chaining `.scoped`, `.throttle`, and `.debounce`
 ///    directly from tuples (e.g. `(user.bloom, auth.bloom).effect`) or `Iterable<Bloom>` collections.
 /// 3. **Multi-Dependency Edge Consolidation**: Coordinates multiple upstream triggers into a single
 ///    action turn without intermediate relay allocations.
@@ -122,17 +122,17 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Defines an explicit handled [Effect] attached to the scoped targets providing an [EffectHandle].
+  /// Defines an explicit scoped [Effect] attached to the scoped targets providing an [EffectScope].
   ///
   /// * Skips initial evaluation (0 runs upon construction/mount).
-  /// * Executes [action] with an [EffectHandle] in an untracked environment when any of the scoped targets mutate.
-  /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectHandle]
+  /// * Executes [action] with an [EffectScope] in an untracked environment when any of the scoped targets mutate.
+  /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
   ///   is marked cancelled and its registered cleanup callbacks are executed in LIFO order.
   /// * If [guard] is provided and returns `false`, execution is skipped and [take] tickets are preserved.
   /// * If [take] is provided, executes at most [take] times and then automatically deactivates (Early Teardown).
   /// * If [onUncaughtError] is provided, it is invoked when an uncaught exception is thrown in [action] or [guard].
   ///
-  /// * [action]: The untracked callback receiving an [EffectHandle] to invoke upon mutation.
+  /// * [action]: The untracked callback receiving an [EffectScope] to invoke upon mutation.
   /// * [guard]: Optional boolean predicate gating execution and preserving tickets when `false`.
   /// * [take]: Optional limit on execution count before automatic deactivation.
   /// * [onUncaughtError]: Optional error recovery handler.
@@ -141,23 +141,23 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
   /// * If [take] is provided, it must be greater than or equal to `0`.
   ///
   /// **Ensures:**
-  /// * Returns a handled [Effect] with deterministic lifecycle cleanup capabilities.
+  /// * Returns a scoped [Effect] with deterministic lifecycle cleanup capabilities.
   ///
   /// ## Examples
   /// ```dart
-  /// final effect = (room.bloom, server.bloom).effect.handled((handle) {
+  /// final effect = (room.bloom, server.bloom).effect.scoped((scope) {
   ///   final client = connect(untracked(room.bloom), untracked(server.bloom));
-  ///   handle.onCleanup(client.close);
+  ///   scope.onCleanup(client.close);
   /// });
   /// ```
   @pragma('vm:prefer-inline')
-  Effect handled(
-    void Function(EffectHandle handle) action, {
+  Effect scoped(
+    void Function(EffectScope scope) action, {
     bool Function()? guard,
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
-      Effect.handled(
+      Effect.scoped(
         _targets,
         action,
         guard: guard,
@@ -165,7 +165,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Defines an explicit rate-limited [ThrottleEffect] attached to the scoped targets.
+  /// Defines an explicit rate-limited throttle [Effect] attached to the scoped targets.
   ///
   /// Guarantees that [action] is executed at most once per [duration] window across all targets.
   ///
@@ -182,7 +182,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
   /// * If [take] is provided, it must be greater than or equal to `0`.
   ///
   /// **Ensures:**
-  /// * Returns a [ThrottleEffect] attached to the scoped targets.
+  /// * Returns a throttle [Effect] attached to the scoped targets.
   ///
   /// ## Examples
   /// ```dart
@@ -192,7 +192,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
   /// );
   /// ```
   @pragma('vm:prefer-inline')
-  ThrottleEffect throttle(
+  Effect throttle(
     Duration duration,
     void Function() action, {
     bool Function()? guard,
@@ -201,7 +201,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
-      ThrottleEffect(
+      Effect.throttle(
         _targets,
         duration,
         action,
@@ -212,7 +212,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Defines an explicit time-stabilized [DebounceEffect] attached to the scoped targets.
+  /// Defines an explicit time-stabilized debounce [Effect] attached to the scoped targets.
   ///
   /// Delays executing [action] until invalidation bursts across all targets have ceased for at least [duration].
   ///
@@ -229,7 +229,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
   /// * If [take] is provided, it must be greater than or equal to `0`.
   ///
   /// **Ensures:**
-  /// * Returns a [DebounceEffect] attached to the scoped targets.
+  /// * Returns a debounce [Effect] attached to the scoped targets.
   ///
   /// ## Examples
   /// ```dart
@@ -239,7 +239,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
   /// );
   /// ```
   @pragma('vm:prefer-inline')
-  DebounceEffect debounce(
+  Effect debounce(
     Duration duration,
     void Function() action, {
     bool Function()? guard,
@@ -248,7 +248,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
-      DebounceEffect(
+      Effect.debounce(
         _targets,
         duration,
         action,
@@ -350,17 +350,17 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Defines an explicit handled [Effect] attached to this node providing an [EffectHandle].
+  /// Defines an explicit scoped [Effect] attached to this node providing an [EffectScope].
   ///
   /// * Skips initial evaluation (0 runs upon construction/mount).
-  /// * Executes [action] with an [EffectHandle] in an untracked environment when this node mutates.
-  /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectHandle]
+  /// * Executes [action] with an [EffectScope] in an untracked environment when this node mutates.
+  /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
   ///   is marked cancelled and its registered cleanup callbacks are executed in LIFO order.
   /// * If [guard] is provided and returns `false`, execution is skipped and [take] tickets are preserved.
   /// * If [take] is provided, executes at most [take] times then automatically deactivates (Early Teardown).
   /// * If [onUncaughtError] is provided, it is invoked when an uncaught exception is thrown in [action] or [guard].
   ///
-  /// * [action]: The untracked callback receiving an [EffectHandle] to invoke upon mutation.
+  /// * [action]: The untracked callback receiving an [EffectScope] to invoke upon mutation.
   /// * [guard]: Optional boolean predicate gating execution.
   /// * [take]: Optional limit on execution count before automatic deactivation.
   /// * [onUncaughtError]: Optional error recovery handler.
@@ -369,24 +369,24 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   /// * If [take] is provided, it must be greater than or equal to `0`.
   ///
   /// **Ensures:**
-  /// * Returns a unary handled [Effect] bound to this node.
+  /// * Returns a unary scoped [Effect] bound to this node.
   ///
   /// ## Examples
   /// ```dart
   /// final room = blooming('lobby');
-  /// final effect = room.bloom.effect.handled((handle) {
+  /// final effect = room.bloom.effect.scoped((scope) {
   ///   final timer = Timer.periodic(const Duration(seconds: 1), (_) => ping());
-  ///   handle.onCleanup(timer.cancel);
+  ///   scope.onCleanup(timer.cancel);
   /// });
   /// ```
   @pragma('vm:prefer-inline')
-  Effect handled(
-    void Function(EffectHandle handle) action, {
+  Effect scoped(
+    void Function(EffectScope scope) action, {
     bool Function()? guard,
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
-      Effect.handledUnary(
+      Effect.scoped.unary(
         _target,
         action,
         guard: guard,
@@ -394,7 +394,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Defines an explicit rate-limited [ThrottleEffect] attached to this node.
+  /// Defines an explicit rate-limited throttle [Effect] attached to this node.
   ///
   /// Rate-limits triggers to at most once per [duration].
   ///
@@ -411,7 +411,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   /// * If [take] is provided, it must be greater than or equal to `0`.
   ///
   /// **Ensures:**
-  /// * Returns a unary [ThrottleEffect] attached to this node.
+  /// * Returns a unary throttle [Effect] attached to this node.
   ///
   /// ## Examples
   /// ```dart
@@ -422,7 +422,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   /// );
   /// ```
   @pragma('vm:prefer-inline')
-  ThrottleEffect throttle(
+  Effect throttle(
     Duration duration,
     void Function() action, {
     bool Function()? guard,
@@ -431,7 +431,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
-      ThrottleEffect.unary(
+      Effect.throttle.unary(
         _target,
         duration,
         action,
@@ -442,7 +442,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Defines an explicit time-stabilized [DebounceEffect] attached to this node.
+  /// Defines an explicit time-stabilized debounce [Effect] attached to this node.
   ///
   /// Delays trigger execution until [duration] passes with no new mutations on this node.
   ///
@@ -459,7 +459,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   /// * If [take] is provided, it must be greater than or equal to `0`.
   ///
   /// **Ensures:**
-  /// * Returns a unary [DebounceEffect] attached to this node.
+  /// * Returns a unary debounce [Effect] attached to this node.
   ///
   /// ## Examples
   /// ```dart
@@ -470,7 +470,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
   /// );
   /// ```
   @pragma('vm:prefer-inline')
-  DebounceEffect debounce(
+  Effect debounce(
     Duration duration,
     void Function() action, {
     bool Function()? guard,
@@ -479,7 +479,7 @@ extension type const UnaryBloomEffectScope(Bloom _target) {
     int? take,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
-      DebounceEffect.unary(
+      Effect.debounce.unary(
         _target,
         duration,
         action,

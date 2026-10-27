@@ -22,8 +22,7 @@ class CounterStore {
 
 class SearchStore {
   SearchStore() {
-    // SWR / Debounce search simulation using Timer
-    query.bloom.effect(() {
+    _runner = query.bloom.effect(() {
       final term = untracked(query.bloom);
       if (term.isEmpty) {
         results.empty('empty-query');
@@ -33,15 +32,17 @@ class SearchStore {
           results.data = ['result for $term'];
         });
       }
-    }).run();
+    }).start();
   }
 
   final query = blooming('');
   final results = blooming.late<List<String>>(reason: 'empty-query');
   Timer? _timer;
+  late final EffectRunner _runner;
 
   void dispose() {
     _timer?.cancel();
+    _runner.stop();
   }
 }
 

@@ -83,7 +83,7 @@ void main() async {
   // 3. Standalone Active Runner with microtask batch compression
   final runner = total.effect(() {
     print('[Effect] Total updated: \$${untracked(total)}');
-  }).run();
+  }).start();
 
   // Initial value read via zero-overhead raw read:
   print('Initial total: \$${untracked(total)}'); // Prints: "Initial total: $190"
@@ -102,7 +102,7 @@ void main() async {
   print('Raw read: ${untracked(total)}'); // 400
 
   // 6. Clean up: Enters Subscriber-Driven Inactive Dormancy
-  runner.deactivate();
+  runner.stop();
 }
 ```
 
@@ -146,11 +146,12 @@ Bloom's reactive engine is organized around three foundational pillars: **Reacti
 │                                                                            │
 │  3. Execution & Side-Effects (1-Tick Compressed)                           │
 │     ├── bloom.effect                            (() => ...)                 │
-│     ├── Effect                                 ([targets], () => ...)      │
-│     │    ├── .handled                          ((handle) => ...)           │
-│     │    ├── .debounce                         (duration, (action) => ...) │
-│     │    └── .throttle                         (duration, (action) => ...) │
-│     └── EffectRunner                           (effect.run())              │
+│     ├── effect(...)                             ([targets], () => ...)      │
+│     │    ├── .unary / .via                      (fast-path & discovery)     │
+│     │    ├── .scoped                            (lifecycle & cleanups)      │
+│     │    ├── .debounce / .throttle              (temporal rate-limiting)    │
+│     │    └── .group                             (composite grouping)        │
+│     └── EffectRunner                            (effect.start(), .runner)   │
 │                                                                            │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -576,9 +577,33 @@ final liveClient = managed<ApiClient>(
 
 ---
 
-### 8. Side-Effects: `Effect`, `via.tether`, `EffectRunner` & `EffectHandle`
+### 8. Side-Effects: `effect` Functor, `via.tether`, `EffectRunner` & `EffectScope`
 
 Bloom completely separates side-effects into declarative first-class entities with strict lifecycle binding and asynchronous race-condition guards.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    The Hierarchical effect Functor Family                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  effect(...)                ──> Manifest N-ary effect (Effect)             │
+│    ├── .unary(...)          ──> Fast-path single-target unary effect       │
+│    ├── .via(...)            ──> Dynamic discovery effect via BloomVia      │
+│    │                                                                       │
+│    ├── .scoped(...)         ──> Scoped effect with RAII (EffectScope)      │
+│    │     ├── .unary(...)    ──> Scoped single-target unary effect          │
+│    │     └── .via(...)      ──> Scoped dynamic discovery effect            │
+│    │                                                                       │
+│    ├── .debounce(...)       ──> Time-stabilized debounce effect            │
+│    │     └── .unary(...)    ──> Fast-path unary debounce effect            │
+│    │                                                                       │
+│    ├── .throttle(...)       ──> Rate-limited throttle effect               │
+│    │     └── .unary(...)    ──> Fast-path unary throttle effect            │
+│    │                                                                       │
+│    └── .group(...)          ──> Composite aggregated effect group          │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
 
 #### A. Scope-Bound Lifecycle via `via.tether()`
 Tethering binds an effect's lifespan directly to an enclosing reactive scope. When the scope deactivates, tethered effects automatically sleep (Zero-Leak):
@@ -600,36 +625,37 @@ final searchPipeline = computed((via) {
 Outside UI scopes, run standalone effects with full pause and resume capability:
 
 ```dart
-final syncEffect = userBloom.effect.debounce(
+final syncEffect = effect.debounce(
+  [userBloom],
   const Duration(milliseconds: 300),
   () => cloudSync(untracked(userBloom)),
 );
 
 // Start standalone execution:
-final runner = syncEffect.run(autoStart: true);
+final runner = syncEffect.start();
 
 // Pause observation (puts upstream LPDAG pipeline into dormancy, 0-CPU):
-runner.deactivate();
+runner.stop();
 
 // Resume observation:
-runner.activate();
+runner.start();
 ```
 
-#### C. In-Flight Race Guards & Multi-Cleanup RAII (`EffectHandle`)
-Using `Effect.handled` protects against stale asynchronous overwrites and setup failures:
+#### C. In-Flight Race Guards & Multi-Cleanup RAII (`EffectScope`)
+Using `effect.scoped` protects against stale asynchronous overwrites and setup failures:
 
 ```dart
-Effect.handled([roomId.bloom], (handle) async {
+effect.scoped([roomId.bloom], (scope) async {
   // 1. Multi-Registration RAII: register cleanups immediately adjacent to resource acquisition
   final timer = Timer.periodic(const Duration(seconds: 1), (_) => ping());
-  handle.onCleanup(timer.cancel);
+  scope.onCleanup(timer.cancel);
 
   final socket = await WebSocket.connect('ws://example.com/rooms/${untracked(roomId.bloom)}');
-  handle.onCleanup(socket.close);
+  scope.onCleanup(socket.close);
 
   // 2. In-flight cancellation guard: prevent stale overwrite across async gaps
   final initialData = await socket.first;
-  if (handle.isCancelled) return; // Stale turn cancelled by newer roomId; safe exit
+  if (scope.isCancelled) return; // Stale turn cancelled by newer roomId; safe exit
 
   applyRoomData(initialData);
 });

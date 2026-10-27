@@ -120,12 +120,12 @@ Future<void> main() async {
   print(untracked(doubled)); // 10 (evaluated lazily, on read)
 
   // Effects are terminals: they run after the microtask flush, not inside the mutation.
-  final runner = doubled.effect(() => print('doubled is now ${untracked(doubled)}')).run();
+  final runner = doubled.effect(() => print('doubled is now ${untracked(doubled)}')).start();
 
   count.set(6);
   await Future<void>.delayed(Duration.zero);
 
-  runner.deactivate(); // detaches from the graph
+  runner.stop(); // detaches from the graph
 }
 ```
 

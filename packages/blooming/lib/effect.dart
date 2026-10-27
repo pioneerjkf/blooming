@@ -8,8 +8,8 @@
 /// Reactive side-effect pipelines and temporal rate limiters.
 ///
 /// `package:blooming/effect.dart` provides an expressive suite of non-propagating reactive
-/// terminals: declarative [Effect], time-domain rate limiters ([ThrottleEffect], [DebounceEffect]),
-/// finite execution bounds with reactive guards (`guard`, `take`), and composite grouping ([EffectGroup]).
+/// terminals: declarative [Effect], time-domain rate limiters (`Effect.throttle`, `Effect.debounce`),
+/// finite execution bounds with reactive guards (`guard`, `take`), and composite grouping (`Effect.group`).
 ///
 /// ## Architectural Overview
 ///
@@ -21,7 +21,7 @@
 /// Instead, side-effects are modeled as **Terminal Sinks**:
 /// - **Terminal Non-Propagation**: Effects do not propagate dirty pulses downstream; they consume
 ///   signals at graph terminal boundaries without creating cascading DAG cycles.
-/// - **Declarative Blueprints**: [Effect], [DebounceEffect], and [ThrottleEffect] can be defined
+/// - **Declarative Blueprints**: [Effect] instances can be defined
 ///   declaratively and attached to tracking scopes via `via.tether()`.
 /// - **Zero-Glitch Invariant**: Effects are flushed only after state transactions settle, guaranteeing
 ///   that multi-node updates are read consistently without transient tearing.
@@ -61,7 +61,7 @@
 /// ```dart
 /// // [Anti-Pattern] Uncontrolled state mutation inside side-effect creates reentrancy loop
 /// final counter = blooming(0);
-/// final effect = counter.bloom.effect(() {
+/// final e = counter.bloom.effect(() {
 ///   counter.set(untracked(counter.bloom) + 1); // Mutates source node without guard!
 /// });
 /// ```
@@ -70,7 +70,7 @@
 /// ```dart
 /// // [Recommended] One-way terminal sink for external interactions
 /// final counter = blooming(0);
-/// final effect = counter.bloom.effect(() {
+/// final e = counter.bloom.effect(() {
 ///   analyticsService.logCount(untracked(counter.bloom)); // Pure side-effect sink
 /// });
 /// ```
@@ -87,7 +87,7 @@
 ///       const Duration(milliseconds: 300),
 ///       () => fetchSearchResults(untracked(searchQuery.bloom)),
 ///     )
-///     .run();
+///     .start();
 /// ```
 ///
 /// ### 2. Scope-Bound Lifecycle with `via.tether()`:
@@ -109,17 +109,13 @@ library;
 
 export 'src/framework.dart'
     show
-        // Core Effects & Groups (Declarative)
+        // Core Contract & Types
         Effect,
-        EffectGroup,
-        EffectHandle,
+        EffectScope,
         Tether,
         // Standalone Execution Runner
-        EffectRunExtension,
+        EffectStartExtension,
         EffectRunner,
-        // Time-Domain Rate Limiting
-        DebounceEffect,
-        ThrottleEffect,
         // Direct Bloom .effect Scopes & Extension Suite
         UnaryBloomEffectScope,
         BloomEffectExtension,

@@ -9,8 +9,7 @@ part of '../../../framework.dart';
 // =============================================================================
 
 /// Specialized internal Flutter element for [BloomListener] hosting a unary [EffectRunner].
-base class _BloomListenerElement<T> extends ComponentElement
-    with _ReactiveTerminalElementMixin<EffectRunner> {
+base class _BloomListenerElement<T> extends ComponentElement {
   _BloomListenerElement(BloomListener<T> super.widget);
 
   late EffectRunner _runner;
@@ -18,19 +17,19 @@ base class _BloomListenerElement<T> extends ComponentElement
   @override
   BloomListener<T> get widget => super.widget as BloomListener<T>;
 
-  @override
+  /// Returns the underlying [EffectRunner] for diagnostics and testing.
   EffectRunner get terminal => _runner;
 
   /// Constructs and returns the appropriate [EffectRunner] instance.
   EffectRunner _createRunner() {
-    final Effect effect = Effect.unary(
+    final Effect eff = Effect.unary(
       widget.target,
       _handleAction,
       guard: _handleGuard,
       take: widget.take,
       onUncaughtError: _handleError,
     );
-    return effect.run(autoStart: false);
+    return eff.runner;
   }
 
   /// Evaluates whether the internal [EffectRunner] must be deactivated and rebound to [newWidget].
@@ -55,6 +54,23 @@ base class _BloomListenerElement<T> extends ComponentElement
     return guard == null || guard(untracked(widget.target));
   }
 
+  @visibleForTesting
+  void handleTerminalUncaughtError(Object error, StackTrace stackTrace) {
+    _handleTerminalUncaughtError(error, stackTrace);
+  }
+
+  void _handleTerminalUncaughtError(Object error, StackTrace stackTrace) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'blooming_flutter',
+        context:
+            ErrorDescription('while invalidating reactive terminal of $widget'),
+      ),
+    );
+  }
+
   void _handleError(Object error, StackTrace stackTrace) {
     final onError = widget.onUncaughtError;
     if (onError != null) {
@@ -68,7 +84,31 @@ base class _BloomListenerElement<T> extends ComponentElement
   @override
   void mount(Element? parent, Object? newSlot) {
     _runner = _createRunner();
+    _runner.start();
     super.mount(parent, newSlot);
+  }
+
+  @mustCallSuper
+  @override
+  void activate() {
+    super.activate();
+    _runner.start();
+  }
+
+  @mustCallSuper
+  @override
+  void deactivate() {
+    _runner.stop();
+    super.deactivate();
+  }
+
+  @mustCallSuper
+  @override
+  void unmount() {
+    if (_runner.isActive) {
+      _runner.stop();
+    }
+    super.unmount();
   }
 
   @mustCallSuper
@@ -77,9 +117,9 @@ base class _BloomListenerElement<T> extends ComponentElement
     final oldWidget = widget;
     super.update(newWidget);
     if (_needsRebind(oldWidget, newWidget)) {
-      _runner.deactivate();
+      _runner.stop();
       _runner = _createRunner();
-      _runner.activate();
+      _runner.start();
     }
   }
 
@@ -142,7 +182,7 @@ final class _BloomDebounceListenerElement<T> extends _BloomListenerElement<T> {
 
   @override
   EffectRunner _createRunner() {
-    final Effect effect = DebounceEffect.unary(
+    final Effect eff = Effect.debounce.unary(
       widget.target,
       widget.duration,
       _handleAction,
@@ -152,7 +192,7 @@ final class _BloomDebounceListenerElement<T> extends _BloomListenerElement<T> {
       take: widget.take,
       onUncaughtError: _handleError,
     );
-    return effect.run(autoStart: false);
+    return eff.runner;
   }
 
   @override
@@ -219,7 +259,7 @@ final class _BloomThrottleListenerElement<T> extends _BloomListenerElement<T> {
 
   @override
   EffectRunner _createRunner() {
-    final Effect effect = ThrottleEffect.unary(
+    final Effect eff = Effect.throttle.unary(
       widget.target,
       widget.duration,
       _handleAction,
@@ -229,7 +269,7 @@ final class _BloomThrottleListenerElement<T> extends _BloomListenerElement<T> {
       take: widget.take,
       onUncaughtError: _handleError,
     );
-    return effect.run(autoStart: false);
+    return eff.runner;
   }
 
   @override

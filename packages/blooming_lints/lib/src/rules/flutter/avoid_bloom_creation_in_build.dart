@@ -80,6 +80,7 @@ class AvoidBloomCreationInBuild extends DartLintRule {
     'computed',
     'switched',
     'managed',
+    'effect',
   };
 
   @override

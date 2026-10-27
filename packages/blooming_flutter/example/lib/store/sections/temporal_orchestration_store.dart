@@ -44,8 +44,8 @@ class TemporalOrchestrationStore {
   final _debounceLeading = blooming<bool>(false);
   Bloom<bool> get debounceLeading => _debounceLeading.bloom;
 
-  /// The active debounce [DebounceEffect] instance.
-  late DebounceEffect debounceEffect;
+  /// The active debounce effect instance.
+  late Effect debounceEffect;
 
   // ---------------------------------------------------------------------------
   // 2. Throttle Lab State & Telemetry
@@ -75,8 +75,8 @@ class TemporalOrchestrationStore {
   final _throttleTrailing = blooming<bool>(true);
   Bloom<bool> get throttleTrailing => _throttleTrailing.bloom;
 
-  /// The active throttle [ThrottleEffect] instance.
-  late ThrottleEffect throttleEffect;
+  /// The active throttle effect instance.
+  late Effect throttleEffect;
 
   // ---------------------------------------------------------------------------
   // 3. Take & Reactivation Guard Lab State & Telemetry
@@ -119,8 +119,8 @@ class TemporalOrchestrationStore {
   final _effectsVersion = blooming<int>(0);
   Bloom<int> get effectsVersion => _effectsVersion.bloom;
 
-  /// Composite [EffectGroup] bundling showcase effects for unified lifecycle management.
-  late EffectGroup effects;
+  /// Composite [Effect] bundling showcase effects for unified lifecycle management.
+  late Effect effects;
 
   void _initEffects() {
     // 1. Debounce Effect: Fires only after keystroke burst ceases for duration
@@ -404,10 +404,10 @@ final limited = buttonBloom.effect(
 // tether(debounce); tether(throttle); tether(limited);
 ''',
         highlights: const [
-          'DebounceEffect: Postpones execution until bursts cease for a silence window',
-          'ThrottleEffect: Suppresses high-frequency invalidations with leading & trailing edge controls',
+          'Effect.debounce: Postpones execution until bursts cease for a silence window',
+          'Effect.throttle: Suppresses high-frequency invalidations with leading & trailing edge controls',
           'take: int?: Automatic early self-teardown with Reactivation Guard preventing accidental revival',
-          'Scope-bound Effect & EffectGroup: Declarative lifecycle management via tether() with zero manual activation boilerplate',
+          'Scope-bound Effect & Effect.group: Declarative lifecycle management via tether() with zero manual activation boilerplate',
         ],
         roadmapTree: '''
 [Bloom Temporal Orchestration Pipeline]
@@ -422,7 +422,7 @@ final limited = buttonBloom.effect(
  ├── source.effect(..., take: N)            -> Self-Teardown Reactivation Guard
  │    └── Closes listener after N runs      -> Permanent Dormancy (0 leak)
  │
- └── EffectGroup([e1, e2, ...])             -> Batch Temporal Lifecycle Tethering
+ └── Effect.group([e1, e2, ...])            -> Batch Temporal Lifecycle Tethering
 ''',
         builder: () => TemporalOrchestrationSectionDemo(),
       );

@@ -50,13 +50,13 @@ void main() async {
   // Inactive Dormancy: Future is lazily initiated only when an active consumer connects
   final profileRunner = userProfile.effect(() {
     print('  [Profile Runner] Fresh Profile received: ${untracked(userProfile)}');
-  }).run();
+  }).start();
 
   print('Initial Synchronous Cache: ${untracked(userProfile)}');
   await Future<void>.delayed(const Duration(milliseconds: 40));
   print('Fetched Profile on demand: ${untracked(userProfile)}\n');
 
-  profileRunner.deactivate();
+  profileRunner.stop();
 
   // ---------------------------------------------------------------------------
   // 3. switched: Dynamic Topology Branch Morphing
@@ -73,7 +73,7 @@ void main() async {
 
   final feedRunner = activeFeed.effect(() {
     print('  [Feed Runner] Received: "${untracked(activeFeed)}"');
-  }).run();
+  }).start();
 
   print('Active Feed: ${untracked(activeFeed)}'); // Free Feed: Standard Content
 
@@ -83,7 +83,7 @@ void main() async {
   await Future<void>.delayed(Duration.zero);
   print('Active Feed: ${untracked(activeFeed)}\n'); // Premium Feed: Exclusive 4K Content
 
-  feedRunner.deactivate();
+  feedRunner.stop();
 
   // ---------------------------------------------------------------------------
   // 4. managed: External Resource Lifecycle Supervision
@@ -110,13 +110,13 @@ void main() async {
   // Downstream subscriber connects -> Triggers on-demand allocation
   final socketRunner = socketResource.effect(() {
     print('  [Socket Runner] Using ${untracked(socketResource)}');
-  }).run();
+  }).start();
 
   await Future<void>.delayed(Duration.zero);
   print('While subscribed: allocatedHandles = $allocatedHandles');
 
   // Downstream subscriber deactivates -> Automatically cleans up
   print('Subscriber deactivates...');
-  socketRunner.deactivate();
+  socketRunner.stop();
   print('After deactivation: allocatedHandles = $allocatedHandles (Dormant again)');
 }

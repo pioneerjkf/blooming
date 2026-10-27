@@ -45,14 +45,14 @@ void main() {
       });
 
       // Trigger computation
-      final r = comp.effect(() {}).run();
+      final r = comp.effect(() {}).start();
 
       expect(viaState, isNotNull);
       expect(identical(viaState, ctrl.bloom), isTrue);
       expect(identical(untracked.state(ctrl.bloom), ctrl.bloom), isTrue);
       expect(identical(viaState, untracked.state(ctrl.bloom)), isTrue);
 
-      r.deactivate();
+      r.stop();
     });
 
     test('via.state(x) captured view observes current live state across Valid->Valid and Valid->Empty->Valid',
@@ -66,7 +66,7 @@ void main() {
         return via(src.bloom) * 10;
       });
 
-      final r = derived.effect(() {}).run();
+      final r = derived.effect(() {}).start();
       await Future<void>.delayed(Duration.zero);
 
       expect(captured.length, equals(1));
@@ -104,7 +104,7 @@ void main() {
       expect(captured[0].data, equals(4));
       expect(identical(captured[0], captured.last), isTrue);
 
-      r.deactivate();
+      r.stop();
     });
 
     test('untracked.state(x).snapshot captures an immutable snapshot unaffected by subsequent mutations', () {

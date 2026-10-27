@@ -38,14 +38,14 @@ void main() {
           caughtError = e;
           if (!completer1.isCompleted) completer1.complete();
         },
-      ).run();
+      ).start();
 
       final handle2 = ctrl2.bloom.effect(() {
         e2ExecutionCount++;
         if (!completer2.isCompleted) {
           completer2.complete();
         }
-      }).run();
+      }).start();
 
       // Mutate ctrl1 to trigger error in _onTask
       ctrl1.set(1);
@@ -58,8 +58,8 @@ void main() {
       await completer2.future;
       expect(e2ExecutionCount, 1); // Only 1 execution post-init!
 
-      handle1.deactivate();
-      handle2.deactivate();
+      handle1.stop();
+      handle2.stop();
     });
 
     test('LpdagReentrancyError is thrown when cyclic relay dependency pushes dirty reentrantly', () {
@@ -277,55 +277,57 @@ void main() {
       terminal.deactivate();
     });
 
-    test('EffectGroup.run().debugForceInvalidate invalidates composite effects', () async {
+    test('Effect.group().start() runs and stops composite effects', () async {
       final source = blooming(1);
       var runCount = 0;
       final e1 = Effect.via((via) {
         via(source.bloom);
         runCount++;
       });
-      final group = EffectGroup([e1]).run();
+      final group = Effect.group([e1]).start();
       await Future<void>.delayed(Duration.zero);
       expect(runCount, 1);
-
-      group.debugForceInvalidate();
       expect(group.isActive, isTrue);
-      group.deactivate();
+
+      group.stop();
+      expect(group.isActive, isFalse);
     });
 
-    test('Effect.handled catches uncaught error in action via runner', () async {
+    test('Effect.scoped catches uncaught error in action via runner', () async {
       Object? caughtError;
       final source = blooming(1);
-      final runner = source.bloom.effect.handled(
-        (handle) {
+      final runner = source.bloom.effect.scoped(
+        (scope) {
           throw StateError('Handled unary action failed');
         },
         onUncaughtError: (err, st) {
           caughtError = err;
         },
-      ).run();
+      ).start();
       source.set(2);
       await Future<void>.delayed(Duration.zero);
       expect(caughtError, isA<StateError>());
-      runner.deactivate();
+      runner.stop();
     });
 
-    test('Effect.handledVia honors guard false and catches action error via runner', () async {
+    test('Effect.scoped.via honors guard false and catches action error via runner', () async {
       var actionCount = 0;
       Object? caughtError;
       final source = blooming(1);
-      final runner = Effect.handledVia(
-        (via, handle) {
-          actionCount++;
-          if (via(source.bloom) == 2) {
-            throw StateError('Handled via action failed');
-          }
-        },
-        guard: (via) => via(source.bloom) > 0 && via(source.bloom) != 999,
-        onUncaughtError: (err, st) {
-          caughtError = err;
-        },
-      ).run();
+      final runner = Effect.scoped
+          .via(
+            (via, scope) {
+              actionCount++;
+              if (via(source.bloom) == 2) {
+                throw StateError('Handled via action failed');
+              }
+            },
+            guard: (via) => via(source.bloom) > 0 && via(source.bloom) != 999,
+            onUncaughtError: (err, st) {
+              caughtError = err;
+            },
+          )
+          .start();
       await Future<void>.delayed(Duration.zero);
       expect(actionCount, 1);
 
@@ -338,7 +340,7 @@ void main() {
       source.set(2);
       await Future<void>.delayed(Duration.zero);
       expect(caughtError, isA<StateError>());
-      runner.deactivate();
+      runner.stop();
     });
 
     test('BloomDebugSnapshot handles constant, unary relay and sourceCount', () {
@@ -482,7 +484,7 @@ void main() {
           onUncaughtError: (e, s) {
             throw StateError('Rethrown from handler');
           },
-        ).run();
+        ).start();
 
         // Create a managed node with microtask graceful policy
         final managedCtrl = Bloom.managed<int>(
@@ -505,7 +507,7 @@ void main() {
         // Yield to allow microtask to run
         await Future<void>.delayed(Duration.zero);
 
-        effectHandle.deactivate();
+        effectHandle.stop();
       }, (error, stack) {
         errors.add(error);
       });

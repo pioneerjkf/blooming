@@ -443,10 +443,10 @@ final activeStockFeed = switched<List<String>>(
 
 // 4. Downstream consumers receive uninterrupted stream continuity across branch switches
 void main() {
-  final monitor = Effect.via((via) {
+  final monitor = effect.via((via) {
     final quotes = via(activeStockFeed);
     print('Active stock quotes: $quotes');
-  }).run();
+  }).start();
 
   // Initially prints: Active stock quotes: []
   // After fetch settles: Active stock quotes: [AAPL: $180, GOOG: $140]
@@ -456,7 +456,7 @@ void main() {
   // Prints: Active stock quotes: [AAPL: $175 (cached)]
 
   // Clean up standalone effect runner:
-  monitor.deactivate();
+  monitor.stop();
 }
 ```
 

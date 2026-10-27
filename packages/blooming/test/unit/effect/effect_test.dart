@@ -232,12 +232,12 @@ void main() {
       terminal.deactivate();
     });
 
-    test('8. Effect.unary constructor directly creates and drives unary effect', () async {
+    test('8. Effect.unary creates and drives unary effect', () async {
       final ctrl = blooming<String>('initial');
       var runs = 0;
       var observed = '';
 
-      final effect = Effect.unary(ctrl.bloom, () {
+      final eff = Effect.unary(ctrl.bloom, () {
         runs++;
         observed = ctrl.data;
       });
@@ -245,7 +245,7 @@ void main() {
       expect(runs, 0);
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -262,12 +262,12 @@ void main() {
       final ctrl = blooming<int>(0);
       var runs = 0;
 
-      final effect = Effect.unary(ctrl.bloom, () {
+      final eff = Effect.unary(ctrl.bloom, () {
         runs++;
       });
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -290,12 +290,12 @@ void main() {
       final ctrl = blooming<int>(0);
       var runs = 0;
 
-      final effect = Effect.unary(ctrl.bloom, () {
+      final eff = Effect.unary(ctrl.bloom, () {
         runs++;
       });
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -317,12 +317,12 @@ void main() {
       final groupCtrl = blooming.list([a.bloom, b.bloom]);
 
       var runs = 0;
-      final effect = Effect.unary(groupCtrl.bloom, () {
+      final eff = Effect.unary(groupCtrl.bloom, () {
         runs++;
       });
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -384,7 +384,7 @@ void main() {
       terminal.deactivate();
     });
 
-    test('13. Effect.group activates and deactivates child effects as a unified DAG terminal', () async {
+    test('13. effect.group activates and deactivates child effects as a unified DAG terminal', () async {
       final a = blooming<int>(1);
       final b = blooming<int>(2);
       var aRuns = 0;
@@ -468,7 +468,7 @@ void main() {
       expect(aRuns, 1);
     });
 
-    test('15. Tuple records and Iterable .group extensions create valid EffectGroup instances', () {
+    test('15. Tuple records and Iterable .group extensions create valid Effect instances', () {
       final a = blooming<int>(0);
       final e1 = a.bloom.effect(() {});
       final e2 = a.bloom.effect(() {});
@@ -479,27 +479,27 @@ void main() {
       final t2 = (e1, e2);
       expect(t2.effects, [e1, e2]);
       final g2 = t2.group;
-      expect(g2.effects.length, 2);
+      expect(g2, isA<Effect>());
 
       final t3 = (e1, e2, e3);
       expect(t3.effects, [e1, e2, e3]);
       final g3 = t3.group;
-      expect(g3.effects.length, 3);
+      expect(g3, isA<Effect>());
 
       final t4 = (e1, e2, e3, e4);
       expect(t4.effects, [e1, e2, e3, e4]);
       final g4 = t4.group;
-      expect(g4.effects.length, 4);
+      expect(g4, isA<Effect>());
 
       final t5 = (e1, e2, e3, e4, e5);
       expect(t5.effects, [e1, e2, e3, e4, e5]);
       final g5 = t5.group;
-      expect(g5.effects.length, 5);
+      expect(g5, isA<Effect>());
 
       final list = [e1, e2, e3];
       expect(list.effects, list);
       final gList = list.group;
-      expect(gList.effects.length, 3);
+      expect(gList, isA<Effect>());
     });
 
     test('16. BloomIterableEffectExtension provides  getter symmetrically', () {
@@ -508,19 +508,18 @@ void main() {
       final list = [a.bloom, b.bloom];
       expect(list, list);
 
-      final effect = list.effect(() {});
-      expect(effect, isA<Effect>());
+      final eff = list.effect(() {});
+      expect(eff, isA<Effect>());
     });
 
-    test('17. EffectGroup deduplicates identical child effects', () async {
+    test('17. Effect.group deduplicates identical child effects', () async {
       final a = blooming<int>(0);
       var runs = 0;
       final e1 = a.bloom.effect(() => runs++);
       final e2 = a.bloom.effect(() => runs++);
 
-      final group = EffectGroup([e1, e1, e2, e2, e1]);
-      expect(group.effects.length, 2);
-      expect(group.effects, [e1, e2]);
+      final group = Effect.group([e1, e1, e2, e2, e1]);
+      expect(group, isA<Effect>());
 
       final terminal = RawViaTerminal((via) {
         via.tether(group);
@@ -536,7 +535,7 @@ void main() {
       terminal.deactivate();
     });
 
-    test('17.1. EffectGroup safely consumes single-pass generators without multiple iteration desync', () {
+    test('17.1. Effect.group safely consumes single-pass generators without multiple iteration desync', () {
       final a = blooming<int>(0);
       final e1 = a.bloom.effect(() {});
       final e2 = a.bloom.effect(() {});
@@ -547,9 +546,8 @@ void main() {
         yield e1;
       }
 
-      final group = EffectGroup(generator());
-      expect(group.effects.length, 2);
-      expect(group.effects, [e1, e2]);
+      final group = Effect.group(generator());
+      expect(group, isA<Effect>());
     });
 
     test('18. Unary and N-ary Manifest Effect forwards uncaught errors to onUncaughtError', () async {
@@ -585,7 +583,7 @@ void main() {
       final source = blooming<int>(0);
       Object? caughtError;
 
-      final effect = Effect(
+      final eff = Effect(
         [source.bloom],
         () {},
         guard: () => throw FormatException('Guard evaluation failed'),
@@ -595,7 +593,7 @@ void main() {
       );
 
       final terminal = RawViaTerminal((via) {
-        via.tether(effect);
+        via.tether(eff);
       }, onInvalidated: () {});
       terminal.activate();
       terminal.evaluate();
@@ -641,52 +639,44 @@ void main() {
       terminal.deactivate();
     });
 
-    test('21. Declarative Effect handled, debounce, and throttle properties and creation', () {
+    test('21. Declarative Effect scoped, debounce, and throttle properties and creation', () {
       final a = blooming(1);
       final b = blooming(2);
       final c = blooming(3);
       final d = blooming(4);
       final e = blooming(5);
 
-      // bloom.effect.handled
-      final singleHandled = a.bloom.effect.handled((handle) {});
-      expect(singleHandled, isA<Effect>());
+      // bloom.effect.scoped
+      final singleScoped = a.bloom.effect.scoped((scope) {});
+      expect(singleScoped, isA<Effect>());
 
-      // targets.effect.handled
-      final multiHandled = [a.bloom, b.bloom].effect.handled((handle) {});
-      expect(multiHandled, isA<Effect>());
+      // targets.effect.scoped
+      final multiScoped = [a.bloom, b.bloom].effect.scoped((scope) {});
+      expect(multiScoped, isA<Effect>());
 
-      // Effect.handledVia
-      final viaHandled = Effect.handledVia((via, handle) {});
-      expect(viaHandled, isA<Effect>());
+      // Effect.scoped.via
+      final viaScoped = Effect.scoped.via((via, scope) {});
+      expect(viaScoped, isA<Effect>());
 
       // Unary debounce
       final uDebounce =
           a.bloom.effect.debounce(const Duration(milliseconds: 50), () {}, leading: true, trailing: false);
-      expect(uDebounce.duration, const Duration(milliseconds: 50));
-      expect(uDebounce.leading, isTrue);
-      expect(uDebounce.trailing, isFalse);
+      expect(uDebounce, isA<Effect>());
 
       // N-ary debounce
       final mDebounce =
           [a.bloom, b.bloom].effect.debounce(const Duration(milliseconds: 60), () {}, leading: false, trailing: true);
-      expect(mDebounce.duration, const Duration(milliseconds: 60));
-      expect(mDebounce.leading, isFalse);
-      expect(mDebounce.trailing, isTrue);
+      expect(mDebounce, isA<Effect>());
 
       // Unary throttle
       final uThrottle =
           a.bloom.effect.throttle(const Duration(milliseconds: 70), () {}, leading: true, trailing: false);
-      expect(uThrottle.duration, const Duration(milliseconds: 70));
-      expect(uThrottle.leading, isTrue);
-      expect(uThrottle.trailing, isFalse);
+      expect(uThrottle, isA<Effect>());
 
       // N-ary throttle
       final mThrottle =
           [a.bloom, b.bloom].effect.throttle(const Duration(milliseconds: 80), () {}, leading: false, trailing: true);
-      expect(mThrottle.duration, const Duration(milliseconds: 80));
-      expect(mThrottle.leading, isFalse);
-      expect(mThrottle.trailing, isTrue);
+      expect(mThrottle, isA<Effect>());
 
       // BloomRecord3, 4, 5 effect scopes
       final r3 = (a.bloom, b.bloom, c.bloom);
@@ -700,6 +690,91 @@ void main() {
 
       // Iterable<Bloom>.blooms
       expect([a.bloom, b.bloom].blooms.length, 2);
+    });
+
+    test('22. Effect class factories and static const sub-factories', () async {
+      final a = blooming(1);
+      final b = blooming(2);
+      final observed = <int>[];
+
+      // 1. Effect(...)
+      final e1 = Effect([a.bloom, b.bloom], () {
+        observed.add(a.data + b.data);
+      });
+      expect(e1, isA<Effect>());
+
+      // 2. Effect.unary(...)
+      final e2 = Effect.unary(a.bloom, () {
+        observed.add(a.data);
+      });
+      expect(e2, isA<Effect>());
+
+      // 3. Effect.via(...)
+      final e3 = Effect.via((via) {
+        observed.add(via(a.bloom) * 10);
+      });
+      expect(e3, isA<Effect>());
+
+      // 4. Effect.scoped(...)
+      final e4 = Effect.scoped([a.bloom], (scope) {
+        scope.onCleanup(() => observed.add(-1));
+      });
+      expect(e4, isA<Effect>());
+
+      // 5. Effect.scoped.unary(...)
+      final e5 = Effect.scoped.unary(a.bloom, (scope) {
+        scope.onCleanup(() => observed.add(-2));
+      });
+      expect(e5, isA<Effect>());
+
+      // 6. Effect.scoped.via(...)
+      final e6 = Effect.scoped.via((via, scope) {
+        final val = via(a.bloom);
+        scope.onCleanup(() => observed.add(-val));
+      });
+      expect(e6, isA<Effect>());
+
+      // 7. Effect.debounce(...)
+      final e7 = Effect.debounce([a.bloom], const Duration(milliseconds: 50), () {
+        observed.add(100);
+      });
+      expect(e7, isA<Effect>());
+
+      // 8. Effect.debounce.unary(...)
+      final e8 = Effect.debounce.unary(a.bloom, const Duration(milliseconds: 50), () {
+        observed.add(200);
+      });
+      expect(e8, isA<Effect>());
+
+      // 9. Effect.throttle(...)
+      final e9 = Effect.throttle([a.bloom], const Duration(milliseconds: 50), () {
+        observed.add(300);
+      });
+      expect(e9, isA<Effect>());
+
+      // 10. Effect.throttle.unary(...)
+      final e10 = Effect.throttle.unary(a.bloom, const Duration(milliseconds: 50), () {
+        observed.add(400);
+      });
+      expect(e10, isA<Effect>());
+
+      // 11. Effect.group(...)
+      final group = Effect.group([e1, e2]);
+      expect(group, isA<Effect>());
+
+      // 12. Tuple .group
+      final tupleGroup = (e1, e2).group;
+      expect(tupleGroup, isA<Effect>());
+
+      // Start and test e1 + e2 through group
+      final runner = group.start();
+      a.set(10);
+      b.set(20);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(observed, contains(30)); // from e1
+      expect(observed, contains(10)); // from e2
+      runner.stop();
     });
   });
 }

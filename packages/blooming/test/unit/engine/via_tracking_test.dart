@@ -453,13 +453,13 @@ void main() {
       }).distinct();
 
       var effectRuns = 0;
-      final effect = Effect.via((via) {
+      final eff1 = Effect.via((via) {
         effectRuns++;
         via(distinctName);
       });
 
       final host = RawViaTerminal(
-        (via) => via.tether(effect),
+        (via) => via.tether(eff1),
         onInvalidated: () {},
       )
         ..activate()
@@ -529,13 +529,13 @@ void main() {
       final distinctName = computed((via) => via(user.bloom).name).distinct();
 
       var effectRuns = 0;
-      final effect = Effect.handledVia((via, handle) {
+      final eff2 = Effect.scoped.via((via, scope) {
         effectRuns++;
         via(distinctName);
       });
 
       final host = RawViaTerminal(
-        (via) => via.tether(effect),
+        (via) => via.tether(eff2),
         onInvalidated: () {},
       )
         ..activate()

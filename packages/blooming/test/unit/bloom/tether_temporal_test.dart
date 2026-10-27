@@ -9,16 +9,16 @@ import 'package:test/test.dart';
 
 void main() {
   group('Tether Throttle, Debounce & Scope Effect Extensions Suite', () {
-    test('1. ThrottleEffect.unary throttles mutations within scope lifecycle', () async {
+    test('1. Effect.throttle.unary throttles mutations within scope lifecycle', () async {
       final clicks = blooming(0);
       int runs = 0;
 
-      final effect = ThrottleEffect.unary(
+      final eff = Effect.throttle.unary(
         clicks.bloom,
         const Duration(milliseconds: 50),
         () => runs++,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -34,16 +34,16 @@ void main() {
       terminal.deactivate();
     });
 
-    test('2. DebounceEffect.unary debounces mutations within scope lifecycle', () async {
+    test('2. Effect.debounce.unary debounces mutations within scope lifecycle', () async {
       final text = blooming('');
       final observed = <String>[];
 
-      final effect = DebounceEffect.unary(
+      final eff = Effect.debounce.unary(
         text.bloom,
         const Duration(milliseconds: 50),
         () => observed.add(text.data),
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -61,17 +61,17 @@ void main() {
       terminal.deactivate();
     });
 
-    test('3. Multi-target DebounceEffect([min, max])', () async {
+    test('3. Multi-target Effect.debounce([min, max])', () async {
       final min = blooming(10);
       final max = blooming(100);
       int runs = 0;
 
-      final effect = DebounceEffect(
+      final eff = Effect.debounce(
         [min.bloom, max.bloom],
         const Duration(milliseconds: 50),
         () => runs++,
       );
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 
@@ -87,10 +87,10 @@ void main() {
       final count = blooming(0);
       int runs = 0;
 
-      final effect = Effect.unary(count.bloom, () {
+      final eff = Effect.unary(count.bloom, () {
         runs++;
       }, take: 1);
-      final terminal = RawViaTerminal((via) => via.tether(effect), onInvalidated: () {})
+      final terminal = RawViaTerminal((via) => via.tether(eff), onInvalidated: () {})
         ..activate()
         ..evaluate();
 

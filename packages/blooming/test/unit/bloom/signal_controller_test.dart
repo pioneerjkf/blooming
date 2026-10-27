@@ -138,7 +138,7 @@ void main() {
 
       final runner = Effect.via((via) {
         receivedTicks.add(via(sig.bloom));
-      }).run();
+      }).start();
 
       await Future<void>.delayed(Duration.zero);
       expect(receivedTicks, [0]);
@@ -151,7 +151,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(receivedTicks, [0, 1, 2]);
 
-      runner.deactivate();
+      runner.stop();
     });
   });
 
