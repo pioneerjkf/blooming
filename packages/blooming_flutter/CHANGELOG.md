@@ -1,3 +1,9 @@
+## 0.2.2
+
+- **Documentation & Benchmarks**: Added empirical high-frequency NASDAQ 50-level order-book benchmark results, detailed methodology, and performance assessment references.
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.2.2`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.2.
+
 ## 0.2.1
 
 - **Durable Animation Status Observation**: Introduced `DurableAnimationController.observeStatus()` demand-driven reactive Bloom pipe to observe `AnimationStatus` without manual listener lifecycle management or leaks.

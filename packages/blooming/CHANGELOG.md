@@ -1,3 +1,7 @@
+## 0.2.2
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.2.
+
 ## 0.2.1
 
 - **Effect Architecture**: Promoted `sealed class Effect` to the canonical entrypoint with standardized sub-factories (`Effect(...)`, `Effect.scoped(...)`, `Effect.debounce(...)`, `Effect.throttle(...)`). Liquidated legacy top-level `effect` functor in favor of the unified `Effect` contract.

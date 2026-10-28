@@ -1,3 +1,7 @@
+## 0.2.2
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.2.
+
 ## 0.2.1
 
 - **Lint Rules**: Updated `deactivate_effect_runner` lint rule and AST type checker to recognize canonical `Effect.*` entrypoint and sub-factories.
