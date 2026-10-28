@@ -123,7 +123,6 @@ class BenchmarkRunResult {
     required this.memoryRssMb,
     this.uiBuildTimeMs,
     this.rasterTimeMs,
-    this.actualFps,
     this.jankRatePct,
     this.displayRefreshRate,
     this.frameBudgetMs,
@@ -156,7 +155,6 @@ class BenchmarkRunResult {
   final double memoryRssMb;
   final double? uiBuildTimeMs;
   final double? rasterTimeMs;
-  final double? actualFps;
   final double? jankRatePct;
   final double? displayRefreshRate;
   final double? frameBudgetMs;
@@ -187,7 +185,6 @@ class BenchmarkRunResult {
     double? memoryRssMb,
     double? uiBuildTimeMs,
     double? rasterTimeMs,
-    double? actualFps,
     double? jankRatePct,
     double? displayRefreshRate,
     double? frameBudgetMs,
@@ -219,7 +216,6 @@ class BenchmarkRunResult {
         memoryRssMb: memoryRssMb ?? this.memoryRssMb,
         uiBuildTimeMs: uiBuildTimeMs ?? this.uiBuildTimeMs,
         rasterTimeMs: rasterTimeMs ?? this.rasterTimeMs,
-        actualFps: actualFps ?? this.actualFps,
         jankRatePct: jankRatePct ?? this.jankRatePct,
         displayRefreshRate: displayRefreshRate ?? this.displayRefreshRate,
         frameBudgetMs: frameBudgetMs ?? this.frameBudgetMs,
@@ -282,9 +278,6 @@ class BenchmarkRunResult {
             : null,
         'raster_time_ms': rasterTimeMs != null
             ? double.parse(rasterTimeMs!.toStringAsFixed(2))
-            : null,
-        'actual_fps': actualFps != null
-            ? double.parse(actualFps!.toStringAsFixed(1))
             : null,
         'jank_rate_pct': jankRatePct != null
             ? double.parse(jankRatePct!.toStringAsFixed(2))
@@ -823,7 +816,6 @@ Future<BenchmarkRunResult> _runHeadlessSubprocessBenchmark({
     lagSampleCount: (data['lag_sample_count'] as num?)?.toInt(),
     uiBuildTimeMs: null,
     rasterTimeMs: null,
-    actualFps: null,
     jankRatePct: null,
     latencyMs: (data['latency_ms'] as num).toDouble(),
     memoryRssMb: (data['memory_rss_mb'] as num).toDouble(),
@@ -1031,7 +1023,6 @@ Future<BenchmarkRunResult> _runFlutterDriverBenchmarkAttempt({
     lagSampleCount: (data['lag_sample_count'] as num?)?.toInt(),
     uiBuildTimeMs: (data['ui_build_time_ms'] as num?)?.toDouble(),
     rasterTimeMs: (data['raster_time_ms'] as num?)?.toDouble(),
-    actualFps: (data['actual_fps'] as num?)?.toDouble(),
     jankRatePct: (data['jank_rate_pct'] as num?)?.toDouble(),
     displayRefreshRate: (data['display_refresh_rate'] as num?)?.toDouble(),
     frameBudgetMs: (data['frame_budget_ms'] as num?)?.toDouble(),
@@ -1310,7 +1301,7 @@ String _generateMediumMarkdownReport(
         '- **Rendering Metrics.** Measured in profile mode with Flutter Driver on a real desktop GPU window over the full test duration. UI Build Time and GPU Raster Time reflect actual widget rebuild tree overhead and compositing performance under concurrent background isolate load.');
   } else {
     buffer.writeln(
-        '- **Headless Execution Environment.** In headless mode, tests run within an isolated test VM process without desktop window rendering or GPU rasterization. Render metrics (UI Build, GPU Raster, FPS, Jank Rate) and Order Book Scroll Animation are omitted/disabled as not applicable to headless mode; evaluation focuses purely on background isolate ingestion throughput, event loop lag under reactive ticker and theme rotation stress, and memory RSS footprint.');
+        '- **Headless Execution Environment.** In headless mode, tests run within an isolated test VM process without desktop window rendering or GPU rasterization. Render metrics (UI Build, GPU Raster, Jank Rate) and Order Book Scroll Animation are omitted/disabled as not applicable to headless mode; evaluation focuses purely on background isolate ingestion throughput, event loop lag under reactive ticker and theme rotation stress, and memory RSS footprint.');
   }
   buffer.writeln(
       '- **Event loop lag is a main-isolate responsiveness metric**, not a throughput or correctness metric. Differences of a few hundredths of a millisecond are within run-to-run noise; compare Median and Max together with the raw per-set table.');
@@ -1382,7 +1373,7 @@ Map<String, dynamic> _generateJsonMatrix(
 String _generateCsv(List<BenchmarkRunResult> results) {
   final buffer = StringBuffer();
   buffer.writeln(
-      'Framework,Architecture,Set_Index,Retry_Count,Target_TPS,Generator_TPS,Framework_Update_Rate_Hz,Achievement_Rate_Pct,Total_Ticks,Total_Batches,Avg_Event_Loop_Lag_Ms,Median_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,Max_Lag_Ms,Lag_Sample_Count,UI_Build_Time_Ms,Raster_Time_Ms,Actual_FPS,Jank_Rate_Pct,Display_Refresh_Rate_Hz,Frame_Budget_Ms,Memory_RSS_MB,Latency_Ms,Scroll_Animation,Theme_Rotation,Theme_Interval_Ms,Ticker_Rotation,Ticker_Interval_Ms');
+      'Framework,Architecture,Set_Index,Retry_Count,Target_TPS,Generator_TPS,Framework_Update_Rate_Hz,Achievement_Rate_Pct,Total_Ticks,Total_Batches,Avg_Event_Loop_Lag_Ms,Median_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,Max_Lag_Ms,Lag_Sample_Count,UI_Build_Time_Ms,Raster_Time_Ms,Jank_Rate_Pct,Display_Refresh_Rate_Hz,Frame_Budget_Ms,Memory_RSS_MB,Latency_Ms,Scroll_Animation,Theme_Rotation,Theme_Interval_Ms,Ticker_Rotation,Ticker_Interval_Ms');
   for (final r in results) {
     final lagStr = r.avgEventLoopLagMs != null
         ? r.avgEventLoopLagMs!.toStringAsFixed(3)
@@ -1405,8 +1396,6 @@ String _generateCsv(List<BenchmarkRunResult> results) {
         r.uiBuildTimeMs != null ? r.uiBuildTimeMs!.toStringAsFixed(2) : 'N/A';
     final rasterStr =
         r.rasterTimeMs != null ? r.rasterTimeMs!.toStringAsFixed(2) : 'N/A';
-    final fpsStr =
-        r.actualFps != null ? r.actualFps!.toStringAsFixed(1) : 'N/A';
     final jankStr =
         r.jankRatePct != null ? r.jankRatePct!.toStringAsFixed(2) : 'N/A';
     final refreshStr = r.displayRefreshRate != null
@@ -1420,7 +1409,7 @@ String _generateCsv(List<BenchmarkRunResult> results) {
     final batchesStr = r.totalBatches != null ? '${r.totalBatches}' : 'N/A';
 
     buffer.writeln(
-        '"${r.target.name}","${r.target.architecture}",${r.setIndex},${r.retryCount},${r.targetTps},${r.sustainedTps},$batchRateStr,${r.achievementRate.toStringAsFixed(2)},${r.totalTicks},$batchesStr,$lagStr,$medianStr,$p95Str,$p99Str,$maxStr,${r.lagSampleCount ?? 'N/A'},$buildStr,$rasterStr,$fpsStr,$jankStr,$refreshStr,$budgetStr,${r.memoryRssMb.toStringAsFixed(1)},${r.latencyMs.toStringAsFixed(2)},${r.scrollAnimation},${r.themeRotation},$themeIntervalMs,${r.tickerRotation},$tickerIntervalMs');
+        '"${r.target.name}","${r.target.architecture}",${r.setIndex},${r.retryCount},${r.targetTps},${r.sustainedTps},$batchRateStr,${r.achievementRate.toStringAsFixed(2)},${r.totalTicks},$batchesStr,$lagStr,$medianStr,$p95Str,$p99Str,$maxStr,${r.lagSampleCount ?? 'N/A'},$buildStr,$rasterStr,$jankStr,$refreshStr,$budgetStr,${r.memoryRssMb.toStringAsFixed(1)},${r.latencyMs.toStringAsFixed(2)},${r.scrollAnimation},${r.themeRotation},$themeIntervalMs,${r.tickerRotation},$tickerIntervalMs');
   }
   return buffer.toString();
 }

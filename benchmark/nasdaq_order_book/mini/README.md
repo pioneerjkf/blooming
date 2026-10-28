@@ -2,11 +2,11 @@
 
 This benchmark compares five Flutter state-management implementations while they receive batched updates for a 50-level order book. It provides a **responsiveness study under heavy streaming workloads**, evaluating main event-loop lag and system resource utilization under load.
 
-## Why measure responsiveness as well as FPS?
+## Why measure responsiveness instead of raw FPS?
 
-I began this benchmark by focusing on throughput and FPS. Then, during an interactive test on a 120 Hz display under heavy data updates, I saw the frame rate stay close to 120 while mouse input became unresponsive. That experience changed the question I wanted the benchmark to answer: a high FPS can coexist with a system that no longer feels usable, so frame rate alone is not enough to judge the state pipeline under load.
+I began this benchmark by focusing on throughput and FPS. Then, during an interactive test on a 120 Hz display under heavy data updates, I saw the frame rate stay close to 120 while mouse input became unresponsive. That experience demonstrated that raw FPS is misleading: a high frame rate can coexist with a system that no longer feels usable, so frame rate alone cannot evaluate state pipeline responsiveness under load.
 
-In Flutter, **jank** means visible stutter when a frame misses its display deadline: about 16.7 ms at 60 Hz and 8.3 ms at 120 Hz. Jank describes rendering; delayed mouse or touch handling describes input responsiveness. I observed the latter even when FPS looked healthy, so I now track event-loop lag alongside FPS and configured throughput. See [Flutter performance profiling](https://docs.flutter.dev/perf/ui-performance).
+Furthermore, in Flutter's demand-driven rendering model and high-throughput background isolate streaming, raw frame counts are prone to buffer sampling artifacts and do not differentiate reactive state libraries. Consequently, raw FPS is deliberately omitted from ranking metrics, and the benchmark focuses on **Event-Loop Lag (responsiveness probe)** alongside frame deadline adherence (**Jank Rate**). See [Flutter performance profiling](https://docs.flutter.dev/perf/ui-performance).
 
 My initial explanation was that frame/render work might be getting scheduled ahead of input. I have not established that scheduling order as the cause. Event-loop lag is useful because it indicates how promptly the main execution path can run queued work under pipeline load, but it is not a direct measurement of click-to-handler latency, successful event delivery, or data correctness. I need direct input-to-handler measurements, together with frame-deadline and event-loop data, to test the cause and quantify the user-visible effect. Flutter's [scheduler phases](https://api.flutter.dev/flutter/scheduler/SchedulerPhase.html) and [UI/raster thread model](https://docs.flutter.dev/perf/ui-performance) provide relevant context.
 

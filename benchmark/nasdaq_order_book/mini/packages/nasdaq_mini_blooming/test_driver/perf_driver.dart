@@ -82,7 +82,6 @@ void main() async {
     double avgRasterMs = 0.0;
     double p99RasterMs = 0.0;
     double? jankRate;
-    final double? fps = frameCount > 0 ? frameCount / durationSec : null;
 
     if (frameCount > 0) {
       try {
@@ -196,7 +195,6 @@ void main() async {
       'p99_raster_time_ms': p99RasterMs > 0
           ? double.parse(p99RasterMs.toStringAsFixed(2))
           : null,
-      'actual_fps': fps != null ? double.parse(fps.toStringAsFixed(1)) : null,
       'jank_rate_pct': effectiveJankRate != null
           ? double.parse(effectiveJankRate.toStringAsFixed(2))
           : null,

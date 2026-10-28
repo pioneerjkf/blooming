@@ -1,0 +1,51 @@
+Framework,Architecture,Set_Index,Retry_Count,Target_TPS,Generator_TPS,Framework_Update_Rate_Hz,Achievement_Rate_Pct,Total_Ticks,Total_Batches,Avg_Event_Loop_Lag_Ms,Median_Lag_Ms,P95_Lag_Ms,P99_Lag_Ms,Max_Lag_Ms,Lag_Sample_Count,UI_Build_Time_Ms,Raster_Time_Ms,Jank_Rate_Pct,Display_Refresh_Rate_Hz,Frame_Budget_Ms,Memory_RSS_MB,Latency_Ms,Scroll_Animation,Theme_Rotation,Theme_Interval_Ms,Ticker_Rotation,Ticker_Interval_Ms
+"Riverpod","Flutter Riverpod State Management",1,0,10000000,9428193,943,94.28,284590000,28459,0.266,0.124,0.799,5.433,8.701,914,6.56,0.78,14.29,120.0,8.33,239.9,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",1,0,10000000,9781341,978,97.81,295240000,29524,0.137,0.044,0.220,5.228,5.942,914,5.91,0.89,0.00,120.0,8.33,217.5,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",1,0,10000000,9727312,973,97.27,293580000,29358,0.131,0.040,0.225,5.588,6.050,914,5.89,0.80,0.00,120.0,8.33,226.5,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",1,0,10000000,9809827,981,98.10,296090000,29609,0.153,0.037,0.198,5.895,6.502,914,6.11,0.66,0.00,120.0,8.33,227.6,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",1,0,10000000,9766047,977,97.66,294710000,29471,0.120,0.034,0.189,0.849,7.976,914,5.83,0.63,0.00,120.0,8.33,217.7,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",2,0,10000000,9783977,978,97.84,295300000,29530,0.133,0.043,0.203,4.836,7.716,914,5.68,0.65,0.00,120.0,8.33,228.2,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",2,0,10000000,9786917,979,97.87,295330000,29533,0.239,0.036,0.216,5.737,7.705,914,6.19,0.68,0.00,120.0,8.33,220.7,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",2,0,10000000,9737269,974,97.37,293900000,29390,0.193,0.044,0.234,5.928,6.346,914,6.21,0.77,0.00,120.0,8.33,236.3,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",2,0,10000000,9452377,945,94.52,285320000,28532,0.283,0.126,0.916,5.192,8.252,914,5.83,0.78,0.00,120.0,8.33,236.5,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",2,0,10000000,9775039,978,97.75,295040000,29504,0.185,0.034,0.241,5.797,7.449,914,6.14,0.65,0.00,120.0,8.33,219.0,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",3,0,10000000,9809833,981,98.10,296100000,29610,0.194,0.036,0.204,6.021,6.900,914,6.07,0.64,0.00,120.0,8.33,234.5,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",3,0,10000000,9818778,982,98.19,296370000,29637,0.279,0.036,0.254,6.080,7.710,914,6.12,0.68,0.00,120.0,8.33,227.3,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",3,0,10000000,9790245,979,97.90,295450000,29545,0.238,0.044,0.243,5.838,6.271,914,6.08,0.66,0.00,120.0,8.33,234.0,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",3,0,10000000,9496737,950,94.97,286640000,28664,0.255,0.125,0.806,4.418,6.121,914,6.29,0.79,14.29,120.0,8.33,240.8,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",3,0,10000000,9725673,973,97.26,293550000,29355,0.265,0.042,0.271,5.890,6.653,914,5.88,0.78,0.00,120.0,8.33,230.2,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",4,0,10000000,9737609,974,97.38,293920000,29392,0.197,0.043,0.242,5.939,6.494,914,6.33,0.77,12.50,120.0,8.33,230.1,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",4,0,10000000,9494816,949,94.95,286620000,28662,0.206,0.127,0.399,2.036,6.075,914,5.88,0.79,0.00,120.0,8.33,237.4,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",4,0,10000000,9820103,982,98.20,296410000,29641,0.181,0.035,0.224,5.938,7.509,914,6.17,0.65,0.00,120.0,8.33,225.5,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",4,0,10000000,9809827,981,98.10,296090000,29609,0.240,0.036,0.237,6.059,6.412,914,5.90,0.64,0.00,120.0,8.33,228.3,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",4,0,10000000,9796567,980,97.97,295680000,29568,0.306,0.044,0.293,5.904,7.119,914,5.84,0.67,0.00,120.0,8.33,220.6,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",5,0,10000000,9812140,981,98.12,296150000,29615,0.200,0.037,0.193,6.143,8.561,914,6.33,0.69,0.00,120.0,8.33,227.9,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",5,0,10000000,9816459,982,98.16,296300000,29630,0.212,0.037,0.202,5.940,7.909,914,6.41,0.66,0.00,120.0,8.33,220.2,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",5,0,10000000,9687935,969,96.88,292440000,29244,0.183,0.043,0.219,5.845,8.057,914,6.08,0.79,0.00,120.0,8.33,237.4,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",5,0,10000000,9463363,946,94.63,285680000,28568,0.251,0.128,0.692,5.255,6.436,914,6.39,0.81,0.00,120.0,8.33,241.1,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",5,0,10000000,9808177,981,98.08,296050000,29605,0.268,0.057,0.256,6.062,8.438,914,6.07,0.67,0.00,120.0,8.33,221.3,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",6,0,10000000,9727661,973,97.28,293610000,29361,0.169,0.043,0.236,5.885,6.666,914,5.94,0.76,0.00,120.0,8.33,231.4,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",6,0,10000000,9802538,980,98.03,295870000,29587,0.205,0.036,0.195,5.984,6.961,914,6.28,0.68,16.67,120.0,8.33,222.5,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",6,0,10000000,9827055,983,98.27,296610000,29661,0.199,0.038,0.187,6.004,6.966,914,6.05,0.63,0.00,120.0,8.33,229.5,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",6,0,10000000,9501408,950,95.01,286800000,28680,0.253,0.122,0.796,4.673,7.952,914,5.97,0.74,0.00,120.0,8.33,225.4,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",6,0,10000000,9789672,979,97.90,295560000,29556,0.216,0.060,0.204,6.085,8.129,914,6.07,0.68,14.29,120.0,8.33,232.8,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",7,0,10000000,9486186,949,94.86,286350000,28635,0.242,0.119,0.757,4.993,8.617,914,6.29,0.79,0.00,120.0,8.33,241.9,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",7,0,10000000,9781658,978,97.82,295230000,29523,0.186,0.033,0.199,5.809,6.155,914,5.64,0.63,0.00,120.0,8.33,222.0,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",7,0,10000000,9776372,978,97.76,295090000,29509,0.203,0.033,0.233,5.785,6.464,914,5.75,0.64,0.00,120.0,8.33,216.6,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",7,0,10000000,9726658,973,97.27,293570000,29357,0.242,0.041,0.261,5.937,8.229,914,5.77,0.77,0.00,120.0,8.33,226.7,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",7,0,10000000,9797899,980,97.98,295730000,29573,0.216,0.041,0.239,5.721,8.122,914,5.87,0.70,0.00,120.0,8.33,218.3,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",8,0,10000000,9435131,944,94.35,284790000,28479,0.273,0.125,0.837,5.418,9.241,914,6.21,0.80,0.00,120.0,8.33,238.1,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",8,0,10000000,9809502,981,98.10,296090000,29609,0.232,0.059,0.232,6.108,9.646,914,5.84,0.65,16.67,120.0,8.33,228.8,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",8,0,10000000,9807183,981,98.07,296020000,29602,0.241,0.036,0.223,6.043,7.301,914,5.91,0.66,0.00,120.0,8.33,228.5,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",8,0,10000000,9721044,972,97.21,293420000,29342,0.288,0.048,0.292,6.152,8.823,914,5.90,0.73,0.00,120.0,8.33,234.0,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",8,0,10000000,9773661,977,97.74,294930000,29493,0.210,0.033,0.226,5.956,7.553,914,5.87,0.66,0.00,120.0,8.33,216.3,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",9,0,10000000,9812809,981,98.13,296180000,29618,0.218,0.036,0.207,6.052,6.286,914,5.87,0.67,0.00,120.0,8.33,226.4,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",9,0,10000000,9721026,972,97.21,293400000,29340,0.284,0.041,0.255,5.994,8.683,914,5.95,0.79,0.00,120.0,8.33,226.7,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",9,0,10000000,9776695,978,97.77,295090000,29509,0.193,0.033,0.227,5.854,9.103,914,5.89,0.63,0.00,120.0,8.33,215.5,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",9,0,10000000,9803863,980,98.04,295910000,29591,0.254,0.050,0.256,5.935,8.365,914,5.82,0.66,0.00,120.0,8.33,229.8,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",9,0,10000000,9427180,943,94.27,284550000,28455,0.289,0.123,0.859,6.009,8.077,914,6.40,0.92,14.29,120.0,8.33,230.1,0.00,true,true,8.33,true,8.33
+"Signals","Signals Reactive Fine-Grained Architecture",10,0,10000000,9802220,980,98.02,295880000,29588,0.221,0.058,0.232,6.168,8.225,914,6.04,0.68,0.00,120.0,8.33,232.7,0.00,true,true,8.33,true,8.33
+"Blooming","Blooming 2-Phase LPDAG Reactive Graph",10,0,10000000,9771402,977,97.71,294940000,29494,0.206,0.035,0.220,5.887,7.517,914,5.94,0.67,0.00,120.0,8.33,216.9,0.00,true,true,8.33,true,8.33
+"Coralline","Coralline High-Performance Reactive Graph",10,0,10000000,9719719,972,97.20,293380000,29338,0.201,0.050,0.192,6.171,9.289,914,6.31,0.80,0.00,120.0,8.33,237.8,0.00,true,true,8.33,true,8.33
+"Flutter","Pure Flutter (ValueNotifier & ListenableBuilder)",10,0,10000000,9814790,981,98.15,296230000,29623,0.244,0.036,0.221,5.973,8.245,914,5.91,0.67,0.00,120.0,8.33,229.3,0.00,true,true,8.33,true,8.33
+"Riverpod","Flutter Riverpod State Management",10,0,10000000,9504554,950,95.05,286990000,28699,0.239,0.126,0.627,2.217,8.690,915,6.67,0.83,14.29,120.0,8.33,242.2,0.00,true,true,8.33,true,8.33
