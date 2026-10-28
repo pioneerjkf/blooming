@@ -244,10 +244,16 @@ so confirm against each project's documentation.
 
 ## Benchmarks
 
-A comparative NASDAQ order-book benchmark run and its limitations are documented in
-[`benchmark/nasdaq_order_book/ASSESSMENT.md`](benchmark/nasdaq_order_book/ASSESSMENT.md). The current
-run measures event-loop responsiveness under a capped batched workload; it does not establish
-actual billion-TPS throughput or prove data correctness. A micro-benchmark also lives in
+The [NASDAQ 50-level order-book benchmark](benchmark/nasdaq_order_book/mini/README.md) compares five
+Flutter state-management implementations under batched streaming updates. In the October 2026
+profile runs, Blooming recorded event-loop-lag medians of **0.038 ms at 100K target TPS** and
+**0.035 ms at 10M target TPS**; the Flutter baseline recorded 0.041 ms and 0.036 ms respectively.
+These are measurements from one macOS machine across 10 randomized sets per scenario, not a general
+performance ranking. At the 1B target, the generator saturated around 15.8–16.5M TPS and framework
+updates fell to about 16 Hz; that run did not achieve 1B TPS. Event-loop lag is a responsiveness
+probe, not direct input latency, frame-jank, or correctness measurement.
+
+See the [overall assessment](benchmark/nasdaq_order_book/ASSESSMENT.md), the [five run assessments](benchmark/nasdaq_order_book/mini/results/), and the [measurement methodology](benchmark/nasdaq_order_book/mini/BENCHMARK_METHODOLOGY.md). A separate micro-benchmark lives in
 [`packages/blooming/benchmark/million_ticks_benchmark.dart`](packages/blooming/benchmark/million_ticks_benchmark.dart).
 
 ---

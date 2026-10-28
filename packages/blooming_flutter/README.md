@@ -918,14 +918,13 @@ For deep-dive architectural specifications, mathematical invariants, and interna
 
 ## High-Frequency Stream Benchmark (NASDAQ 50-Level Order Book)
 
-Blooming includes an extensive high-frequency benchmark suite comparing 5 Flutter state-management architectures under heavy batched order-book stream updates. It focuses on state pipeline responsiveness and main event-loop latency under sustained loads.
+Blooming includes a high-frequency benchmark comparing five Flutter state-management implementations under batched updates to a 50-level order book. In the October 2026 profile runs, Blooming recorded event-loop-lag medians of **0.038 ms at 100K target TPS** and **0.035 ms at 10M target TPS**; the Flutter `ValueNotifier` baseline recorded 0.041 ms and 0.036 ms respectively. Riverpod's medians in those scenarios were 0.129 ms and 0.125 ms. These are observations from one macOS machine across 10 randomized sets per scenario, not a general ranking.
 
-For architecture details, measurement methodology, and execution instructions:
-- [NASDAQ Order Book Mini Suite](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/mini/README.md)
-- [Methodology & Statistical Rigor](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/mini/BENCHMARK_METHODOLOGY.md)
-- [Benchmark Assessments & Runs Index](https://github.com/pioneerjkf/blooming/blob/main/benchmark/nasdaq_order_book/ASSESSMENT.md)
+The 1B TPS target run saturated at approximately 15.8–16.5M generated ticks per second, while framework updates fell to about 16 Hz; it did not achieve 1B TPS. Event-loop lag is a responsiveness probe, not direct input-to-handler latency, frame-jank, throughput of UI updates, or a correctness check. See the limitations before drawing conclusions.
 
-Historical benchmark results have been cleared. Fresh benchmark runs and statistical artifacts will be generated upon executing the driver suite.
+- [NASDAQ Order Book Mini Suite](../../benchmark/nasdaq_order_book/mini/README.md)
+- [Methodology & Statistical Rigor](../../benchmark/nasdaq_order_book/mini/BENCHMARK_METHODOLOGY.md)
+- [Overall assessment and five run assessments](../../benchmark/nasdaq_order_book/ASSESSMENT.md)
 
 ---
 
