@@ -29,8 +29,9 @@ void main() {
 
         final rssMb = ProcessInfo.currentRss / (1024 * 1024);
         final nowMs = DateTime.now().millisecondsSinceEpoch;
-        final elapsedSec =
-            measurementStartMs > 0 ? (nowMs - measurementStartMs) / 1000.0 : 0.0;
+        final elapsedSec = measurementStartMs > 0
+            ? (nowMs - measurementStartMs) / 1000.0
+            : 0.0;
         final currentTicks = pipeline.totalTicksProcessed;
         final currentBatches = pipeline.totalBatchesProcessed;
         final windowTicks = measurementStartMs > 0

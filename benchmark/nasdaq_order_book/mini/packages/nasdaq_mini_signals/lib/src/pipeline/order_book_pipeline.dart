@@ -368,7 +368,8 @@ class OrderBookPipeline {
     final cachedSnap = _stockSnapshots[stock.symbol];
     final OrderBookSnapshot newSnapshot;
     if (cachedSnap != null) {
-      newSnapshot = cachedSnap.copyWith(totalTicksProcessed: _totalTicksProcessed);
+      newSnapshot =
+          cachedSnap.copyWith(totalTicksProcessed: _totalTicksProcessed);
     } else {
       newSnapshot = OrderBookSnapshot.initial(
         ticker: stock.symbol,

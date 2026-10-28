@@ -138,8 +138,7 @@ void main() async {
     // [Data Source B] External Flutter Driver VM Timeline Trace Analysis (Full Duration Primary)
     // Source: driver.traceAction() -> TimelineSummary
     // -------------------------------------------------------------------------
-    final effectiveBuildMs =
-        avgBuildMs > 0 ? avgBuildMs : appInternalBuildMs;
+    final effectiveBuildMs = avgBuildMs > 0 ? avgBuildMs : appInternalBuildMs;
     final effectiveRasterMs =
         avgRasterMs > 0 ? avgRasterMs : appInternalRasterMs;
     final effectiveJankRate = frameCount > 0
@@ -162,8 +161,7 @@ void main() async {
       'framework_update_rate_hz':
           (pipelineMetrics['framework_update_rate_hz'] as num?)?.toInt() ?? 0,
       'total_ticks': (pipelineMetrics['total_ticks'] as num).toInt(),
-      'total_batches':
-          (pipelineMetrics['total_batches'] as num?)?.toInt() ?? 0,
+      'total_batches': (pipelineMetrics['total_batches'] as num?)?.toInt() ?? 0,
       'avg_event_loop_lag_ms': lagStat('mean') == null
           ? null
           : double.parse(lagStat('mean')!.toStringAsFixed(3)),
@@ -183,18 +181,15 @@ void main() async {
       'ui_build_time_ms': effectiveBuildMs > 0
           ? double.parse(effectiveBuildMs.toStringAsFixed(2))
           : null,
-      'p90_ui_build_time_ms': p90BuildMs > 0
-          ? double.parse(p90BuildMs.toStringAsFixed(2))
-          : null,
-      'p99_ui_build_time_ms': p99BuildMs > 0
-          ? double.parse(p99BuildMs.toStringAsFixed(2))
-          : null,
+      'p90_ui_build_time_ms':
+          p90BuildMs > 0 ? double.parse(p90BuildMs.toStringAsFixed(2)) : null,
+      'p99_ui_build_time_ms':
+          p99BuildMs > 0 ? double.parse(p99BuildMs.toStringAsFixed(2)) : null,
       'raster_time_ms': effectiveRasterMs > 0
           ? double.parse(effectiveRasterMs.toStringAsFixed(2))
           : null,
-      'p99_raster_time_ms': p99RasterMs > 0
-          ? double.parse(p99RasterMs.toStringAsFixed(2))
-          : null,
+      'p99_raster_time_ms':
+          p99RasterMs > 0 ? double.parse(p99RasterMs.toStringAsFixed(2)) : null,
       'jank_rate_pct': effectiveJankRate != null
           ? double.parse(effectiveJankRate.toStringAsFixed(2))
           : null,

@@ -3211,8 +3211,7 @@ class OrderBookSnapshot {
     // Lower-priced stocks (e.g. INTC $30, NVDA $135) trade in massive share volumes.
     final nominalWallShares =
         (250000000.0 / basePrice).clamp(2500.0, 5000000.0);
-    final nominalNormalShares =
-        (15000000.0 / basePrice).clamp(250.0, 300000.0);
+    final nominalNormalShares = (15000000.0 / basePrice).clamp(250.0, 300000.0);
     final nominalThinShares = (1000000.0 / basePrice).clamp(25.0, 25000.0);
 
     // Dynamic wall & thin level modulos unique to each ticker
@@ -3258,8 +3257,8 @@ class OrderBookSnapshot {
     final bids = List<OrderBookRowData>.generate(25, (i) {
       final level = i + 1;
       final price = basePrice - (level * 0.05);
-      final isWall = (i % wallModBid == wallOffsetBid) ||
-          (i == (8 + ((seed >> 3) % 7)));
+      final isWall =
+          (i % wallModBid == wallOffsetBid) || (i == (8 + ((seed >> 3) % 7)));
       final isThin = !isWall && (i % thinModBid == 0);
 
       final rowSeed = (seed + (i + 25) * 17) % 100;

@@ -1156,36 +1156,28 @@ String _generateMediumMarkdownReport(
     final aggregatedList = <Map<String, dynamic>>[];
     targetMap.forEach((targetId, runList) {
       final setSustainedTps = runList.map((r) => r.sustainedTps).toList();
-      final setBatchRates = runList
-          .map((r) => r.frameworkUpdateRateHz)
-          .whereType<int>()
-          .toList();
+      final setBatchRates =
+          runList.map((r) => r.frameworkUpdateRateHz).whereType<int>().toList();
       final setMeans =
           runList.map((r) => r.avgEventLoopLagMs).whereType<double>().toList();
       final setP99s =
           runList.map((r) => r.p99EventLoopLagMs).whereType<double>().toList();
-      final setMaxes = runList
-          .map((r) => r.maxEventLoopLagMs)
-          .whereType<double>()
-          .toList();
+      final setMaxes =
+          runList.map((r) => r.maxEventLoopLagMs).whereType<double>().toList();
       final setMedians = runList
           .map((r) => r.medianEventLoopLagMs)
           .whereType<double>()
           .toList();
-      final setBuilds = runList
-          .map((r) => r.uiBuildTimeMs)
-          .whereType<double>()
-          .toList();
-      final setRasters = runList
-          .map((r) => r.rasterTimeMs)
-          .whereType<double>()
-          .toList();
+      final setBuilds =
+          runList.map((r) => r.uiBuildTimeMs).whereType<double>().toList();
+      final setRasters =
+          runList.map((r) => r.rasterTimeMs).whereType<double>().toList();
 
       aggregatedList.add({
         'target': runList.first.target,
-        'generator_tps': (setSustainedTps.reduce((a, b) => a + b) /
-                setSustainedTps.length)
-            .round(),
+        'generator_tps':
+            (setSustainedTps.reduce((a, b) => a + b) / setSustainedTps.length)
+                .round(),
         'framework_update_hz': setBatchRates.isEmpty
             ? null
             : (setBatchRates.reduce((a, b) => a + b) / setBatchRates.length)
@@ -1267,7 +1259,8 @@ String _generateMediumMarkdownReport(
       }
       buffer.writeln();
 
-      final retried = results.where((r) => r.targetTps == tps && r.retryCount > 0).toList();
+      final retried =
+          results.where((r) => r.targetTps == tps && r.retryCount > 0).toList();
       if (retried.isNotEmpty) {
         buffer.writeln('> ⚠️ **Retried Runs Notice**:');
         for (final r in retried) {
@@ -1401,9 +1394,8 @@ String _generateCsv(List<BenchmarkRunResult> results) {
     final refreshStr = r.displayRefreshRate != null
         ? r.displayRefreshRate!.toStringAsFixed(1)
         : 'N/A';
-    final budgetStr = r.frameBudgetMs != null
-        ? r.frameBudgetMs!.toStringAsFixed(2)
-        : 'N/A';
+    final budgetStr =
+        r.frameBudgetMs != null ? r.frameBudgetMs!.toStringAsFixed(2) : 'N/A';
     final batchRateStr =
         r.frameworkUpdateRateHz != null ? '${r.frameworkUpdateRateHz}' : 'N/A';
     final batchesStr = r.totalBatches != null ? '${r.totalBatches}' : 'N/A';

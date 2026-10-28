@@ -289,7 +289,6 @@ class TickIsolateEngine {
         );
       }
 
-
       double maxAskVol = 1.0;
       double maxBidVol = 1.0;
 
@@ -399,8 +398,7 @@ void _isolateEntryPoint(SendPort mainSendPort) {
   final random = Random();
 
   final Map<String, _IsolateStockBook> stockBooks = {};
-  _IsolateStockBook activeBook =
-      _IsolateStockBook.create('NVDA', 135.50);
+  _IsolateStockBook activeBook = _IsolateStockBook.create('NVDA', 135.50);
   stockBooks['NVDA'] = activeBook;
 
   int totalTicksProcessed = 0;
@@ -555,9 +553,8 @@ void _isolateEntryPoint(SendPort mainSendPort) {
   commandReceivePort.listen((message) {
     if (message is TickIsolateCommand) {
       if (message.stockPrice > 0.0) {
-        final symbol = message.symbol.isNotEmpty
-            ? message.symbol
-            : activeBook.ticker;
+        final symbol =
+            message.symbol.isNotEmpty ? message.symbol : activeBook.ticker;
         if (stockBooks.containsKey(symbol)) {
           activeBook = stockBooks[symbol]!;
           activeBook.currentPrice = message.stockPrice;
