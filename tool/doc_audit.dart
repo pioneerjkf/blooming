@@ -500,9 +500,10 @@ class DocAuditor {
         // Synthesize test file for runnable public snippets
         // Pure Dart packages (`packages/blooming/`, `packages/blooming_extensions/`, `packages/blooming_test/`)
         // are strictly verified in a 100% pure-Dart harness without Flutter imports.
-        final isPureDartPackage = relFilePath.startsWith('packages/blooming/') ||
-            relFilePath.startsWith('packages/blooming_extensions/') ||
-            relFilePath.startsWith('packages/blooming_test/');
+        final isPureDartPackage =
+            relFilePath.startsWith('packages/blooming/') ||
+                relFilePath.startsWith('packages/blooming_extensions/') ||
+                relFilePath.startsWith('packages/blooming_test/');
         final isFlutter = !isPureDartPackage &&
             (relFilePath.contains('blooming_flutter') ||
                 code.contains('BloomWidget') ||

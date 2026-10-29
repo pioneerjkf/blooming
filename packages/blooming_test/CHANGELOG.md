@@ -1,3 +1,9 @@
+## 0.2.3
+
+- **Documentation**: Audited and aligned README and testing harness API doc comments with the Truth Verification Protocol (TVP).
+- **Dependencies**: Bumped `blooming` dependency constraint to `^0.2.3`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.3.
+
 ## 0.2.2
 
 - **Dependencies**: Bumped `blooming` dependency constraint to `^0.2.2`.

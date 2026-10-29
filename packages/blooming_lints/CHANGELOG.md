@@ -1,3 +1,8 @@
+## 0.2.3
+
+- **Documentation**: Audited and aligned lint rule documentation, quick-fix descriptions, and API doc comments with the Truth Verification Protocol (TVP).
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.3.
+
 ## 0.2.2
 
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.2.

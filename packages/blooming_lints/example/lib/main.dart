@@ -17,7 +17,7 @@
 // # pubspec.yaml
 // dev_dependencies:
 //   custom_lint: ^0.8.1
-//   blooming_lints: ^0.2.0
+//   blooming_lints: ^0.2.3
 //
 // # analysis_options.yaml
 // analyzer:

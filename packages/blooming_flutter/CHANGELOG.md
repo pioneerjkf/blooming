@@ -1,3 +1,9 @@
+## 0.2.3
+
+- **Documentation**: Audited and aligned architectural foundations, README, and widget/animation API doc comments with the Truth Verification Protocol (TVP).
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.2.3`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.3.
+
 ## 0.2.2
 
 - **Documentation & Benchmarks**: Added empirical high-frequency NASDAQ 50-level order-book benchmark results, detailed methodology, and performance assessment references.

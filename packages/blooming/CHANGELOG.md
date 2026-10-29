@@ -1,3 +1,8 @@
+## 0.2.3
+
+- **Documentation & Examples**: Audited and aligned all architectural foundation documents, README, and API doc comments with the Truth Verification Protocol (TVP), converting all inline code snippets to 100% pure Dart.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.3.
+
 ## 0.2.2
 
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.2.
