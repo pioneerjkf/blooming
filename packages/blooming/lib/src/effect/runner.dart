@@ -44,21 +44,21 @@ part of '../framework.dart';
 ///    exhausting its `take` ticket quota (Early Teardown), [isActive] transitions to `false` automatically.
 ///
 /// **Warning (Anti-Pattern Prevention):**
-/// - Do NOT call `.start()` repeatedly inside Flutter build methods or reactive derivations without
+/// - Do NOT call `.start()` repeatedly inside reactive derivations or request handlers without
 ///   stopping; unmanaged runners stay attached to upstream effects and cause memory leaks.
 ///
 /// **BAD:**
 /// ```dart
-/// // [Anti-Pattern] Spawning effect runners inside build method causes memory leaks
-/// Widget build(BuildContext context) {
-///   searchEffect.start(); // New runner created on every render frame!
-///   return Text('Searching...');
-/// }
+/// // [Anti-Pattern] Spawning unmanaged effect runners inside a computed derivation
+/// final activeQuery = computed((via) {
+///   searchEffect.start(); // Leaks a new runner on every evaluation!
+///   return via(query.bloom);
+/// });
 /// ```
 ///
 /// **GOOD:**
 /// ```dart
-/// // [Recommended] Manage runner in long-lived lifecycle scope or State class
+/// // [Recommended] Manage runner in a long-lived service lifecycle or tether via via.tether()
 /// class SearchService {
 ///   late final EffectRunner _runner;
 ///
@@ -100,11 +100,11 @@ abstract interface class EffectRunner implements LpdagStatus {
   /// ## Examples
   /// ```dart
   /// final runner = EffectRunner(myEffect);
-  /// expect(runner.isActive, isFalse);
+  /// print(runner.isActive); // false
   ///
   /// // Start execution:
   /// runner.start();
-  /// expect(runner.isActive, isTrue);
+  /// print(runner.isActive); // true
   /// ```
   factory EffectRunner(Effect effect) = _EffectRunnerImpl;
 
@@ -138,15 +138,15 @@ extension EffectStartExtension on Effect {
   /// * Returns an active [EffectRunner] (`isActive == true`).
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT invoke `.start()` inside Flutter build methods or reactive derivations without stopping.
+  /// - Do NOT invoke `.start()` inside reactive derivations or repeated callbacks without stopping.
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Calling .start() on every frame rebuild
-  /// Widget build(BuildContext context) {
+  /// // [Anti-Pattern] Calling .start() on every derivation pass
+  /// final currentCount = computed((via) {
   ///   loggingEffect.start(); // Re-creates and leaks runner
-  ///   return Container();
-  /// }
+  ///   return via(counter.bloom);
+  /// });
   /// ```
   ///
   /// **GOOD:**

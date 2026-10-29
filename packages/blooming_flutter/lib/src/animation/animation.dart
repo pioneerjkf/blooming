@@ -10,10 +10,25 @@ part of '../../framework.dart';
 
 /// A convenience extension bridging Flutter's [Animation] status updates with the Bloom reactive pipeline.
 extension AnimationStatusBloomExtension on Animation<dynamic> {
-  /// Converts this [Animation]'s status updates into a demand-driven reactive [Bloom<AnimationStatus>].
+  /// Converts this [Animation]'s status updates into a demand-driven reactive [Bloom] of [AnimationStatus].
   ///
   /// Subscribes to status updates only while active, and automatically unsubscribes on deactivation
   /// to prevent listener memory leaks.
+  ///
+  /// * [distinct]: When `true` (default), suppresses consecutive duplicate [AnimationStatus] pulses.
+  /// * [graceful]: Optional [Graceful] teardown deferral policy when all downstream subscribers detach.
+  ///
+  /// **Ensures:**
+  /// * Returns a demand-driven [Bloom] seeded with the current [status].
+  ///
+  /// **Warning (Anti-Pattern Prevention):**
+  /// - Do NOT invoke [toStatusBloom] directly inside a widget `build()` method; cache the bridged node in state or a controller field.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final statusBloom = animation.toStatusBloom();
+  /// final badge = statusBloom.build((context, status) => Text('Status: ${status.name}'));
+  /// ```
   Bloom<AnimationStatus> toStatusBloom({
     bool distinct = true,
     Graceful? graceful,

@@ -182,14 +182,19 @@ extension BloomBuildContextProviderExtension on BuildContext {
   /// To query by a base class or interface, explicitly provision as `BloomProvider<Animal>`.
   ///
   /// **Requires:**
-  /// * An ancestor [BloomProvider<T>] must exist in the widget tree when evaluated.
+  /// * An ancestor [BloomProvider] of type [T] must exist in the widget tree when evaluated.
   ///
   /// **Ensures:**
-  /// * Registers this [BuildContext] as a dependent on the ancestor [BloomProvider<T>]
-  ///   and returns its inner [Bloom<T>] reactive node.
+  /// * Registers this [BuildContext] as a dependent on the ancestor [BloomProvider]
+  ///   and returns its inner [Bloom] reactive node.
   ///
   /// **Throws:**
-  /// * Throws [FlutterError] in all build modes if no matching [BloomProvider<T>] is found in the current hierarchy.
+  /// * Throws [FlutterError] in all build modes if no matching [BloomProvider] is found in the current hierarchy.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final counterBloom = context.bloomOf<int>();
+  /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> bloomOf<T>() {
     final provider = dependOnInheritedWidgetOfExactType<BloomProvider<T>>();
@@ -215,13 +220,18 @@ extension BloomBuildContextProviderExtension on BuildContext {
     return provider.bloom;
   }
 
-  /// Reactively subscribes to an optional ancestor [BloomProvider] and returns its inner [Bloom<T?>] state.
+  /// Reactively subscribes to an optional ancestor [BloomProvider] and returns its inner [Bloom] state.
   ///
   /// **Exact Type Resolution:**
   /// Lookup matches the exact reified type [T]. Subtypes or base classes do not match.
   ///
   /// **Ensures:**
-  /// * Returns the ancestor provider's [Bloom<T>], or [Bloom.constantNull] if no matching ancestor provider exists.
+  /// * Returns the ancestor provider's [Bloom], or [Bloom.constantNull] if no matching ancestor provider exists.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final optionalTheme = context.maybeBloomOf<AppTheme>();
+  /// ```
   @pragma('vm:prefer-inline')
   Bloom<T?> maybeBloomOf<T>() {
     final provider = dependOnInheritedWidgetOfExactType<BloomProvider<T>>();

@@ -203,8 +203,11 @@ _BloomState<T> _pull() {
     } else {
       state = _ValidBloomState<T>(result);
     }
+  } on _ViaShortCircuit catch (e) {
+    succeeded = true;
+    state = e.state._retype<T>();
   } catch (error, stackTrace) {
-    succeeded = error is _ViaShortCircuit;
+    succeeded = false;
     state = _BloomState.fromCaught(error, stackTrace);
   } finally {
     _endEpoch(currentEpoch, succeeded: succeeded, commitVersions: false);
@@ -214,13 +217,13 @@ _BloomState<T> _pull() {
 ```
 
 #### Short-Circuit vs. Failure Demarcation:
-1. **Short-Circuit Signal (`error is _ViaShortCircuit`)**:  
+1. **Short-Circuit Signal (`on _ViaShortCircuit catch (e)`)**:  
    Thrown when an upstream dependency accessed via `via(node)` is in an `Empty` or `Error` state.
-   - `_BloomState.fromCaught` unpacks the upstream state directly via `error.state._retype<T>()`, forwarding the reason or error without reallocating objects.
+   - Unpacks the upstream state directly via `e.state._retype<T>()` without synthesizing a `StackTrace` or reallocating state objects.
    - `succeeded = true`: The derivation completed its evaluation sequence as intended, safely unlinking stale branches in `_endEpoch`.
-2. **User Exception (`error is! _ViaShortCircuit`)**:  
+2. **User Exception (`catch (error, stackTrace)`)**:  
    Thrown when user business logic encounters a bug or parse error.
-   - Encapsulated cleanly into an [`_ErrorBloomState<T>(error, stackTrace)`](../../lib/src/bloom/_internal/_state.dart).
+   - Encapsulated cleanly via [`_BloomState.fromCaught(error, stackTrace)`](../../lib/src/bloom/_internal/_state.dart#L107) into an `_ErrorBloomState<T>(error, stackTrace)`.
    - `succeeded = false`: Stale branch edges and versions are left untouched, ensuring that the node remains dirty and can retry re-evaluation once upstream inputs change.
 3. **Preserved DAG Topology**: Even if closures throw `Exception` or `Error`, the node's internal state machine and topological edges remain intact.
 4. **Self-Healing Recovery**: Once upstream inputs return to valid states, the subsequent Pull turn executes `_compute(_via)` cleanly, restoring `_ValidBloomState` automatically without manual resets or controller disposal.
@@ -237,22 +240,31 @@ void _dispatchUncaughtError(Object error, StackTrace stackTrace, {Object? contex
   if (handler != null) {
     try {
       handler.onUncaughtError(error, stackTrace, context: context);
+      return;
     } catch (handlerError, handlerStack) {
       Zone.current.handleUncaughtError(handlerError, handlerStack);
+      Zone.current.handleUncaughtError(error, stackTrace);
+      return;
     }
   }
+
   Zone.current.handleUncaughtError(error, stackTrace);
 }
 ```
 
-1. **Downstream Terminal Routing**: [`_Node._handleUncaughtError`](../../lib/src/engine/_internal/_node.dart#L149) first traverses downstream edges to deliver the failure to active terminals via `terminal._handleUncaughtError`.
+1. **Downstream Terminal Routing**: [`_Node._handleUncaughtError`](../../lib/src/engine/_internal/_node.dart#L148) first traverses downstream edges to deliver the failure to active terminals via `terminal._handleUncaughtError`.
 2. **Global Telemetry Integration**: If no active terminal intercepts the failure, it routes to [`LpdagUncaughtErrorHandler.instance`](../../lib/src/engine/uncaught.dart#L11). Applications attach centralized telemetry (e.g., Sentry, Firebase Crashlytics) without incurring hot-path performance penalties:
    ```dart
-   LpdagUncaughtErrorHandler.instance = MyTelemetryHandler(
-     onUncaughtError: (error, stackTrace, {context}) {
-       Sentry.captureException(error, stackTrace: stackTrace, extra: {'node': context});
-     },
-   );
+   final class TelemetryErrorHandler implements LpdagUncaughtErrorHandler {
+     @override
+     void onUncaughtError(Object error, StackTrace stackTrace, {Object? context}) {
+       // Forward to telemetry sink (e.g. Sentry / Crashlytics)
+     }
+   }
+
+   void registerTelemetry() {
+     LpdagUncaughtErrorHandler.instance = TelemetryErrorHandler();
+   }
    ```
 3. **Zero Core Collapse**: Exceptions in one terminal or callback never abort the global DAG engine; sibling terminals and unaffected nodes continue processing smoothly.
 
@@ -285,7 +297,7 @@ Every stateful entity in Bloom conforms to a deterministic **3-State Finite Stat
 ```
 
 * **Data (`hasData == true`)**: Contains a valid payload of type `T`. Note that `null` is a valid payload for nullable types (`T?`) and is **never** conflated with missing data.
-* **Empty (`isEmpty == true`)**: Uninitialized, gated, or dormant state with an optional causal attribution reason ([`emptyReason`](../../lib/src/bloom/state.dart#L59)).
+* **Empty (`isEmpty == true`)**: Uninitialized, gated, or dormant state with an optional causal attribution reason ([`emptyReason`](../../lib/src/bloom/state.dart#L158)).
 * **Error (`hasError == true`)**: Failure state capturing the underlying failure object and stack trace.
 
 ### 4.1 Zero-Allocation Record Multi-Guarding (`(a, b, c).guarded()`)
@@ -296,9 +308,10 @@ When derivations depend on multiple upstream inputs, evaluating readiness using 
 final userId = blooming.late<String>();
 final authToken = blooming.late<String>();
 final userRole = blooming.late<String>();
+String buildProfileQuery(String id, String token, String role) => '$id:$role';
 
 final profileQuery = computed(
-  (via) => fetchProfile(via(userId.bloom), via(authToken.bloom), via(userRole.bloom)),
+  (via) => buildProfileQuery(via(userId.bloom), via(authToken.bloom), via(userRole.bloom)),
   // Evaluates on CPU registers with ZERO heap allocations
   guard: (via) => (
     via.state(userId.bloom),

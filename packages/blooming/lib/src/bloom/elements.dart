@@ -212,8 +212,10 @@ extension type BloomIterableElements<E>._(Bloom<Iterable<E>> _bloom) {
 
   /// Checks whether the collection contains an element equal to [element] reactively.
   ///
+  /// * [element]: The candidate object to check for membership in this collection.
+  ///
   /// **Ensures:**
-  /// * Returns a [Bloom<bool>] yielding `true` if [element] is present, `false` otherwise.
+  /// * Returns a `Bloom<bool>` yielding `true` if [element] is present, `false` otherwise.
   Bloom<bool> contains(Object? element) => computed((via) => via(_bloom).contains(element));
 
   /// Reduces a collection to a single value by iteratively combining elements reactively.
@@ -239,8 +241,10 @@ extension type BloomIterableElements<E>._(Bloom<Iterable<E>> _bloom) {
 
   /// Checks if all elements satisfy [test].
   ///
+  /// * [test]: Predicate evaluated against each element in the collection.
+  ///
   /// **Ensures:**
-  /// * Returns a [Bloom<bool>] that evaluates to `true` if every element satisfies [test].
+  /// * Returns a `Bloom<bool>` that evaluates to `true` if every element satisfies [test].
   Bloom<bool> every(bool Function(E element) test) => computed((via) => via(_bloom).every(test));
 
   /// Converts each element to a [String] and concatenates the results reactively.
@@ -248,13 +252,15 @@ extension type BloomIterableElements<E>._(Bloom<Iterable<E>> _bloom) {
   /// * [separator]: The delimiter string placed between elements. Defaults to empty string.
   ///
   /// **Ensures:**
-  /// * Returns a [Bloom<String>] with the joined representation.
+  /// * Returns a `Bloom<String>` with the joined representation.
   Bloom<String> join([String separator = '']) => computed((via) => via(_bloom).join(separator));
 
   /// Checks if any element satisfies [test].
   ///
+  /// * [test]: Predicate evaluated against elements in the collection.
+  ///
   /// **Ensures:**
-  /// * Returns a [Bloom<bool>] yielding `true` if at least one element satisfies [test].
+  /// * Returns a `Bloom<bool>` yielding `true` if at least one element satisfies [test].
   Bloom<bool> any(bool Function(E element) test) => computed((via) => via(_bloom).any(test));
 
   /// Returns a list containing the elements of this iterable reactively.

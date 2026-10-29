@@ -38,7 +38,7 @@ The integration between Bloom and Flutter's render pipeline separates into **Pha
 │   Topological Dirty Pulse Propagation (No Value Computation!)          │
 │          │                                                             │
 │          ▼                                                             │
-│   RawViaTerminal / RawBloomTerminal (In Element)                        │
+│   RawComputedTerminal<Widget> / RawBloomTerminal<T> (In Element)       │
 │          │                                                             │
 │          ▼                                                             │
 │   Element.markNeedsBuild() ──► Flutter BuildOwner.scheduleBuildFor()   │
@@ -56,7 +56,7 @@ The integration between Bloom and Flutter's render pipeline separates into **Pha
 │   BloomElement / _ComposedElement.performRebuild()                      │
 │          │                                                             │
 │          ▼                                                             │
-│   terminal.evaluate() (Dynamic 1-Pass Epoch Sweeping via BloomVia)      │
+│   terminal.data (Dynamic 1-Pass Epoch Sweeping via BloomVia)           │
 │          │                                                             │
 │          ▼                                                             │
 │   Exact Leaf Widget Produced ──► RenderObject Repaint (Isolated!)      │
@@ -75,11 +75,11 @@ The integration between Bloom and Flutter's render pipeline separates into **Pha
 
 ### Invariant 2: On-Demand Lazy-Pull Evaluation in Phase 2
 - When Flutter's `BuildOwner` flushes dirty elements during the frame pipeline, `performRebuild()` executes.
-- The element invokes `terminal.data` or `terminal.evaluate()`, pulling derived state on-demand.
+- The element reads `terminal.data` (or `untracked(bloom)` in 1:1 single-node elements), pulling derived state on-demand.
 - If upstream values did not effectively change (`distinct`) or are no longer read due to conditional branching (`if`/`switch`), downstream recomputations short-circuit immediately.
 
 ### Invariant 3: Surgical Micro-Rebuild Isolation
-- `composed((via) => ...)` and `bloom.build((data) => ...)` insert lightweight proxy elements (`_ComposedElement`, `_InlineSingleBloomElement`) into the element tree.
+- `composed((context, via) => ...)` and `bloom.build((context, data) => ...)` insert lightweight proxy elements (`_ComposedElement`, `_InlineSingleBloomElement`) into the element tree.
 - When state mutates, `markNeedsBuild()` targets only this micro-element.
 - **Outcome**: Ancestor widgets (`StatelessWidget`, `Scaffold`, `Column`) bypass the build queue entirely; only the exact leaf `Text` or `Container` rebuilds.
 
@@ -90,7 +90,7 @@ The integration between Bloom and Flutter's render pipeline separates into **Pha
 Reactive elements in `blooming_flutter` bind to Flutter's `ComponentElement` via `_ReactiveTerminalElementMixin` and `_ViaTerminalElementMixin`:
 
 ```dart
-// lib/src/widgets/_internal/_framework.dart
+// packages/blooming_flutter/lib/src/widgets/_internal/_framework.dart
 mixin _ViaTerminalElementMixin on ComponentElement
     implements _ReactiveTerminalElementMixin<RawComputedTerminal<Widget>> {
   @override
@@ -109,13 +109,18 @@ mixin _ViaTerminalElementMixin on ComponentElement
 ```
 
 ```dart
-// lib/src/widgets/_internal/_composed.dart
+// packages/blooming_flutter/lib/src/widgets/_internal/_composed.dart
 final class _ComposedElement extends ComponentElement
-    with _ReactiveTerminalElementMixin<RawComputedTerminal<Widget>>, _ViaTerminalElementMixin {
-  _ComposedElement(Composed super.widget);
+    with
+        _ReactiveTerminalElementMixin<RawComputedTerminal<Widget>>,
+        _ViaTerminalElementMixin {
+  _ComposedElement(_ComposedWidget super.widget);
 
   @override
-  Widget _buildVia(BloomVia via) => (widget as Composed).builder(via);
+  _ComposedWidget get widget => super.widget as _ComposedWidget;
+
+  @override
+  Widget _buildVia(BloomVia via) => widget.builder(this, via);
 }
 ```
 

@@ -5,7 +5,7 @@
 part of '../../framework.dart';
 
 /// Internal plumbing mixin that directly bridges [BloomState] inspection getters to the
-/// underlying physical 3-State FSM container ([_read()]).
+/// underlying physical 3-State FSM container (`_read()`).
 ///
 /// ---
 /// ### [CRITICAL ARCHITECTURAL & COMPILER INVARIANTS] (DO NOT MODIFY)
@@ -14,14 +14,14 @@ part of '../../framework.dart';
 ///    * This mixin is strictly internal engine plumbing designed to eliminate repetitive
 ///      boilerplate across internal reactive entities (concrete nodes like `_Entry`,
 ///      `_ConstantBloom`, `_ComputedBloomBase`, `_DeltaBloom`, `_CoupledBloom`, `_ManagedBloom`,
-///      `_ElementsBloom`, plus `BloomController`, `RawBloomTerminal`, `BloomCoupler`, etc.).
+///      plus `BloomController`, `RawBloomTerminal`, `BloomCoupler`, etc.).
 ///    * Note: [Bloom] itself does NOT mix in `_BloomStateMixin` on its static public surface,
 ///      keeping [Bloom] instances opaque and forcing untracked reads through [untracked].
-///    * It requires direct access to the private sealed container [_BloomState<T>]. Exposing
+///    * It requires direct access to the private sealed container `_BloomState<T>`. Exposing
 ///      this mixin publicly would leak engine memory layout details across the library boundary.
 ///
 /// 2. **`_read()` MUST Return Sealed `_BloomState<T>`, NOT `BloomState<T>`**:
-///    * **Sealed Hierarchy & Fast Dispatch Guarantee**: [_BloomState<T>] is a strictly library-private
+///    * **Sealed Hierarchy & Fast Dispatch Guarantee**: `_BloomState<T>` is a strictly library-private
 ///      `sealed class` whose hierarchy is 100% closed to exactly three leaves:
 ///      `_ValidBloomState<T>`, `_EmptyBloomState<T>`, and `_ErrorBloomState<T>`.
 ///    * In the 99.999% hot path (`_ValidBloomState`), `data` is a concrete memory field.

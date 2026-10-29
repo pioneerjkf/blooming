@@ -18,7 +18,7 @@ part of '../../../../framework.dart';
 ///
 /// 2. **Position Equation ($x(t)$):**
 ///    $$x(t) = x_{\text{begin}} + (x_{\text{end}} - x_{\text{begin}}) \cdot C(\tau)$$
-///    where $C(\tau) : [0, 1] \to \mathbb{R}$ represents the easing transform function [Curve.transform].
+///    where `C(\tau) : [0, 1] -> R` represents the easing transform function [Curve.transform].
 ///
 /// 3. **Instantaneous Velocity via Numerical Central Finite Difference ($\dot{x}(t)$):**
 ///    $$\dot{x}(t) = \frac{d x}{d t} = (x_{\text{end}} - x_{\text{begin}}) \cdot \frac{C(\tau + \epsilon) - C(\tau - \epsilon)}{2 \epsilon \cdot T}$$

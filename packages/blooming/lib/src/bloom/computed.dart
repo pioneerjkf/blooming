@@ -480,13 +480,17 @@ final class ComputedStreamFunctor {
 ///       LoanQuote.calculate(via(incomeBloom), via(creditScoreBloom));
 /// }
 ///
-/// // Downstream UI usage:
-/// // ElevatedButton(
-/// //   onPressed: quote.hasData ? () => submit() : null,
-/// //   child: Text(quote.hasData ? 'Apply Now' : '${quote.emptyReason}'),
-/// // );
+/// // Downstream state inspection:
+/// // if (quote.hasData) {
+/// //   submitApplication(quote.data);
+/// // } else {
+/// //   print('Blocked: ${quote.emptyReason}');
+/// // }
 /// ```
-abstract base class Computation<T> with _BloomStateMixin<T> implements LpdagStatus {
+abstract base class Computation<T> with _BloomStateMixin<T> implements BloomState<T>, LpdagStatus {
+  /// Creates a [Computation] with an optional precondition [guard].
+  ///
+  /// * [guard]: Optional precondition check evaluated prior to [compute].
   Computation({
     BloomGuard Function(BloomVia via)? guard,
   }) : _guard = guard {
@@ -502,15 +506,19 @@ abstract base class Computation<T> with _BloomStateMixin<T> implements LpdagStat
 
   /// Optional precondition check evaluated prior to [compute].
   ///
-  /// Defaults to invoking [_guard] if supplied in constructor, or [BloomGuard.pass] otherwise.
+  /// Defaults to invoking `_guard` if supplied in constructor, or [BloomGuard.pass] otherwise.
   /// Can be overridden by subclasses for custom precondition logic.
   /// Dependencies accessed inside [guard] are explicitly tracked via [via].
+  ///
+  /// * [via]: Explicit dependency manifest tracker for precondition checks.
   BloomGuard guard(BloomVia via) => _guard?.call(via) ?? BloomGuard.pass;
 
   /// Performs the actual synchronous calculation.
   ///
   /// All reactive dependencies accessed inside this method are explicitly tracked via [via]
   /// using 1-pass zero-allocation Epoch diffing.
+  ///
+  /// * [via]: Explicit dependency manifest tracker for reactive reads.
   T compute(BloomVia via);
 
   /// Indicates whether the underlying topological node is currently active in the graph.

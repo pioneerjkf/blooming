@@ -138,7 +138,7 @@ The clarity of an LPDAG depends on maintaining strict separation between topolog
 ```
 
 ### Blooming Belongs in the Pure LPDAG?
-* Any node that holds a **`BloomState`** (or can lazily derive one via `.data` / `.snapshot`).
+* Any node that holds a **`BloomState`** (or can lazily derive one via `via(node)` / `via.state(node)` or `untracked(node)` / `untracked.state(node)`).
 * Any node that emits **Push-Dirty** pulses and supports **Lazy-Pull** queries.
 * Nodes must be pure state carriers with deterministic topological dependencies.
 

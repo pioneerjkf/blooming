@@ -81,7 +81,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
-    // 1. PropertyAccess (e.g. this.counter.data, state.bloom.snapshot)
+    // 1. PropertyAccess (e.g. this.counter.data, this.controller.snapshot)
     context.registry.addPropertyAccess((node) {
       final propName = node.propertyName.name;
       if (BloomTypeChecker.isPipelineReadProperty(propName)) {
@@ -93,7 +93,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
       }
     });
 
-    // 2. PrefixedIdentifier (e.g. counter.data, userBloom.snapshot)
+    // 2. PrefixedIdentifier (e.g. counter.data, controller.snapshot)
     context.registry.addPrefixedIdentifier((node) {
       final propName = node.identifier.name;
       if (BloomTypeChecker.isPipelineReadProperty(propName)) {

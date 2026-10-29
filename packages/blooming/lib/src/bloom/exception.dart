@@ -35,7 +35,7 @@ abstract class BloomException implements Exception {
 /// ## Actionable Resolution
 /// 1. Use `.dataOrNull` or `.dataOrElse(() => fallback)` to handle dormant or failed states gracefully.
 /// 2. Check `.hasData` before extracting `.data`.
-/// 3. Use exhaustive pattern matching via `switch (snapshot.phase)` or `switch (snapshot)`.
+/// 3. Use exhaustive pattern matching via `switch (snapshot.phase)`.
 ///
 /// **BAD:**
 /// ```dart
@@ -55,6 +55,12 @@ abstract class BloomSnapshotExtractionException extends BloomException {
   /// Creates a [BloomSnapshotExtractionException] matching the specified [state].
   ///
   /// Maintained for factory backward compatibility.
+  ///
+  /// * [state]: The string descriptor of the invalid state (e.g. `'Empty'`, `'Error'`).
+  /// * [details]: Diagnostic description of where and why extraction failed.
+  /// * [emptyReason]: Optional causal reason if the state was in an empty phase.
+  /// * [error]: The original upstream error object if state was in an error phase.
+  /// * [stackTrace]: The original stack trace if state was in an error phase.
   factory BloomSnapshotExtractionException(
     String state,
     String details, {
@@ -97,6 +103,9 @@ abstract class BloomSnapshotExtractionException extends BloomException {
 /// 4. Use `.dataOrNull` or `.dataOrElse(() => fallback)` to handle dormant states gracefully.
 class BloomEmptyExtractionException extends BloomSnapshotExtractionException {
   /// Creates a [BloomEmptyExtractionException] with diagnostic context and causal reason.
+  ///
+  /// * [details]: Diagnostic description of where and why extraction failed.
+  /// * [emptyReason]: Optional causal reason explaining why the state was empty.
   const BloomEmptyExtractionException(
     String details, {
     this.emptyReason,
@@ -162,6 +171,10 @@ class BloomEmptyExtractionException extends BloomSnapshotExtractionException {
 /// 3. Guard against failure using `.hasError` or fallback via `.dataOrNull`.
 class BloomErrorExtractionException extends BloomSnapshotExtractionException {
   /// Creates a [BloomErrorExtractionException] with diagnostic context, error cause, and stack trace.
+  ///
+  /// * [details]: Diagnostic description of where and why extraction failed.
+  /// * [error]: The original upstream error object.
+  /// * [stackTrace]: Optional stack trace associated with [error].
   const BloomErrorExtractionException(
     String details, {
     required this.error,

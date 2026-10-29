@@ -10,9 +10,12 @@ import 'package:blooming_flutter/blooming_flutter.dart';
 // =============================================================================
 
 /// An immutable declarative override mapping that injects a mock or replacement
-/// [Bloom<T>] into descendant widget subtrees via [BloomProvider].
+/// [Bloom] into descendant widget subtrees via [BloomProvider].
 final class BloomOverride<T> {
   /// Creates a [BloomOverride] supplying [replacement] to descendant widgets.
+  ///
+  /// * [replacement]: The mock or replacement [Bloom] node to supply into the widget subtree.
+  /// * [target]: Optional original [Bloom] node being overridden.
   const BloomOverride({
     required this.replacement,
     this.target,
@@ -24,7 +27,9 @@ final class BloomOverride<T> {
   /// The original [Bloom] node being overridden, if specified.
   final Bloom<T>? target;
 
-  /// Wraps [child] in a [BloomProvider<T>] providing this replacement node.
+  /// Wraps [child] in a [BloomProvider] providing this replacement node.
+  ///
+  /// * [child]: The descendant widget subtree to wrap.
   Widget wrap(Widget child) =>
       BloomProvider<T>(bloom: replacement, child: child);
 }
@@ -32,19 +37,28 @@ final class BloomOverride<T> {
 /// Fluent extensions on [Bloom] for creating [BloomOverride] instances in widget tests.
 extension BloomOverrideExtension<T> on Bloom<T> {
   /// Overrides this node's type with a static constant [value].
+  ///
+  /// * [value]: The static constant payload to inject.
   BloomOverride<T> overrideWithValue(T value) =>
       BloomOverride<T>(target: this, replacement: Bloom.constant(value));
 
   /// Overrides this node's type with another reactive [bloom] node.
+  ///
+  /// * [bloom]: The replacement [Bloom] node to inject.
   BloomOverride<T> overrideWithBloom(Bloom<T> bloom) =>
       BloomOverride<T>(target: this, replacement: bloom);
 
   /// Overrides this node's type with a permanent error state.
+  ///
+  /// * [error]: The error or exception object to inject.
+  /// * [stackTrace]: Optional stack trace associated with [error].
   BloomOverride<T> overrideWithError(Object error, [StackTrace? stackTrace]) =>
       BloomOverride<T>(
           target: this, replacement: Bloom.error(error, stackTrace));
 
   /// Overrides this node's type with an empty state and optional [reason].
+  ///
+  /// * [reason]: Optional diagnostic reason explaining why the overridden state is empty.
   BloomOverride<T> overrideWithEmpty([Object? reason]) =>
       BloomOverride<T>(target: this, replacement: Bloom.empty(reason));
 
@@ -71,6 +85,10 @@ extension BloomOverrideExtension<T> on Bloom<T> {
 /// ```
 class BloomTestScope extends StatelessWidget {
   /// Creates a [BloomTestScope] injecting [overrides] into [child].
+  ///
+  /// * [key]: Optional widget key.
+  /// * [overrides]: The list of state overrides to apply to descendant widgets.
+  /// * [child]: The descendant widget subtree receiving the overridden states.
   const BloomTestScope({
     super.key,
     required this.overrides,

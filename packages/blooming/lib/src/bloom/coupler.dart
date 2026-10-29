@@ -60,7 +60,7 @@ part of '../framework.dart';
 ///
 /// coupler.couple(liveSource.bloom); // Safely coupled to live source
 /// ```
-base class BloomCoupler<T> with _BloomStateMixin<T> implements LpdagStatus {
+base class BloomCoupler<T> with _BloomStateMixin<T> implements BloomState<T>, LpdagStatus {
   /// Creates a [BloomCoupler] initialized with [inbound].
   ///
   /// * [inbound]: The initial upstream [Bloom] pipeline to relay.
@@ -102,7 +102,7 @@ base class BloomCoupler<T> with _BloomStateMixin<T> implements LpdagStatus {
   /// **Ensures:**
   /// * If this coupler is currently active, [newInbound] is automatically activated.
   /// * The previously attached node is detached cleanly.
-  /// * Returns the previous inbound node, or `null` if none was attached.
+  /// * Returns the previous inbound node, or `null` if [newInbound] is identical to the currently attached inbound node.
   @pragma('vm:prefer-inline')
   Bloom<T>? couple(Bloom<T> newInbound) => _proxy._performCouple(newInbound);
 

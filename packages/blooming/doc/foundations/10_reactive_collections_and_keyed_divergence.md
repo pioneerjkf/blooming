@@ -18,15 +18,15 @@ Unlike scalar primitives (integers, strings, booleans), collection data structur
    Sequences like `list.add()`, `list.removeAt()`, and `list[0] = ...` emit individual invalidation pulses, overloading downstream LPDAG graphs with redundant recomputations.
 
 The Bloom Framework resolves these challenges through three architectural pillars:
-- **Transactional Collection Controllers ([`BloomDraftController`](../../lib/src/bloom/draft.dart#L68))**: Collapses batch modifications into single atomic pulses while enforcing immutable snapshots.
-- **Keyed Cache Divergence ([`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L471))**: Preserves ViewModel and widget state across list reordering, sorting, and pagination.
-- **Defensive Element-Wise Projections ([`BloomIterableElements`](../../lib/src/bloom/elements.dart#L171)) & Higher-Order Aggregations ([`BloomIterableBloomExtension`](../../lib/src/bloom/collection.dart#L24))**: Exposes surgical element subscriptions and multi-node reactive folding.
+- **Transactional Collection Controllers ([`BloomDraftController`](../../lib/src/bloom/draft.dart))**: Collapses batch modifications into single atomic pulses while enforcing immutable snapshots.
+- **Keyed Cache Divergence ([`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart))**: Preserves ViewModel and widget state across list reordering, sorting, and pagination.
+- **Defensive Element-Wise Projections ([`BloomIterableElements`](../../lib/src/bloom/elements.dart)) & Higher-Order Aggregations ([`BloomIterableBloomExtension`](../../lib/src/bloom/collection.dart))**: Exposes surgical element subscriptions and multi-node reactive folding.
 
 ---
 
 ## 2. Transactional Collection Controllers: The Controller Triad
 
-Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` via [`BloomDraftController<C>`](../../lib/src/bloom/draft.dart#L68). Each controller is backed by an internal entry node ([`_ListEntry`](../../lib/src/bloom/_internal/_draft.dart#L51), [`_SetEntry`](../../lib/src/bloom/_internal/_draft.dart#L72), [`_MapEntry`](../../lib/src/bloom/_internal/_draft.dart#L93)) extending `_DistinctEntry<T>` with built-in shallow equality checking.
+Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` via [`BloomDraftController<C>`](../../lib/src/bloom/draft.dart). Each controller is backed by an internal entry node ([`_ListEntry`](../../lib/src/bloom/_internal/_draft.dart), [`_SetEntry`](../../lib/src/bloom/_internal/_draft.dart), [`_MapEntry`](../../lib/src/bloom/_internal/_draft.dart)) extending `_DistinctEntry<T>` with built-in shallow equality checking.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -51,17 +51,17 @@ Bloom Framework provides specialized controllers for `List`, `Set`, and `Map` vi
 
 ### 2.1 The Collection Controller Subtypes
 
-1. **List Controller ([`BloomDraftController<List<T>>`](../../lib/src/bloom/draft.dart#L68), via `blooming.list`)**:
+1. **List Controller ([`BloomDraftController<List<T>>`](../../lib/src/bloom/draft.dart), via `blooming.list`)**:
    - Manages ordered sequences of elements.
-   - Enforces immutability by wrapping all committed data in [`List.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart#L55).
+   - Enforces immutability by wrapping all committed data in [`List.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart).
    - Default equality comparator: `_listEquals<T>` (checks length and index-wise equality).
-2. **Set Controller ([`BloomDraftController<Set<E>>`](../../lib/src/bloom/draft.dart#L68), via `blooming.set`)**:
+2. **Set Controller ([`BloomDraftController<Set<E>>`](../../lib/src/bloom/draft.dart), via `blooming.set`)**:
    - Manages unique sets of elements.
-   - Enforces immutability by wrapping all committed data in [`Set.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart#L76).
+   - Enforces immutability by wrapping all committed data in [`Set.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart).
    - Default equality comparator: `_setEquals<E>` (checks length and member containment).
-3. **Map Controller ([`BloomDraftController<Map<K, V>>`](../../lib/src/bloom/draft.dart#L68), via `blooming.map`)**:
+3. **Map Controller ([`BloomDraftController<Map<K, V>>`](../../lib/src/bloom/draft.dart), via `blooming.map`)**:
    - Manages key-value dictionaries.
-   - Enforces immutability by wrapping all committed data in [`Map.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart#L97).
+   - Enforces immutability by wrapping all committed data in [`Map.unmodifiable`](../../lib/src/bloom/_internal/_draft.dart).
    - Default equality comparator: `_mapEquals<K, V>` (checks length, key existence, and value equality).
 
 ### 2.2 Mutation Modalities
@@ -95,6 +95,9 @@ todoList.edit((draft) {
 #### Mode 3: Exception-Guarded Draft (`.editGuarded((draft) => ...)`)
 Catches any unhandled exceptions thrown inside the recipe, rolling back draft changes and transitioning the controller cleanly into an Error state (`setError(error, stackTrace)`):
 ```dart
+final todoList = blooming.list<String>([]);
+String parseUnsafeInput() => throw const FormatException('Invalid input');
+
 todoList.editGuarded((draft) {
   draft.add(parseUnsafeInput()); // If this throws, controller transitions to Error state
 });
@@ -123,7 +126,7 @@ final matrix = blooming.list<List<int>>(
 
 > [!WARNING]
 > **Anti-Pattern Warning: In-Place Mutation of `.data`**  
-> Direct mutations such as `controller.data.add(...)` or `controller.data['key'] = value` throw [`UnsupportedError`](../../lib/src/bloom/draft.dart#L35) because `.data` returns an unmodifiable view. Always use `edit()` or assign via `.set()`.
+> Direct mutations such as `controller.data.add(...)` or `controller.data['key'] = value` throw [`UnsupportedError`](../../lib/src/bloom/draft.dart) because `.data` returns an unmodifiable view. Always use `edit()` or assign via `.set()`.
 
 ---
 
@@ -131,7 +134,7 @@ final matrix = blooming.list<List<int>>(
 
 When mapping collections of domain models into expensive presentation objects (e.g. ViewModels, animations, stateful UI controllers), simple `map()` operations recreate every object whenever the collection updates.
 
-The Bloom Framework provides **Keyed Cache Mapping** via [`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart#L471), implemented by [`_KeyedMapBloom<E, K, T>`](../../lib/src/bloom/_internal/_elements.dart#L7).
+The Bloom Framework provides **Keyed Cache Mapping** via [`BloomKeyedIterableElements.map`](../../lib/src/bloom/elements.dart), implemented by [`_KeyedMapBloom<E, K, T>`](../../lib/src/bloom/_internal/_elements.dart).
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -157,8 +160,9 @@ The Bloom Framework provides **Keyed Cache Mapping** via [`BloomKeyedIterableEle
 
 ### 3.1 Internal Engine Mechanics of `_KeyedMapBloom`
 
-[`_KeyedMapBloom<E, K, T>`](../../lib/src/bloom/_internal/_elements.dart#L7) extends `_StaticUnaryRelay<Bloom<Iterable<E>>>` and maintains an internal cache:
+[`_KeyedMapBloom<E, K, T>`](../../lib/src/bloom/_internal/_elements.dart) extends `_StaticUnaryRelay<Bloom<Iterable<E>>>` and maintains an internal cache:
 ```dart
+// packages/blooming/lib/src/bloom/_internal/_elements.dart
 final Map<K, T> _internalCache = {};
 ```
 
@@ -166,6 +170,7 @@ final Map<K, T> _internalCache = {};
    Extracts a domain identity key $K$ for each source element.
 2. **Two-Tier Cache Lookup & Update Propagation**:
    ```dart
+   // packages/blooming/lib/src/bloom/_internal/_elements.dart
    var cached = _internalCache[key];
    if (cached != null || _internalCache.containsKey(key)) {
      final value = cached as T;
@@ -182,6 +187,7 @@ final Map<K, T> _internalCache = {};
    - **In-Place Update (`_update?.call(value, data)`)**: When existing keys are encountered, the optional `update` callback allows updating mutable fields, internal reactive state, or immutable model references inside stable ViewModels without recreating them (analogous to Flutter's `State.didUpdateWidget`).
 3. **Pigeonhole Principle Sweeping**:
    ```dart
+   // packages/blooming/lib/src/bloom/_internal/_elements.dart
    if (_internalCache.length > activeKeys.length) {
      _internalCache.removeWhere((key, _) => !activeKeys.contains(key));
    }
@@ -200,24 +206,24 @@ final Map<K, T> _internalCache = {};
 
 ```dart
 final users = blooming.list<User>([
-  User(id: 'u1', name: 'Alice'),
-  User(id: 'u2', name: 'Bob'),
+  const User('Alice'),
+  const User('Bob'),
 ]);
 
 // Mapped into stable ViewModels keyed by unique id with in-place data synchronization
 final userCards = users.bloom.keyed.map(
   key: (user) => user.id,
   convert: (user) => UserCardViewModel(user),
-  update: (vm, user) => vm.updateUser(user),
+  update: (vm, user) {},
 );
 
 // Reordering users preserves existing UserCardViewModel instances identically
 users.edit((draft) => draft.sort((a, b) => b.name.compareTo(a.name)));
-// userCards.data[0] is still the exact identical instance previously created for Bob!
+// untracked(userCards)[0] is still the exact identical instance previously created for Bob!
 
-// Updating non-key fields of user 'u1' invokes update() while preserving ViewModel identity
-users.edit((draft) => draft[1] = User(id: 'u1', name: 'Alicia'));
-// userCards.data[1] remains the same ViewModel instance, now holding 'Alicia'!
+// Updating non-key fields of user invokes update() while preserving ViewModel identity
+users.edit((draft) => draft[1] = const User('Alice', isVip: true));
+// untracked(userCards)[1] remains the same ViewModel instance!
 ```
 
 > [!IMPORTANT]
@@ -235,21 +241,22 @@ users.edit((draft) => draft[1] = User(id: 'u1', name: 'Alicia'));
 
 The `.elements` namespace provides declarative element-wise access and collection transformations without polluting the root [`Bloom<T>`](../../lib/src/bloom/bloom.dart) class.
 
-All transformations computed via `.elements` defensively wrap their output collections in immutable wrappers ([`List.unmodifiable`](../../lib/src/bloom/elements.dart#L180), [`Set.unmodifiable`](../../lib/src/bloom/elements.dart#L274), [`Map.unmodifiable`](../../lib/src/bloom/elements.dart#L628)) to prevent external mutation leaks.
+All transformations computed via `.elements` defensively wrap their output collections in immutable wrappers ([`List.unmodifiable`](../../lib/src/bloom/elements.dart), [`Set.unmodifiable`](../../lib/src/bloom/elements.dart), [`Map.unmodifiable`](../../lib/src/bloom/elements.dart)) to prevent external mutation leaks.
 
 ### 4.1 Available Extensions and Operators
 
 | Extension | Target | Key Operators | Return Type |
 | :--- | :--- | :--- | :--- |
-| [`BloomIterableElementsExtension<E>`](../../lib/src/bloom/elements.dart#L40) | `Bloom<Iterable<E>>` | `.map()`, `.where()`, `.whereType()`, `.indexed`, `.expand()`, `.reduce()`, `.fold()`, `.every()`, `.any()`, `.join()`, `.take()`, `.skip()`, `.first`, `.last`, `.single`, `.firstOrNull`, `.lastOrNull`, `.singleOrNull`, `.firstWhere()`, `.lastWhere()`, `.singleWhere()`, `.elementAt()`, `.length`, `.isEmpty`, `.isNotEmpty` | `Bloom<List<T>>`, `Bloom<bool>`, `Bloom<int>`, `Bloom<E>` |
-| [`BloomListElementsExtension<E>`](../../lib/src/bloom/elements.dart#L98) | `Bloom<List<E>>` | `[index]`, `.sublist()`, `.reversed`, `.indexOf()`, `.indexWhere()`, `.lastIndexWhere()`, `.lastIndexOf()`, `.asMap()`, `.cast()`, `.toUnmodifiable()` | `Bloom<E>`, `Bloom<List<E>>`, `Bloom<Map<int, E>>` |
-| [`BloomSetElementsExtension<E>`](../../lib/src/bloom/elements.dart#L121) | `Bloom<Set<E>>` | `.lookup()`, `.union()`, `.intersection()`, `.difference()`, `.cast()`, `.toUnmodifiable()` | `Bloom<E?>`, `Bloom<Set<E>>` |
-| [`BloomMapElementsExtension<K, V>`](../../lib/src/bloom/elements.dart#L145) | `Bloom<Map<K, V>>` | `[key]`, `.containsKey()`, `.containsValue()`, `.map()`, `.where()`, `.keys`, `.values`, `.length`, `.isEmpty`, `.isNotEmpty`, `.cast()`, `.toUnmodifiable()` | `Bloom<V?>`, `Bloom<bool>`, `Bloom<List<K>>`, `Bloom<Map<K2, V2>>` |
+| [`BloomIterableElementsExtension<E>`](../../lib/src/bloom/elements.dart) | `Bloom<Iterable<E>>` | `.map()`, `.where()`, `.whereType()`, `.indexed`, `.expand()`, `.reduce()`, `.fold()`, `.every()`, `.any()`, `.join()`, `.take()`, `.skip()`, `.first`, `.last`, `.single`, `.firstOrNull`, `.lastOrNull`, `.singleOrNull`, `.firstWhere()`, `.lastWhere()`, `.singleWhere()`, `.elementAt()`, `.length`, `.isEmpty`, `.isNotEmpty` | `Bloom<List<T>>`, `Bloom<bool>`, `Bloom<int>`, `Bloom<E>` |
+| [`BloomListElementsExtension<E>`](../../lib/src/bloom/elements.dart) | `Bloom<List<E>>` | `[index]`, `.sublist()`, `.reversed`, `.indexOf()`, `.indexWhere()`, `.lastIndexWhere()`, `.lastIndexOf()`, `.asMap()`, `.cast()`, `.toUnmodifiable()` | `Bloom<E>`, `Bloom<List<E>>`, `Bloom<Map<int, E>>` |
+| [`BloomSetElementsExtension<E>`](../../lib/src/bloom/elements.dart) | `Bloom<Set<E>>` | `.lookup()`, `.union()`, `.intersection()`, `.difference()`, `.cast()`, `.toUnmodifiable()` | `Bloom<E?>`, `Bloom<Set<E>>` |
+| [`BloomMapElementsExtension<K, V>`](../../lib/src/bloom/elements.dart) | `Bloom<Map<K, V>>` | `[key]`, `.containsKey()`, `.containsValue()`, `.map()`, `.where()`, `.keys`, `.values`, `.length`, `.isEmpty`, `.isNotEmpty`, `.cast()`, `.toUnmodifiable()` | `Bloom<V?>`, `Bloom<bool>`, `Bloom<List<K>>`, `Bloom<Map<K2, V2>>` |
 
 ### 4.2 LPDAG Propagation and Deduplication via `.distinct()`
 
 In the 2-Phase LPDAG, element projections such as `users.bloom.elements[0]` and `config.bloom.elements['timeout']` are implemented as reactive computed nodes:
 ```dart
+// packages/blooming/lib/src/bloom/elements.dart
 Bloom<E> operator [](int index) => computed((via) => via(_bloom)[index]);
 Bloom<V?> operator [](K key) => computed((via) => via(_bloom)[key]);
 ```
@@ -258,6 +265,9 @@ When the upstream collection mutates (e.g. index 2 changed), the upstream node p
 
 To short-circuit downstream recomputations when the specific element or slice value has not changed, chain with `.distinct()`:
 ```dart
+final users = blooming.list<String>(['Alice', 'Bob']);
+final config = blooming.map<String, int>({'timeout': 30});
+
 // 1. Observe a specific index with deduplication:
 // Even if the list grows or other indices mutate,
 // downstream recomputations are short-circuited as long as index 0 equals 'Alice'.
@@ -272,7 +282,7 @@ final timeoutBloom = config.bloom.elements['timeout'].distinct();
 
 ## 5. Higher-Order Reactive Collection Composition: `Bloom<Iterable<Bloom<T>>>`
 
-When working with dynamic collections where each item is itself an independent reactive node (`Bloom<T>`), the framework provides higher-order folding and aggregation operators via [`BloomIterableBloomExtension<T>`](../../lib/src/bloom/collection.dart#L24).
+When working with dynamic collections where each item is itself an independent reactive node (`Bloom<T>`), the framework provides higher-order folding and aggregation operators via [`BloomIterableBloomExtension<T>`](../../lib/src/bloom/collection.dart).
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -304,19 +314,25 @@ When working with dynamic collections where each item is itself an independent r
 2. **`.sum()`**:
    Aggregates numeric nodes into their mathematical sum:
    ```dart
+   final priceA = blooming(10.0);
+   final priceB = blooming(20.0);
    final prices = blooming.list<Bloom<double>>([priceA.bloom, priceB.bloom]);
    final total = prices.bloom.sum(); // Bloom<double> holding current sum
    ```
 3. **`.fold()` / `.reduce()`**:
    Accumulates reactive member values into a single scalar result:
    ```dart
+   final flag1 = blooming(false);
+   final flag2 = blooming(true);
    final flags = blooming.list([flag1.bloom, flag2.bloom]);
    final anyActive = flags.bloom.any((active) => active);
    ```
-4. **Convenience Payload Accessors ([`BloomStateCollectionPayloadExtension`](../../lib/src/bloom/collection.dart#L111))**:
+4. **Convenience Payload Accessors ([`BloomStateCollectionPayloadExtension`](../../lib/src/bloom/collection.dart))**:
    Extract raw data synchronously from collections of `BloomState`:
    ```dart
-   final states = <Bloom<int>>[c1.bloom, c2.bloom];
+   final c1 = blooming(1);
+   final c2 = blooming(2);
+   final states = <BloomState<int>>[untracked.state(c1.bloom), untracked.state(c2.bloom)];
    final values = states.data; // Iterable<int>
    final safeValues = states.dataOrNull; // Iterable<int?>
    ```

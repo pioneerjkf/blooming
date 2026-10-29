@@ -11,7 +11,7 @@
 /// * [bloomWidgetTest] declarative widget test runner
 /// * [BloomTestScope] & [BloomOverride] declarative node mocking system
 /// * [BloomTesterScopeExtension.pumpScopedWidget]
-/// * Full `blooming_test` re-export ([bloomTest], [FakeAsync], [isDormant], [isActive], [hasGlitchFreedom], etc.)
+/// * Full `blooming_test` re-export ([bloomTest], [isDormant], [isActive], [hasGlitchFreedom], etc.)
 /// * Full `flutter_test` re-export ([testWidgets], [find], [expect], [WidgetTester], etc.)
 library blooming_flutter_test;
 

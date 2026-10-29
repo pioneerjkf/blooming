@@ -13,7 +13,7 @@ A comprehensive, declarative testing harness and LPDAG state matcher library for
 - **LPDAG Custom Matchers**:
   - `isDormant` / `isActive`: Verify zero-leak subscriber-driven dormant lifecycle states.
   - `hasSubscribers(n)`: Interrogate active subscriber count in the reactive graph.
-  - `hasGlitchFreedom`: Prove absence of diamond-dependency intermediate glitch states.
+  - `hasGlitchFreedom`: Verify that a recorded snapshot sequence contains no error states.
   - `isData(expected)` / `isEmptyState(reason)` / `isErrorState(error)`: Deep-match 3-State `BloomSnapshot` containers.
 - **Pure Dart**: Zero Flutter SDK dependency; runs seamlessly in Server, CLI, VM, and Web test environments.
 
@@ -26,7 +26,7 @@ Add `blooming_test` to your `dev_dependencies` in `pubspec.yaml`:
 ```yaml
 dev_dependencies:
   test: ^1.25.0
-  blooming_test: ^0.1.0
+  blooming_test: ^0.2.2
 ```
 
 Or run:

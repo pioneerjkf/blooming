@@ -51,26 +51,28 @@ The Bloom Framework resolves these challenges using an **Explicit Dependency Man
 
 ### 2.1 The Complete BloomVia Surface: Three Scoped Operations
 
-Inside any reactive tracking scope ([`computed`](../../lib/src/bloom/computed.dart), [`switched`](../../lib/src/bloom/switched.dart), `RawViaTerminal`, `Effect`, or `BloomWidget.build`), dependencies are registered strictly through the injected [`BloomVia`](../../lib/src/engine/via.dart) instance:
+Inside any reactive tracking scope ([`computed`](../../lib/src/bloom/computed.dart), [`switched`](../../lib/src/bloom/switched.dart), [`managed`](../../lib/src/bloom/managed.dart), `RawViaTerminal`, `composed`, or `BloomWidget.build`), dependencies are registered strictly through the injected [`BloomVia`](../../lib/src/engine/via.dart) instance:
 
 1. **`via(bloom)` — Direct Payload Extraction with Short-Circuiting**:
    Registers `bloom` as an upstream dependency for the current evaluation epoch. If `bloom` contains valid data (`_ValidBloomState`), returns `T` directly. If `bloom` is empty or holds an error, throws an internal [`_ViaShortCircuit`](../../lib/src/engine/_internal/_via.dart#L44) sentinel to immediately bypass downstream calculation without running invalid logic.
 2. **`via.state(bloom)` — Defensive State Inspection**:
-   Registers `bloom` as an upstream dependency and returns its zero-allocation [`BloomState<T>`](../../lib/src/bloom/state.dart) container without short-circuiting, enabling exhaustive pattern matching (`state.match(data: ..., empty: ..., error: ...)`) inside derivations.
+   Registers `bloom` as an upstream dependency and returns its zero-allocation [`BloomState<T>`](../../lib/src/bloom/state.dart) container without short-circuiting, enabling exhaustive pattern matching (`switch (state.phase)`) inside derivations.
 3. **`via.tether(tether)` — Declarative Lifecycle Binding**:
    Binds a non-propagating lifecycle node ([`Tether`](../../lib/src/engine/tether.dart)) to the enclosing scope's active/dormant state and epoch lifecycle.
 
 ### 2.2 Symmetrical Gateway: Tracked `via(...)` vs. Untracked `untracked(...)`
 
 Bloom establishes a completely symmetrical, zero-allocation gateway architecture:
-- Inside reactive scopes (`computed`, `effect`, `build`): use **`via(node)`** and **`via.state(node)`** to register dynamic LPDAG edges.
-- Outside reactive scopes (event handlers, imperative methods, tests): use **`untracked(node)`** and **`untracked.state(node)`** for 0-allocation raw reads with zero dependency tracking.
+- Inside reactive tracking scopes (`computed`, `switched`, `managed`, `composed`, `build`): use **`via(node)`** and **`via.state(node)`** to register dynamic LPDAG edges.
+- Outside reactive tracking scopes (event handlers, imperative methods, effects, tests): use **`untracked(node)`** and **`untracked.state(node)`** for 0-allocation raw reads with zero dependency tracking.
 
 By keeping `Bloom<T>` an opaque node handle with zero public read getters, Bloom eliminates AI hallucinations and accidental unreactive leaks.
 
 ```dart
+final counter = blooming(0);
+
 // 1. Pure raw read: 0 global scope lookups, 0 edge mutations, 0 heap allocations
-final current = untracked(counter.bloom); 
+final current = untracked(counter.bloom);
 
 // 2. Explicit registration within dynamic derivations:
 final doubled = computed((via) {
@@ -89,8 +91,8 @@ Dynamic branching refers to scenarios where the set of observed nodes changes dy
 
 ```dart
 final isDark = blooming(false);
-final darkTheme = blooming(DarkTheme());
-final lightTheme = blooming(LightTheme());
+final darkTheme = blooming('dark');
+final lightTheme = blooming('light');
 
 final activeTheme = computed((via) {
   return via(isDark.bloom) ? via(darkTheme.bloom) : via(lightTheme.bloom);
@@ -185,11 +187,13 @@ flowchart TD
 
 ## 4. The Short-Circuiting Mechanics: `_ViaShortCircuit` and State Forwarding
 
-When [`BloomVia.call`](../../lib/src/engine/via.dart#L95) evaluates an upstream node that is currently in an `Empty` or `Error` state, evaluating downstream user expressions (e.g. string formatting, arithmetic) is unsafe:
+When [`BloomVia.call`](../../lib/src/engine/via.dart#L83) evaluates an upstream node that is currently in an `Empty` or `Error` state, evaluating downstream user expressions (e.g. string formatting, arithmetic) is unsafe:
 
 ```dart
+final userBloom = blooming.late<({String name, String role})>().bloom;
+
 final profile = computed((via) {
-  final user = via(userBloom); // If userBloom is Empty, continuing here would throw NullThrownError
+  final user = via(userBloom); // If userBloom is Empty, short-circuits before evaluating downstream logic
   return 'Name: ${user.name}, Role: ${user.role}';
 });
 ```
@@ -200,6 +204,7 @@ To short-circuit execution cleanly and defensively:
 2. If `_ValidBloomState`, returns the raw payload `s.data`.
 3. If `Empty` or `Error`, throws [`_ViaShortCircuit(s)`](../../lib/src/engine/_internal/_via.dart#L44):
    ```dart
+   // packages/blooming/lib/src/engine/_internal/_via.dart
    final class _ViaShortCircuit implements Error {
      const _ViaShortCircuit(this.state);
      final _BloomState<Object?> state;
@@ -210,8 +215,9 @@ To short-circuit execution cleanly and defensively:
    - **Why `implements Error`**: Application code typically uses `try { ... } on Exception catch (e)`. By implementing `Error`, the sentinel bypasses ordinary exception handlers and bubbles directly to the enclosing engine pull wrapper.
 
 ### 4.2 Epoch Completion and State Forwarding
-In [`_ComputedPullMixin`](../../lib/src/bloom/_internal/_computed.dart#L50):
+In [`_ComputedPullMixin`](../../lib/src/bloom/_internal/_computed.dart#L54):
 ```dart
+// packages/blooming/lib/src/bloom/_internal/_computed.dart
 } on _ViaShortCircuit catch (e) {
   succeeded = true;
   state = e.state._retype<T>();
@@ -228,10 +234,13 @@ In [`_ComputedPullMixin`](../../lib/src/bloom/_internal/_computed.dart#L50):
    Consequently, `_endEpoch` successfully executes `_sweepObsoleteEdges`, pruning any edges that were not visited prior to the short-circuit point.
 2. **`_BloomState.fromCaught` & Type-Preserving Retyping**:
    ```dart
-   if (error is _ViaShortCircuit) {
-     return error.state._retype<T>();
+   // packages/blooming/lib/src/bloom/_internal/_state.dart
+   static _BloomState<T> fromCaught<T>(Object error, StackTrace stackTrace) {
+     if (error is _ViaShortCircuit) {
+       return error.state._retype<T>();
+     }
+     return _ErrorBloomState<T>(error, stackTrace);
    }
-   return _ErrorBloomState<T>(error, stackTrace);
    ```
    `error.state._retype<T>()` forwards the upstream `Empty` (preserving its `emptyReason`) or `Error` (preserving original error and stack trace) without re-allocating new error containers.
 
@@ -265,6 +274,9 @@ The Bloom Framework physically separates two orthogonal planes across reactive t
 ### 5.1 Mechanics of `via.tether()` and Epoch Sweeping
 
 ```dart
+final authController = blooming((isVip: true, profile: 'Pro'));
+final vipAnalyticsEffect = authController.bloom.effect(() {});
+
 final userSession = computed((via) {
   final user = via(authController.bloom);
   if (user.isVip) {
@@ -282,9 +294,11 @@ final userSession = computed((via) {
 
 ## 6. Static Analysis Guards: The `avoid_untracked_bloom_read` Lint Rule
 
-The only potential pitfall in an explicit manifest architecture is an accidental raw read of reactive state (e.g., `controller.data`, `untracked(bloom)`, `untracked.state(bloom)`, `bloom.snapshot`) without wrapping in `via(...)` or `via.state(...)` inside a derivation closure:
+The only potential pitfall in an explicit manifest architecture is an accidental raw read of reactive state (e.g., `controller.data`, `controller.snapshot`, `untracked(bloom)`, `untracked.state(bloom)`) without wrapping in `via(...)` or `via.state(...)` inside a derivation closure:
 
 ```dart
+final count = blooming(0);
+
 // [Anti-Pattern] Missing via() bypasses dependency registration!
 final badComputed = computed((via) {
   return untracked(count.bloom) * 2; // When count mutates, badComputed is NOT invalidated!
@@ -294,7 +308,7 @@ final badComputed = computed((via) {
 The Bloom Framework guards against this at compile time via `package:blooming_lints`:
 
 * **Lint Rule**: `avoid_untracked_bloom_read`
-* **Mechanics**: An analyzer plugin inspects Dart AST trees to detect un-wrapped property access (`.data`, `.snapshot`, `.hasData`), invocations of `untracked(...)`, or manual downcasting on reactive entities within `computed`, `composed`, `switched`, `Effect`, and `BloomWidget.build` closures, reporting diagnostic errors immediately and offering quick-fixes to wrap with `via(node)` or `via.state(node)`.
+* **Mechanics**: An analyzer plugin inspects Dart AST trees to detect un-wrapped property access (`.data`, `.snapshot`, `.hasData`), invocations of `untracked(...)`, or manual downcasting on reactive entities within `computed`, `composed`, `switched`, `managed`, and `BloomWidget.build` closures, reporting diagnostic errors immediately and offering quick-fixes to wrap with `via(node)` or `via.state(node)`.
 
 ---
 

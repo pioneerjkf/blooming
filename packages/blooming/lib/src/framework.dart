@@ -8,7 +8,7 @@
 /// core. It organizes source files into four decoupled architectural tiers:
 ///
 /// 1. **Engine Domain (`src/engine/`)**:
-///    The topological core containing intrusive doubly-linked list DAG edges (`_SourceEdge`,
+///    The topological core containing intrusive doubly-linked list DAG edges (`_Edge`,
 ///    `_TargetEdge`), the Push-Dirty invalidation loop (`_push.dart`), explicit dependency tracking
 ///    (`via.dart`), the 1-tick microtask queue coordinator (`_scheduler.dart`), and
 ///    terminal anchors (`terminal.dart`, `graceful.dart`).

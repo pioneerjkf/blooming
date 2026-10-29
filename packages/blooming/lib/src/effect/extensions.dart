@@ -24,9 +24,9 @@ part of '../framework.dart';
 /// ## Mechanics & Lifecycle Characteristics
 /// As a Dart 3 extension type (`extension type const BloomEffectScope`), this abstraction
 /// introduces zero runtime heap allocation overhead. Invocations dispatch directly to
-/// multi-target manifest terminals ([_NaryManifestEffectTerminal], [_NaryDebounceEffectTerminal],
-/// [_NaryThrottleEffectTerminal]), coordinating multiple upstream reactive nodes under a single
-/// non-propagating lifecycle terminal.
+/// multi-target manifest terminals (`_NaryManifestEffectTerminal`, `_HandledNaryManifestEffectTerminal`,
+/// `_NaryDebounceEffectTerminal`, `_NaryThrottleEffectTerminal`), coordinating multiple upstream
+/// reactive nodes under a single non-propagating lifecycle terminal.
 ///
 /// ## System Architectural Flow
 /// ```text
@@ -268,7 +268,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
 /// ## Sub-Functor & Invocation Pathways
 /// ```text
 /// target.effect                  ((action) => ...)
-///  ├── .handled                  ((handle) => ...)
+///  ├── .scoped                   ((scope) => ...)
 ///  ├── .throttle                 (duration, (action) => ...)
 ///  └── .debounce                 (duration, (action) => ...)
 /// ```
@@ -276,8 +276,9 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
 /// ## Mechanics & Lifecycle Characteristics
 /// As a specialized Dart 3 extension type (`extension type const UnaryBloomEffectScope`),
 /// this namespace bypasses intermediate collections and iterator overhead, constructing
-/// specialized unary terminals ([_UnaryManifestEffectTerminal], [_UnaryDebounceEffectTerminal],
-/// [_UnaryThrottleEffectTerminal]) that directly link to the underlying source node.
+/// specialized unary terminals (`_UnaryManifestEffectTerminal`, `_HandledUnaryManifestEffectTerminal`,
+/// `_UnaryDebounceEffectTerminal`, `_UnaryThrottleEffectTerminal`) that directly link to the
+/// underlying source node.
 ///
 /// ## System Architectural Flow
 /// ```text
@@ -287,7 +288,7 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
 /// [UnaryBloomEffectScope Namespace]
 ///               │
 ///        ┌──────┴──────────────────────────┬────────────────────────┐
-///        │ .call() / .handled()            │ .throttle()            │ .debounce()
+///        │ .call() / .scoped()             │ .throttle()            │ .debounce()
 ///        ▼                                 ▼                        ▼
 /// [Unary Manifest Terminal]     [Unary Throttle Terminal] [Unary Debounce Terminal]
 ///        │                                 │                        │

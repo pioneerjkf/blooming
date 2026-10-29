@@ -139,6 +139,7 @@ When an asynchronous query branch transitions from A to B while $F_A$ is still i
 1. **Line of Defense 1 (Root Inactive Short-Circuit)**:
    In `_Entry._markDirty()` (`packages/blooming/lib/src/bloom/_internal/_entry.dart`):
    ```dart
+   // packages/blooming/lib/src/bloom/_internal/_entry.dart
    @mustCallSuper
    @pragma('vm:prefer-inline')
    void _markDirty() {
@@ -155,6 +156,7 @@ When an asynchronous query branch transitions from A to B while $F_A$ is still i
    Even if dirty propagation were invoked on the node:
    In `_Node._propagateDirty()` (`packages/blooming/lib/src/engine/_internal/_node.dart`):
    ```dart
+   // packages/blooming/lib/src/engine/_internal/_node.dart
    @pragma('vm:prefer-inline')
    void _propagateDirty() {
      final prevPropagating = _propagatingTarget;

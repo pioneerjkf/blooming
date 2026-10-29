@@ -10,12 +10,12 @@ import 'package:blooming/blooming.dart';
 
 /// Reactive [Comparable] collection reductions and sorting extensions on [BloomIterableElements].
 ///
-/// **Design Philosophy (Safe Comparable Reductions):**
+/// ## Architectural Benefits
 /// Extends [BloomIterableElements] with reactive sorting and extremum discovery.
 /// All list-returning methods yield frozen immutable lists via [List.unmodifiable]
 /// to safeguard state across reactive boundaries.
 ///
-/// **Data Propagation Flow:**
+/// ## Data Propagation Flow
 /// ```text
 /// [Source Bloom<Iterable<Comparable>>]
 ///        │ (Push-Dirty)
@@ -26,14 +26,14 @@ import 'package:blooming/blooming.dart';
 ///        └─► .sorted / .sortedDescending ──► Immutable sorted Bloom<List<E>>
 /// ```
 ///
-/// **Example:**
+/// ## Examples
 /// ```dart
-/// final names = bloom(['Charlie', 'Alice', 'Bob']);
-/// final sortedNames = names.elements.sorted;
-/// final firstName = names.elements.minOrNull;
+/// final names = blooming(['Charlie', 'Alice', 'Bob']);
+/// final sortedNames = names.bloom.elements.sorted;
+/// final firstName = names.bloom.elements.minOrNull;
 ///
-/// print(sortedNames.data); // ['Alice', 'Bob', 'Charlie']
-/// print(firstName.data);   // 'Alice'
+/// print(untracked(sortedNames)); // ['Alice', 'Bob', 'Charlie']
+/// print(untracked(firstName));   // 'Alice'
 /// ```
 extension ComparableBloomElementsExtension<E extends Comparable<dynamic>>
     on BloomIterableElements<E> {
@@ -86,6 +86,8 @@ extension ComparableBloomElementsExtension<E extends Comparable<dynamic>>
       });
 
   /// Returns `true` if this collection is sorted in ascending order reactively.
+  ///
+  /// * [compare]: Optional custom comparator overriding [Comparable.compareTo].
   ///
   /// **Ensures:**
   /// * Returns `true` if collection length is less than 2.

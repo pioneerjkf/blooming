@@ -43,9 +43,11 @@ The Bloom Framework resolves these limits through **`.retained()` Stale-While-Re
 * **`BloomCoupler`**: Relays an external or dynamically discovered node, detaching previous subscriptions upon substitution.
 
 ### 2.2 First-Class Signal Dependency Manifest (`via(signal.bloom)`)
-The framework eliminates bespoke refresh interfaces or lifecycle mixins. Producers create a [BloomSignalController] handle and expose its read-only [BloomSignalController.bloom] view. Consumers register a dependency on the signal via `via(refreshSignal.bloom)` inside computation closures:
+The framework eliminates bespoke refresh interfaces or lifecycle mixins. Producers create a `BloomSignalController` handle and expose its read-only `BloomSignalController.bloom` view. Consumers register a dependency on the signal via `via(refreshSignal.bloom)` inside computation closures:
 
 ```dart
+final userId = blooming('u1');
+Future<String> fetchProfile(String id) async => id;
 final refreshSignal = blooming.signal();
 
 // Explicit dependency tracking via BloomVia:
@@ -64,13 +66,15 @@ When `refreshSignal.emit()` is called, the Push-Dirty signal propagates synchron
 Appending `.retained()` to any reactive pipeline unlocks **Stale-While-Revalidate (SWR)** caching in a single declarative expression:
 
 ```dart
+Future<List<String>> fetchUserTimeline() async => ['post_1'];
+
 // 1. Signal-based refresh trigger (Producer handle)
 final refreshSignal = blooming.signal();
 
 // 2. Asynchronous data query pipeline
 final userFeed = computed.future((via) {
   via(refreshSignal.bloom);
-  return api.fetchUserTimeline();
+  return fetchUserTimeline();
 });
 
 // 3. Promoted to an SWR buffered node with a dedicated pending facet coupler
@@ -107,7 +111,7 @@ final isPending = isPendingCoupler.bloom;
 ```
 
 1. **Zero Layout Flash**: While background queries fetch fresh data (during which upstream emits an intermediate `Empty` state), `.retained()` intercepts the empty state and presents the last known `Valid` snapshot.
-2. **Decoupled Loading Indicators**: Presentation widgets observe `isPending.data` independently to display non-intrusive progress bars or pull-to-refresh spinners without tearing down active views.
+2. **Decoupled Loading Indicators**: Presentation widgets observe `via(isPending)` (or `untracked(isPending)`) independently to display non-intrusive progress bars or pull-to-refresh spinners without tearing down active views.
 
 ---
 
@@ -145,7 +149,7 @@ The engine's `_RetainedBloom` node strictly enforces **Honest Fault Propagation*
 
 ## 4. Pure Dart Observation Example
 
-In pure Dart environments (CLI tooling, background workers, domain services), `Effect.via` combined with `EffectRunExtension.run` observes SWR pipeline transitions with zero-overhead short-circuiting:
+In pure Dart environments (CLI tooling, background workers, domain services), `Effect.via` combined with `EffectStartExtension.start` observes SWR pipeline transitions with zero-overhead short-circuiting:
 
 ```dart
 import 'dart:async';

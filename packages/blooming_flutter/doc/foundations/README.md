@@ -30,7 +30,7 @@ This directory provides the definitive engineering specifications for the juncti
 05. [**Scoped State Provision & Rebuild Suppression**](05_scoped_state_and_rebuild_suppression.md)
     - Scoped dependency injection container: `BloomProvider`.
     - Reference identity invariant in `updateShouldNotify` (`!identical(old.bloom, new.bloom)`).
-    - Suppression of indiscriminate `InheritedWidget` subtree rebuilds and dynamic scope unwrapping via `switched`.
+    - Suppression of indiscriminate `InheritedWidget` subtree rebuilds and dynamic scope resolution via `didChangeDependencies`.
 
 06. [**Durable Animations & Wall-Clock Compensation Invariants**](06_durable_animations_and_wall_clock.md)
     - Elimination of Ticker leaks upon widget unmount; configurable state preservation via `DurableAnimationController` and `DurabilityPolicy` (`resume`, `catchUp`, `reset`).
@@ -66,8 +66,8 @@ This directory provides the definitive engineering specifications for the juncti
     - Clean lifecycle binding without memory leaks, distinct filtering preventing route rebuild thrashing, and transient route triggers via [`BloomSignal`](https://github.com/pioneerjkf/blooming/blob/main/packages/blooming/doc/foundations/17_imperative_signals_and_transient_events.md) (from `package:blooming`).
 
 13. [**Scroll Kinematics & Reactive Pagination**](13_scroll_kinematics_and_pagination.md)
-    - Zero-allocation bridging of high-frequency 60/120fps `ScrollController` offsets via `.observe()`.
-    - Isolating scroll kinematics from widget tree rebuilds via `composed.child` to eliminate jank in complex sliver hierarchies.
+    - Zero-allocation bridging of high-frequency 60/120fps `ScrollController` offsets via `.toBloomBy()`.
+    - Isolating scroll kinematics from widget tree rebuilds via `composed` to eliminate jank in complex sliver hierarchies.
 
 14. [**Widget Testing & Frame Pumping Mechanics**](14_widget_testing_and_pump_mechanics.md)
     - Deterministic UI verification with `WidgetTester` across 2-Phase LPDAG and asynchronous SWR lifecycles.
@@ -82,12 +82,12 @@ This directory provides the definitive engineering specifications for the juncti
 | **Surgical Render** | Rebuild scope: whole subtree $\to$ one leaf element | 2-Phase LPDAG + Leaf Element direct wiring + 1-Pass Epoch Sweeping | 01, 02 |
 | **Zero-Alloc Functor** | Syntactic elegance & execution speed | `composed` Functors + `bloom.build` `extension type const` | 03 |
 | **Zero-Rebuild Effect** | Clean separation of render & effects | `BloomListener` + EffectRunner + `scheduleMicrotask` | 04 |
-| **Suppressed Scope** | Blocks indiscriminate global rebuilds | `BloomProvider` + `!identical` identity suppression + `switched` | 05 |
+| **Suppressed Scope** | Blocks indiscriminate global rebuilds | `BloomProvider` + `!identical` identity suppression + `didChangeDependencies` | 05 |
 | **Durable Motion** | Physical time & motion continuity | Wall-clock compensation (`CatchUp`) + State freezing (`Frozen`) + $C^1$ continuity | 06, 07 |
 | **Zero-Flicker SWR** | Continuous user immersion | Stale cache retention + `BloomAsyncBuilder` + `BloomPendingIndicator` | 08 |
 | **Context Virtualization** | Granular environment token projection | `BloomViaContextExtension` (`via.of<T>(context)`) | 09 |
 | **Demand-Driven Bridge**| Full Flutter ecosystem interop | `toBloom` / `toBloomBy` + Demand-driven listener lifecycle management | 10 |
 | **Native Diagnostics** | Transparent live debugging | `debugFillProperties` + DevTools Inspector + Hot reload resilience | 11 |
 | **Declarative Router** | 100% route-state synchronization | `.toListenable()` + [`BloomSignal`](https://github.com/pioneerjkf/blooming/blob/main/packages/blooming/doc/foundations/17_imperative_signals_and_transient_events.md) (`blooming`) + distinct filter | 12 |
-| **Kinematic Scroll** | 120fps jank-free scroll binding | `.observe()` + `composed.child` isolation | 13 |
+| **Kinematic Scroll** | 120fps jank-free scroll binding | `.toBloomBy()` + `composed` isolation | 13 |
 | **Deterministic Test** | Zero-flakiness reactive testing | Frame pump control + `BloomAsyncBuilder` pump mechanics | 14 |

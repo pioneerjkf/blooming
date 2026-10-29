@@ -63,9 +63,9 @@ In the State Domain, temporal damping occurs not at terminal endpoints, but **at
                                                           ▼ (After silence / window close)
                                                  [_emitTrailing() Unlocks Gate]
                                                           │
-                                                          ▼ (Push-Dirty Pulse Released: Version++)
+                                                          ▼ (Push-Dirty Pulse Released)
                                              [Downstream Terminals / Consumers]
-                                             (Lazy-Pull: Pulls latest state 'C' synchronously!)
+                                             (Lazy-Pull: Pulls latest state 'C' & bumps version!)
 ```
 
 ### 3.1 The Temporal Dirty Gatekeeper (`_GatedRelayBloom<T>`)
@@ -81,7 +81,11 @@ abstract base class _GatedRelayBloom<T> extends _StaticUnaryRelay<Bloom<T>>
     super.source, {
     required this.leading,
     required this.trailing,
-  }) : assert(leading || trailing, 'At least one of leading or trailing must be true.');
+  }) {
+    if (!leading && !trailing) {
+      throw ArgumentError('At least one of leading or trailing must be true.');
+    }
+  }
 
   final bool leading;
   final bool trailing;
@@ -89,13 +93,18 @@ abstract base class _GatedRelayBloom<T> extends _StaticUnaryRelay<Bloom<T>>
 
   @override
   @pragma('vm:prefer-inline')
-  _BloomState<T> _pull() => _state = _source._read();
+  _BloomState<T> _pull() {
+    final next = _source._read();
+    if (_source._version != _pulledVersion) {
+      _version++;
+    }
+    return _state = next;
+  }
 
   @pragma('vm:prefer-inline')
   void _emitTrailing() {
     _hasTrailingPending = false;
     _dirtyState = _DirtyState.dirty;
-    _version++;
     _PushScope.queueOrigin(this);
   }
 }
@@ -105,10 +114,10 @@ abstract base class _GatedRelayBloom<T> extends _StaticUnaryRelay<Bloom<T>>
 1. **Upstream Invalidation & Suppression (Ticking Window)**:  
    When the upstream `_source` mutates, `_invalidate()` intercepts the event. Instead of marking itself dirty or propagating flags downstream, it starts or resets a timer (or microtask). During this window, `_dirtyState` remains `_DirtyState.clean`.
 2. **Cache Integrity (Read Committed)**:  
-   If any downstream node or external caller reads `.data`, `untracked(node)`, `.snapshot`, or `via(node)` during this delay window, `_PullResolver._resolve` sees `_dirtyState == _DirtyState.clean`, **completely bypasses `_pull()`**, and immediately returns the previously committed cached `_state`.  
+   If any downstream node or external caller reads `untracked(node)`, `untracked.state(node)`, `via(node)`, or `via.state(node)` during this delay window, `_PullResolver._resolve` sees `_dirtyState == _DirtyState.clean`, **completely bypasses `_pull()`**, and immediately returns the previously committed cached `_state`.  
    *Guarantee*: Downstream computations (e.g. SWR, search API calls) are never contaminated by uncommitted intermediate mutations.
 3. **Gate Unlocking & Push Propagation (`_emitTrailing`)**:  
-   When the timer or microtask elapses, `_emitTrailing()` transitions `_dirtyState` to `_DirtyState.dirty`, bumps `_version++`, and enqueues this node into `_PushScope.queueOrigin(this)`. Only then are downstream observers marked dirty and notified to pull the fresh upstream state via `_pull()`.
+   When the timer or microtask elapses, `_emitTrailing()` transitions `_dirtyState` to `_DirtyState.dirty` and enqueues this node into `_PushScope.queueOrigin(this)`. Only then are downstream observers marked dirty and notified to pull the fresh upstream state via `_pull()` (which increments `_version++` when `_source._version != _pulledVersion`).
 
 ### 3.2 Microtask Burst Coalescing (`_CoalescedBloom<T>`)
 
@@ -195,7 +204,7 @@ final class _DebouncedBloom<T> extends _TemporalRelayBloom<T> {
 }
 ```
 * **Configurable Edges**: Supports `leading` (immediate fire on initial mutation) and `trailing` (fire after silence window).
-* **Assertion Validation**: Enforces `assert(leading || trailing)` at construction time to prevent no-op zombie relays.
+* **Argument Validation**: Throws `ArgumentError` (`if (!leading && !trailing)`) at construction time in all build modes to prevent no-op zombie relays.
 * **Inactive Dormancy & Raw Reads**: When unobserved (`!_lifecycle.isActive`), reading `untracked(node)` or `untracked.state(node)` bypasses temporal timers and synchronously resolves the latest upstream state on demand. Deactivation cancels active timers synchronously.
 
 ---
@@ -264,6 +273,7 @@ abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
 
     if (_hasTrailingPending && trailing) {
       _hasTrailingPending = false;
+      _isTrailingExecution = true;
       _Scheduler.instance._scheduleTerminal(this);
     }
   }
@@ -284,7 +294,7 @@ final searchInput = blooming('');
 // Fluent unary debounce effect:
 final searchEffect = searchInput.bloom.effect.debounce(
   const Duration(milliseconds: 300),
-  () => api.search(untracked(searchInput.bloom)),
+  () => performSearch(untracked(searchInput.bloom)),
 );
 
 // Standalone execution outside widget lifecycles:
@@ -300,7 +310,7 @@ Why introducing debounce directly inside dynamic tracking scopes (`BloomVia`) is
 
 ```dart
 // [Anti-Pattern] Structural contradiction when placing debounce inside dynamic tracking
-effect((via) {
+Effect.via((via) {
   // If a 300ms debounce were applied directly to this dynamic scope:
   // Should this block run immediately to register via() edges, or wait 300ms?
 });
@@ -356,13 +366,14 @@ final debouncedQuery = searchQuery.bloom.debounced(
 final searchResults = computed.future((via) async {
   final query = via(debouncedQuery);
   if (query.trim().isEmpty) return <String>[];
-  return apiService.fetchResults(query);
+  return performSearch(query);
 }).retained();
 ```
 
 ### 7.2 Sensor & Scroll Offset Rate-Limiting (Throttled Stream)
 
 ```dart
+const maxScrollExtent = 1000.0;
 final scrollPosition = blooming<double>(0.0);
 
 // Throttles scroll position updates to at most once every 50ms:
@@ -384,7 +395,7 @@ final transactionLog = blooming<int>(0, distinct: false);
 final coalescedLog = transactionLog.bloom.coalesced();
 
 final renderTerminal = RawBloomTerminal(coalescedLog, onInvalidated: () {
-  print('Render frame with latest balance: ${coalescedLog.data}');
+  print('Render frame with latest balance: ${untracked(coalescedLog)}');
 })..activate();
 ```
 
@@ -399,7 +410,7 @@ final buttonClickCount = blooming<int>(0);
 // Pure side-effect: Dispatches analytics at most once per second on leading edge
 final clickTracker = buttonClickCount.bloom.effect.throttle(
   const Duration(seconds: 1),
-  () => analyticsService.logEvent('button_tap', count: untracked(buttonClickCount.bloom)),
+  () => print('button_tap: ${untracked(buttonClickCount.bloom)}'),
   leading: true,
   trailing: false,
 ).start();

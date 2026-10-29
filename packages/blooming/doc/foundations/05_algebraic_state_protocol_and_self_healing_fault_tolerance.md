@@ -80,7 +80,7 @@ An entity governed by [`BloomState<T>`](../../lib/src/bloom/state.dart#L94) resi
 
 ### 2.2 Sound Fail-Fast vs. Safe Extraction & Pattern Matching
 
-To eliminate silent null propagation while preventing unhandled app crashes, [`BloomState`](../../lib/src/bloom/state.dart#L94) provides multiple extraction tiers:
+To eliminate silent null propagation while preventing unhandled app crashes, [`BloomState`](../../lib/src/bloom/state.dart#L141) provides multiple extraction tiers:
 
 ```dart
 final bloom = blooming<String>('Alice').bloom;
@@ -94,18 +94,19 @@ final state = untracked.state(bloom);
 final safeValue = state.dataOrNull ?? 'Guest';
 final fallbackValue = state.dataOrElse(() => 'Default');
 
-// 3. Zero-Heap Total Pattern Matching (Compiler-Verified Exhaustive)
-final label = state.match(
-  data: (v) => 'Active: $v',
-  empty: () => 'Awaiting input: ${state.emptyReason ?? "none"}',
-  error: (err, stack) => 'Failed: $err',
-);
+// 3. Exhaustive 3-Phase Pattern Matching via BloomPhase (Dart 3 switch)
+final label = switch (state.phase) {
+  BloomPhase.valid => 'Active: ${state.data}',
+  BloomPhase.empty => 'Awaiting input: ${state.emptyReason ?? "none"}',
+  BloomPhase.error => 'Failed: ${state.error}',
+};
 
-// 4. Sealed Snapshot Matching in Dart 3
-final display = switch (bloom.snapshot) {
-  BloomSnapshot(hasData: true, data: final val) => 'User: $val',
-  BloomSnapshot(isEmpty: true, emptyReason: final reason) => 'Waiting: $reason',
-  BloomSnapshot(hasError: true, error: final err) => 'Error: $err',
+// 4. Immutable Point-in-Time Snapshot Extraction
+final snap = state.snapshot;
+final display = switch (snap.phase) {
+  BloomPhase.valid => 'User: ${snap.data}',
+  BloomPhase.empty => 'Waiting: ${snap.emptyReason}',
+  BloomPhase.error => 'Error: ${snap.error}',
 };
 ```
 
@@ -142,8 +143,11 @@ _BloomState<T> _pull() {
     } else {
       state = _ValidBloomState<T>(result);
     }
+  } on _ViaShortCircuit catch (e) {
+    succeeded = true;
+    state = e.state._retype<T>();
   } catch (error, stackTrace) {
-    succeeded = error is _ViaShortCircuit;
+    succeeded = false;
     state = _BloomState.fromCaught(error, stackTrace);
   } finally {
     _endEpoch(currentEpoch, succeeded: succeeded, commitVersions: false);
@@ -156,10 +160,10 @@ _BloomState<T> _pull() {
 No exception thrown within user closures (`_compute`, `create`, `update`, `guard`) is permitted to escape the `_pull()` evaluation boundary into the LPDAG engine or the Flutter build pipeline.
 
 * **Short-Circuit vs. Failure Demarcation**:
-  - When `error is _ViaShortCircuit`:  
-    The short-circuit sentinel (thrown when `via(node)` reads an unready `Empty` or `Error` dependency) is unpacked cleanly via [`_BloomState.fromCaught()`](../../lib/src/bloom/_internal/_state.dart#L114). Because `succeeded = true`, `_endEpoch` sweeps obsolete edges up to the point of short-circuit, and retypes the state via `_retype<T>()` with **zero memory reallocations**.
-  - When an unexpected user exception escapes (`error is! _ViaShortCircuit`):  
-    It is encapsulated within `_ErrorBloomState<T>(error, stackTrace)`. Crucially, `succeeded = false` ensures that existing dependency edges are **frozen**, preventing premature disconnection of healthy upstream sources.
+  - When `on _ViaShortCircuit catch (e)` triggers:  
+    The short-circuit sentinel (thrown when `via(node)` reads an unready `Empty` or `Error` dependency) is unpacked cleanly via `e.state._retype<T>()` without synthesizing a `StackTrace`. Because `succeeded = true`, `_endEpoch` sweeps obsolete edges up to the point of short-circuit with **zero memory reallocations**.
+  - When an unexpected user exception escapes (`catch (error, stackTrace)`):  
+    It is encapsulated via [`_BloomState.fromCaught()`](../../lib/src/bloom/_internal/_state.dart#L107) within `_ErrorBloomState<T>(error, stackTrace)`. Crucially, `succeeded = false` ensures that existing dependency edges are **frozen**, preventing premature disconnection of healthy upstream sources.
 * **Engine Stability**: Exceptions do not crash the DAG scheduler or poison internal state into `null`.
 * **Declarative Propagation**: Failures travel downstream purely as **first-class state data**.
 
@@ -309,9 +313,9 @@ The architectural decisions in [`BloomState`](../../lib/src/bloom/state.dart#L94
 ```
 
 1. **Eradication of State Desynchronization**:  
-   In traditional frameworks, AI code generation frequently suffers from subtle bugs where `isLoading`, `isError`, and `data` flags get out of sync. Under [`BloomState`](../../lib/src/bloom/state.dart#L94), the 3 states are mutually exclusive at the type level, eliminating hallucinated state combinations.
+   In traditional frameworks, AI code generation frequently suffers from subtle bugs where `isLoading`, `isError`, and `data` flags get out of sync. Under [`BloomState`](../../lib/src/bloom/state.dart#L141), the 3 states are mutually exclusive at the type level, eliminating hallucinated state combinations.
 2. **Compiler-Driven 1-Shot Self-Correction**:  
-   Because [`BloomStateMatchExtension.match`](../../lib/src/bloom/state.dart#L207) and sealed snapshots demand exhaustive handling of `data`, `empty`, and `error`, any omission is flagged immediately by `dart analyze`. The AI agent receives an unambiguous compiler error and corrects the code in a single prompt turn.
+   Because [`BloomPhase`](../../lib/src/bloom/state.dart#L130) (`switch (state.phase)`) demands exhaustive handling of `BloomPhase.valid`, `BloomPhase.empty`, and `BloomPhase.error`, any omission is flagged immediately by `dart analyze`. The AI agent receives an unambiguous compiler error and corrects the code in a single prompt turn.
 3. **High Token Density**:  
    Complex multi-state resource bindings are expressed in 3 to 5 lines of declarative code rather than 80+ lines of Redux/Bloc boilerplate. Lower token counts dramatically reduce LLM attention degradation and context drift.
 

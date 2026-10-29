@@ -15,7 +15,7 @@ Flutter's standard dependency injection mechanism, `InheritedWidget`, passes sta
 2. **O(N) Search and Allocation Overhead in Deeply Nested Providers**:
    Wrapping widgets in dozens of nested provider layers inflates widget tree depth, creating redundant Element wrappers on every render pass.
 
-`package:blooming_flutter` resolves these issues via **Rebuild-Suppressed `BloomProvider<T>`** and **`switched`-backed dynamic unwrapping pipelines**.
+`package:blooming_flutter` resolves these issues via **Rebuild-Suppressed `BloomProvider<T>`** and **`BloomViaContextExtension` (`via.of<T>(context)`)**.
 
 ---
 
@@ -59,7 +59,7 @@ Flutter's standard dependency injection mechanism, `InheritedWidget`, passes sta
 
 ### Invariant 1: Reference Identity Invariant in `updateShouldNotify`
 ```dart
-// lib/src/widgets/provider.dart
+// packages/blooming_flutter/lib/src/widgets/provider.dart
 class BloomProvider<T> extends InheritedWidget {
   const BloomProvider({
     super.key,
@@ -79,18 +79,19 @@ class BloomProvider<T> extends InheritedWidget {
 - **Invariant**: *Indiscriminate subtree rebuild cascades at the Flutter `InheritedWidget` layer are 100% suppressed.*
 
 ### Invariant 2: Scoped Dependency Observation via `BloomViaContextExtension`
-When descendants call `via.of<T>(context)`, Bloom activates a scoped provider lookup internally:
+When descendants call `via.of<T>(context)`, Bloom resolves the ancestor `BloomProvider<T>` via `dependOnInheritedWidgetOfExactType<BloomProvider<T>>()` and registers the `Bloom<T>` node with `BloomVia`:
 
 ```dart
-// lib/src/widgets/provider.dart
+// packages/blooming_flutter/lib/src/widgets/provider.dart
 extension BloomViaContextExtension on BloomVia {
   @pragma('vm:prefer-inline')
-  Bloom<T> of<T>(BuildContext context) {
-    return context.bloomOf<T>();
-  }
+  T of<T>(BuildContext context) => this(context.bloomOf<T>());
+
+  @pragma('vm:prefer-inline')
+  T? maybeOf<T>(BuildContext context) => this(context.maybeBloomOf<T>());
 }
 ```
-- If the widget tree reparents and `BloomProvider` binds to a different node, `switched` severs the prior edge via 1-Pass Epoch Sweeping and transitions to the new node seamlessly.
+- If the widget tree reparents and `BloomProvider<T>` binds to a different `Bloom<T>` instance, `didChangeDependencies()` invokes `terminal.markDirty()`, allowing 1-Pass Epoch Sweeping to sever the prior edge and transition to the new node seamlessly on the next build pass.
 - This prevents memory leaks and orphan references to obsolete ancestor scopes.
 
 ---

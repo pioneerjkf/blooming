@@ -15,8 +15,7 @@ part of '../../framework.dart';
 /// bloom
 ///  ├── .build                    ((context, data) => ...)       [Declarative UI Rendering]
 ///  │    ├── .child               ((context, data, child) => ..., child: W)
-///  │    ├── .children            ((context, data, children) => ..., children: [...])
-///  │    └── .async               (data: ..., loading: ..., error: ..., empty: ...)
+///  │    └── .children            ((context, data, children) => ..., children: [...])
 ///  │
 ///  └── .listen                   ((context, state) => ...)      [0-Rebuild Side Effects]
 ///       ├── .debounce            (duration, (context, state) => ...)
@@ -83,18 +82,24 @@ part of '../../framework.dart';
 /// );
 /// ```
 extension BloomFlutterExtension<T> on Bloom<T> {
-  /// Entry point for inline reactive build functors.
+  /// Entry point for inline single-node reactive UI build functors ([BloomBuildFunctor]).
+  ///
+  /// **Ensures:**
+  /// * Returns a zero-allocation [BloomBuildFunctor] view bound to this [Bloom].
   @pragma('vm:prefer-inline')
   BloomBuildFunctor<T> get build => BloomBuildFunctor._(this);
 
-  /// Entry point for inline reactive side-effect listener functors.
+  /// Entry point for inline zero-rebuild side-effect listener functors ([BloomListenFunctor]).
+  ///
+  /// **Ensures:**
+  /// * Returns a zero-allocation [BloomListenFunctor] view bound to this [Bloom].
   @pragma('vm:prefer-inline')
   BloomListenFunctor<T> get listen => BloomListenFunctor._(this);
 }
 
 /// Zero-cost compile-time functor for [BloomFlutterExtension.build].
 extension type const BloomBuildFunctor<T>._(Bloom<T> _bloom) {
-  /// Creates an inline reactive widget bound 1:1 to this [Bloom<T>] node.
+  /// Creates an inline reactive widget bound 1:1 to this [Bloom] node.
   ///
   /// * [builder]: Pure widget construction callback receiving [BuildContext] and current data payload.
   /// * [key]: Optional widget key.
@@ -203,7 +208,7 @@ extension type const BloomBuildFunctor<T>._(Bloom<T> _bloom) {
 
 /// Zero-cost compile-time functor for [BloomFlutterExtension.listen].
 extension type const BloomListenFunctor<T>._(Bloom<T> _target) {
-  /// Listens to this [Bloom<T>] node and executes [action] when its state mutates without rebuilding.
+  /// Listens to this [Bloom] node and executes [action] when its state mutates without rebuilding.
   ///
   /// Composes a high-performance unary [Effect] via [EffectRunner] internally, deferring executions
   /// to the microtask queue to shield the Flutter build phase from re-entrancy conflicts.

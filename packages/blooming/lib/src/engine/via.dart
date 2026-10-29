@@ -116,7 +116,7 @@ abstract interface class BloomVia {
   ///
   /// ## Examples
   /// ```dart
-  /// final user = BloomController.empty<User>();
+  /// final user = blooming.late<User>();
   ///
   /// // 1. Defensive conditional inspection
   /// final label = computed((via) {

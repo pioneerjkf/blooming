@@ -17,8 +17,8 @@ Numerous native Flutter framework controllers and third-party packages are engin
 Consuming these primitives cleanly in standard Flutter necessitates `StatefulWidget` boilerplate with explicit `addListener` and `removeListener` hooks. Failing to deregister listeners during element unmount produces insidious memory leaks, ghost notifications, and frame drops.
 
 `package:blooming_flutter` eliminates this operational overhead through bidirectional demand-driven bridges:
-* **Flutter $\to$ Bloom**: [`ValueListenable.toBloom()`](../../lib/src/foundation/change_notifier.dart#L50) and [`Listenable.toBloomBy()`](../../lib/src/foundation/change_notifier.dart#L125)
-* **Bloom $\to$ Flutter**: [`Bloom.toListenable()`](../../lib/src/foundation/change_notifier.dart#L155)
+* **Flutter $\to$ Bloom**: [`ValueListenable.toBloom()`](../../lib/src/foundation/change_notifier.dart) and [`Listenable.toBloomBy()`](../../lib/src/foundation/change_notifier.dart)
+* **Bloom $\to$ Flutter**: [`Bloom.toListenable()`](../../lib/src/foundation/change_notifier.dart)
 
 ---
 
@@ -61,7 +61,7 @@ Bridges in `blooming_flutter` do not maintain standing listeners. They operate u
 
 ### 3.1 `ValueListenable.toBloom()`: 1:1 Value Bridge
 
-Adapts a `ValueNotifier<T>` or `ValueListenable<T>` directly into a reactive [`Bloom<T>`](../../../blooming/lib/src/bloom/bloom.dart) node via [`_ValueListenableBloomPipe<T>`](../../lib/src/foundation/_internal/_change_notifier.dart#L11):
+Adapts a `ValueNotifier<T>` or `ValueListenable<T>` directly into a reactive [`Bloom<T>`](../../../blooming/lib/src/bloom/bloom.dart) node via [`_ValueListenableBloomPipe<T>`](../../lib/src/foundation/_internal/_change_notifier.dart):
 
 ```dart
 // packages/blooming_flutter/lib/src/foundation/change_notifier.dart
@@ -74,7 +74,7 @@ extension ValueListenableBloomExtension<T> on ValueListenable<T> {
 }
 ```
 
-* **Demand-Driven Handshake**: Listener is attached inside `_onActivate()` and removed inside `_onDeactivated()`.
+* **Demand-Driven Handshake**: Listener is attached inside `_onActivate()` and removed inside `_onDeactivate()`.
 * **Activation Catch-Up**: Calls `_controller.setGuarded(() => _listenable.value)` upon activation to catch any mutations that occurred while dormant.
 * **Distinct Deduplication**: Suppresses downstream dirty pulses if consecutive emissions match according to `equals`.
 * **Graceful Mooring Support**: Accepts optional [`Graceful`](../../../blooming/lib/src/engine/graceful.dart) policy to defer listener teardown during rapid unmount/remount intervals (e.g. tab switches).
@@ -83,7 +83,7 @@ extension ValueListenableBloomExtension<T> on ValueListenable<T> {
 
 ### 3.2 `Listenable.toBloomBy<R>()`: Granular Selector Extraction
 
-Transforms multi-attribute, high-frequency `Listenable` instances (such as `ScrollController`) into targeted, strongly-typed [`Bloom<R>`](../../../blooming/lib/src/bloom/bloom.dart) slices via [`_ListenableSelectorBloomPipe<N, R>`](../../lib/src/foundation/_internal/_change_notifier.dart#L47):
+Transforms multi-attribute, high-frequency `Listenable` instances (such as `ScrollController`) into targeted, strongly-typed [`Bloom<R>`](../../../blooming/lib/src/bloom/bloom.dart) slices via [`_ListenableSelectorBloomPipe<N, R>`](../../lib/src/foundation/_internal/_change_notifier.dart):
 
 ```dart
 // packages/blooming_flutter/lib/src/foundation/change_notifier.dart
@@ -105,7 +105,7 @@ extension ListenableBloomExtension<L extends Listenable> on L {
 
 ### 3.3 `Bloom.toListenable()`: Reverse Interoperability Bridge
 
-Exposes a reactive [`Bloom<T>`](../../../blooming/lib/src/bloom/bloom.dart) node back to the Flutter ecosystem as a standard `ValueListenable<T>` via [`_BloomValueListenable<T>`](../../lib/src/foundation/_internal/_change_notifier.dart#L98):
+Exposes a reactive [`Bloom<T>`](../../../blooming/lib/src/bloom/bloom.dart) node back to the Flutter ecosystem as a standard `ValueListenable<T>` via [`_BloomValueListenable<T>`](../../lib/src/foundation/_internal/_change_notifier.dart):
 
 ```dart
 // packages/blooming_flutter/lib/src/foundation/change_notifier.dart
@@ -114,7 +114,7 @@ extension BloomListenableExtension<T> on Bloom<T> {
 }
 ```
 
-* **Zero-Overhead Terminal Mooring**: Internally instantiates a [`RawBloomTerminal<T>`](../../../blooming/lib/src/engine/terminal.dart#L182) when the first listener attaches (`_head` becomes non-null), and deactivates it when the last listener detaches (`_head == null`). Traverses listeners via an intrusive doubly-linked list with zero heap allocation per notification pass.
+* **Zero-Overhead Terminal Mooring**: Internally instantiates a [`RawBloomTerminal<T>`](../../../blooming/lib/src/engine/terminal.dart) when the first listener attaches (`_head` becomes non-null), and deactivates it when the last listener detaches (`_head == null`). Traverses listeners via an intrusive doubly-linked list with zero heap allocation per notification pass.
 * **Synchronous vs. Coalesced Modes**:
   - `sync: true` (default): Synchronously dispatches notifications upon state mutation, satisfying Flutter's immediate contract.
   - `sync: false`: Routes through `_bloom.coalesced()`, batching high-frequency invalidations into a single microtask turn.
@@ -202,10 +202,10 @@ final textController = managed<TextEditingController>(
 
 // 2. Bridge text changes to reactive Bloom using toBloomBy
 final queryBloom =
-    computed((via) => via(textController).toBloomBy((c) => c.text));
+    switched((via) => via(textController).toBloomBy((c) => c.text));
 
 // 3. Debounced search derivation
-final searchBloom = queryBloom.debounce(const Duration(milliseconds: 300));
+final searchBloom = queryBloom.debounced(const Duration(milliseconds: 300));
 
 class SearchBarWidget extends BloomWidget {
   const SearchBarWidget({super.key});
@@ -229,12 +229,13 @@ class SearchBarWidget extends BloomWidget {
 Consuming a Bloom reactive state inside an external widget that demands Flutter's `ValueListenable`:
 
 ```dart
-Widget build(BuildContext context) {
-  // Bridges Bloom<int> to ValueListenable<int> with zero-overhead terminal mooring
-  final listenable = countBloom.toListenable();
+// Bridges Bloom<int> to ValueListenable<int> with zero-overhead terminal mooring
+final countListenable = counterBloom.toListenable();
 
-  return ExternalAnimatedCounter(
-    valueListenable: listenable,
+Widget build(BuildContext context) {
+  return ValueListenableBuilder<int>(
+    valueListenable: countListenable,
+    builder: (context, count, _) => Text('Count: $count'),
   );
 }
 ```

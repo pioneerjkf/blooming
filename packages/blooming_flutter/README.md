@@ -39,7 +39,7 @@ import 'package:blooming_flutter/blooming_flutter.dart';
 // 1. Pure reactive state nodes & controllers (No Codegen, No Global State Traps)
 final likes = blooming(0);
 
-// 🚀 Zero-Disposal Motion: pauses on unmount and resumes cleanly without boilerplate
+// Zero-Disposal Motion: pauses on unmount and resumes cleanly without boilerplate
 final pulse = DurableAnimationController(
   duration: const Duration(milliseconds: 800),
 )..repeat(reverse: true);
@@ -226,11 +226,11 @@ In standard Flutter, updating a reactive value inside a large widget often leads
 │      ├── [Expensive Chart]      ──> Rebuilds: 100 times (WASTED)           │
 │      └── [Live Counter Text]    ──> Rebuilds: 100 times                    │
 │                                                                            │
-│  blooming_flutter with composed (Surgical Leaf Micro-Rebuild):                 │
+│  blooming_flutter with composed (Surgical Leaf Micro-Rebuild):             │
 │    [Card Widget]                ──> Rebuilds: 1 time  (INITIAL ONLY)       │
 │      ├── [Heavy Header]         ──> Rebuilds: 1 time  (0 ON UPDATES)       │
 │      ├── [Expensive Chart]      ──> Rebuilds: 1 time  (0 ON UPDATES)       │
-│      └── composed((via) => ...) ──> Rebuilds: 100 times (LEAF ONLY)        │
+│      └── composed((ctx, via) =>)──> Rebuilds: 100 times (LEAF ONLY)        │
 │                                                                            │
 │  * Note: While ValueListenableBuilder can isolate rebuilds, observing N    │
 │    independent values requires N levels of nested builders. composed       │
@@ -240,7 +240,7 @@ In standard Flutter, updating a reactive value inside a large widget often leads
 
 #### The `composed` Functor Family & Cascading Pathways
 
-`composed` provides a zero-cost cascading hierarchy supporting dynamic context injection, static subtree caching, high-frequency animations, frame drivers, and side-effects:
+`composed` provides a zero-cost cascading hierarchy supporting dynamic context injection, static subtree caching, high-frequency animations, and frame drivers:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -352,7 +352,7 @@ Flutter's standard dependency injection mechanism, `InheritedWidget` (and state 
 import 'package:flutter/material.dart';
 import 'package:blooming_flutter/blooming_flutter.dart';
 
-final authController = blooming(AuthState(user: 'Alice', token: 'xyz'));
+final authController = blooming(const AuthSession('Alice'));
 
 class RootAppShell extends StatelessWidget {
   const RootAppShell({super.key});
@@ -360,7 +360,7 @@ class RootAppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Inject reactive state at root; updateShouldNotify ensures this tree NEVER rebuilds
-    return BloomProvider<AuthState>(
+    return BloomProvider<AuthSession>(
       bloom: authController.bloom,
       child: const DashboardView(),
     );
@@ -376,13 +376,13 @@ class DashboardView extends StatelessWidget {
       appBar: AppBar(title: const Text('Dashboard')),
       body: Column(
         children: [
-          const ExpensiveHeroChart(), // NEVER rebuilds on auth change
-          const HeavyNavigationRail(), // NEVER rebuilds on auth change
+          const ExpensiveChartWidget(), // NEVER rebuilds on auth change
+          const HeavyHeader(title: 'Navigation'), // NEVER rebuilds on auth change
 
-          // Surgical Leaf Tunneling: Subscribes to ancestor BloomProvider<AuthState>
+          // Surgical Leaf Tunneling: Subscribes to ancestor BloomProvider<AuthSession>
           composed((context, via) {
-            final auth = via.of<AuthState>(context);
-            return Text('Logged in as: ${auth.user}');
+            final auth = via.of<AuthSession>(context);
+            return Text('Logged in as: ${auth.username}');
           }),
         ],
       ),
@@ -509,12 +509,12 @@ Eliminates `AnimatedBuilder` and `StatefulWidget` boilerplate by providing direc
 ├────────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
 │  1. Controller Hierarchy (Durable Lifecycle Management)                    │
-│     AnimationController (Flutter standard)                                 │
-│      └── DurableAnimationController (Unmount-safe lifecycle contract)      │
-│           ├── policy: DurabilityPolicy.resume  (Freeze on unmount, resume) │
-│           ├── policy: DurabilityPolicy.catchUp (Wall-clock elapsed sync)   │
-│           ├── policy: DurabilityPolicy.reset   (Reset on unmount)          │
-│           └── controller.observe()             --> Bloom<double> (Passive)  │
+│     DurableAnimationController (Sealed unmount-safe lifecycle contract)    │
+│      ├── policy: DurabilityPolicy.resume  (Freeze on unmount, resume)      │
+│      ├── policy: DurabilityPolicy.catchUp (Wall-clock elapsed sync)        │
+│      ├── policy: DurabilityPolicy.reset   (Reset on unmount)               │
+│      ├── controller.observe()             --> Bloom<double> (Passive)      │
+│      └── controller.observeStatus()       --> Bloom<AnimationStatus>       │
 │                                                                            │
 │  2. VSYNC Providers & Frame Tickers                                        │
 │     ├── BloomVsyncWidget                        (build: (ctx, via, vsync))  │

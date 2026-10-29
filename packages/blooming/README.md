@@ -146,7 +146,7 @@ Bloom's reactive engine is organized around three foundational pillars: **Reacti
 │                                                                            │
 │  3. Execution & Side-Effects (1-Tick Compressed)                           │
 │     ├── bloom.effect                            (() => ...)                 │
-│     ├── effect(...)                             ([targets], () => ...)      │
+│     ├── Effect(...)                             ([targets], () => ...)      │
 │     │    ├── .unary / .via                      (fast-path & discovery)     │
 │     │    ├── .scoped                            (lifecycle & cleanups)      │
 │     │    ├── .debounce / .throttle              (temporal rate-limiting)    │
@@ -211,7 +211,7 @@ final count = blooming(0);
 count.data++; // Push-dirty invalidation
 
 // 2. Uninitialized asynchronous resource
-final userProfile = blooming.late<UserProfile>(reason: 'AwaitingLogin');
+final userProfile = blooming.late<User>(reason: 'AwaitingLogin');
 
 // 3. Transactional collection with draft editing
 final todos = blooming.list<String>(['Buy milk']);
@@ -767,7 +767,7 @@ To understand the mathematical and architectural foundations of Bloom's LPDAG en
 | `blooming(...)` | Core | Unified declarative state producer instantiation functor (`.raw`, `.list`, `.set`, `.map`, `.signal`). |
 | `Bloom<T>` | Core | Read-only, observation-only reactive node interface in the LPDAG graph. |
 | `BloomController<T>` | Core | Producer handle owning mutation methods (`set`, `empty`, `setError`). |
-| `RawBloomController<T>` | Core | Unboxed, ultra-hot path state producer for non-nullable values. |
+| `RawBloomController<T>` | Core | Unfiltered raw state producer bypassing equality checks with manual `markDirty()`. |
 | `BloomSignalController` | Signal | Producer handle for emitting discrete pulse events (`emit`). |
 | `BloomSignal` | Signal | Read-only consumer view emitting monotonic sequence ticks for discrete events. |
 | `BloomVia` | Engine | Dynamic dependency registration handle passed to reactive functors. |

@@ -4,12 +4,8 @@
 
 /// @docImport 'package:blooming/blooming.dart';
 ///
-/// # Blooming Extensions: Reactive Collection & Functional Pipeline Operators
-///
-/// `blooming_extensions` provides a rich suite of reactive collection operators, aggregations,
-/// and functional algorithms on top of `Bloom<Iterable<E>>`, `Bloom<List<E>>`, and `Bloom<Set<E>>`.
-///
-/// ---
+/// Reactive collection operators, aggregations, and functional pipeline algorithms
+/// for `Bloom<Iterable<E>>`, `Bloom<List<E>>`, and `Bloom<Set<E>>`.
 ///
 /// ## Architectural Overview
 ///
@@ -20,9 +16,9 @@
 ///
 /// ```text
 /// ┌────────────────────────────────────────────────────────────────────────┐
-/// │                     Upstream State Carrier ([Bloom<List<T>>])          │
+/// │                     Upstream State Carrier (Bloom<List<T>>)            │
 /// │                                                                        │
-/// │   final users = blooming<List<User>>([...]);                      │
+/// │   final users = blooming<List<User>>([...]);                           │
 /// └──────────────────────────────────┬─────────────────────────────────────┘
 ///                                    │ (Push-Dirty Invalidation)
 ///                                    ▼
@@ -30,50 +26,46 @@
 /// │                     Reactive Pipeline Operator Extensions              │
 /// │                                                                        │
 /// │   • .elements.sortedBy((u) => u.age)   : Reactive sorting              │
-/// │   • .elements.whereNot((u) => u.isBanned) : Reactive filtering        │
+/// │   • .elements.whereNot((u) => u.isBanned) : Reactive filtering         │
 /// │   • .elements.slices(10)               : Reactive pagination/chunking  │
 /// │   • .elements.sum / .elements.average  : Reactive numeric aggregation  │
 /// └──────────────────────────────────┬─────────────────────────────────────┘
 ///                                    │ (Pull-Data on Evaluation)
 ///                                    ▼
 /// ┌────────────────────────────────────────────────────────────────────────┐
-/// │                     Immutable Output ([Bloom<List<T>>] / [Bloom<R>])    │
+/// │                     Immutable Output (Bloom<List<T>> / Bloom<R>)       │
 /// │                                                                        │
 /// │   Evaluates lazily and freezes results via List.unmodifiable in O(N)   │
 /// └────────────────────────────────────────────────────────────────────────┘
 /// ```
-///
-/// ---
 ///
 /// ## Quick Start
 ///
 /// ### 1. Reactive Sorting and Slicing
 /// ```dart
 /// import 'package:blooming/blooming.dart';
-/// import 'blooming_extensions/blooming_extensions.dart';
+/// import 'package:blooming_extensions/blooming_extensions.dart';
 ///
 /// final scores = blooming([40, 10, 90, 20]);
 ///
 /// // Create a derived sorted pipeline:
-/// final sortedScores = scores.elements.sorted((a, b) => a.compareTo(b));
+/// final sortedScores = scores.bloom.elements.sorted((a, b) => a.compareTo(b));
 ///
 /// // Create a derived paginated chunk pipeline:
-/// final pages = scores.elements.slices(2); // Bloom<List<List<int>>>
+/// final pages = scores.bloom.elements.slices(2); // Bloom<List<List<int>>>
 ///
-/// print(sortedScores.data); // [10, 20, 40, 90]
+/// print(untracked(sortedScores)); // [10, 20, 40, 90]
 /// ```
 ///
 /// ### 2. Numeric Reductions and Aggregations
 /// ```dart
 /// final prices = blooming<List<double>>([19.99, 9.99, 4.99]);
 ///
-/// final total = prices.elements.sum; // Bloom<double>
-/// final avg = prices.elements.average; // Bloom<double>
+/// final total = prices.bloom.elements.sum; // Bloom<double>
+/// final avg = prices.bloom.elements.average; // Bloom<double>
 ///
-/// print('Total: ${total.data}, Avg: ${avg.data}');
+/// print('Total: ${untracked(total)}, Avg: ${untracked(avg)}');
 /// ```
-///
-/// ---
 ///
 /// **Warning (Anti-Pattern Prevention):**
 /// - **DO NOT** mutate source collections in-place (e.g. `list.add(...)` without notifying

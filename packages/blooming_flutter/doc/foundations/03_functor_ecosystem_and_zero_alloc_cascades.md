@@ -28,9 +28,10 @@ When composing granular reactive UI in Flutter, developers confront three persis
 ```text
 composed                             ((context, via) => ...)            // 1. Reactive State Composition
  ├── .child                          (child: ..., (context, via, child) => ...)
- └── .children                       (children: ..., (context, via, children) => ...)
+ ├── .children                       (children: ..., (context, via, children) => ...)
  │
  ├── .vsync                          ((context, via, vsync) => ...)     // 2. Direct VSYNC Ticker Acquisition
+ │    └── .child / .children         (...)
  │
  ├── .animate                        (controller, (context, via, ctrl) => ...) // 3. 60/120fps Active Animation
  │    └── .child / .children         (...)
@@ -40,12 +41,12 @@ composed                             ((context, via) => ...)            // 1. Re
 ```
 
 ### 4 Core Execution Modalities:
-1. **Multi-State Composition (`composed(...)`)**: Dynamically tracks multiple nodes (`via(a)`, `via(b)`) via `RawViaTerminal`.
+1. **Multi-State Composition (`composed(...)`)**: Dynamically tracks multiple nodes (`via(a)`, `via(b)`) via `RawComputedTerminal<Widget>`.
 2. **Raw VSYNC Acquisition (`composed.vsync(...)`)**: Direct access to `TickerProvider` without `StatefulWidget` boilerplate.
 3. **Animation Isolation (`composed.animate(...)`)**: Isolates high-frequency frame ticking from parent trees, rendering at 120fps.
 4. **Continuous Frame Drivers (`composed.drive(...)`)**: Drives frame-autonomous widgets using display VSYNC ticks and elapsed durations.
 
-*(For zero-rebuild declarative side-effects, use `BloomListener`.)*
+*(For zero-rebuild declarative side-effects, use `BloomListener` or `bloom.listen`.)*
 
 ---
 
@@ -62,34 +63,50 @@ bloom.build           ((context, data) => ...)
 ### Why Zero Runtime Allocation?
 
 ```dart
-// lib/src/widgets/inline.dart
+// packages/blooming_flutter/lib/src/widgets/inline.dart
 extension BloomFlutterExtension<T> on Bloom<T> {
-  /// Entry point with zero heap allocation!
-  BloomBuildFunctor<T> get build => BloomBuildFunctor<T>(this);
-  BloomListenFunctor<T> get listen => BloomListenFunctor<T>(this);
+  @pragma('vm:prefer-inline')
+  BloomBuildFunctor<T> get build => BloomBuildFunctor._(this);
+
+  @pragma('vm:prefer-inline')
+  BloomListenFunctor<T> get listen => BloomListenFunctor._(this);
 }
 
-/// Dart extension type wraps Bloom<T> with compile-time inline dispatch:
-extension type const BloomBuildFunctor<T>(Bloom<T> _bloom) {
-  Widget call(Widget Function(BuildContext context, T data) builder) =>
-      _InlineSingleBloomWidget<T>(bloom: _bloom, builder: builder);
+/// Zero-cost compile-time functor for [BloomFlutterExtension.build].
+extension type const BloomBuildFunctor<T>._(Bloom<T> _bloom) {
+  @pragma('vm:prefer-inline')
+  Widget call(
+    Widget Function(BuildContext context, T data) builder, {
+    Key? key,
+  }) =>
+      _InlineSingleBloomWidget<T>(
+        key: key,
+        bloom: _bloom,
+        builder: builder,
+      );
 
+  @pragma('vm:prefer-inline')
   Widget child(
     Widget Function(BuildContext context, T data, Widget child) builder, {
     required Widget child,
+    Key? key,
   }) =>
       _InlineSingleBloomWithChildWidget<T>(
+        key: key,
         bloom: _bloom,
         builder: builder,
         child: child,
       );
 
+  @pragma('vm:prefer-inline')
   Widget children(
     Widget Function(BuildContext context, T data, List<Widget> children)
         builder, {
     required List<Widget> children,
+    Key? key,
   }) =>
       _InlineSingleBloomWithChildrenWidget<T>(
+        key: key,
         bloom: _bloom,
         builder: builder,
         children: children,

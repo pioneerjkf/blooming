@@ -424,13 +424,13 @@ abstract final class BloomTypeChecker {
       final targetType = target.staticType;
       if (targetType == null) return false;
 
-      // 2.1. Record tuple functor: (bloomA, bloomB).build(...)
+      // 2.1. Record tuple functor: (bloomA, bloomB).effect(...)
       if (targetType is RecordType) return true;
 
-      // 2.2. Bloom reactive state node methods: bloom.map(...), bloom.build(...)
+      // 2.2. Bloom reactive state node methods: bloom.distinct(...), bloom.build(...)
       if (isBloomType(targetType)) return true;
 
-      // 2.3. Bloom Animation Controller functors: controller.animate(...)
+      // 2.3. Bloom Animation Controller functors: composed.animate(controller, ...)
       if (isBloomAnimationController(targetType)) return true;
     }
 

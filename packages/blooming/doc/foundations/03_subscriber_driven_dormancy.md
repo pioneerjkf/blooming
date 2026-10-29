@@ -153,10 +153,13 @@ The Bloom Framework enforces pure laziness across synchronous derivations and ex
 While asynchronous ingress bridges use the microtask scheduler for dispatch, their underlying I/O lifecycle is strictly bound to subscriber presence:
 
 ```dart
+final selectedSymbol = blooming('AAPL');
+Stream<double> subscribeToSymbol(String symbol) => const Stream<double>.empty();
+
 // Continuous WebSocket or SSE feed
 final liveMarketFeed = computed.stream((via) {
   final symbol = via(selectedSymbol.bloom);
-  return marketClient.subscribeToSymbol(symbol);
+  return subscribeToSymbol(symbol);
 });
 ```
 
@@ -173,6 +176,7 @@ External handles requiring deterministic acquisition and disposal (hardware sens
 
 ```dart
 final tickInterval = blooming(const Duration(seconds: 1));
+void sendPing() {}
 
 // Timer handle is instantiated ONLY while observed by an active screen
 final heartbeatTimer = managed<Timer>(
@@ -201,38 +205,45 @@ final heartbeatTimer = managed<Timer>(
 
 ```dart
 final currentRoomId = blooming('room-general');
+Stream<List<String>> watchMessages(String roomId) => const Stream<List<String>>.empty();
 
 final roomMessages = computed.stream(
-  (via) => chatService.watchMessages(via(currentRoomId.bloom)),
+  (via) => watchMessages(via(currentRoomId.bloom)),
 );
 ```
 
 * **Automatic Subscription Swapping**: When `currentRoomId` changes, the previous room's stream subscription cancels automatically before the new stream subscription opens.
 * **Background Silence**: When the chat screen closes, `roomMessages` deactivates, closing the stream subscription and preventing memory leaks or background network traffic.
 
-### 4.3 Flutter Animation Tickers (`composed.drive` & `BloomVsyncWidget`)
+### 4.3 Periodic Tick & Heartbeat Streams (`Stream.periodic.toBloom()`)
 
-In `package:blooming_flutter`, frame tickers driven by `composed.drive` or [`BloomVsyncWidget`](../../../blooming_flutter/lib/src/widgets/framework.dart#L205) synchronize directly with the Flutter display VSYNC pipeline:
+In pure Dart services and CLI monitors, periodic heartbeat or telemetry streams bridged via `.toBloom()` execute ticks strictly while an active downstream terminal observes the node:
 
 ```dart
-base class PulseIndicator extends BloomWidget {
-  const PulseIndicator({super.key});
+import 'dart:async';
+import 'dart:math' show sin;
+import 'package:blooming/blooming.dart';
 
-  @override
-  Widget build(BuildContext context, BloomVia via) {
-    // 60/120Hz frame ticks execute ONLY while mounted in the active render tree
-    return composed.drive<double>(
-      (elapsed) => (sin(elapsed.inMilliseconds * 0.005) + 1.0) / 2.0,
-      (context, via, value) => Opacity(
-        opacity: value,
-        child: const Icon(Icons.circle, color: Colors.blue),
-      ),
-    );
-  }
-}
+// Periodic wave generator: subscribes and ticks ONLY while an active terminal is attached
+final pulseWave = Stream<double>.periodic(
+  const Duration(milliseconds: 16),
+  (tick) => (sin(tick * 0.1) + 1.0) / 2.0,
+).toBloom(initialFactory: () => 0.5);
+
+final terminal = RawBloomTerminal(
+  pulseWave,
+  onInvalidated: () {},
+);
+
+// 1. Activate terminal -> Opens periodic stream subscription
+terminal.activate();
+print('Active value: ${terminal.data}');
+
+// 2. Deactivate terminal -> Cancels periodic timer immediately (0 CPU in dormancy)
+terminal.deactivate();
 ```
 
-* **Element-Bound VSYNC**: Tickers are tied directly to the widget's `BloomElement`. When the route navigates away or is obscured in an inactive tab, Flutter's `TickerMode` and Bloom's deactivation hook suspend frame ticking immediately, eliminating phantom battery drain.
+* **Demand-Driven Timer Governance**: The periodic timer runs exclusively while `terminal.isActive` is `true`. Upon `terminal.deactivate()`, the stream subscription is canceled synchronously, eliminating background CPU wakeups and phantom timer leaks. (In `package:blooming_flutter`, the same dormancy contract extends to display VSYNC tickers via `composed.drive` and `BloomVsyncWidget`.)
 
 ### 4.4 Dynamic Branch Pruning & Dead Subgraph Dormancy (`switched`)
 
@@ -240,6 +251,8 @@ When switching between heterogeneous views or algorithms via `switched`:
 
 ```dart
 final isAdvancedMode = blooming(false);
+final advancedAnalytics = blooming('Advanced Metrics').bloom;
+final simpleOverview = blooming('Simple Summary').bloom;
 
 final activeDashboard = switched((via) {
   return via(isAdvancedMode.bloom) ? advancedAnalytics : simpleOverview;

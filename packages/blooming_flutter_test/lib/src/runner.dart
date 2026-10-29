@@ -20,6 +20,11 @@ extension BloomTesterScopeExtension on WidgetTester {
   /// If [overrides] is omitted, automatically inherits the active overrides defined
   /// on the enclosing [bloomWidgetTest] runner.
   ///
+  /// * [widget]: The root widget subtree to wrap in [BloomTestScope] and pump.
+  /// * [overrides]: Optional explicit list of [BloomOverride] mappings.
+  /// * [duration]: Optional frame advance duration forwarded to [WidgetTester.pumpWidget].
+  /// * [phase]: Target [EnginePhase] forwarded to [WidgetTester.pumpWidget].
+  ///
   /// ## Examples
   /// ```dart
   /// bloomWidgetTest(
@@ -60,6 +65,14 @@ extension BloomTesterScopeExtension on WidgetTester {
 ///
 /// If [autoFlushLpdag] is `true`, automatically flushes pending LPDAG 2-Phase microtask ticks
 /// and UI frames at the end of the test turn.
+///
+/// * [description]: The description of the widget test case.
+/// * [overrides]: List of [BloomOverride] mappings automatically supplied to [BloomTesterScopeExtension.pumpScopedWidget].
+/// * [test]: The widget test callback receiving the [WidgetTester].
+/// * [autoFlushLpdag]: Whether to automatically pump a frame after [test] completes. Defaults to `true`.
+/// * [skip]: Whether to skip this test case.
+/// * [timeout]: Optional test execution [Timeout].
+/// * [tags]: Optional test tags forwarded to [testWidgets].
 ///
 /// ## Examples
 /// ```dart

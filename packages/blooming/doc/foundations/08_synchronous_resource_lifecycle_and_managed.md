@@ -160,7 +160,7 @@ In the 2-Phase LPDAG engine, when an upstream dependency mutates:
 1. **Phase 1 (Non-Destructive Dirty Push)**:
    The mutation pushes a dirty pulse downstream (`_markDirty()`). **It does NOT prematurely destroy the existing resource.**
 2. **Phase 2 (Lazy Pull Re-creation / Update)**:
-   Only when a downstream consumer reads `.data` or `.snapshot` does `_pull()` execute. It disposes the stale resource and creates or updates to the new instance in a single atomic turn.
+   Only when a downstream consumer reads via `via(node)` or `untracked(node)` does `_pull()` execute. It disposes the stale resource and creates or updates to the new instance in a single atomic turn.
 3. **Thrashing Immunity**:
    If an upstream parameter changes 100 times before anyone reads, intermediate re-creations and disposals are completely bypassed. Only the final settled state triggers disposal and re-creation!
 
@@ -175,19 +175,19 @@ Destroying and recreating external resources on every upstream parameter change 
 To eliminate this, `managed` provides a built-in **`update: (via, current)` callback**:
 
 ```dart
-final scrollController = managed(
-  create: (via) => ScrollController(
-    initialScrollOffset: via(savedOffset.bloom),
+final serverPort = blooming(8080);
+
+final apiClient = managed(
+  create: (via) => ApiClient(
+    port: via(serverPort.bloom),
   ),
-  update: (via, controller) {
-    // Retains existing controller instance; updates properties in-place!
-    final targetOffset = via(savedOffset.bloom);
-    if (controller.hasClients) {
-      controller.jumpTo(targetOffset);
-    }
-    return controller; // Returning identical instance skips dispose()!
+  update: (via, client) {
+    // Retains existing client instance; updates port configuration in-place!
+    final targetPort = via(serverPort.bloom);
+    client.updatePort(targetPort);
+    return client; // Returning identical instance skips dispose()!
   },
-  dispose: (controller) => controller.dispose(),
+  dispose: (client) => client.close(),
 );
 ```
 
@@ -234,12 +234,14 @@ if (currentState != null && currentState.hasData && _updateResource != null) {
 External resources frequently depend on authentication tokens, permissions, or network connectivity. `managed` supports declarative precondition gating:
 
 ```dart
-final webSocket = managed<WebSocketChannel>(
+final authToken = blooming.late<String>();
+
+final apiClient = managed<ApiClient>(
   guard: (via) => via.state(authToken.bloom).hasData.guarded('AwaitingAuthToken'),
-  create: (via) => WebSocketChannel.connect(
-    Uri.parse('wss://api.example.com/feed?token=${via(authToken.bloom)}'),
+  create: (via) => ApiClient(
+    port: via(authToken.bloom).length + 8000,
   ),
-  dispose: (channel) => channel.sink.close(),
+  dispose: (client) => client.close(),
 );
 ```
 
@@ -254,6 +256,7 @@ final webSocket = managed<WebSocketChannel>(
 `managed` provides fine-grained scheduling policies matching diverse operational requirements:
 
 ```dart
+// packages/blooming/lib/src/bloom/managed.dart
 Bloom<T> call<T>({
   BloomGuard Function(BloomVia via)? guard,
   required T Function(BloomVia via) create,
@@ -265,11 +268,11 @@ Bloom<T> call<T>({
 ```
 
 ### 7.1 Lazy (`eager: false`, Default)
-* Resource allocation and updates are deferred until a downstream consumer reads `.data` or `.snapshot`.
+* Resource allocation and updates are deferred until a downstream consumer reads via `via(node)` or `untracked(node)`.
 * Avoids allocating resources for unrendered tabs or off-screen components.
 
 ### 7.2 Eager (`eager: true`)
-* Backed by [`_EagerManagedBloom<T>`](../../lib/src/bloom/_internal/_managed.dart#L157).
+* Backed by [`_EagerManagedBloom<T>`](../../lib/src/bloom/_internal/_managed.dart).
 * Resolves immediately upon terminal activation.
 * When upstream dependencies mutate while active, it automatically microtask-schedules updates via `_Scheduler.instance._scheduleEager(this)`.
 * On deactivation, pending microtask evaluations are purged via `_Scheduler.instance._cancelEager(this)`.
@@ -288,31 +291,40 @@ The cleanest pattern for asynchronous resources is to avoid monolithic God nodes
 * **`managed`**: Oversees the pure instance **lifecycle (allocation and synchronous disposal)**.
 * **`computed.future` / `stream`**: Tracks the resource's **asynchronous readiness (initialization, error handling, completion)**.
 
-### Production Example: Hardware Resource Requiring Asynchronous Initialization
+### Production Example: External Resource Requiring Asynchronous Handshake
 
 ```dart
+class DatabaseConnection {
+  DatabaseConnection(this.endpoint);
+  final String endpoint;
+  Future<void> connect() async {}
+  Future<void> close() async {}
+}
+
+final selectedEndpoint = blooming('postgres://localhost:5432/app');
+
 // 1. Instance Lifecycle Management: Instantiates on subscription; disposes on detachment
-final cameraInstance = managed(
-  create: (via) => CameraController(via(selectedCamera.bloom)),
-  dispose: (camera) {
-    // Synchronous disposal delegating async work to the background (Fire-and-Forget)
-    unawaited(camera.dispose());
+final dbInstance = managed(
+  create: (via) => DatabaseConnection(via(selectedEndpoint.bloom)),
+  dispose: (db) {
+    // Synchronous disposal delegating async teardown to the background (Fire-and-Forget)
+    unawaited(db.close());
   },
 );
 
-// 2. Asynchronous Readiness Pipeline: Observes camera.initialize() completion
-final cameraReady = computed.future((via) async {
-  final camera = via(cameraInstance);
-  await camera.initialize();
-  return camera; // Fully initialized camera handle
+// 2. Asynchronous Readiness Pipeline: Observes db.connect() completion
+final dbReady = computed.future((via) async {
+  final db = via(dbInstance);
+  await db.connect();
+  return db; // Fully connected database handle
 });
 ```
 
 ### Architectural Benefits:
 1. **State Transparency**:
-   The presentation layer queries `cameraReady.snapshot` to distinguish `isEmpty` (initial loading indicator), `hasError` (permission denied), and `hasData` (preview feed).
+   Downstream consumers query `untracked.state(dbReady)` to distinguish `isEmpty` (initial connection pending), `hasError` (connection refused), and `hasData` (active database handle).
 2. **Zero Resource Leaks**:
-   When the screen unmounts, `cameraInstance` triggers `dispose` immediately, releasing hardware handles.
+   When all downstream observers detach, `dbInstance` triggers `dispose` immediately, releasing socket handles.
 3. **Race-Condition Free**:
    If the screen unmounts during initialization, `_FutureBloomBridge` severs the topological edge, preventing stale completion callbacks from corrupting UI state.
 

@@ -161,6 +161,9 @@ sealed class Effect extends Tether {
   /// **Ensures:**
   /// * Returns a manifest [Effect] bound to [targets].
   ///
+  /// **Throws:**
+  /// * [RangeError] if [take] is negative.
+  ///
   /// ## Examples
   /// ```dart
   /// final counter = blooming(0);
@@ -208,6 +211,9 @@ sealed class Effect extends Tether {
   /// **Ensures:**
   /// * Returns an optimized unary manifest [Effect] bound to [target].
   ///
+  /// **Throws:**
+  /// * [RangeError] if [take] is negative.
+  ///
   /// ## Examples
   /// ```dart
   /// final query = blooming('');
@@ -233,8 +239,9 @@ sealed class Effect extends Tether {
 
   /// Creates an explicit dynamic discovery [Effect] using [BloomVia].
   ///
-  /// Unlike manifest effects which skip initial evaluation, [Effect.via] evaluates
-  /// immediately upon activation to dynamically discover dependencies accessed through `via(node)`.
+  /// Unlike manifest effects which skip initial evaluation, [Effect.via] schedules
+  /// an initial evaluation on the microtask scheduler upon activation to dynamically
+  /// discover dependencies accessed through `via(node)`.
   ///
   /// * Re-runs [action] whenever any dynamically observed node mutates.
   /// * Automatically prunes stale dependencies and registers new dependencies during re-evaluation (1-pass epoch diffing).
@@ -340,6 +347,9 @@ final class EffectScopedFunctor {
   /// **Ensures:**
   /// * Returns a scoped [Effect] bound to [targets].
   ///
+  /// **Throws:**
+  /// * [RangeError] if [take] is negative.
+  ///
   /// ## Examples
   /// ```dart
   /// final room = blooming('lobby');
@@ -386,6 +396,9 @@ final class EffectScopedFunctor {
   /// **Ensures:**
   /// * Returns an optimized unary scoped [Effect] bound to [target].
   ///
+  /// **Throws:**
+  /// * [RangeError] if [take] is negative.
+  ///
   /// ## Examples
   /// ```dart
   /// final room = blooming('lobby');
@@ -412,8 +425,9 @@ final class EffectScopedFunctor {
 
   /// Creates an explicit dynamic discovery [Effect] using [BloomVia] and [EffectScope].
   ///
-  /// Evaluates immediately upon activation to discover dynamic dependencies via `via(node)`,
-  /// providing an [EffectScope] to register turn teardowns and observe lifecycle state.
+  /// Schedules an initial evaluation on the microtask scheduler upon activation to discover
+  /// dynamic dependencies via `via(node)`, providing an [EffectScope] to register turn
+  /// teardowns and observe lifecycle state.
   ///
   /// Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
   /// is marked cancelled and its registered cleanups are executed in LIFO order.
@@ -471,6 +485,10 @@ final class EffectDebounceFunctor {
   /// **Ensures:**
   /// * Returns a debounce [Effect] attached to [targets].
   ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
+  /// * [RangeError] if [take] is negative.
+  ///
   /// ## Examples
   /// ```dart
   /// final query = blooming('');
@@ -519,6 +537,10 @@ final class EffectDebounceFunctor {
   ///
   /// **Ensures:**
   /// * Returns an optimized unary debounce [Effect] attached to [target].
+  ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
+  /// * [RangeError] if [take] is negative.
   ///
   /// ## Examples
   /// ```dart
@@ -578,6 +600,10 @@ final class EffectThrottleFunctor {
   /// **Ensures:**
   /// * Returns a throttle [Effect] attached to [targets].
   ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
+  /// * [RangeError] if [take] is negative.
+  ///
   /// ## Examples
   /// ```dart
   /// final scroll = blooming(0.0);
@@ -626,6 +652,10 @@ final class EffectThrottleFunctor {
   ///
   /// **Ensures:**
   /// * Returns an optimized unary throttle [Effect] attached to [target].
+  ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
+  /// * [RangeError] if [take] is negative.
   ///
   /// ## Examples
   /// ```dart

@@ -106,6 +106,7 @@ abstract base class _DeltaBloom<T> extends _CoupledUnaryRelay<Bloom<T>>
 ### 3.1 Subclass Specialization Contract
 Subclasses implement a single synchronous factory method:
 ```dart
+// packages/blooming/lib/src/bloom/_internal/_delta.dart
 Bloom<T> _evaluateDelta(BloomVia via);
 ```
 * **Functional Branching (`switched`)**: Evaluates user-defined `select(via)` and optional `guard(via)` to dynamically return pre-existing or cached `Bloom<T>` subtrees.
@@ -121,18 +122,18 @@ void _performSwitchGuarded([bool queuePush = true]) {
   try {
     final result = _deltaTerminal.evaluate();
     _performCouple(result, queuePush);
-  } catch (error, stackTrace) {
-    if (error is _ViaShortCircuit) {
-      final state = error.state;
-      if (state is _EmptyBloomState) {
-        _performCouple(Bloom.empty(state.emptyReason), queuePush);
-        return;
-      }
-      if (state is _ErrorBloomState) {
-        _performCouple(Bloom.error(state.error, state.stackTrace), queuePush);
-        return;
-      }
+  } on _ViaShortCircuit catch (e) {
+    final state = e.state;
+    if (state is _EmptyBloomState) {
+      _performCouple(Bloom.empty(state.emptyReason), queuePush);
+      return;
     }
+    if (state is _ErrorBloomState) {
+      _performCouple(Bloom.error(state.error, state.stackTrace), queuePush);
+      return;
+    }
+    _performCouple(_catchError(e, null), queuePush);
+  } catch (error, stackTrace) {
     _performCouple(_catchError(error, stackTrace), queuePush);
   }
 }
@@ -180,7 +181,7 @@ Evaluation scheduling decouples across two distinct policies matching the perfor
 | :--- | :--- | :--- |
 | **Applicable Primitives** | `switched(..., eager: false)` | `computed.future`, `computed.stream`, `switched(..., eager: true)` |
 | **Class Hierarchy** | `extends _DeltaBloom<T>` | `extends _DeltaBloom<T> implements _EagerSchedulable` |
-| **Switch Timing** | On-demand when consumers pull (`_read()`, `untracked(node)`, `.snapshot`) | Scheduled preemptively in microtask tick while active |
+| **Switch Timing** | On-demand when consumers pull (`_read()`, `untracked(node)`, `untracked.state(node)`) | Scheduled preemptively in microtask tick while active |
 | **Activation Behavior** | Activates `_deltaTerminal`; defers evaluation | Synchronously resolves switch if `_needsSwitch` or dirty |
 | **Deactivation Behavior** | Deactivates `_deltaTerminal` & decouples source | Cancels pending microtask, deactivates terminal & decouples source |
 | **Push-Origin Dispatch** | Passive: marks downstream `Check`/`Dirty` | Active: microtask dispatches `_PushScope.queueOrigin(this)` |
@@ -247,7 +248,7 @@ abstract base class _EagerDeltaBloom<T> extends _DeltaBloom<T> implements _Eager
 * **Preemptive Microtask Queue**: When active, `_onDeltaDirty()` enqueues the node into `_Scheduler.instance._scheduleEager(this)`.
 * **Immediate Origin Push**: When `_performScheduledEager()` runs in the microtask, it passes `queuePush = true` to `_performSwitchGuarded()`. This registers the relay as a push origin via `_PushScope.queueOrigin(this)`, broadcasting a push-dirty pulse downstream immediately upon branch swap.
 * **Activation Synchronization**: The moment an `_EagerDeltaBloom` transitions from inactive to active, `_activate()` synchronously evaluates the pending switch so downstream listeners receive the fresh active branch without a 1-frame microtask lag.
-* **Pull-Before-Tick Coalescing**: If a consumer reads `untracked(node)` or `.snapshot` *before* the scheduled microtask tick runs, `_resolve()` executes `_performSwitchGuarded(false)` synchronously and resets `_needsSwitch = false`. When the microtask tick subsequently fires, it early-returns cleanly without redundant evaluation.
+* **Pull-Before-Tick Coalescing**: If a consumer reads `untracked(node)` or `untracked.state(node)` *before* the scheduled microtask tick runs, `_resolve()` executes `_performSwitchGuarded(false)` synchronously and resets `_needsSwitch = false`. When the microtask tick subsequently fires, it early-returns cleanly without redundant evaluation.
 
 ---
 
@@ -385,6 +386,8 @@ final class SwitchedFunctor {
 ### 6.2 Precondition Gating with `BloomGuard`
 `switched` supports precondition guards to gate branch switching and avoid instantiating heavy subtrees until prerequisites are satisfied:
 ```dart
+final homeFeed = blooming('home');
+final trendingFeed = blooming('trending');
 final selectedTab = blooming(0);
 final isLoggedIn = blooming(false);
 
@@ -402,8 +405,12 @@ final currentFeed = switched(
   Creating new `BloomController` instances inside `select` on every dependency tick orphans reactive subgraphs and breaks lifecycle continuity.
 
 ```dart
+final isDark = blooming(true);
+final darkTheme = blooming('Dark');
+final lightTheme = blooming('Light');
+
 // BAD: Re-creates controller on every branch evaluation
-final currentTheme = switched((via) {
+final badTheme = switched((via) {
   return blooming('Dark').bloom; // Anti-pattern: allocates new node every tick!
 });
 

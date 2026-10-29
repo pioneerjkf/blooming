@@ -19,12 +19,28 @@ import 'matchers.dart';
 /// Encapsulates the entire testing lifecycle of reactive state pipelines:
 /// 1. Instantiates the state container or store via [build].
 /// 2. If [target] is provided, automatically establishes an active observation subscription
-///    ([RawBloomTerminal]), recording an immutable snapshot ring buffer.
+///    ([RawBloomTerminal]), recording an ordered sequence of [BloomSnapshot] emissions.
 /// 3. Executes state mutations via [act].
-/// 4. If [wait] is specified, controls virtual time via [FakeAsync] and flushes microtasks.
+/// 4. If [wait] is specified, controls virtual time via [fakeAsync] and flushes microtasks.
 /// 5. Validates expected state transitions via [expect] (matching [BloomSnapshot] sequences or raw values).
 /// 6. Verifies invocations and mocks via [verify].
 /// 7. Automatically detaches all subscriptions and executes [tearDown] with 0% state pollution.
+///
+/// * [description]: The description of the unit test case.
+/// * [build]: Factory callback constructing the state container or store under test.
+/// * [seed]: Optional setup callback invoked on the built target before subscribing to [target].
+/// * [target]: Optional selector returning the [Bloom] node to observe and record snapshots from.
+/// * [act]: Optional callback performing synchronous or asynchronous state mutations on the target.
+/// * [wait]: Optional virtual time duration to elapse via [fakeAsync] after [act].
+/// * [expect]: Optional callback returning the expected list of values, snapshots, or [test_pkg.Matcher].
+/// * [errors]: Optional callback returning the expected list or matcher of uncaught exceptions thrown in [act].
+/// * [verify]: Optional post-act verification callback receiving the built instance.
+/// * [tearDown]: Optional cleanup callback invoked in a `finally` block after terminal deactivation.
+/// * [tags]: Optional test tags forwarded to `package:test`.
+/// * [retry]: Optional retry count forwarded to `package:test`.
+/// * [testOn]: Optional platform selector expression forwarded to `package:test`.
+/// * [timeout]: Optional test execution [test_pkg.Timeout] forwarded to `package:test`.
+/// * [skip]: Whether to skip this test case. Defaults to `false`.
 ///
 /// ## Examples
 /// ```dart

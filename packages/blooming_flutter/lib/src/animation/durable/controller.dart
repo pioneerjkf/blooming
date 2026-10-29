@@ -675,6 +675,9 @@ extension DurableAnimationControllerObserveExtension
   /// * [equals]: Custom equality function.
   /// * [graceful]: Optional teardown deferral policy.
   ///
+  /// **Requires:**
+  /// * If [equals] is provided, [distinct] must be `true`.
+  ///
   /// **Ensures:**
   /// * Emits updated [double] values whenever the controller's animation updates.
   ///
@@ -715,7 +718,7 @@ extension DurableAnimationControllerObserveExtension
         graceful: graceful,
       );
 
-  /// Observes this controller's animation [status] as a reactive [Bloom<AnimationStatus>].
+  /// Observes this controller's animation [status] as a reactive [Bloom] of [AnimationStatus].
   ///
   /// ### Caution: VSYNC Coupling (Passive Observer)
   /// [observeStatus] is a **passive observer** of this controller's timeline and does NOT
@@ -728,6 +731,15 @@ extension DurableAnimationControllerObserveExtension
   /// * Emits updated [AnimationStatus] values whenever the controller's animation status updates.
   /// * Subscribes to status updates demand-driven while active, and automatically unsubscribes on
   ///   deactivation to prevent listener memory leaks.
+  ///
+  /// **Warning (Anti-Pattern Prevention):**
+  /// - Do NOT invoke [observeStatus] directly inside a widget `build()` method; cache the returned [Bloom] in state or a store.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final statusBloom = controller.observeStatus();
+  /// final label = statusBloom.build((context, status) => Text(status.name));
+  /// ```
   Bloom<AnimationStatus> observeStatus({
     bool distinct = true,
     Graceful? graceful,
@@ -746,10 +758,14 @@ extension DurableAnimationControllerObserveExtension
 @visibleForTesting
 extension DurableAnimationTestingExtension on DurableAnimationController {
   /// Attaches a [TickerProvider] as an active vsync holder.
+  ///
+  /// * [vsync]: The [TickerProvider] socket to attach.
   @visibleForTesting
   void attachVsync(TickerProvider vsync) => _attachVsync(vsync);
 
   /// Detaches a [TickerProvider] from the active vsync holder pool.
+  ///
+  /// * [vsync]: The [TickerProvider] socket to detach.
   @visibleForTesting
   bool detachVsync(TickerProvider vsync) => _detachVsync(vsync);
 
@@ -758,6 +774,8 @@ extension DurableAnimationTestingExtension on DurableAnimationController {
   void hibernate() => _hibernate();
 
   /// Wakes this controller by attaching [vsync].
+  ///
+  /// * [vsync]: The [TickerProvider] socket used to wake this controller.
   @visibleForTesting
   void wake(TickerProvider vsync) => attachVsync(vsync);
 
@@ -766,6 +784,8 @@ extension DurableAnimationTestingExtension on DurableAnimationController {
   Animation<double> get view => _view;
 
   /// Drives an animatable using the raw view strictly for unit testing harnesses.
+  ///
+  /// * [child]: The [Animatable] transformation to chain onto this controller.
   @visibleForTesting
   Animation<U> drive<U>(Animatable<U> child) => child.animate(_view);
 }
@@ -777,6 +797,9 @@ extension DurableAnimationTestingExtension on DurableAnimationController {
 @visibleForTesting
 base class TestDurableVSync implements _DurableTickerProvider {
   /// Creates a test-only durable vsync provider.
+  ///
+  /// * [isActive]: Whether tickers created by this provider start active. Defaults to `true`.
+  /// * [tickerFactory]: Optional custom factory for constructing [Ticker] instances.
   const TestDurableVSync({
     bool isActive = true,
     Ticker Function(TickerCallback onTick)? tickerFactory,

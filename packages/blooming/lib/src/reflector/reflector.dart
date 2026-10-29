@@ -91,8 +91,8 @@ abstract interface class LpdagReflector {
 
 /// Specialized diagnostic reflector interface for reactive state carriers ([Bloom]).
 ///
-/// Exposes the node's three-state FSM ([BloomState]), current data payload,
-/// snapshot, and debugging mutation sandbox handles.
+/// Exposes the node's three-state FSM ([BloomState]) and point-in-time
+/// diagnostic [BloomDebugSnapshot].
 abstract interface class BloomReflector implements LpdagReflector {
   /// The live [BloomState] view of this node.
   BloomState<dynamic> get state;

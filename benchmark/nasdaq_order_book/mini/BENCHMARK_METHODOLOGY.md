@@ -22,7 +22,7 @@ This document outlines **what and how the benchmark measures, and what it delibe
 
 This benchmark compares two widely adopted community state managers and Flutter's built-in primitive against two experimental engines designed by the benchmark author. To maintain transparency and enable objective evaluation, the origins and architectural paradigms of each framework are disclosed below.
 
-### 🏢 Established Community & Standard Flutter Frameworks
+### Established Community & Standard Flutter Frameworks
 * **Flutter (Pure ValueNotifier)** (`flutter` SDK)
   - Built strictly using Flutter SDK primitives (`ValueNotifier<T>`, `ListenableBuilder`, `InheritedWidget`) without external dependencies.
   - Serves as the zero-dependency vanilla baseline for fine-grained per-level order book rebuilds.
@@ -33,7 +33,7 @@ This benchmark compares two widely adopted community state managers and Flutter'
   - The most widely adopted compile-safe provider architecture in the Flutter ecosystem.
   - Decouples global state and ensures testability and lifecycle safety.
 
-### 🛠️ Author-Designed Experimental Frameworks (Authorship Disclosure)
+### Author-Designed Experimental Frameworks (Authorship Disclosure)
 * **Blooming** (`blooming` 0.1.4, `blooming_flutter` 0.1.4)
   - **Architecture**: Blooming 2-Phase LPDAG (Lazy Pull Directed Acyclic Graph)
   - **Design Philosophy**: Propagates $O(1)$ dirty flags on upstream updates, deferring actual calculation until evaluation (Pull, e.g. at VSync) to prevent redundant intermediate computations and diamond dependency glitches.
@@ -96,12 +96,12 @@ To prevent misinterpreting high tick volumes as individual UI/state invalidation
 1. **Generator Ingest Throughput (`generator_tps` / `sustained_tps`)**:
    - Measures the raw volume of simulated financial order-book ticks generated and processed per second inside the dedicated background isolate.
    - **Linear Scaling Region (up to ~10M TPS)**: Targets within host hardware single-core capacity achieve ~100% sustained throughput.
-   - **Physical Hardware Saturation Region (10M to 1,000,000,000+ TPS)**: When configured beyond physical CPU capacity (such as the default 1,000,000,000 TPS / 10억 틱 stress target), the generator isolate runs at 100% single-core saturation, yielding the physical maximum throughput sustained by the host CPU (~14.5M TPS on Apple Silicon).
+   - **Physical Hardware Saturation Region (10M to 1,000,000,000+ TPS)**: When configured beyond physical CPU capacity (such as the default 1,000,000,000 TPS stress target), the generator isolate runs at 100% single-core saturation, yielding the physical maximum throughput sustained by the host CPU (~15.8–16.5M TPS on Apple Silicon).
 
 2. **Framework State Update Frequency (`framework_update_rate_hz` / `batch_dispatches_per_sec`)**:
-   - The background isolate bundles simulated ticks into 1ms payloads (`TickBatchPayload(batchSize: N, ...)`), sending approximately ~1,000 payloads per second across the isolate port to the main UI isolate.
+   - The background isolate bundles simulated ticks into 1ms payloads (`TickBatchPayload(batchSize: N, ...)`), sending approximately ~1,000 payloads per second across the isolate port to the main UI isolate under non-saturated loads (dropping to ~16 Hz under 1B TPS target saturation).
    - The main isolate pipeline unpacks each payload in `updateBatch()` and notifies framework reactive state listeners (`ValueNotifier`, `Bloom`, `Signal`, `StateNotifier`, `Coral`) **once per batch**.
-   - **Crucial Distinction**: `sustained_tps` (e.g. 14.5M TPS) reflects the background isolate's tick generation capacity, **NOT** 14.5 million distinct UI widget rebuilds or separate framework state tree invalidations per second. The actual frequency of framework state invalidations corresponds to the batch dispatch rate (~1,000 Hz).
+   - **Crucial Distinction**: `sustained_tps` (e.g. 15.8–16.5M TPS) reflects the background isolate's tick generation capacity, **NOT** 16 million distinct UI widget rebuilds or separate framework state tree invalidations per second. The actual frequency of framework state invalidations corresponds to the batch dispatch rate.
 
 - **Metric Focus**: Sustained TPS and Achievement Rate represent the background isolate's physical compute ceiling. Meanwhile, **Event Loop Lag** on the main isolate serves as the primary differentiator of framework UI responsiveness under continuous upstream streaming pressure.
 

@@ -62,7 +62,7 @@ Mooring anchors unobserved reactive nodes to an internal virtual terminal ([`_Mo
 ```
 
 ### 2.1 The Tranquil Harbor (`_MooringTerminal`)
-Unlike ordinary consumer terminals that pull data and trigger UI rebuilds, [`_MooringTerminal`](../../lib/src/engine/_internal/_mooring.dart#L43) is a tranquil harbor: it holds topological edges purely to prevent upstream lifecycles from sinking into dormant deactivation.
+Unlike ordinary consumer terminals that pull data and trigger UI rebuilds, [`_MooringTerminal`](../../lib/src/engine/_internal/_mooring.dart) is a tranquil harbor: it holds topological edges purely to prevent upstream lifecycles from sinking into dormant deactivation.
 
 ```dart
 // packages/blooming/lib/src/engine/_internal/_mooring.dart
@@ -89,7 +89,7 @@ final class _MooringTerminal extends _Terminal {
 ---
 
 ### 2.2 Intrusive Edge Management (`_MooringEdge`)
-`_MooringTerminal` manages lightweight intrusive [`_MooringEdge`](../../lib/src/engine/_internal/_mooring.dart#L12) instances:
+`_MooringTerminal` manages lightweight intrusive [`_MooringEdge`](../../lib/src/engine/_internal/_mooring.dart) instances:
 * When a node enters period grace, `moor(node, duration)` instantiates a lightweight `_MooringEdge` and prepends it to `_mooringHead` via intrusive pointers (`_prevMooring`, `_nextMooring`) in $O(1)$.
 * When unmoored or expired, the edge is unlinked in $O(1)$ and cleanly detached, rendering it unreachable and eligible for subsequent Dart VM GC reclamation.
 * **Zero Engine Leaks**: Intrusive unlinking guarantees that the reactive engine retains zero dangling references; actual memory deallocation and generational collection are handled naturally by the Dart VM runtime.
@@ -114,28 +114,30 @@ The Bloom Framework provides two distinct grace policy implementations matching 
 ```
 
 ### 3.1 Microtask Deferral (`Graceful.microtask` / `Graceful()`)
-* **Underlying Engine**: Backed by [`_MicrotaskGraceHandle`](../../lib/src/engine/_internal/_graceful.dart#L19) and [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart).
+* **Underlying Engine**: Backed by [`_MicrotaskGraceHandle`](../../lib/src/engine/_internal/_graceful.dart) and [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart).
 * **Zero-Allocation Optimization**: It does **not** allocate `_MooringEdge` objects or Dart `Timer` handles. It registers directly in `_Scheduler.instance._scheduleGraceHandle(this)`.
 * **Application**: Perfect for Flutter widget tree rebuilding, `Hero` transitions, and list element reparenting occurring within the same event loop tick.
 
 ### 3.2 Time-Based Mooring (`Graceful.period(Duration)`)
-* **Underlying Engine**: Backed by [`_PeriodGraceHandle`](../../lib/src/engine/_internal/_mooring.dart#L114) and `_MooringTerminal`.
+* **Underlying Engine**: Backed by [`_PeriodGraceHandle`](../../lib/src/engine/_internal/_mooring.dart) and `_MooringTerminal`.
 * **Application**: Multi-second retention for screen navigation (bottom navigation bars, master-detail transitions, tab pages).
 * **Stream In-Flight Continuity**: WebSockets and broadcast streams remain connected; events arriving while unobserved are buffered and available instantly upon remount.
 
 ### 3.3 Factory Constructors and Named Constants
 
 ```dart
+const socketStream = Stream<List<String>>.empty();
+
 // 1. Direct Default Microtask Deferral (Constant or Constructor):
-final formState = managed(
-  create: (via) => FormValidator(),
-  dispose: (v) => v.dispose(),
+final serviceState = managed(
+  create: (via) => HeavyService(),
+  dispose: (s) => s.dispose(),
   graceful: Graceful.microtask, // or const Graceful()
 );
 
 // 2. Time-Based Mooring Window (Explicit .period):
 final userProfile = computed.future(
-  (via) => fetchProfile(via(userId.bloom)),
+  (via) => fetchProfile(via(userId)),
 ).graceful(const Graceful.period(Duration(seconds: 30)));
 
 // 3. BloomController Direct Attachment:
@@ -146,7 +148,7 @@ final counter = blooming(
 
 // 4. Stream Extension Mooring:
 final feedBloom = socketStream.toBloom(
-  initialFactory: () => const <Message>[],
+  initialFactory: () => const <String>[],
   graceful: const Graceful.period(Duration(seconds: 15)),
 );
 ```
@@ -155,7 +157,7 @@ final feedBloom = socketStream.toBloom(
 
 ## 4. Topological Mechanics: `_GracefulNodeMixin`
 
-Nodes with graceful support mix in [`_GracefulNodeMixin`](../../lib/src/engine/_internal/_graceful.dart#L77):
+Nodes with graceful support mix in [`_GracefulNodeMixin`](../../lib/src/engine/_internal/_graceful.dart):
 
 ```dart
 // packages/blooming/lib/src/engine/_internal/_graceful.dart
@@ -241,7 +243,7 @@ Even if subscriber counts drop to zero during an active tick, **active effects r
 
 If deactivation ran before effect execution:
 * Executing effects would encounter destroyed connections or disposed controllers, throwing `StateError` anomalies.
-* By scheduling [`_GracefulSchedulerMixin`](../../lib/src/engine/_internal/_scheduler.dart#L181) strictly at the tail of the scheduler loop, all side-effects and reads complete safely against coherent state before deallocations commence.
+* By scheduling [`_GracefulSchedulerMixin`](../../lib/src/engine/_internal/_scheduler.dart) strictly at the tail of the scheduler loop, all side-effects and reads complete safely against coherent state before deallocations commence.
 
 ---
 

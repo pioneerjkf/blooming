@@ -73,8 +73,8 @@ This ensures that downstream consumers never observe corrupted or half-initializ
 Under the 2-Phase LPDAG engine:
 - **Push-Dirty Phase**: When an upstream node that participates in a `guard` mutates, only a 1-bit invalidation flag travels downstream. **Guards are never evaluated synchronously during the push phase.**
 - **Lazy-Pull Phase**:
-  - **Synchronous & Dormant Pipelines**: For synchronous computations (`computed`, `managed`, `switched(eager: false)`) and unobserved dormant nodes, the guard is evaluated strictly on-demand when a downstream consumer reads `.data`, `.snapshot`, or an active terminal pulls. Dormant nodes consume zero CPU cycles evaluating guards.
-  - **Active Asynchronous & Eager Pipelines**: For active asynchronous bridges ([`_FutureComputedBloom`](../../lib/src/bloom/_internal/_computed.dart), [`_StreamComputedBloom`](../../lib/src/bloom/_internal/_computed.dart)) and eager dynamic cascades ([`_EagerSwitchedBloom`](../../lib/src/bloom/_internal/_switched.dart)), when dependencies mutate while active subscribers exist (`_lifecycle.isActive == true`), the guard and dynamic branch coupling are scheduled proactively on the microtask turn ([`_scheduleEager`](../../lib/src/bloom/_internal/_delta.dart#L182)) to initiate or abort I/O and stream subscriptions eagerly without waiting for a manual read.
+  - **Synchronous & Dormant Pipelines**: For synchronous computations (`computed`, `managed`, `switched(eager: false)`) and unobserved dormant nodes, the guard is evaluated strictly on-demand when a downstream consumer reads `untracked(node)`, `untracked.state(node)`, or an active terminal pulls. Dormant nodes consume zero CPU cycles evaluating guards.
+  - **Active Asynchronous & Eager Pipelines**: For active asynchronous bridges ([`_FutureComputedBloom`](../../lib/src/bloom/_internal/_computed.dart), [`_StreamComputedBloom`](../../lib/src/bloom/_internal/_computed.dart)) and eager dynamic cascades ([`_EagerSwitchedBloom`](../../lib/src/bloom/_internal/_switched.dart)), when dependencies mutate while active subscribers exist (`_lifecycle.isActive == true`), the guard and dynamic branch coupling are scheduled proactively on the microtask turn ([`_scheduleEager`](../../lib/src/bloom/_internal/_delta.dart)) to initiate or abort I/O and stream subscriptions eagerly without waiting for a manual read.
 
 ---
 
@@ -156,12 +156,13 @@ final guard = _guard;
 if (guard != null) {
   final decision = guard(_via);
   if (!decision.isPass) {
-    final hadData = _state?.hasData ?? false;
-    _disposeCurrent(); // Synchronously calls user dispose() callback!
-    if (hadData) {
+    final oldState = _state;
+    _disposeCurrent();
+    final reason = decision.reason;
+    if (oldState is! _EmptyBloomState<T> || !identical(oldState.emptyReason, reason)) {
       _version++;
     }
-    return _state = _EmptyBloomState<T>(decision.reason);
+    return _state = reason != null ? _EmptyBloomState<T>(reason) : const _EmptyBloomState();
   }
 }
 ```
@@ -190,6 +191,11 @@ When `guard` evaluates to `isBlock`, [`_SwitchedSelectionMixin._evaluateDelta()`
 In class-based domain components ([`Computation<T>`](../../lib/src/bloom/computed.dart)), `guard` can be configured via constructor parameter or by overriding the `BloomGuard guard(BloomVia via)` method:
 
 ```dart
+class CheckoutSummary {
+  const CheckoutSummary({required this.subtotal});
+  final double subtotal;
+}
+
 base class CheckoutComputation extends Computation<CheckoutSummary> {
   CheckoutComputation(this.cart, this.paymentMethod, this.shippingAddress);
 
@@ -214,7 +220,7 @@ base class CheckoutComputation extends Computation<CheckoutSummary> {
   @override
   CheckoutSummary compute(BloomVia via) {
     return CheckoutSummary(
-      subtotal: via(cart).items.fold(0.0, (acc, item) => acc + item.price * item.quantity),
+      subtotal: via(cart).items.length * 10.0,
     );
   }
 }
@@ -327,26 +333,24 @@ final chatSocket = managed<ApiClient>(
 );
 ```
 
-### Example 2: Granular Domain Preconditions & UI Guidance
+### Example 2: Granular Domain Preconditions & Consumer State Gating
 
 ```dart
-// In Flutter UI:
-class CheckoutSubmitButton extends StatelessWidget {
-  const CheckoutSubmitButton({super.key, required this.checkout});
-  final CheckoutComputation checkout;
+class CheckoutSummary {
+  const CheckoutSummary({required this.subtotal});
+  final double subtotal;
+}
 
-  @override
-  Widget build(BuildContext context) {
-    // Declarative 3-state UI gating:
-    return ElevatedButton(
-      onPressed: checkout.hasData ? () => submitOrder() : null,
-      child: Text(
-        checkout.hasData
-            ? 'Place Order (\$${checkout.data.subtotal.toStringAsFixed(2)})'
-            : (checkout.emptyReason?.toString() ?? 'Prerequisites Pending'),
-      ),
-    );
+void submitOrder(CheckoutSummary summary) {}
+
+// Pure Dart consumer inspecting Computation<CheckoutSummary> (which implements BloomState):
+String renderCheckoutAction(Computation<CheckoutSummary> checkout) {
+  if (checkout.hasData) {
+    final summary = checkout.data;
+    submitOrder(summary);
+    return 'Place Order (\$${summary.subtotal.toStringAsFixed(2)})';
   }
+  return checkout.emptyReason?.toString() ?? 'Prerequisites Pending';
 }
 ```
 

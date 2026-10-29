@@ -79,11 +79,12 @@ extension FutureBloomExtension<T> on Future<T> {
   ///   onError: (error, stackTrace) => UserProfile.fallback(),
   /// );
   ///
-  /// final greeting = untracked.state(profileBloom).match(
-  ///   data: (profile) => 'Welcome, ${profile.name}!',
-  ///   empty: () => 'Loading profile...',
-  ///   error: (err, stack) => 'Failed to load profile.',
-  /// );
+  /// final state = untracked.state(profileBloom);
+  /// final greeting = switch (state.phase) {
+  ///   BloomPhase.valid => 'Welcome, ${state.data.name}!',
+  ///   BloomPhase.empty => 'Loading profile...',
+  ///   BloomPhase.error => 'Failed to load profile.',
+  /// };
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> toBloom({
@@ -189,16 +190,16 @@ extension StreamBloomExtension<T> on Stream<T> {
   ///   3. Supervising dynamic stream connection lifetimes with [Bloom.managed].
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT invoke `stream.toBloom(...)` repeatedly inside build methods or `computed` closures without caching,
+  /// - Do NOT invoke `stream.toBloom(...)` repeatedly inside `computed` closures without caching,
   ///   as it will establish and cancel separate stream subscriptions on every evaluation.
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Converting stream to Bloom on every render loop
-  /// Widget build(BuildContext context) {
-  ///   final stockBloom = stockStream.toBloom(); // Re-subscribes every frame!
-  ///   return composed((context, via) => Text('${via.state(stockBloom).dataOrNull}'));
-  /// }
+  /// // [Anti-Pattern] Converting stream to Bloom on every derivation evaluation
+  /// final formattedPrice = computed((via) {
+  ///   final stockBloom = stockStream.toBloom(); // Re-subscribes on every evaluation!
+  ///   return '\$${via(stockBloom).toStringAsFixed(2)}';
+  /// });
   /// ```
   ///
   /// **GOOD:**
@@ -207,7 +208,7 @@ extension StreamBloomExtension<T> on Stream<T> {
   /// class StockController {
   ///   late final stockBloom = stockStream.toBloom(
   ///     initialFactory: () => 0.0,
-  ///     graceful: graceful,
+  ///     graceful: Graceful.microtask,
   ///   );
   /// }
   /// ```
@@ -219,7 +220,7 @@ extension StreamBloomExtension<T> on Stream<T> {
   /// final sensorBloom = sensorStream.toBloom(
   ///   initialFactory: () => 0,
   ///   distinct: true,
-  ///   graceful: graceful,
+  ///   graceful: Graceful.microtask,
   /// );
   ///
   /// final label = switch (untracked.state(sensorBloom).phase) {

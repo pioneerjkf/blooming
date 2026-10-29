@@ -99,54 +99,67 @@ class AuthStore {
   final _loginSuccessSignal = blooming.signal();
   BloomSignal get loginSuccessSignal => _loginSuccessSignal.bloom;
 
-  final userProfile = blooming<UserProfile?>(null);
+  final userProfile = blooming<User?>(null);
 
   Future<void> login(String credentials) async {
-    final profile = await api.authenticate(credentials);
+    final profile = User(credentials);
     userProfile.set(profile);
-    
+
     // Fires discrete event pulse
     _loginSuccessSignal.emit();
   }
 }
 
 // In background or service layer:
-void setupAnalytics(AuthStore authStore) {
+EffectRunner setupAnalytics(AuthStore authStore) {
   // Manifest Effect skips initial execution (0 runs on mount)
-  Effect([authStore.loginSuccessSignal], () {
+  return Effect.unary(authStore.loginSuccessSignal, () {
     final user = untracked(authStore.userProfile.bloom);
-    analytics.logEvent('user_logged_in', {'userId': user?.id});
-  });
+    print('user_logged_in: ${user?.id}');
+  }).start();
 }
 ```
 
-### 4.2 Flutter UI Side-Effects (`BloomListener`)
+### 4.2 Zero-Replay Across Late Subscriptions & Reconnections
 
-In Flutter applications, listening to signals via `BloomListener` eliminates the "Zombie Dialog" bug completely across widget rebuilds and route transitions:
+When an observer detaches and later re-subscribes (or a new observer attaches after an event has already occurred), `BloomSignal` guarantees **zero zombie event replay**:
 
 ```dart
-class CheckoutView extends StatelessWidget {
-  const CheckoutView({super.key, required this.store});
-  final CheckoutStore store;
+class CheckoutStore {
+  final _paymentFailureSignal = blooming.signal();
+  BloomSignal get paymentFailureSignal => _paymentFailureSignal.bloom;
 
-  @override
-  Widget build(BuildContext context) {
-    return BloomListener(
-      store.paymentFailureSignal.bloom,
-      (context, _) {
-        // Runs STRICTLY when paymentFailureSignal.emit() is called.
-        // Remounting this view or popping back to this screen NEVER re-triggers the dialog!
-        showDialog(
-          context: context,
-          builder: (ctx) => const AlertDialog(
-            title: Text('Payment Failed'),
-            content: Text('Please verify your payment credentials and retry.'),
-          ),
-        );
-      },
-      child: CheckoutForm(store: store),
-    );
-  }
+  void notifyPaymentFailed() => _paymentFailureSignal.emit();
+}
+
+void main() async {
+  final store = CheckoutStore();
+  final alerts = <String>[];
+
+  // 1. Emit a signal while no observer is attached:
+  store.notifyPaymentFailed();
+
+  // 2. Attach an observer AFTER the pulse has already occurred:
+  final runner = Effect.unary(
+    store.paymentFailureSignal,
+    () => alerts.add('Payment Failed: please verify credentials.'),
+  ).start();
+
+  // Runs STRICTLY when notifyPaymentFailed() is called while active.
+  // Attaching or restarting the runner NEVER replays historical pulses!
+  print(alerts.isEmpty); // true
+
+  // 3. Subsequent emission triggers the active observer:
+  store.notifyPaymentFailed();
+  await Future<void>.delayed(Duration.zero);
+  print(alerts.length); // 1
+
+  // 4. Stopping and restarting the runner does NOT re-trigger the prior pulse:
+  runner.stop();
+  runner.start();
+  await Future<void>.delayed(Duration.zero);
+  print(alerts.length); // Still 1 (zero zombie replay!)
+  runner.stop();
 }
 ```
 
@@ -155,12 +168,13 @@ class CheckoutView extends StatelessWidget {
 Signals serve as declarative cache-invalidation triggers inside asynchronous pipelines ([computed.future](../../lib/src/bloom/computed.dart)), initiating immediate background refetches without imperative callback spaghettis:
 
 ```dart
+Future<String> fetchMarketSnapshot() async => 'NASDAQ: 18500';
 final refreshSignal = blooming.signal();
 
 // Baseline snapshot loads on mount; subsequent [refreshSignal.emit()] pulses trigger fresh refetches:
 final marketOverview = computed.future((via) async {
   via(refreshSignal.bloom); // Dynamically subscribes to the signal pulse
-  return stockApi.fetchMarketSnapshot();
+  return fetchMarketSnapshot();
 });
 
 // User pull-to-refresh action:
@@ -176,6 +190,8 @@ Signals can be observed inside conditional selectors ([switched](../../lib/src/b
 ```dart
 enum FeedTab { trending, personalized }
 
+final trendingFeed = blooming('Trending');
+final personalizedFeed = blooming('Personalized');
 final selectedTab = blooming(FeedTab.trending);
 final reloadTabSignal = blooming.signal();
 
@@ -198,13 +214,13 @@ When coordinating managed lifecycle resources ([managed](../../lib/src/bloom/man
 ```dart
 final reconnectSignal = blooming.signal();
 
-final activeSocket = managed<WebSocketChannel>(
+final activeClient = managed<ApiClient>(
   create: (via) {
     via(reconnectSignal.bloom); // Re-creates socket connection on signal pulse
-    return WebSocketChannel.connect(serverUri);
+    return ApiClient(port: 8080);
   },
-  dispose: (channel) {
-    channel.sink.close();
+  dispose: (client) {
+    client.close();
   },
 );
 
@@ -219,14 +235,17 @@ void reconnect() {
 `BloomSignalController` supports subscriber boundary callbacks, allowing emitters to coordinate upstream data sources (e.g., hardware sensors, polling intervals, SSE listeners) based on whether any downstream UI component is actively observing the signal:
 
 ```dart
+void subscribePush() {}
+void unsubscribePush() {}
+
 final pushEventSignal = blooming.signal(
   onActivated: () {
     // Connect to external push stream only when observed by active terminal/UI
-    pushClient.subscribe();
+    subscribePush();
   },
   onDeactivated: () {
     // Deterministically disconnect when all UI widgets unmount
-    pushClient.unsubscribe();
+    unsubscribePush();
   },
 );
 ```
@@ -245,7 +264,7 @@ print(snapshot.version);     // 0 (Increments monotonically on each emit)
 print(snapshot.isActive);    // true / false based on downstream connections
 
 refreshSignal.emit();
-print(refreshSignal.bloom.debugVersion); // 1
+print(refreshSignal.bloom.debug.snapshot().version); // 1
 ```
 
 ---

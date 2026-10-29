@@ -24,7 +24,7 @@
     - `BloomDraftController.map(init)` / `BloomMapController(init)` → `blooming.map(init)`
     - `BloomDraftController.set(init)` / `BloomSetController(init)` → `blooming.set(init)`
 - **Coupler Independence**: `BloomCoupler` explicitly retains its standalone public constructor (`BloomCoupler(...)`) as an explicit pipeline coupler and adapter rather than a state producer.
-- **Collection Functor Privatization**: Collection functor implementation classes (`_BloomListFunctor`, `_BloomMapFunctor`, `_BloomSetFunctor`) are strictly internal and inaccessible from public API exports.
+- **Collection Functor Privatization**: Collection functor implementation classes for `blooming.list`, `blooming.map`, and `blooming.set` are strictly internal and inaccessible from public API exports.
 
 ### Improvements & Hardening
 

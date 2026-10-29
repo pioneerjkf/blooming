@@ -90,7 +90,7 @@ This directory provides the definitive engineering specifications for the Bloom 
 | Pillar | Core Engineering Value | Implementation Mechanism |
 | :--- | :--- | :--- |
 | **2-Phase LPDAG** | Zero glitches & short-circuiting | Push-Dirty (0-Compute) + Lazy-Pull topological sync + Tri-Color (`Clean/Check/Dirty`) |
-| **BloomVia Manifest** | Deterministic topology & zero-overhead reads | Explicit `BloomVia` parameter + pure field dereference (`.data`) + 1-pass monotonic epoch sweeping |
+| **BloomVia Manifest** | Deterministic topology & zero-overhead reads | Explicit `BloomVia` parameter + pure field dereference (`untracked(node)`) + 1-pass monotonic epoch sweeping |
 | **Dormancy** | Zero idle resource consumption | Inactive state suspends all upstream computation and I/O (pure on-demand lazy) |
 | **Fault Isolation** | System integrity & capability security | Strict producer/consumer type decoupling (LSP) + snapshot error encapsulation (`_ErrorBloomState`) |
 | **Algebraic State & Self-Healing**| 3-State FSM, topology freezing & AI determinism | `BloomState<T>` + non-escaping `_ErrorBloomState` + `succeeded: false` sweep abort + Zero-Ceremony Self-Healing |

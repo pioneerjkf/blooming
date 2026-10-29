@@ -25,7 +25,7 @@ part of '../../../blooming_lints.dart';
 ///
 ///   @override
 ///   Widget build(BuildContext context) {
-///     return controller.animate((via, ctrl) {
+///     return composed.animate(controller, (context, via, ctrl) {
 ///       _cachedView = ctrl.view; // [Anti-Pattern] Escaping into outer field!
 ///       return FadeTransition(opacity: ctrl.view, child: const SizedBox());
 ///     });
@@ -42,7 +42,7 @@ part of '../../../blooming_lints.dart';
 /// class _MyState extends State<MyWidget> {
 ///   @override
 ///   Widget build(BuildContext context) {
-///     return controller.animate((via, ctrl) {
+///     return composed.animate(controller, (context, via, ctrl) {
 ///       return FadeTransition(opacity: ctrl.view, child: const SizedBox());
 ///     });
 ///   }

@@ -11,11 +11,11 @@ part of '../framework.dart';
 /// The core read-only reactive state interface in the Bloom reactive DAG engine.
 ///
 /// Under the strict **Producer/Consumer Separation (Has-a)** architecture:
-/// - [Bloom<T>] represents the observation-only view of a reactive node.
-/// - It does **NOT** implement [BloomState<T>] or [BloomController<T>] directly on its public interface.
+/// - [Bloom] represents the observation-only view of a reactive node.
+/// - It does **NOT** implement [BloomState] or [BloomController] directly on its public interface.
 /// - Mutation APIs (`.set()`, `.data =`, `.setGuarded()`, `.setError()`, `.empty([reason])`) are
-///   strictly confined to [BloomController<T>] and [RawBloomController<T>].
-/// - [Bloom<T>] NEVER implements [BloomController<T>], and underlying physical entry nodes
+///   strictly confined to [BloomController] and [RawBloomController].
+/// - [Bloom] NEVER implements [BloomController], and underlying physical entry nodes
 ///   are private to the library, preventing rogue downcasting at runtime.
 ///
 /// Values and live states are read outside tracking scopes via the global [untracked] functor
@@ -113,7 +113,7 @@ abstract base class Bloom<T> extends _Node {
   /// * [data]: The payload to store in this static node.
   ///
   /// **Ensures:**
-  /// * Returns a leaf [Bloom<T>] node permanently in the Data state ([BloomState.hasData] == true).
+  /// * Returns a leaf [Bloom] node permanently in the Data state ([BloomState.hasData] == true).
   ///
   /// ## Examples
   /// ```dart
@@ -126,7 +126,7 @@ abstract base class Bloom<T> extends _Node {
   ///
   /// Because [Null] is a subtype of `T?` for any type `T` and [Bloom] is covariant,
   /// this singleton can be used as a zero-allocation default or fallback for any
-  /// nullable reactive state [Bloom<T?>] without casting.
+  /// nullable reactive state `Bloom<T?>` without casting.
   ///
   /// ## Examples
   /// ```dart
@@ -139,7 +139,7 @@ abstract base class Bloom<T> extends _Node {
   /// * [emptyReason]: Optional diagnostic object explaining why this node holds no data.
   ///
   /// **Ensures:**
-  /// * Returns a leaf [Bloom<T>] node permanently in the Empty state ([BloomState.isEmpty] == true).
+  /// * Returns a leaf [Bloom] node permanently in the Empty state ([BloomState.isEmpty] == true).
   ///
   /// ## Examples
   /// ```dart
@@ -154,7 +154,7 @@ abstract base class Bloom<T> extends _Node {
   /// * [stackTrace]: Optional stack trace associated with the failure.
   ///
   /// **Ensures:**
-  /// * Returns a leaf [Bloom<T>] node permanently in the Error state ([BloomState.hasError] == true).
+  /// * Returns a leaf [Bloom] node permanently in the Error state ([BloomState.hasError] == true).
   ///
   /// ## Examples
   /// ```dart
@@ -165,22 +165,23 @@ abstract base class Bloom<T> extends _Node {
 
   /// Creates a reactive [Bloom] node from a Dart [Future].
   ///
-  /// Bridges asynchronous single-value completion into the synchronous reactive LPDAG graph,
-  /// lazily initiating the future upon first downstream activation and transitioning from
-  /// Empty to Data or Error upon completion.
+  /// Bridges an in-flight asynchronous [Future] into the synchronous reactive LPDAG graph,
+  /// initializing as Empty (or Data if [initialFactory] is supplied) and transitioning
+  /// to Data or Error upon completion. For lazy on-demand asynchronous evaluation that starts
+  /// only when observed, use [ComputedFunctor.future] (`computed.future`).
   ///
   /// ## System Architectural Flow
   /// ```text
-  /// [Active Consumer Subscribes] ──> [Future Initiated]
-  ///                                           │
-  ///            ┌──────────────────────────────┴──────────────────────────────┐
-  ///            ▼ (on completion)                                             ▼ (on error)
-  ///    [Bloom<T> (Data)]                                              [Bloom<T> (Error)]
+  /// [In-Flight Future<T>] ──> [_DeLorean Bridge (Empty / Initial Data)]
+  ///                                        │
+  ///            ┌───────────────────────────┴───────────────────────────┐
+  ///            ▼ (on completion)                                       ▼ (on error)
+  ///    [Bloom<T> (Data)]                                       [Bloom<T> (Error)]
   /// ```
   ///
   /// ## Architectural Benefits
-  /// 1. **Lazy On-Demand Execution**: Future computation is postponed until an active terminal or UI
-  ///    observer requests the value, saving network and CPU bandwidth.
+  /// 1. **Immediate Future Bridging**: Attaches a completion handler to [future] and propagates
+  ///    the resolved state into the reactive LPDAG graph.
   /// 2. **Deterministic 3-State FSM Integration**: Transitions safely through [BloomSnapshot.empty],
   ///    [BloomSnapshot.new] (Data), or [BloomSnapshot.error], allowing total UI pattern matching.
   /// 3. **Synchronous Fallback Support**: [initialFactory] allows providing an immediate initial payload
@@ -191,19 +192,19 @@ abstract base class Bloom<T> extends _Node {
   /// * [onError]: Optional error recovery callback transforming an exception into a valid [T] payload.
   ///
   /// **Ensures:**
-  /// * Returns a reactive [Bloom<T>] node reflecting the resolution of [future].
+  /// * Returns a reactive [Bloom] node reflecting the resolution of [future].
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT invoke `Bloom.future(...)` repeatedly inside Flutter build methods or `computed` closures
-  ///   without caching in a field, as it instantiates a new asynchronous bridge on every evaluation.
+  /// - Do NOT invoke `Bloom.future(...)` repeatedly inside `computed` closures
+  ///   without caching in a field (or using `computed.future`), as it instantiates a new asynchronous bridge on every evaluation.
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Invoking Bloom.future inside build re-executes the future every frame
-  /// Widget build(BuildContext context) {
-  ///   final profileBloom = Bloom.future(fetchProfile(userId)); // Triggers new fetch on each build!
-  ///   return Text('${untracked.state(profileBloom).dataOrNull?.name}');
-  /// }
+  /// // [Anti-Pattern] Invoking Bloom.future inside computed re-executes the future on every evaluation
+  /// final greeting = computed((via) {
+  ///   final profileBloom = Bloom.future(fetchProfile(userId)); // Triggers new fetch on each evaluation!
+  ///   return 'Hello, ${via(profileBloom).name}';
+  /// });
   /// ```
   ///
   /// **GOOD:**
@@ -258,7 +259,7 @@ abstract base class Bloom<T> extends _Node {
   /// * [graceful]: Optional [Graceful] policy delaying subscription cancellation upon deactivation.
   ///
   /// **Ensures:**
-  /// * Returns a reactive [Bloom<T>] node reflecting the latest events of [stream].
+  /// * Returns a reactive [Bloom] node reflecting the latest events of [stream].
   ///
   /// **Warning (Single-Subscription Streams & Reactivation):**
   /// - Dart's single-subscription streams (e.g. from standard `StreamController()`) cannot be
@@ -271,16 +272,16 @@ abstract base class Bloom<T> extends _Node {
   ///   3. Supervising dynamic stream connection lifetimes with [Bloom.managed].
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT invoke `Bloom.stream(...)` inside Flutter build methods or reactive derivations without caching,
-  ///   as it opens and closes redundant stream subscriptions on every frame.
+  /// - Do NOT invoke `Bloom.stream(...)` inside reactive derivations without caching,
+  ///   as it opens and closes redundant stream subscriptions on every evaluation.
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Opening stream subscription inside build method
-  /// Widget build(BuildContext context) {
-  ///   final stockBloom = Bloom.stream(stockStream); // Re-subscribes every frame!
-  ///   return Text('${untracked.state(stockBloom).dataOrNull}');
-  /// }
+  /// // [Anti-Pattern] Opening stream subscription inside a computed derivation
+  /// final formattedPrice = computed((via) {
+  ///   final stockBloom = Bloom.stream(stockStream); // Re-subscribes on every evaluation!
+  ///   return '\$${via(stockBloom).toStringAsFixed(2)}';
+  /// });
   /// ```
   ///
   /// **GOOD:**
@@ -358,7 +359,7 @@ extension BloomComputationExtension<T> on Bloom<T> {
   ///
   /// During the 2-phase LPDAG lazy-pull evaluation pass, this node pulls the upstream payload
   /// and compares it with the previous payload. If identical, this node's version does not advance
-  /// ([_isNewerThan] returns `false`), short-circuiting downstream recomputations.
+  /// (`_isNewerThan` returns `false`), short-circuiting downstream recomputations.
   ///
   /// ## Data Propagation Flow
   /// ```text
@@ -369,7 +370,7 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// * [equals]: Optional custom equality comparator. Defaults to `identical(a, b) || a == b`.
   ///
   /// **Ensures:**
-  /// * Returns a [Bloom<T>] node that only propagates dirty notifications when values change.
+  /// * Returns a [Bloom] node that only propagates dirty notifications when values change.
   ///
   /// ## Examples
   /// ```dart
@@ -392,8 +393,14 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// * [leading]: If `true`, propagates the first dirty pulse immediately upon invalidation.
   /// * [trailing]: If `true`, schedules a deferred dirty pulse on the microtask queue. Defaults to `true`.
   ///
+  /// **Requires:**
+  /// * At least one of [leading] or [trailing] must be `true`.
+  ///
   /// **Ensures:**
-  /// * Returns a [Bloom<T>] node that batches synchronous invalidation bursts.
+  /// * Returns a [Bloom] node that batches synchronous invalidation bursts.
+  ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
   ///
   /// ## Examples
   /// ```dart
@@ -423,8 +430,14 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// `untracked(node)` or `untracked.state(node)` bypasses temporal timers and synchronously pulls the latest
   /// upstream state on demand (Subscriber-driven Inactive Dormancy).
   ///
+  /// **Requires:**
+  /// * At least one of [leading] or [trailing] must be `true`.
+  ///
   /// **Ensures:**
-  /// * Returns a [Bloom<T>] node rate-limiting notifications via debounce.
+  /// * Returns a [Bloom] node rate-limiting notifications via debounce.
+  ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
   ///
   /// ## Examples
   /// ```dart
@@ -458,8 +471,14 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// `untracked(node)` or `untracked.state(node)` bypasses temporal timers and synchronously pulls the latest
   /// upstream state on demand (Subscriber-driven Inactive Dormancy).
   ///
+  /// **Requires:**
+  /// * At least one of [leading] or [trailing] must be `true`.
+  ///
   /// **Ensures:**
-  /// * Returns a [Bloom<T>] node rate-limiting notifications via throttle.
+  /// * Returns a [Bloom] node rate-limiting notifications via throttle.
+  ///
+  /// **Throws:**
+  /// * [ArgumentError] if both [leading] and [trailing] are `false`.
   ///
   /// ## Examples
   /// ```dart
@@ -490,7 +509,7 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// * [graceful]: The deactivation grace policy configuration. Defaults to [Graceful.microtask] if omitted.
   ///
   /// **Ensures:**
-  /// * Returns a [Bloom<T>] node shielded by the specified deactivation grace policy.
+  /// * Returns a [Bloom] node shielded by the specified deactivation grace policy.
   ///
   /// ## Examples
   /// ```dart
@@ -520,10 +539,10 @@ extension BloomComputationExtension<T> on Bloom<T> {
   /// Pending:    (false)  ───> (true)                 ───> (false)
   /// ```
   ///
-  /// * [pending]: Optional [BloomCoupler<bool>] dynamically synchronized with the internal pending facet.
+  /// * [pending]: Optional [BloomCoupler] dynamically synchronized with the internal pending facet.
   ///
   /// **Ensures:**
-  /// * Returns a [Bloom<T>] node preserving the last valid payload across pending recomputations.
+  /// * Returns a [Bloom] node preserving the last valid payload across pending recomputations.
   ///
   /// ## Examples
   /// ```dart

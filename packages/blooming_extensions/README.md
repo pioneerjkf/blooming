@@ -21,7 +21,7 @@ All operators integrate seamlessly into the Bloom 2-Phase LPDAG engine:
 - **Numeric Aggregations**: `.elements.sum`, `.elements.average`
 - **Comparable Computations**: `.elements.min`, `.elements.max`, `.elements.minOrNull`, `.elements.maxOrNull`, `.elements.sorted(...)`, `.elements.sortedDescending(...)`
 - **Search & Grouping**: `.elements.firstWhereOrNull(...)`, `.elements.lastWhereOrNull(...)`, `.elements.singleWhereOrNull(...)`, `.elements.groupBy(...)`, `.elements.slices(...)`
-- **Index-Aware Operators**: `.elements.foldIndexed(...)`, `.elements.reduceIndexed(...)`, `.elements.none(...)`, `.elements.flattenedToList()`, `.elements.flattenedToSet()`
+- **Index-Aware Operators**: `.elements.foldIndexed(...)`, `.elements.reduceIndexed(...)`, `.elements.none(...)`, `.elements.flattenedToList`, `.elements.flattenedToSet`
 - **List Indexing**: `.elements.binarySearch(...)`, `.elements.lowerBound(...)`
 
 ---
@@ -32,8 +32,8 @@ Add `blooming` and `blooming_extensions` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  blooming: ^0.1.0
-  blooming_extensions: ^0.1.0
+  blooming: ^0.2.2
+  blooming_extensions: ^0.2.2
 ```
 
 ### Example Usage

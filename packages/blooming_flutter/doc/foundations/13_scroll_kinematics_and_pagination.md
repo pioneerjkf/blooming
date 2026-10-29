@@ -12,13 +12,13 @@ In Flutter, interacting with `ScrollController.offset` to create dynamic UI (e.g
 
 If a developer binds `ScrollController` directly to a high-level `StatefulWidget` using `setState` or typical state-management `watch` patterns, **the entire widget tree (including complex list items) rebuilds 120 times per second**. This inevitably leads to dropped frames ("jank") and extreme GC pressure.
 
-`package:blooming_flutter` solves this by introducing zero-allocation bridging (`observe`) and surgical micro-rebuilds via `composed.child`.
+`package:blooming_flutter` solves this by introducing zero-allocation bridging (`toBloomBy`) and surgical micro-rebuilds via `composed`.
 
 ---
 
-## 2. Zero-Allocation Bridging (`observe`)
+## 2. Zero-Allocation Bridging (`toBloomBy`)
 
-To react to `ScrollController` changes without rebuilding the entire UI, the `ScrollPosition`'s underlying `ValueListenable` is bridged into the LPDAG using `.observe()`. 
+To react to `ScrollController` changes without rebuilding the entire UI, the `ScrollController` is bridged into the LPDAG using `.toBloomBy()`.
 
 Because `bloom` nodes are intrinsically lazy, bridging a scroll offset does NOT push downstream calculations unless a specific UI element is actively demanding it.
 
@@ -29,19 +29,19 @@ base class FeedScreen extends BloomWidget {
 
   final scrollController = ScrollController();
 
+  // 1. Bridge the scroll offset into the reactive graph once per widget instance
+  late final scrollOffset = scrollController.toBloomBy(
+    (ctrl) => ctrl.hasClients ? ctrl.offset : 0.0,
+  );
+
+  // 2. Compute a normalized opacity (0.0 to 1.0) based on scroll depth
+  late final appBarOpacity = computed((via) {
+    final offset = via(scrollOffset);
+    return (offset / 150.0).clamp(0.0, 1.0);
+  }).distinct(); // distinct() prevents rebuilds if value doesn't change
+
   @override
   Widget build(BuildContext context, BloomVia via) {
-    // 1. Bridge the scroll offset into the reactive graph
-    final scrollOffset = scrollController.toBloomBy(
-      (ctrl) => ctrl.hasClients ? ctrl.offset : 0.0,
-    );
-
-    // 2. Compute a normalized opacity (0.0 to 1.0) based on scroll depth
-    final appBarOpacity = computed((via) {
-      final offset = via(scrollOffset);
-      return (offset / 150.0).clamp(0.0, 1.0);
-    }).distinct(); // distinct() prevents rebuilds if value doesn't change
-
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -108,4 +108,4 @@ final paginationEffect = isNearBottom.effect(() {
 
 ## 4. Architectural Conclusions
 
-By integrating `observe` with `computed` and `.distinct()`, complex 120fps scroll kinematics are mathematically reduced into clean, surgical state updates. The separation of the high-frequency scroll input from the isolated `composed` builder ensures that Flutter's Render Tree is protected from extraneous work.
+By integrating `toBloomBy` with `computed` and `.distinct()`, complex 120fps scroll kinematics are mathematically reduced into clean, surgical state updates. The separation of the high-frequency scroll input from the isolated `composed` builder ensures that Flutter's Render Tree is protected from extraneous work.

@@ -719,7 +719,7 @@ typedef _MotionProjection = ({
 ///      $$\text{loops} = \frac{\Delta t}{T_{\text{period}}}, \quad \phi = (\text{loops} - \lfloor\text{loops}\rfloor) \cdot \Delta x$$
 ///      $$x_{\text{loop}} = x_{\text{min}} + ((x_0 - x_{\text{min}} + \phi) \pmod{\Delta x})$$
 ///    * **Ping-Pong Alternating Mode ($T_{\text{cycle}} = 2 T_{\text{period}}$):**
-///      Evaluates phase in the bidirectional coordinate space $[0, 2\Delta x]$ and correctly tracks
+///      Evaluates phase in the bidirectional coordinate space `[0, 2\Delta x]` and correctly tracks
 ///      whether the current flight is in forward or reverse phase.
 base class _CatchUpDormantControlDelegate
     extends _DormantAnimationControlDelegate {

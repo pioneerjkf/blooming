@@ -111,12 +111,12 @@ Does active-eager scheduling cause unconstrained background network requests whe
 
 ### 5.1 Architecture of `_EagerDeltaBloom`
 
-All asynchronous computed nodes ([`_FutureComputedBloom`](../../lib/src/bloom/_internal/_computed.dart#L163), [`_StreamComputedBloom`](../../lib/src/bloom/_internal/_computed.dart#L201), [`_EagerSwitchedBloom`](../../lib/src/bloom/_internal/_switched.dart#L46)) inherit from [`_EagerDeltaBloom<T>`](../../lib/src/bloom/_internal/_delta.dart#L158), implementing [`_EagerSchedulable`](../../lib/src/engine/_internal/_scheduler.dart#L91).
+All asynchronous computed nodes ([`_FutureComputedBloom`](../../lib/src/bloom/_internal/_computed.dart), [`_StreamComputedBloom`](../../lib/src/bloom/_internal/_computed.dart), [`_EagerSwitchedBloom`](../../lib/src/bloom/_internal/_switched.dart)) inherit from [`_EagerDeltaBloom<T>`](../../lib/src/bloom/_internal/_delta.dart), implementing [`_EagerSchedulable`](../../lib/src/engine/_internal/_scheduler.dart).
 
 The node encapsulates its active-eager behavior through four concise lifecycle hooks:
 
 ```dart
-// Core reactive hooks in _EagerDeltaBloom (lib/src/bloom/_internal/_delta.dart)
+// packages/blooming/lib/src/bloom/_internal/_delta.dart
 void _activate() => _needsSwitch ? _performSwitchGuarded(false) : null;
 void _deactivate() => _Scheduler.instance._cancelEager(this);
 void _onDeltaDirty() => _lifecycle.isActive ? _Scheduler.instance._scheduleEager(this) : null;
@@ -128,11 +128,11 @@ void _performScheduledEager() => _performSwitchGuarded(true);
 1. **Unsubscribed Cold Dormancy (`!_lifecycle.isActive`)**:  
    Upstream parameter mutations trigger **zero network requests**. If upstream dependencies change while dormant, `_needsSwitch = true` is recorded, but no microtask is scheduled (`_lifecycle.isActive` check short-circuits).
 2. **Initial Activation Handshake (`_activate`)**:  
-   The instant the first downstream subscriber attaches, `_activate()` checks `_needsSwitch || _deltaTerminal._isSourceDirty`. If dirty, it immediately executes `_performSwitchGuarded(false)` **synchronously**, establishing the fresh [`_StreamBloomBridge`](../../lib/src/bloom/_internal/_async.dart#L189) or [`_FutureBloomBridge`](../../lib/src/bloom/_internal/_async.dart#L76) with zero roundtrip delay.
+   The instant the first downstream subscriber attaches, `_activate()` checks `_needsSwitch || _deltaTerminal._isSourceDirty`. If dirty, it immediately executes `_performSwitchGuarded(false)` **synchronously**, establishing the fresh [`_StreamBloomBridge`](../../lib/src/bloom/_internal/_async.dart) or [`_FutureBloomBridge`](../../lib/src/bloom/_internal/_async.dart) with zero roundtrip delay.
 3. **Active Mutation Microtask Queuing (`_onDeltaDirty`)**:  
-   While active, any upstream dependency mutation triggers `_onDeltaDirty()`. It flags `_needsSwitch = true`, invalidates downstream dependents via `_invalidate()`, and enqueues itself into [`_Scheduler.instance._scheduleEager(this)`](../../lib/src/engine/_internal/_scheduler.dart#L99).
+   While active, any upstream dependency mutation triggers `_onDeltaDirty()`. It flags `_needsSwitch = true`, invalidates downstream dependents via `_invalidate()`, and enqueues itself into [`_Scheduler.instance._scheduleEager(this)`](../../lib/src/engine/_internal/_scheduler.dart).
 4. **Deactivation & Instant Subscription Teardown (`_deactivate`)**:  
-   When all subscribers detach, `_Scheduler.instance._cancelEager(this)` cancels any pending microtask in $O(1)$. Active stream subscriptions are severed synchronously via `_unsubscribe()` ([`_subscription?.cancel()`](../../lib/src/bloom/_internal/_async.dart#L181)), immediately halting event delivery while underlying socket and resource cleanup concludes asynchronously via the returned `Future`.
+   When all subscribers detach, `_Scheduler.instance._cancelEager(this)` cancels any pending microtask in $O(1)$. Active stream subscriptions are severed synchronously via `_unsubscribe()` ([`_subscription?.cancel()`](../../lib/src/bloom/_internal/_async.dart)), immediately halting event delivery while underlying socket and resource cleanup concludes asynchronously via the returned `Future`.
 
 ---
 
@@ -141,6 +141,8 @@ void _performScheduledEager() => _performSwitchGuarded(true);
 To prevent request flooding when multiple upstream parameters mutate in the same synchronous turn:
 
 ```dart
+Future<List<String>> fetchUsers(String u, String f, int p) async => ['$u:$f:$p'];
+
 final userId = blooming('user_0');
 final filter = blooming('all');
 final page = blooming(1);
@@ -149,7 +151,7 @@ final userList = computed.future((via) async {
   final u = via(userId.bloom);
   final f = via(filter.bloom);
   final p = via(page.bloom);
-  return api.fetchUsers(u, f, p);
+  return fetchUsers(u, f, p);
 });
 
 // Rapid consecutive mutations in a single synchronous turn:
@@ -158,7 +160,7 @@ filter.set('active');
 page.set(2);
 ```
 
-The Bloom asynchronous engine ([`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) and [`_EagerDeltaBloom`](../../lib/src/bloom/_internal/_delta.dart#L158)) coalesces intermediate pulses via **Microtask Coalescing**:
+The Bloom asynchronous engine ([`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) and [`_EagerDeltaBloom`](../../lib/src/bloom/_internal/_delta.dart)) coalesces intermediate pulses via **Microtask Coalescing**:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -186,6 +188,7 @@ The Bloom asynchronous engine ([`_Scheduler`](../../lib/src/engine/_internal/_sc
 * **Zero-Allocation Double-Buffered Swap**:  
   During the microtask execution pass, `_eagerSet` is swapped with `_eagerSwapSet` in $O(1)$ pointer assignment:
   ```dart
+  // packages/blooming/lib/src/engine/_internal/_scheduler.dart
   final processing = _eagerSet;
   _eagerSet = _eagerSwapSet;
   _eagerSwapSet = processing;
@@ -198,7 +201,7 @@ The Bloom asynchronous engine ([`_Scheduler`](../../lib/src/engine/_internal/_sc
 
 ## 7. Central Scheduler Mixin Linearization Order
 
-The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart#L40) coordinates batch execution passes using a strict mixin linearization order to ensure topological soundness across the entire reactive graph:
+The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) coordinates batch execution passes using a strict mixin linearization order to ensure topological soundness across the entire reactive graph:
 
 ```dart
 // packages/blooming/lib/src/engine/_internal/_scheduler.dart
@@ -236,7 +239,7 @@ Active terminals and effects running in Phase 4 may still observe or depend on r
 
 Executing deactivations last in Phase 5 ensures that:
 1. All resources remain fully valid throughout effect evaluations.
-2. Graceful deactivations ([`_GracefulSchedulerMixin`](../../lib/src/engine/_internal/_scheduler.dart#L181)) only execute after all scheduled side-effects have concluded.
+2. Graceful deactivations ([`_GracefulSchedulerMixin`](../../lib/src/engine/_internal/_scheduler.dart)) only execute after all scheduled side-effects have concluded.
 3. Rapid unmount-remount transitions within the same microtask tick (e.g. Flutter tab switching) are resolved seamlessly without tearing down and reconstructing underlying connections.
 
 ---

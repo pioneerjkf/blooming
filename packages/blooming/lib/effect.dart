@@ -112,6 +112,9 @@ export 'src/framework.dart'
         // Core Contract & Types
         Effect,
         EffectScope,
+        EffectScopedFunctor,
+        EffectDebounceFunctor,
+        EffectThrottleFunctor,
         Tether,
         // Standalone Execution Runner
         EffectStartExtension,

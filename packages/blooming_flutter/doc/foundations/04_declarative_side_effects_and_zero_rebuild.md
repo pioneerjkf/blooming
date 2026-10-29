@@ -150,6 +150,11 @@ class OrderCheckoutButton extends StatelessWidget {
 
 ### 4. Time-Domain Rate Limiting (`debounce` / `throttle`)
 ```dart
+final searchQueryBloom = blooming('').bloom;
+final scrollOffsetBloom = blooming(0.0).bloom;
+void fetchSearchResults(BuildContext context, String query) {}
+void syncHaptics(BuildContext context, double offset) {}
+
 BloomListener<String>.debounce(
   searchQueryBloom,
   (context, query) => fetchSearchResults(context, query),
@@ -169,7 +174,7 @@ Depending on whether the side effect is intrinsically tied to the UI element tre
 | Pattern | Execution Context | Example Use Case | Recommended Tool |
 |---|---|---|---|
 | **Widget-Level One-Shot** | UI Presentation Tree | Screen navigation, modal alerts, SnackBars | `BloomListener(target, action, take: 1)` |
-| **Domain / Controller-Level One-Shot** | Background Business Logic | Analytics telemetry, initial handshake sync | `Effect.unary(target, action, take: 1)` |
+| **Domain / Controller-Level One-Shot** | Background Business Logic | Analytics telemetry, initial handshake sync | `Effect.unary(target, action, take: 1).start()` |
 | **Consumable Event in State** | Shared Cross-Screen Flow | Multi-step wizard results, global deep link | `state.event.consume()` / `state = state.copyWith(event: null)` |
 
 ---

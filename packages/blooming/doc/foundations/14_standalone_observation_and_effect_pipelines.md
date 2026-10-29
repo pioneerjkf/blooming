@@ -30,7 +30,7 @@ The Bloom Framework resolves this with **Declarative Side-Effects ([`Effect`](..
 │                                                                        │
 │   [ Domain 1: Declarative Side-Effect (Effect) ]                       │
 │   • Core Class: Effect (extends Tether)                                │
-│   • Modalities: Manifest Unary/N-ary, Handled, Dynamic via, Groups    │
+│   • Modalities: Manifest Unary/N-ary, Scoped, Dynamic via, Groups     │
 │   • Terminal Engines: _UnaryManifestEffectTerminal, _ViaEffectTerminal │
 │   • Invariant: Terminal execution sink, zero data production,          │
 │                reference-counted scope lifecycle                       │
@@ -146,7 +146,7 @@ The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) coord
 ```dart
 final sensorStream = Stream<double>.periodic(const Duration(seconds: 1), (i) => 25.0 + i);
 final sensorData = computed.stream((via) => sensorStream);
-final runner = sensorData.bloom.effect(() => print(untracked(sensorData.bloom))).start();
+final runner = sensorData.effect(() => print(untracked(sensorData))).start();
 
 // 1. While runner is active:
 //    sensorData maintains an active terminal, keeping the physical stream subscription open.
@@ -178,8 +178,8 @@ final roomManager = roomIdBloom.effect.scoped((scope) {
   scope.onCleanup(timer.cancel);
 
   // Resource 2: Acquired and immediately guarded
-  final socket = WebSocket.connect(url);
-  scope.onCleanup(socket.close);
+  final client = ApiClient(port: 8080);
+  scope.onCleanup(client.close);
 }).start();
 ```
 
@@ -191,24 +191,25 @@ void onCleanup(void Function() cleanup) {
     try {
       cleanup();
     } catch (error, stackTrace) {
-      _handleUncaughtError(error, stackTrace);
+      _terminal._handleUncaughtError(error, stackTrace);
     }
     return;
   }
   // Zero-Alloc Fast-Path & Closure-Chained Multi-Registration:
   // 90%+ of effects register exactly 1 cleanup (e.g. CancelToken or Timer).
   // Storing a direct callback in `_cleanup` avoids allocating a heap `List` per effect turn.
-  // When multiple cleanups are registered, we recursively chain them via a synthesized
-  // closure with `try-finally` to guarantee that subsequent cleanups execute even if an earlier teardown throws.
+  // When multiple cleanups are registered (e.g. across independent helper functions),
+  // we recursively chain them in LIFO order via a synthesized closure with `try-finally`
+  // to guarantee that prior cleanups execute even if a newer teardown throws.
   final previous = _cleanup;
   if (previous == null) {
     _cleanup = cleanup;
   } else {
     _cleanup = () {
       try {
-        previous();
-      } finally {
         cleanup();
+      } finally {
+        previous();
       }
     };
   }
@@ -248,9 +249,9 @@ final sessionRunner = (userId.bloom, authToken.bloom, syncStatus.bloom).effect.s
   final user = untracked(userId.bloom);
   final token = untracked(authToken.bloom);
   final status = untracked(syncStatus.bloom);
-  
-  final client = ApiClient.authenticate(user, token);
-  scope.onCleanup(client.dispose);
+
+  final client = ApiClient(port: user.length + token.length + status.length);
+  scope.onCleanup(client.close);
 }).start();
 ```
 
@@ -265,6 +266,8 @@ import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
 
 enum ServerHealth { healthy, degraded, critical }
+
+void triggerEmergencyAlert() {}
 
 void main() async {
   final serverHealth = blooming<ServerHealth>(ServerHealth.healthy);
@@ -309,6 +312,8 @@ final speedMonitor = Effect.via((via) {
 ```dart
 import 'package:blooming/blooming.dart';
 import 'package:blooming/effect.dart';
+
+void sendAnalytics(double offset, int page) {}
 
 final scrollOffset = blooming<double>(0.0);
 final pageIndex = blooming<int>(0);

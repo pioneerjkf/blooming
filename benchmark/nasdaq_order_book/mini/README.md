@@ -24,7 +24,7 @@ Blooming and Coralline are experimental reactive engines authored by the benchma
 
 ## Benchmark Results
 
-All prior benchmark run results and artifacts have been cleared.
+Empirical results across five target scenarios (1K, 10K, 100K, 10M, and 1B target TPS) are archived in `results/` and summarized in [`../ASSESSMENT.md`](../ASSESSMENT.md).
 
 To run a new benchmark session and generate fresh artifacts, follow the execution instructions in [Reproducing a comparable run](#reproducing-a-comparable-run). Outputs will be saved under `results/<run-id>/` containing:
 - `SUMMARY_REPORT.md` (statistical summary report)
@@ -34,9 +34,9 @@ To run a new benchmark session and generate fresh artifacts, follow the executio
 
 ## Limitations and interpretation
 
-1. **Generator Throughput vs. Framework Update Rate.** All tick batches are executed 100% in real hardware by the background isolate without artificial step capping or arithmetic tick padding. At 1,000,000,000 TPS (10억 틱), the isolate saturates the host single-core capacity (~14.5M TPS on Apple Silicon). Because the isolate groups ticks into 1ms batches, the main isolate framework receives updates and invalidates state at ~1,000 Hz. `sustained_tps` reflects isolate generation throughput, not 14.5 million individual UI widget rebuilds or separate framework state tree invalidations per second.
+1. **Generator Throughput vs. Framework Update Rate.** All tick batches are executed 100% in real hardware by the background isolate without artificial step capping or arithmetic tick padding. At 1,000,000,000 TPS, the isolate saturates the host single-core capacity (~15.8–16.5M TPS on Apple Silicon). Because the isolate groups ticks into batches, `sustained_tps` reflects isolate generation throughput, not 16 million individual UI widget rebuilds or separate framework state tree invalidations per second.
 2. **The lag probe can miss some stalls.** It timestamps execution inside a 33 ms `Timer.periodic` callback, then measures until a queued `Timer.run` executes. A delay before the periodic callback itself wakes is not directly included. Treat lag as a responsiveness signal, not a guarantee that input is responsive.
-3. **This run does not measure input latency or jank adequately.** It does not record click-to-handler delay or missed frame deadlines. The viewport is static, animation is disabled, and only a few frames were collected; therefore the reported 0% jank rate does not establish stutter-free rendering.
+3. **This run does not measure input latency directly.** It does not record click-to-handler delay. Furthermore, lower-load runs (1K, 10K) enabled scroll animation while disabling theme and ticker rotation, whereas higher-load runs (100K, 10M, 1B) enabled scroll, theme, and ticker rotation simultaneously; see [`../ASSESSMENT.md`](../ASSESSMENT.md) for scenario-specific setup details.
 4. **Batching policies differ.** Blooming and Signals wrap portions of their state changes in batching APIs; the other implementations use their own notification paths without the same explicit wrapper. This can represent idiomatic framework usage, but it is not an identical notification policy. Future comparisons should separate a uniform-policy mode from a best-practice-per-framework mode.
 5. **Correctness and overload recovery are not tested.** The run does not verify event loss, duplication, ordering, final-state equivalence, queue growth, or recovery after overload.
 6. **Rendering metrics are not rankable here.** UI build and GPU raster values came from very few frames and should not be used to rank frameworks.

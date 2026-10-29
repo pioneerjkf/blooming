@@ -108,6 +108,9 @@ part of '../../framework.dart';
 /// }
 /// ```
 abstract class BloomWidget extends Widget {
+  /// Initializes a [BloomWidget] with an optional [key].
+  ///
+  /// * [key]: Controls how one widget replaces another widget in the tree.
   const BloomWidget({super.key});
 
   @override
@@ -131,7 +134,7 @@ abstract class BloomWidget extends Widget {
 // BloomElement
 // =============================================================================
 
-/// The element managing the lifecycle of the reactive [RawComputedTerminal<Widget>] for a [BloomWidget].
+/// The element managing the lifecycle of the reactive [RawComputedTerminal] for a [BloomWidget].
 ///
 /// Mixes in `_ReactiveTerminalElementMixin<RawComputedTerminal<Widget>>` and `_ViaTerminalElementMixin`
 /// to bridge Flutter element lifecycle hooks ([mount], [activate], [deactivate], [reassemble], [unmount])
@@ -140,6 +143,9 @@ base class BloomElement extends ComponentElement
     with
         _ReactiveTerminalElementMixin<RawComputedTerminal<Widget>>,
         _ViaTerminalElementMixin {
+  /// Creates a [BloomElement] that uses the given [widget] as its configuration.
+  ///
+  /// * [widget]: The [BloomWidget] configuration for this element.
   BloomElement(BloomWidget super.widget);
 
   @override
@@ -236,6 +242,8 @@ base class BloomElement extends ComponentElement
 /// ```
 abstract class BloomVsyncWidget extends Widget {
   /// Initializes a [BloomVsyncWidget] with an optional [key].
+  ///
+  /// * [key]: Controls how one widget replaces another widget in the tree.
   const BloomVsyncWidget({super.key});
 
   @override
@@ -261,13 +269,15 @@ abstract class BloomVsyncWidget extends Widget {
   );
 }
 
-/// The element managing both the reactive [RawComputedTerminal<Widget>] and [TickerProvider] lifecycle for a [BloomVsyncWidget].
+/// The element managing both the reactive [RawComputedTerminal] and [TickerProvider] lifecycle for a [BloomVsyncWidget].
 base class BloomVsyncElement extends ComponentElement
     with
         _TickerProviderElementMixin,
         _ReactiveTerminalElementMixin<RawComputedTerminal<Widget>>,
         _ViaTerminalElementMixin {
   /// Creates a [BloomVsyncElement] managing [widget].
+  ///
+  /// * [widget]: The [BloomVsyncWidget] configuration for this element.
   BloomVsyncElement(BloomVsyncWidget super.widget);
 
   @override
@@ -331,6 +341,9 @@ base class BloomVsyncElement extends ComponentElement
 /// ```
 abstract class BloomAnimatedWidget extends Widget {
   /// Initializes a [BloomAnimatedWidget] with [controller] and an optional [key].
+  ///
+  /// * [key]: Controls how one widget replaces another widget in the tree.
+  /// * [controller]: The [DurableAnimationController] driving this widget.
   const BloomAnimatedWidget({
     super.key,
     required this.controller,
@@ -362,7 +375,7 @@ abstract class BloomAnimatedWidget extends Widget {
   );
 }
 
-/// The element managing both the reactive [RawComputedTerminal<Widget>] and [DurableAnimationController]
+/// The element managing both the reactive [RawComputedTerminal] and [DurableAnimationController]
 /// lifecycle for a [BloomAnimatedWidget].
 base class BloomAnimatedElement extends ComponentElement
     with
@@ -370,6 +383,8 @@ base class BloomAnimatedElement extends ComponentElement
         _ViaTerminalElementMixin,
         _DurableVsyncSocketElementMixin {
   /// Creates a [BloomAnimatedElement] managing [widget].
+  ///
+  /// * [widget]: The [BloomAnimatedWidget] configuration for this element.
   BloomAnimatedElement(BloomAnimatedWidget super.widget);
 
   @override

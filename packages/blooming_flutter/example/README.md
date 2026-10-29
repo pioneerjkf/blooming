@@ -74,8 +74,8 @@ The application is structured into 18 distinct, self-contained chapters covering
 ### 4.1. Core State & Composition (Chapters 01 - 04)
 
 * **01. BloomWidget & Dynamic Discovery (`01_watch_widget`)**: Demonstrates dynamic dependency tracking via explicit `BloomVia` manifest with 1-Pass Epoch Sweeping. Rebuilds surgically only when accessed Bloom nodes change distinct value (`distinct: true`).
-* **02. Inline Functors (`02_composed_functors`)**: Zero-boilerplate inline reactive widgets via `composed((via) => ...)` without requiring standalone `StatefulWidget` or `BloomWidget` classes. Supports `.context`, `.child`, and `.children` static subtree caching.
-* **03. Direct Value Cascades (`03_bloom_build_tuple`)**: Zero-allocation single-value reactive building via `bloom.build((val) => ...)` and multi-node dynamic discovery via `composed((via) => ...)`.
+* **02. Inline Functors (`02_composed_functors`)**: Zero-boilerplate inline reactive widgets via `composed((context, via) => ...)` without requiring standalone `StatefulWidget` or `BloomWidget` classes. Supports `.child`, `.children`, `.vsync`, `.animate`, and `.drive` static subtree caching and motion pathways.
+* **03. Direct Value Cascades (`03_bloom_build_tuple`)**: Zero-allocation single-value reactive building via `bloom.build((context, data) => ...)` and multi-node dynamic discovery via `composed((context, via) => ...)`.
 * **04. Scoped State DI (`04_scoped_state_di`)**: Hierarchical, type-safe dependency injection via `bloom.provide(child: ...)` and `via.of<T>(context)`, eliminating prop-drilling across deep widget subtrees.
 
 ---
@@ -86,7 +86,7 @@ The application is structured into 18 distinct, self-contained chapters covering
 * **06. Async UI, SWR & BloomPendingIndicator (`06_async_swr_builder`)**: Declarative 4-state asynchronous building (`data`, `loading`, `error`, `empty`), flicker-free Stale-While-Revalidate (SWR) cache retention, surgical linear `BloomPendingIndicator` bound directly to `Bloom<bool>`, and ergonomic `BloomAsyncBuilder.tuple` shorthand with `toBloomTuple()`.
 * **07. Imperative Signals vs State Anti-Pattern (`07_imperative_signals`)**: Transient one-off signals (`BloomSignalController` from `package:blooming`, re-exported by `blooming_flutter`) vs persistent boolean state, showing how `BloomListener` eliminates zombie dialog states upon remount.
 * **08. Scroll Kinematics & 120fps Surgical Micro-Rebuilds (`08_scroll_kinematics`)**: High-frequency scroll tracking via `scrollController.toBloomBy(...)` where a heavy 100-item ListView NEVER rebuilds, and only the lightweight AppBar Opacity updates at 120fps.
-* **09. Reactive Effects & Side-Effect Pipeline (`09_reactive_effects`)**: Isolated reactive side-effects executing without UI widget rebuilds (`Rebuild Count: 0`), explicit dynamic branch discovery (`Effect.via`), untracked boundary protection, explicit tuple effects (`(a, b).effect`), direct unary effect (`source.effect`), and full lifecycle management (`activate`, `deactivate`, `dispose`).
+* **09. Reactive Effects & Side-Effect Pipeline (`09_reactive_effects`)**: Isolated reactive side-effects executing without UI widget rebuilds (`Rebuild Count: 0`), explicit dynamic branch discovery (`Effect.via`), untracked boundary protection, explicit tuple effects (`(a, b).effect`), direct unary effect (`source.effect`), and full lifecycle management (`start`, `stop`, `onCleanup`).
 * **10. Temporal Pipelines & Rate-Limiting (`10_temporal_orchestration`)**: Leading/trailing debounce and throttle rate-limiting pipelines.
 
 ---

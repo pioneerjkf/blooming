@@ -11,10 +11,10 @@ part of '../framework.dart';
 /// Imperative producer controller managing state mutations into the Bloom reactive DAG.
 ///
 /// Under the strict **Producer/Consumer Separation (Has-a)** architecture:
-/// - [BloomController<T>] owns and encapsulates an internal physical reactive DAG entry node.
-/// - It does **NOT** implement [Bloom<T>], completely preventing mutation methods from being
+/// - [BloomController] owns and encapsulates an internal physical reactive DAG entry node.
+/// - It does **NOT** implement [Bloom], completely preventing mutation methods from being
 ///   inadvertently invoked by consumers that only receive the read-only [bloom] view.
-/// - Downcasting a [Bloom<T>] instance back to [BloomController<T>] will fail with a [TypeError],
+/// - Downcasting a [Bloom] instance back to [BloomController] will fail with a [TypeError],
 ///   ensuring compile-time and runtime encapsulation of state producers.
 ///
 /// ## System Architectural Flow
@@ -91,6 +91,8 @@ abstract base class BloomController<T> implements BloomState<T> {
   ///
   /// Shorthand alias for [set]. Propagates dirty invalidation pulses downstream if [data]
   /// differs from the existing payload (or if `distinct` is false).
+  ///
+  /// * [data]: The new payload to store and propagate.
   ///
   /// **Ensures:**
   /// * Transitions this node to the Data state ([hasData] == true) with payload [data].

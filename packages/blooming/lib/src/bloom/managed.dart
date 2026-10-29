@@ -59,31 +59,32 @@ final class ManagedFunctor {
   /// Instantiates external objects only when actively observed by downstream consumers,
   /// and automatically invokes [dispose] when all downstream subscribers deactivate.
   ///
+  /// * [guard]: Optional precondition check returning [BloomGuard] gating resource creation and providing diagnostic reasons.
   /// * [create]: Factory callback creating the resource when downstream subscribers activate.
   /// * [update]: Optional update callback invoked when tracked dependencies change, allowing instance reuse.
-  /// * [guard]: Optional precondition check returning [BloomGuard] gating resource creation and providing diagnostic reasons.
-  /// * [graceful]: Optional [Graceful] policy to buffer deallocation during rapid remounts.
+  /// * [dispose]: Teardown callback invoked to release the resource when all downstream subscribers deactivate or when replaced.
   /// * [eager]: If `true`, pre-emptively resolves the resource in microtask when active.
   ///   Defaults to `false` (on-demand Lazy evaluation).
+  /// * [graceful]: Optional [Graceful] policy to buffer deallocation during rapid remounts.
   ///
   /// **Ensures:**
   /// * Returns a reactive [Bloom<T>] managing the synchronous lifecycle of the underlying resource.
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT instantiate `managed(...)` inside `computed()` or widget build methods,
-  ///   as creating new resource nodes on each render loop will continuously allocate and orphan lifecycle instances.
+  /// - Do NOT instantiate `managed(...)` inside `computed()` closures,
+  ///   as creating new resource nodes on each evaluation will continuously allocate and orphan lifecycle instances.
   /// - Do NOT manually call `dispose()` on the managed instance directly; let the reactive graph automatically trigger [dispose].
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Instantiating managed resource inside build method
-  /// Widget build(BuildContext context) {
-  ///   final client = managed<HttpClient>( // Allocates new managed node every frame!
+  /// // [Anti-Pattern] Instantiating managed resource inside a computed derivation
+  /// final activeClient = computed((via) {
+  ///   final client = managed<HttpClient>( // Allocates and orphans a new managed node on every evaluation!
   ///     create: (via) => HttpClient(),
   ///     dispose: (c) => c.close(),
   ///   );
-  ///   return Text('${untracked.state(client).dataOrNull}');
-  /// }
+  ///   return via(client);
+  /// });
   /// ```
   ///
   /// **GOOD:**

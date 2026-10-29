@@ -91,8 +91,8 @@ Consumer reads terminal.data
 ```
 
 ### 3.1 Phase 1: Synchronous Push-Dirty Phase (Control Plane)
-1. When a source node mutates via [`BloomController.set`](../../lib/src/bloom/bloom.dart), it invokes [`_DirtyPusher._pushDirty()`](../../lib/src/engine/_internal/_dirty.dart#L33).
-2. The dirty wave traverses downstream through intrusive target edges via [`_Node._propagateDirty()`](../../lib/src/engine/_internal/_node.dart#L130).
+1. When a source node mutates via [`BloomController.set`](../../lib/src/bloom/controller.dart), its underlying `_Entry` increments `_version++` and enqueues itself into [`_PushScope.queueOrigin()`](../../lib/src/engine/_internal/_push.dart#L27), which drains via [`_Node._propagateDirty()`](../../lib/src/engine/_internal/_node.dart#L129).
+2. The dirty wave traverses downstream through intrusive target edges via [`_Node._propagateDirty()`](../../lib/src/engine/_internal/_node.dart#L129), invoking [`_DirtyPusher._pushDirty()`](../../lib/src/engine/_internal/_dirty.dart#L33) on intermediate relays.
 3. Intermediate relay nodes ([`_PullRelay`](../../lib/src/engine/_internal/_relay.dart#L133)) receive `_invalidate()` and mark their internal state as `_DirtyState.check`.
 4. Leaf consumers ([`_RawTerminal`](../../lib/src/engine/_internal/_terminal.dart#L72)) are enqueued into [`_PushScope._flushTerminalHead`](../../lib/src/engine/_internal/_push.dart#L20).
 5. **Phase 1 Invariants**:
@@ -135,7 +135,7 @@ Every derived node ([`_PullResolver<T>`](../../lib/src/engine/_internal/_pull.da
 ### 4.1 State Definitions
 * **`_DirtyState.clean`**:
   - The node's cached state (`_state`) is fully synchronized with all upstream source versions.
-  - On active clean nodes, accessing `.data` or `.snapshot` is an immediate $O(1)$ field dereference (dormant nodes verify upstream versions first; dirty nodes trigger a lazy pull).
+  - On active clean nodes, accessing state via `untracked(node)` (or `.data` / `.snapshot` on its `BloomState` view) is an immediate $O(1)$ field dereference (dormant nodes verify upstream versions first; dirty nodes trigger a lazy pull).
 * **`_DirtyState.check`**:
   - The node received a Push-Dirty invalidation pulse, but **whether upstream outputs actually changed has not yet been determined**.
   - During lazy evaluation (Pull), upstream dependencies must be verified first via `_resolveDirty()`.
@@ -147,6 +147,7 @@ Every derived node ([`_PullResolver<T>`](../../lib/src/engine/_internal/_pull.da
 In [`_PullRelay`](../../lib/src/engine/_internal/_relay.dart#L137):
 
 ```dart
+// packages/blooming/lib/src/engine/_internal/_relay.dart
 base mixin _PullRelay<T> on _Relay, _PullResolver<T> {
   @mustCallSuper
   @override
@@ -164,6 +165,7 @@ If the Push phase marked nodes as `dirty` unconditionally, **short-circuit memoi
 By marking nodes as `check`, Bloom enables downstream short-circuiting in [`_PullResolver`](../../lib/src/engine/_internal/_pull.dart#L58):
 
 ```dart
+// packages/blooming/lib/src/engine/_internal/_pull.dart
 if (_dirtyState == _DirtyState.check) {
   // Recursively resolve upstream relays and verify whether their versions incremented
   if (!_resolveDirty() && _state != null) {
@@ -231,6 +233,7 @@ The Bloom Framework rejects external collection wrappers (`List<Edge>`, `Set<Nod
    - Mutating a controller or completing a computation increments `_version++`.
    - Edges store `_pulledVersion` to detect staleness synchronously:
      ```dart
+     // packages/blooming/lib/src/engine/_internal/_edge.dart
      bool get _isSourceDirty => _source._isNewerThan(_pulledVersion);
      ```
 
@@ -241,6 +244,10 @@ The Bloom Framework rejects external collection wrappers (`List<Edge>`, `Set<Nod
 When multiple sources mutate in the same synchronous turn, the engine coalesces invalidation waves into an $O(1)$ single dispatch without consuming microtask queues:
 
 ```dart
+final controllerA = blooming(1);
+final controllerB = blooming(2);
+final controllerC = blooming(3);
+
 batch(() {
   controllerA.set(10);
   controllerB.set(20);
@@ -272,7 +279,7 @@ Unlike batch systems that delay dirty propagation, Bloom's [`_PushScope`](../../
 - Only Phase 2 terminal dispatches (such as Flutter `markNeedsBuild()` or side-effect callbacks) are deferred until the outermost batch exits.
 
 ### 6.2 Trampoline Reentrancy Protection
-If a terminal flush callback executes new mutations, [`_PushScope._drain()`](../../lib/src/engine/_internal/_push.dart#L65) uses a trampoline loop:
+If a terminal flush callback executes new mutations, [`_PushScope._drain()`](../../lib/src/engine/_internal/_push.dart#L92) uses a trampoline loop:
 - The flush yields immediately back to Phase 1 so new dirty states propagate through the graph before subsequent terminals are flushed.
 - This prevents call stack recursion and guarantees deterministic event ordering.
 
@@ -287,6 +294,7 @@ If a terminal flush callback executes new mutations, [`_PushScope._drain()`](../
 ### 7.1 $O(1)$ Cycle Detection ([`LpdagCycleError`](../../lib/src/engine/exception.dart#L74))
 In cyclic topologies ($A \to B \to A$), recursive pull models risk infinite stack overflows. Bloom implements an $O(1)$ recursion bit in [`_PullResolver._resolve()`](../../lib/src/engine/_internal/_pull.dart#L48):
 ```dart
+// packages/blooming/lib/src/engine/_internal/_pull.dart
 if (_isResolving) {
   throw LpdagCycleError(
     'Cyclic evaluation loop detected in $runtimeType while resolving state.',
@@ -294,7 +302,7 @@ if (_isResolving) {
 }
 _isResolving = true;
 try {
-  ...
+  // ...
 } finally {
   _isResolving = false;
 }
@@ -304,6 +312,7 @@ If a node attempts to read its own state while resolution is in-flight, it immed
 ### 7.2 Reentrancy Guard ([`LpdagReentrancyError`](../../lib/src/engine/exception.dart#L34))
 A node cannot initiate a new `_pushDirty()` phase while it is already actively propagating dirty signals. In [`_DirtyPusher._pushDirty()`](../../lib/src/engine/_internal/_dirty.dart#L33):
 ```dart
+// packages/blooming/lib/src/engine/_internal/_dirty.dart
 if (_isPushingDirty) {
   throw LpdagReentrancyError(''
       'Reentrant call to _pushDirty detected. A dirty point cannot '

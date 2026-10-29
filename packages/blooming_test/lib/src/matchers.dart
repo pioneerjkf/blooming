@@ -9,28 +9,40 @@ import 'package:blooming/blooming.dart';
 // LPDAG Reactive State & Lifecycle Custom Matchers
 // =============================================================================
 
-/// Matches an LPDAG node that is currently in a dormant state (0 downstream subscribers, inactive).
+/// Matches an LPDAG node ([Bloom], [BloomController], [BloomCoupler], or [LpdagStatus])
+/// that is currently in a dormant state (0 downstream subscribers, inactive).
 const Matcher isDormant = _IsDormantMatcher();
 
-/// Matches an LPDAG node that is currently in an active state (has downstream subscribers).
+/// Matches an LPDAG node ([Bloom], [BloomController], [BloomCoupler], or [LpdagStatus])
+/// that is currently in an active state (has downstream subscribers).
 const Matcher isActive = _IsActiveMatcher();
 
-/// Creates a matcher that asserts an LPDAG node has exactly [count] active downstream subscribers.
+/// Creates a matcher that asserts a [Bloom], [BloomController], or [BloomCoupler] node
+/// has exactly [count] active downstream subscribers.
+///
+/// * [count]: The expected number of active downstream target edges.
 Matcher hasSubscribers(int count) => _HasSubscribersMatcher(count);
 
-/// Matches a reactive pipeline or snapshot sequence verifying glitch-free evaluation.
+/// Matches a reactive node or snapshot sequence verifying that no recorded [BloomSnapshot]
+/// is in an error state.
 const Matcher hasGlitchFreedom = _HasGlitchFreedomMatcher();
 
-/// Creates a matcher verifying that a [BloomSnapshot], [BloomState], or [Bloom] node is in a valid Data state
-/// and matches [expected].
+/// Creates a matcher verifying that a [BloomSnapshot], [BloomState], [Bloom], or [BloomController]
+/// is in a valid Data state and matches [expected].
+///
+/// * [expected]: The expected data value or [Matcher] to validate against.
 Matcher isData(dynamic expected) => _IsDataMatcher(expected);
 
-/// Creates a matcher verifying that a [BloomSnapshot], [BloomState], or [Bloom] node is in an Empty state,
-/// optionally verifying [reason].
+/// Creates a matcher verifying that a [BloomSnapshot], [BloomState], [Bloom], or [BloomController]
+/// is in an Empty state, optionally verifying [reason].
+///
+/// * [reason]: Optional expected empty reason payload.
 Matcher isEmptyState([Object? reason]) => _IsEmptyStateMatcher(reason);
 
-/// Creates a matcher verifying that a [BloomSnapshot], [BloomState], or [Bloom] node is in an Error state,
-/// optionally matching [error].
+/// Creates a matcher verifying that a [BloomSnapshot], [BloomState], [Bloom], or [BloomController]
+/// is in an Error state, optionally matching [error].
+///
+/// * [error]: Optional expected error object or [Matcher] to validate against.
 Matcher isErrorState([dynamic error]) => _IsErrorStateMatcher(error);
 
 // -----------------------------------------------------------------------------
@@ -184,8 +196,7 @@ final class _HasGlitchFreedomMatcher extends Matcher {
   bool matches(dynamic item, Map matchState) {
     if (item is Iterable) {
       final list = item.toList();
-      // Verifies that a sequence of snapshots or values has no duplicate intermediate tearing.
-      // In a glitch-free LPDAG diamond graph, intermediate inconsistent state is never observed.
+      // Verifies that no recorded BloomSnapshot in the sequence is in an error state.
       for (var i = 0; i < list.length; i++) {
         final current = list[i];
         if (current is BloomSnapshot && current.hasError) {

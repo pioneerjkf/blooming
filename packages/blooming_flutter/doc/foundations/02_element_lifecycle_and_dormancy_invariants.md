@@ -91,7 +91,7 @@ composed((context, via) {
 ## 4. Internal Implementation Analysis (`_ReactiveTerminalElementMixin`)
 
 ```dart
-// lib/src/widgets/_internal/_framework.dart
+// packages/blooming_flutter/lib/src/widgets/_internal/_framework.dart
 mixin _ReactiveTerminalElementMixin<T extends RawTerminal> on ComponentElement {
   /// The reactive terminal sink hosted by this element.
   T get terminal;

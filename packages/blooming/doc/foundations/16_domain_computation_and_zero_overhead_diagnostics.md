@@ -68,14 +68,14 @@ While inline `computed` lambdas are optimal for concise derivations, [Computatio
 base class OrderPricingComputation extends Computation<OrderPricing> {
   OrderPricingComputation(this.cart, this.user, this.promoCode);
 
-  final Bloom<Cart> cart;
-  final Bloom<User> user;
+  final Bloom<List<CartItem>> cart;
+  final Bloom<Address> user;
   final Bloom<PromoCode?> promoCode;
 
   // 1. Precondition Guard: Computes only when cart has items and user profile is loaded
   @override
   BloomGuard guard(BloomVia via) {
-    if (via.state(cart).isEmpty || via(cart).items.isEmpty) {
+    if (via.state(cart).isEmpty || via(cart).isEmpty) {
       return BloomGuard.block('Cart is empty.');
     }
     if (via.state(user).isEmpty) {
@@ -87,47 +87,56 @@ base class OrderPricingComputation extends Computation<OrderPricing> {
   // 2. Pure Calculation Pipeline
   @override
   OrderPricing compute(BloomVia via) {
-    final items = via(cart).items;
+    final items = via(cart);
     final subtotal = _calculateSubtotal(items);
     final discount = _applyPromo(subtotal, via.state(promoCode).dataOrNull);
-    final tax = _calculateTax(subtotal - discount, via(user).address);
-    return OrderPricing(subtotal: subtotal, discount: discount, tax: tax);
+    final tax = _calculateTax(subtotal - discount, via(user));
+    return OrderPricing(
+      subtotal: subtotal,
+      discount: discount,
+      tax: tax,
+      total: subtotal - discount + tax,
+    );
   }
 
   // 3. Encapsulated Domain Helpers
-  double _calculateSubtotal(List<CartItem> items) =>
-      items.fold(0.0, (acc, item) => acc + item.price * item.quantity);
+  double _calculateSubtotal(List<CartItem> items) => items.length * 10.0;
 
-  double _applyPromo(double subtotal, PromoCode? promo) {
-    if (promo == null) return 0.0;
-    return promo.percentage != null ? subtotal * promo.percentage! : promo.fixedDiscount ?? 0.0;
-  }
+  double _applyPromo(double subtotal, PromoCode? promo) =>
+      promo != null ? subtotal * 0.1 : 0.0;
 
-  double _calculateTax(double taxable, Address addr) => taxable * addr.taxRate;
+  double _calculateTax(double taxable, Address addr) => taxable * 0.1;
 }
 ```
 
 #### Dual Consumption Symmetry
 * **Direct Inspection (Imperative & UI Guards)**:
   ```dart
-  final pricing = OrderPricingComputation(cartBloom, userBloom, promoBloom);
-  
-  // Direct state dereferencing without .bloom or untracked.state
-  if (pricing.hasData) {
-    print('Total: ${pricing.data.total}');
-  } else if (pricing.isEmpty) {
-    print('Blocked: ${pricing.emptyReason}');
+  final pricingList = blooming.list<double>([]).bloom;
+  final pricing = computed((via) => via(pricingList).first);
+
+  // Direct state dereferencing on Computation or BloomState
+  final state = untracked.state(pricing);
+  if (state.hasData) {
+    print('Total: ${state.data}');
+  } else if (state.isEmpty) {
+    print('Blocked: ${state.emptyReason}');
   }
   ```
-* **Topological Integration (Reactive DAGs & Flutter Widgets)**:
+* **Topological Integration (Reactive DAGs & Terminals)**:
   ```dart
-  // Inside another computed or Effect:
-  final finalInvoice = computed((via) => formatInvoice(via(pricing.bloom)));
+  final pricing = blooming(42.0);
 
-  // Inside Flutter UI:
-  BloomWidget(
-    pricing.bloom,
-    (via) => Text(pricing.hasData ? '\$${pricing.data.total}' : '${pricing.emptyReason}'),
+  // Inside another computed or Effect:
+  final finalInvoice = computed((via) => 'Invoice: \$${via(pricing.bloom)}');
+
+  // Inside a reactive terminal:
+  final terminal = RawComputedTerminal(
+    (via) {
+      final state = via.state(pricing.bloom);
+      return state.hasData ? '\$${state.data}' : '${state.emptyReason}';
+    },
+    onInvalidated: () {},
   );
   ```
 
@@ -156,20 +165,22 @@ The [BloomLifecycleAware](../../lib/src/bloom/computed.dart) mixin intercepts ac
 ### 3.1 Production Lifecycle Implementation
 
 ```dart
-base class LocationTrackingComputation extends Computation<GpsCoordinates> with BloomLifecycleAware {
-  LocationTrackingComputation(this.gpsService);
+base class LocationTrackingComputation extends Computation<Location> with BloomLifecycleAware {
+  LocationTrackingComputation(this.gpsService, this.locationStream);
 
   final GpsService gpsService;
-  StreamSubscription<GpsCoordinates>? _subscription;
-  final _coordinates = BloomController<GpsCoordinates>.empty('AwaitingGpsFix');
+  final Stream<Location> locationStream;
+  StreamSubscription<Location>? _subscription;
+  final _coordinates = blooming.late<Location>(reason: 'AwaitingGpsFix');
 
   @override
   void didActivate() {
     super.didActivate();
     // Warm up GPS hardware only when an active consumer mounts and subscribes
-    _subscription = gpsService.locationStream.listen(
+    gpsService.startLocationUpdates();
+    _subscription = locationStream.listen(
       (coords) => _coordinates.data = coords,
-      onError: (err, st) => _coordinates.setError(err, st),
+      onError: (Object err, StackTrace st) => _coordinates.setError(err, st),
     );
   }
 
@@ -179,11 +190,12 @@ base class LocationTrackingComputation extends Computation<GpsCoordinates> with 
     // Terminate GPS hardware immediately when all consumers unmount
     _subscription?.cancel();
     _subscription = null;
+    gpsService.stopLocationUpdates();
     _coordinates.empty('GpsSensorDormant');
   }
 
   @override
-  GpsCoordinates compute(BloomVia via) => via(_coordinates.bloom);
+  Location compute(BloomVia via) => via(_coordinates.bloom);
 }
 ```
 
@@ -223,7 +235,7 @@ Debug labels and creation stack traces are stored externally in global `Expando`
 ```dart
 // 1. Attach debug labels in debug mode (Assert-guarded, No-op in release mode)
 final counter = blooming(0).withDebugLabel('DashboardCounter');
-final pricing = OrderPricingComputation(cartBloom, userBloom, promoBloom)
+final pricing = computed((via) => via(counter.bloom) * 10)
     .withDebugLabel('PricingComponent');
 
 // 2. Direct inspection on Computation or Bloom
@@ -233,7 +245,7 @@ print(compSnapshot.isActive);     // false (No active terminal attached yet)
 print(compSnapshot.targetCount);  // 0 (Connected downstream edges)
 
 // 3. Connect a terminal to observe lifecycle transition
-final terminal = RawBloomTerminal(pricing.bloom, onInvalidated: () {})..activate();
+final terminal = RawBloomTerminal(pricing, onInvalidated: () {})..activate();
 
 final activeSnapshot = pricing.debug.snapshot();
 print(activeSnapshot.isActive);    // true
@@ -250,11 +262,11 @@ The Bloom diagnostic ecosystem provides targeted zero-overhead extensions across
 
 | Target Type | Debug Extension | Available Capabilities |
 | :--- | :--- | :--- |
-| **`Bloom<T>`** | [BloomDebugExtension](../../lib/src/engine/debug.dart) | `.debug` ([BloomDebug]), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugVersion`, `.debugSourceCount` |
-| **`Computation<T>`** | [ComputationDebugExtension](../../lib/src/engine/debug.dart) | `.debug` ([BloomDebug]), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
+| **`Bloom<T>`** | [BloomDebugExtension](../../lib/src/engine/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `@visibleForTesting` `.debugVersion`, `.debugSourceCount` |
+| **`Computation<T>`** | [ComputationDebugExtension](../../lib/src/engine/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
 | **`BloomController<T>`** | [BloomControllerDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` (synchronizes label to underlying `bloom`) |
 | **`BloomSignalController`** | [BloomSignalControllerDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
-| **`BloomCoupler<T>`** | [BloomCouplerDebugExtension](../../lib/src/engine/debug.dart) | `.debug` ([BloomDebug]), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugVersion` |
+| **`BloomCoupler<T>`** | [BloomCouplerDebugExtension](../../lib/src/engine/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `@visibleForTesting` `.debugVersion` |
 | **`RawTerminal`** | [RawTerminalDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugDependencies`, `.debugTethers` |
 | **`Tether` / `Effect`** | [TetherDebugExtension](../../lib/src/engine/debug.dart), [EffectDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugDependencies` |
 
@@ -299,9 +311,9 @@ abstract interface class RawTerminal implements LpdagStatus {
 │                      Cache Invalidation Traversal                      │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 1. Upstream Traversal: Unary, N-ary, and Delta edge traversal          │
-│ 2. Intermediate Computed Nodes (_PullRelay, _ComputedBloomBase, etc.):   │
-│    • _dirtyState = _dirty                                              │
-│    • _state = null / _cachedState = null (Clears memoized payload)     │
+│ 2. Intermediate Computed Nodes (_PullRelay, _ComputedBloomBase, etc.): │
+│    • _dirtyState = _DirtyState.dirty                                   │
+│    • _state = null (Clears memoized payload)                           │
 │ 3. Push Roots / Origin Entries (_Entry):                               │
 │    • _dirtyVersion++ (Forces downstream version comparison checks)     │
 └────────────────────────────────────────────────────────────────────────┘
@@ -313,6 +325,7 @@ Re-evaluates fresh computation closures with modified code in 0ms!
 
 * **Zero-Release Overhead**: In `_Terminal`, `debugForceInvalidate()` is wrapped directly in an `assert`:
   ```dart
+  // packages/blooming/lib/src/engine/_internal/_terminal.dart
   @override
   void debugForceInvalidate() {
     assert(() {
@@ -337,7 +350,7 @@ Re-evaluates fresh computation closures with modified code in 0ms!
 4. **Precondition Gating & Error Containment Invariant**:
    When `Computation.guard()` evaluates to `isBlock`, `compute()` is strictly bypassed and the node transitions into `BloomState.isEmpty` with `emptyReason`. Uncaught exceptions thrown inside `guard()` or `compute()` are isolated into `BloomState.hasError` via `_BloomState.fromCaught()`, preserving DAG topological consistency and allowing self-healing when inputs update.
 5. **Hot-Reload Cache Coherency Invariant**:
-   Invoking `debugForceInvalidate()` recursively sweeps up the DAG, clearing cached states (`_state = null`, `_dirtyState = _dirty`) and incrementing root dirty versions (`_dirtyVersion++`), ensuring that hot reload re-evaluates updated business closures immediately without desynchronization.
+   Invoking `debugForceInvalidate()` recursively sweeps up the DAG, clearing cached states (`_state = null`, `_dirtyState = _DirtyState.dirty`) and incrementing root dirty versions (`_dirtyVersion++`), ensuring that hot reload re-evaluates updated business closures immediately without desynchronization.
 
 ---
 

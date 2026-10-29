@@ -12,6 +12,18 @@ part of '../framework.dart';
 /// capturing its topology, lifecycle, and reactive state payload.
 final class BloomDebugSnapshot {
   /// Creates an immutable diagnostic snapshot of a reactive [node].
+  ///
+  /// * [node]: The underlying [Bloom] reactive node instance.
+  /// * [debugLabel]: The developer-assigned debug label, if any.
+  /// * [nodeType]: The runtime implementation class of the observed node.
+  /// * [version]: The internal version of the observed node.
+  /// * [isActive]: Whether this node is currently active in the LPDAG reactive graph.
+  /// * [targetCount]: The number of active downstream target edges connected to this node.
+  /// * [customProperties]: Node-specific diagnostic properties.
+  /// * [phase]: The operational phase of the observed reactive node.
+  /// * [data]: The current data payload if [hasData] is true; otherwise null.
+  /// * [error]: The current error payload if [hasError] is true; otherwise null.
+  /// * [emptyReason]: The empty reason payload if [isEmpty] is true; otherwise null.
   const BloomDebugSnapshot({
     required this.node,
     this.debugLabel,
@@ -126,7 +138,7 @@ final class BloomDebugSnapshot {
 ///
 /// print(counter.bloom.debug.debugLabel);   // 'counter'
 /// print(counter.bloom.debug.targetCount);  // 0
-/// print(counter.bloom.debug.describe());    // '[BloomController<int>#counter] active: false...'
+/// print(counter.bloom.debug.describe());   // '[_DistinctEntry<int>#counter] active: false...'
 /// ```
 extension type const BloomDebug(Bloom _target) {
   /// The developer-defined debug label assigned to this node, if any.
@@ -174,6 +186,8 @@ extension RawTerminalDebugExtension on RawTerminal {
   }
 
   /// Assigns a developer-defined debug label and returns this terminal.
+  ///
+  /// * [label]: The debug label to assign to this terminal.
   T withDebugLabel<T extends RawTerminal>(String label) {
     debugLabel = label;
     return this as T;
@@ -234,6 +248,8 @@ extension TetherDebugExtension<T extends Tether> on T {
   }
 
   /// Assigns a developer-defined debug label and returns this tether.
+  ///
+  /// * [label]: The debug label to assign to this tether.
   T withDebugLabel(String label) {
     debugLabel = label;
     return this;
@@ -278,6 +294,8 @@ extension ComputationDebugExtension on Computation {
   }
 
   /// Assigns a developer-defined debug label and returns this computation.
+  ///
+  /// * [label]: The debug label to assign to this computation.
   T withDebugLabel<T extends Computation>(String label) {
     debugLabel = label;
     return this as T;
@@ -328,6 +346,8 @@ extension BloomDebugExtension<T> on Bloom<T> {
   }
 
   /// Assigns a developer-defined debug label and returns this [Bloom].
+  ///
+  /// * [label]: The debug label to assign to this node.
   W withDebugLabel<W extends Bloom<T>>(String label) {
     debugLabel = label;
     return this as W;
@@ -371,6 +391,8 @@ extension BloomControllerDebugExtension<T> on BloomController<T> {
   }
 
   /// Assigns a developer-defined debug label and returns this controller.
+  ///
+  /// * [label]: The debug label to assign to this controller.
   C withDebugLabel<C extends BloomController<T>>(String label) {
     debugLabel = label;
     return this as C;
@@ -412,6 +434,8 @@ extension BloomSignalControllerDebugExtension on BloomSignalController {
   }
 
   /// Assigns a developer-defined debug label and returns this controller.
+  ///
+  /// * [label]: The debug label to assign to this signal controller.
   BloomSignalController withDebugLabel(String label) {
     debugLabel = label;
     return this;
@@ -453,6 +477,8 @@ extension BloomCouplerDebugExtension on BloomCoupler {
   }
 
   /// Assigns a developer-defined debug label and returns this coupler socket.
+  ///
+  /// * [label]: The debug label to assign to this coupler socket.
   BloomCoupler withDebugLabel(String label) {
     debugLabel = label;
     return this;

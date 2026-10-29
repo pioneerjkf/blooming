@@ -101,7 +101,7 @@ provide it. Blooming's focus is on the parts around the core:
 
 ```yaml
 dependencies:
-  blooming: ^0.1.0
+  blooming: ^0.2.2
 ```
 
 ```dart
@@ -141,8 +141,8 @@ Three things to know:
 dependencies:
   flutter:
     sdk: flutter
-  blooming_flutter: ^0.1.0
-  # blooming: ^0.1.0 # optional: blooming_flutter re-exports blooming
+  blooming_flutter: ^0.2.2
+  # blooming: ^0.2.2 # optional: blooming_flutter re-exports blooming
 ```
 
 ```dart
@@ -197,19 +197,21 @@ When `counter` changes, only that leaf element rebuilds while the surrounding `C
 ### Side effects without rebuilding
 
 ```dart
-// Fluent extension syntax (recommended):
-counter.bloom.listen(
-  (context, value) {
-    if (value == 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reached 10')),
-      );
-    }
-  },
-  child: const SizedBox.shrink(),
-);
-
-// Declarative widget syntax: BloomListener(counter.bloom, (context, value) { ... })
+Widget buildCounterListener(BuildContext context, BloomController<int> counter) {
+  // Fluent extension syntax (recommended):
+  return counter.bloom.listen(
+    (context, value) {
+      if (value == 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reached 10')),
+        );
+      }
+    },
+    child: const SizedBox.shrink(),
+  );
+  // Or declarative widget syntax:
+  // return BloomListener(counter.bloom, (context, value) { ... }, child: const SizedBox.shrink());
+}
 ```
 
 `bloom.listen` (and `BloomListener`) never rebuilds its child, does not fire on mount, and runs the
@@ -269,24 +271,33 @@ The `take` parameter is supported across `BloomListener`, `BloomListener.debounc
 is exhausted (e.g., `take: 1` for one-shot navigation, dialogs, or banners).
 
 ```dart
+final authController = blooming('user_123');
+final cartController = blooming.list<String>(['item_a']);
+
 // 1. Compose multi-node conditions in controller/store scope (outside build):
 final checkout = computed((via) => (
   user: via(authController.bloom),
   count: via(cartController.bloom).length,
 ));
 
-// 2. Direct functor syntax with one-shot execution bounding (take: 1):
-checkout.listen(
-  (context, state) => showCheckoutBanner(context, state.user, state.count),
-  take: 1, // Automatically severs dependency edges after executing once
-);
-
-// Or declarative widget syntax:
-BloomListener(
-  checkout,
-  (context, state) => showCheckoutBanner(context, state.user, state.count),
-  take: 1,
-);
+Widget buildCheckoutBanner(
+  BuildContext context,
+  void Function(BuildContext context, String user, int count) showCheckoutBanner,
+) {
+  // 2. Direct functor syntax with one-shot execution bounding (take: 1):
+  return checkout.listen(
+    (context, state) => showCheckoutBanner(context, state.user, state.count),
+    take: 1, // Automatically severs dependency edges after executing once
+    child: const SizedBox.shrink(),
+  );
+  // Or declarative widget syntax:
+  // return BloomListener(
+  //   checkout,
+  //   (context, state) => showCheckoutBanner(context, state.user, state.count),
+  //   take: 1,
+  //   child: const SizedBox.shrink(),
+  // );
+}
 ```
 
 ---
@@ -294,6 +305,7 @@ BloomListener(
 ## Documentation
 
 - [LPDAG whitepaper](packages/blooming/doc/LPDAG.md) — specification of the push-dirty / lazy-pull engine
+- [Core foundations](packages/blooming/doc/foundations/README.md) — 19 deep-dive technical specifications on the pure Dart LPDAG engine
 - [Flutter foundations](packages/blooming_flutter/doc/foundations/README.md) — composed functors, durable animations, lifecycle
 - [`packages/blooming/example`](packages/blooming/example) and [`packages/blooming_flutter/example`](packages/blooming_flutter/example) — runnable examples
 - Changelogs: [`blooming`](packages/blooming/CHANGELOG.md), [`blooming_flutter`](packages/blooming_flutter/CHANGELOG.md), [`blooming_extensions`](packages/blooming_extensions/CHANGELOG.md), [`blooming_lints`](packages/blooming_lints/CHANGELOG.md), [`blooming_test`](packages/blooming_test/CHANGELOG.md), [`blooming_flutter_test`](packages/blooming_flutter_test/CHANGELOG.md)

@@ -108,16 +108,16 @@ final class BloomingFunctor {
   /// * Returns an active [BloomController] in the Data state ([BloomState.hasData] == true).
   ///
   /// **Warning (Anti-Pattern Prevention):**
-  /// - Do NOT instantiate `blooming(...)` inside Flutter `build()` methods or derivation closures;
+  /// - Do NOT instantiate `blooming(...)` inside derivation closures or computed getters;
   ///   always cache instances in `final` class fields or state controllers.
   ///
   /// **BAD:**
   /// ```dart
-  /// // [Anti-Pattern] Per-frame state re-instantiation in build (state reset)
-  /// Widget build(BuildContext context) {
-  ///   final count = blooming(0); // State lost on every render!
-  ///   return Text('${untracked(count.bloom)}');
-  /// }
+  /// // [Anti-Pattern] Per-evaluation state re-instantiation inside a derivation (state reset)
+  /// final derivedCount = computed((via) {
+  ///   final count = blooming(0); // State lost on every evaluation!
+  ///   return via(count.bloom);
+  /// });
   /// ```
   ///
   /// **GOOD:**

@@ -4,7 +4,7 @@
 
 /// Pure Dart declarative testing harness and LPDAG custom matchers for the Bloom framework.
 ///
-/// Provides [bloomTest] declarative runner, [FakeAsync] virtual time fast-forwarding,
+/// Provides [bloomTest] declarative runner with `FakeAsync` virtual time fast-forwarding,
 /// and custom LPDAG matchers ([isDormant], [isActive], [hasSubscribers], [hasGlitchFreedom],
 /// [isData], [isEmptyState], [isErrorState]).
 library blooming_test;

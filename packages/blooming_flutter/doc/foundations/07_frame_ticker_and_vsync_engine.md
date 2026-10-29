@@ -24,7 +24,7 @@ When modeling continuous physical motions or time streams, developers face criti
 
 ## 2. VSYNC Engine Architecture
 
-The VSYNC engine integrates directly with Flutter's `TickerProvider` lifecycle via the `managed` functor:
+The VSYNC engine integrates directly with Flutter's `TickerProvider` lifecycle: `TickerProvider.drive<T>()` uses `managed<_TickerDriver<T>>` while `composed.drive` binds `_TickerDriver<T>` directly to `_ComposedDriveElement`:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -34,8 +34,8 @@ The VSYNC engine integrates directly with Flutter's `TickerProvider` lifecycle v
 │   [ Host Element / TickerProvider Source ]                             │
 │   Provides TickerProvider                                              │
 │          │                                                             │
-│          ▼                                                             │
-│   managed<_TickerDriver<T>> Pipeline                                   │
+│          ├─► vsync.drive: managed<_TickerDriver<T>> Pipeline           │
+│          └─► composed.drive: _ComposedDriveElement._driver             │
 │   ┌────────────────────────────────────────────────────────────────┐   │
 │   │ • create: Instantiates _TickerDriver(vsync, onTick)            │   │
 │   │ • dispose: Cancels ticker & frees memory on unmount            │   │
@@ -60,9 +60,9 @@ The VSYNC engine integrates directly with Flutter's `TickerProvider` lifecycle v
 
 ## 3. Foundational Architecture Invariants
 
-### Invariant 1: Zero-Leak Lifecycles via `managed`
+### Invariant 1: Zero-Leak Lifecycles via `managed` (`vsync.drive`)
 ```dart
-// lib/src/scheduler/ticker.dart
+// packages/blooming_flutter/lib/src/scheduler/ticker.dart
 final resourceNode = managed<_TickerDriver<T>>(
   eager: true,
   create: (via) {
@@ -151,9 +151,9 @@ base class AnimatedHeroScreen extends BloomVsyncWidget {
 
   @override
   Widget build(BuildContext context, BloomVia via, TickerProvider vsync) {
-    // vsync is available seamlessly:
-    final controller = AnimationController(vsync: vsync, duration: const Duration(seconds: 1));
-    return FadeTransition(opacity: controller, child: const Placeholder());
+    // vsync is available seamlessly to drive frame-synced reactive streams:
+    final seconds = via(vsync.drive((elapsed) => elapsed.inSeconds));
+    return Text('Elapsed: ${seconds}s');
   }
 }
 
@@ -164,8 +164,8 @@ class InlineAnimatedWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return composed.vsync((context, via, vsync) {
-      final controller = AnimationController(vsync: vsync, duration: const Duration(seconds: 1));
-      return FadeTransition(opacity: controller, child: const Text('Fading!'));
+      final seconds = via(vsync.drive((elapsed) => elapsed.inSeconds));
+      return Text('Elapsed: ${seconds}s');
     });
   }
 }

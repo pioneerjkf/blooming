@@ -498,12 +498,18 @@ class DocAuditor {
         }
 
         // Synthesize test file for runnable public snippets
-        final isFlutter = relFilePath.contains('blooming_flutter') ||
-            code.contains('BloomWidget') ||
-            code.contains('Widget build(') ||
-            code.contains('BuildContext') ||
-            code.contains('testWidgets') ||
-            code.contains('WidgetTester');
+        // Pure Dart packages (`packages/blooming/`, `packages/blooming_extensions/`, `packages/blooming_test/`)
+        // are strictly verified in a 100% pure-Dart harness without Flutter imports.
+        final isPureDartPackage = relFilePath.startsWith('packages/blooming/') ||
+            relFilePath.startsWith('packages/blooming_extensions/') ||
+            relFilePath.startsWith('packages/blooming_test/');
+        final isFlutter = !isPureDartPackage &&
+            (relFilePath.contains('blooming_flutter') ||
+                code.contains('BloomWidget') ||
+                code.contains('Widget build(') ||
+                code.contains('BuildContext') ||
+                code.contains('testWidgets') ||
+                code.contains('WidgetTester'));
 
         final synthesized = _synthesizeSnippet(
           code,
@@ -705,20 +711,6 @@ class GpsService {
 class MarketWebSocket {
   static Stream<String> connect(String symbol) => const Stream.empty();
 }
-class CameraController {
-  CameraController([dynamic a, dynamic b]);
-  Future<void> initialize() async {}
-  Future<void> dispose() async {}
-}
-${!isFlutter ? '''
-class ScrollController {
-  ScrollController({double initialScrollOffset = 0.0});
-  bool get hasClients => true;
-  double get offset => 0.0;
-  void jumpTo(double offset) {}
-  void dispose() {}
-}
-''' : ''}
 class SocketChannel {
   static SocketChannel connect(dynamic url) => SocketChannel();
   Stream<String> get stream => const Stream.empty();

@@ -416,7 +416,7 @@ Hot-path methods in the reactive engine carry `@pragma('vm:prefer-inline')`:
 * `_isNewerThan` / `_resolveDirty` / `_pullVersion`
 * `_trackDependency` / `_sweepObsoleteEdges`
 * Symmetrical gateway functors (`via`, `via.state`, `untracked`, `untracked.state`)
-* State extraction getters (`.data`, `.hasData`, `.isEmpty`, `.hasError`)
+* `BloomState` extraction getters (`.data`, `.hasData`, `.isEmpty`, `.hasError`)
 
 This directive instructs the Dart AOT compiler to inline the function body directly into caller call-sites, eliminating stack frame setup, register spill/restore sequences, and branch call latency.
 
@@ -474,13 +474,16 @@ Multi-state inspection and reactive guards operate across 2- to 9-tuples using c
 
 ```dart
 // packages/blooming/lib/src/bloom/state.dart
-extension BloomStateRecord2Extension on (BloomState, BloomState) {
+extension BloomStateRecord2Extension<T1, T2> on (BloomState<T1>, BloomState<T2>) {
   @pragma('vm:prefer-inline')
-  bool allHaveData() => $1.hasData && $2.hasData;
+  bool allHaveData() {
+    final d1 = $1.hasData, d2 = $2.hasData;
+    return d1 && d2;
+  }
 
   @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = 'PrerequisiteNotMet']) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
+  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
+      allHaveData().guarded(reason);
 }
 ```
 
@@ -500,20 +503,27 @@ base mixin _TerminalSchedulerMixin on _SchedulerBase {
   @mustCallSuper
   @override
   void _onTask() {
-    super._onTask();
-    if (_terminalSet.isEmpty) return;
-
-    final processing = _terminalSet;
-    _terminalSet = _terminalSwapSet;
-    _terminalSwapSet = processing;
-
     try {
-      for (final target in processing) {
-        if (!target._lifecycle.isActive) continue;
-        target._performScheduled();
-      }
+      super._onTask();
     } finally {
-      processing.clear();
+      if (_terminalSet.isNotEmpty) {
+        final processing = _terminalSet;
+        _terminalSet = _terminalSwapSet;
+        _terminalSwapSet = processing;
+
+        try {
+          for (final target in processing) {
+            if (!target._lifecycle.isActive) continue;
+            try {
+              target._performScheduled();
+            } catch (error, stackTrace) {
+              target._handleUncaughtError(error, stackTrace);
+            }
+          }
+        } finally {
+          processing.clear();
+        }
+      }
     }
   }
 }

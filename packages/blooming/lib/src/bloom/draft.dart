@@ -75,10 +75,14 @@ abstract base class BloomDraftController<C> implements BloomController<C> {
   /// Upon completion, changes are compared via equality (`equals` or collection-specific equality).
   /// If modified, the new collection is frozen as an unmodifiable collection and
   /// commits at most one Push-Dirty invalidation downstream.
+  ///
+  /// * [recipe]: Synchronous callback mutating the temporary draft buffer in-place.
   void edit(void Function(C draft) recipe);
 
   /// Safely executes [recipe] on a temporary draft buffer and commits modifications,
   /// or catches any thrown exceptions and transitions this controller to an error state.
+  ///
+  /// * [recipe]: Synchronous callback mutating the temporary draft buffer in-place.
   void editGuarded(void Function(C draft) recipe);
 
   @override

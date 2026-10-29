@@ -11,11 +11,11 @@ import 'package:blooming/blooming.dart';
 
 /// Reactive numeric aggregations and reduction extensions on [BloomIterableElements].
 ///
-/// **Design Philosophy (Type-Preserving Numeric Reductions):**
+/// ## Architectural Benefits
 /// Extends numeric collections with high-efficiency arithmetic operations ([sum], [average], [min], [max]).
 /// Calculations evaluate lazily on-demand when downstream consumers pull values.
 ///
-/// **Data Propagation Flow:**
+/// ## Data Propagation Flow
 /// ```text
 /// [Source Bloom<Iterable<num>>]
 ///        │ (Push-Dirty)
@@ -27,14 +27,14 @@ import 'package:blooming/blooming.dart';
 ///        └─► .max     ──► Largest value Bloom<E>
 /// ```
 ///
-/// **Example:**
+/// ## Examples
 /// ```dart
-/// final scores = bloom<List<int>>([85, 92, 78]);
-/// final totalScore = scores.elements.sum;
-/// final avgScore = scores.elements.average;
+/// final scores = blooming<List<int>>([85, 92, 78]);
+/// final totalScore = scores.bloom.elements.sum;
+/// final avgScore = scores.bloom.elements.average;
 ///
-/// print('Total: ${totalScore.data}'); // 255
-/// print('Avg: ${avgScore.data}');     // 85.0
+/// print('Total: ${untracked(totalScore)}'); // 255
+/// print('Avg: ${untracked(avgScore)}');     // 85.0
 /// ```
 extension NumericBloomElementsExtension<E extends num>
     on BloomIterableElements<E> {

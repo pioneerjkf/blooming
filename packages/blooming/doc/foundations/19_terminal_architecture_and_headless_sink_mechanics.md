@@ -53,7 +53,7 @@ Because of this invariant, a reactive DAG cannot execute in a vacuum. It require
 2. **Sink Invalidation Pulses**: Receive synchronous Push-Dirty signals from upstream mutations and schedule external reactions.
 3. **Execute Lazy-Pull Queries**: Trigger synchronous data resolution on-demand via `.data`, `.snapshot`, or explicit `evaluate()`.
 
-In Flutter applications, widget elements (`BloomBuilder`, `BloomWidget`) act as implicit terminals. In headless environments—such as server-side microservices, background command-line tools, and pure Dart unit tests—reactive graphs are driven programmatically through the **[`RawTerminal`](../../lib/src/engine/terminal.dart)** taxonomy.
+In Flutter applications, widget elements (`composed`, `bloom.build`, `BloomWidget`) act as implicit terminals. In headless environments—such as server-side microservices, background command-line tools, and pure Dart unit tests—reactive graphs are driven programmatically through the **[`RawTerminal`](../../lib/src/engine/terminal.dart)** taxonomy.
 
 ---
 
@@ -64,15 +64,17 @@ In Flutter applications, widget elements (`BloomBuilder`, `BloomWidget`) act as 
 When an intermediate reactive node is instantiated, it begins its existence in a dormant, inactive state:
 
 ```dart
+const externalEventStream = Stream<String>.empty();
+
 final streamNode = computed.stream((via) => externalEventStream);
 final resourceNode = managed(
-  create: (via) => ExpensiveService.connect(),
+  create: (via) => ApiClient(port: 8080),
   dispose: (service) => service.close(),
 );
 ```
 
 * `streamNode` does **not** listen to `externalEventStream`.
-* `resourceNode` has **not** invoked `ExpensiveService.connect()`.
+* `resourceNode` has **not** invoked `ApiClient(port: 8080)`.
 * Internal state remains uninitialized (`_state ??= _EmptyBloomState()`).
 
 If a system attempts to inspect these nodes without establishing an active subscriber, the nodes will remain dormant.
@@ -109,7 +111,7 @@ A fundamental distinction exists between reading a node's immediate value and es
   - Evaluates the current state on-demand without creating dependency edges and without registering as a target.
   - Leaves `_lifecycle.isActive` strictly `false`.
   - **Does not awaken dormant async stream listeners or allocate `managed` handles.**
-* **[`terminal.activate()`](../../lib/src/engine/terminal.dart#L26)**:
+* **[`terminal.activate()`](../../lib/src/engine/terminal.dart)**:
   - Synchronously transitions `_lifecycle.isActive` from `false` to `true`.
   - Attaches an intrusive target edge ([`_attachTargetEdgeOptimistically`](../../lib/src/engine/_internal/_node.dart)) to the upstream node.
   - Cascades activation upstream via `_activateOptimistically()`, awakening streams, futures, and managed resources.
@@ -144,15 +146,15 @@ The engine provides three specialized concrete implementations under the [`RawTe
 
 | Terminal Class | Edge Cardinality | Evaluation Protocol | State Caching | Dynamic Dependency Sweeping | Primary Headless Use Case |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **[`RawBloomTerminal<T>`](../../lib/src/engine/terminal.dart#L182)** | 1:1 (Unary) | Direct Delegation (`_read()`) | No (Zero-Copy SSOT) | N/A (Fixed 1:1) | Observing single nodes, testing Stream/Future bridges, validating `managed` lifecycles |
-| **[`RawViaTerminal<T>`](../../lib/src/engine/terminal.dart#L63)** | N-ary (Dynamic) | Explicit `evaluate()` | No (Transient) | 1-Pass Monotonic Epoch Sweep | Testing dynamic conditional branches (`if/else`), acyclic verification |
-| **[`RawComputedTerminal<T>`](../../lib/src/engine/terminal.dart#L86)** | N-ary (Dynamic) | Lazy pull on `.data` / `.snapshot` | Yes (0-Compute) | 1-Pass Monotonic Epoch Sweep | Headless leaf computation, cache coherency validation, dirty short-circuit testing |
+| **[`RawBloomTerminal<T>`](../../lib/src/engine/terminal.dart)** | 1:1 (Unary) | Direct Delegation (`_read()`) | No (Zero-Copy SSOT) | N/A (Fixed 1:1) | Observing single nodes, testing Stream/Future bridges, validating `managed` lifecycles |
+| **[`RawViaTerminal<T>`](../../lib/src/engine/terminal.dart)** | N-ary (Dynamic) | Explicit `evaluate()` | No (Transient) | 1-Pass Monotonic Epoch Sweep | Testing dynamic conditional branches (`if/else`), acyclic verification |
+| **[`RawComputedTerminal<T>`](../../lib/src/engine/terminal.dart)** | N-ary (Dynamic) | Lazy pull on `.data` / `.snapshot` | Yes (0-Compute) | 1-Pass Monotonic Epoch Sweep | Headless leaf computation, cache coherency validation, dirty short-circuit testing |
 
 ---
 
 ### 3.2 `RawBloomTerminal<T>`: The 1:1 Zero-Copy Passive Gateway
 
-[`RawBloomTerminal<T>`](../../lib/src/engine/terminal.dart#L182) is a specialized low-level terminal designed specifically for observing a single upstream [`Bloom<T>`](../../lib/src/bloom/bloom.dart) pipeline.
+[`RawBloomTerminal<T>`](../../lib/src/engine/terminal.dart) is a specialized low-level terminal designed specifically for observing a single upstream [`Bloom<T>`](../../lib/src/bloom/bloom.dart) pipeline.
 
 ```dart
 // packages/blooming/lib/src/engine/terminal.dart
@@ -175,6 +177,7 @@ base class RawBloomTerminal<T> extends _RawTerminal
 1. **Zero-Copy SSOT Delegation**:
    Unlike intermediate derivation nodes (`computed`) which cache their own derived state in a local `_state` field, `RawBloomTerminal` **never shadows or duplicates state**:
    ```dart
+   // packages/blooming/lib/src/engine/_internal/_terminal.dart
    @override
    _BloomState<T> _read() {
      final state = _source._read();
@@ -186,6 +189,7 @@ base class RawBloomTerminal<T> extends _RawTerminal
 2. **Direct State Protocol Implementation**:
    Because `RawBloomTerminal` mixes in [`_BloomStateMixin<T>`](../../lib/src/bloom/_internal/_state.dart) and implements [`BloomState<T>`](../../lib/src/bloom/state.dart), external consumers can inspect state properties directly on the terminal instance:
    ```dart
+   final source = blooming(42).bloom;
    final term = RawBloomTerminal(source, onInvalidated: () {});
    if (term.hasData) print(term.data);
    ```
@@ -196,7 +200,7 @@ base class RawBloomTerminal<T> extends _RawTerminal
 
 ### 3.3 `RawViaTerminal<T>`: N-ary Explicit Reactive Evaluator
 
-[`RawViaTerminal<T>`](../../lib/src/engine/terminal.dart#L63) is designed for multi-dependency observation where dependencies are registered dynamically via an injected [`BloomVia`](../../lib/src/engine/via.dart) handle during an explicit evaluation call.
+[`RawViaTerminal<T>`](../../lib/src/engine/terminal.dart) is designed for multi-dependency observation where dependencies are registered dynamically via an injected [`BloomVia`](../../lib/src/engine/via.dart) handle during an explicit evaluation call.
 
 ```dart
 // packages/blooming/lib/src/engine/terminal.dart
@@ -234,19 +238,21 @@ base class RawViaTerminal<T> extends _RawTerminal
 
 ### 3.4 `RawComputedTerminal<T>`: N-ary 1-Hop Leaf Computed Terminal
 
-[`RawComputedTerminal<T>`](../../lib/src/engine/terminal.dart#L86) represents a hybrid: it functions as a terminal sink to external callers, but internally behaves as an engineered **1-hop leaf computed node**.
+[`RawComputedTerminal<T>`](../../lib/src/engine/terminal.dart) represents a hybrid: it functions as a terminal sink to external callers, but internally behaves as an engineered **1-hop leaf computed node**.
 
 ```dart
 // packages/blooming/lib/src/engine/terminal.dart
 base class RawComputedTerminal<T> extends _RawTerminal
     with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _BloomStateMixin<T>, 
-         _PullResolver<T>, _ComputedPullMixin<T> {
+         _PullResolver<T>, _ComputedPullMixin<T>
+    implements BloomState<T> {
   RawComputedTerminal(
-    this._compute, {
+    T Function(BloomVia via) compute, {
     required super.onInvalidated,
     super.onUncaughtError,
     BloomGuard Function(BloomVia via)? guard,
-  }) : _guard = guard;
+  })  : _compute = compute,
+        _guard = guard;
   ...
 }
 ```
@@ -257,7 +263,7 @@ base class RawComputedTerminal<T> extends _RawTerminal
 2. **Push-Dirty Direct Invalidation**:
    When an upstream dependency mutates, `RawComputedTerminal` marks its state as `_DirtyState.check` and immediately invokes `onInvalidated` without intermediate graph hops.
 3. **Imperative Invalidation (`markDirty`)**:
-   Provides [`markDirty()`](../../lib/src/engine/terminal.dart#L113) to imperatively force dirty state on the terminal without mutating upstream dependencies, guaranteeing that the subsequent pull re-executes the compute closure.
+   Provides [`markDirty()`](../../lib/src/engine/terminal.dart) to imperatively force dirty state on the terminal without mutating upstream dependencies, guaranteeing that the subsequent pull re-executes the compute closure.
 4. **Precondition Guard Support**:
    Accepts an optional `guard: (via) => ...` parameter, integrating algebraic state gating ([Foundation 18](18_precondition_guarding_and_algebraic_gating.md)) directly at the terminal boundary.
 
@@ -308,15 +314,19 @@ abstract base class _RawTerminal extends _Terminal {
 Because `onInvalidated` executes within the synchronous Push-Dirty flush of `_PushScope`, pulling data prematurely inside this callback forces Phase 2 (Lazy-Pull) to execute before the entire invalidation wave has settled.
 
 ```dart
+void render(int val) {}
+void markNeedsBuild() {}
+final counter = blooming(0);
+
 // BAD: Forces premature lazy-pull during the push-dirty wave!
-final term = RawBloomTerminal(counter.bloom, onInvalidated: () {
-  final val = counter.bloom.data; // Premature pull!
+final badTerm = RawBloomTerminal(counter.bloom, onInvalidated: () {
+  final val = untracked(counter.bloom); // Premature pull!
   render(val);
 });
 
 // GOOD: Sinks invalidation to schedule external deferred evaluation
 final term = RawBloomTerminal(counter.bloom, onInvalidated: () {
-  element.markNeedsBuild(); // Schedules Flutter frame for deferred lazy-pull
+  markNeedsBuild(); // Schedules frame for deferred lazy-pull
 });
 ```
 
@@ -331,8 +341,8 @@ The framework differentiates between four classes of reactive sinks across its a
 │                   Topological Sink Classification Matrix                         │
 ├──────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
-│   1. Programmatic Sinks (RawTerminal) [package:blooming/blooming.dart]                   │
-│      • RawBloomTerminal, RawViaTerminal, RawComputedTerminal                      │
+│   1. Programmatic Sinks (RawTerminal) [package:blooming/blooming.dart]           │
+│      • RawBloomTerminal, RawViaTerminal, RawComputedTerminal                     │
 │      • Pure synchronous invalidation dispatch; explicit pull control             │
 │      • Designed for headless execution, custom engine adapters, unit testing     │
 │                                                                                  │
@@ -341,11 +351,11 @@ The framework differentiates between four classes of reactive sinks across its a
 │      • Drops all invalidation ripples (zero pull, zero evaluate)                 │
 │      • Tranquil harbor preserving active upstream pipelines across route changes │
 │                                                                                  │
-│   3. Side-Effect Sinks (EffectRunner) [package:blooming/effect.dart]                 │
+│   3. Side-Effect Sinks (EffectRunner) [package:blooming/effect.dart]             │
 │      • Microtask-coalesced scheduler integration (_ScheduledTerminalMixin)       │
 │      • Automatically executes side-effect closures with RAII cleanup handles     │
 │                                                                                  │
-│   4. UI Sinks (BloomBuilder / BloomWidget) [package:blooming_flutter]                  │
+│   4. UI Sinks (composed / bloom.build / BloomWidget) [package:blooming_flutter]  │
 │      • Bound to Flutter Element lifecycle (mount / unmount)                      │
 │      • Translates onInvalidated to Element.markNeedsBuild()                      │
 │                                                                                  │
@@ -369,7 +379,7 @@ test('computed.stream awakens only upon terminal activation', () async {
   expect(streamBloom.isActive, isFalse);
   controller.add('Ignored Event');
   await Future<void>.delayed(Duration.zero);
-  expect(streamBloom.snapshot.isEmpty, isTrue);
+  expect(untracked.state(streamBloom).isEmpty, isTrue);
 
   // 2. Establish Active Terminal Grounding
   final terminal = RawBloomTerminal(streamBloom, onInvalidated: () {});
@@ -397,10 +407,10 @@ test('managed resource lifecycle transitions strictly with terminal', () {
   var allocated = false;
   var disposed = false;
 
-  final resource = managed<DatabaseClient>(
+  final resource = managed<ApiClient>(
     create: (via) {
       allocated = true;
-      return DatabaseClient();
+      return ApiClient(port: 8080);
     },
     dispose: (client) {
       disposed = true;
@@ -531,9 +541,10 @@ test('RawComputedTerminal caches 0-compute hits and invalidates on source delta'
 
 ### Pattern 6: Zero-Cost Diagnostics & Terminal Reflection (`withDebugLabel`)
 
-In development environments, terminals can be assigned human-readable debug labels via [`RawTerminalDebugExtension`](../../lib/src/engine/debug.dart#L155):
+In development environments, terminals can be assigned human-readable debug labels via [`RawTerminalDebugExtension`](../../lib/src/engine/debug.dart):
 
 ```dart
+final userPipeline = blooming('user_1').bloom;
 final terminal = RawBloomTerminal(userPipeline, onInvalidated: () {})
     .withDebugLabel('UserSessionTerminal');
 
@@ -551,7 +562,7 @@ terminal.debugForceInvalidate();
 
 | # | Invariant Name | Mathematical / Topological Rule | Verification Mechanism |
 | :---: | :--- | :--- | :--- |
-| **I** | **Strict Sink Boundary** | Out-degree of any terminal is strictly 0: $d_{\text{out}}(\text{Terminal}) = 0$. Terminals cannot serve as sources for other reactive nodes. | Engine static type architecture ([`RawTerminal`](../../lib/src/engine/terminal.dart#L20) does not implement [`Bloom`](../../lib/src/bloom/bloom.dart)). |
+| **I** | **Strict Sink Boundary** | Out-degree of any terminal is strictly 0: $d_{\text{out}}(\text{Terminal}) = 0$. Terminals cannot serve as sources for other reactive nodes. | Engine static type architecture ([`RawTerminal`](../../lib/src/engine/terminal.dart) does not implement [`Bloom`](../../lib/src/bloom/bloom.dart)). |
 | **II** | **Dormancy Awakening** | Upstream dormant subtrees ($0$) transition to active ($1$) if and only if an active terminal or subscriber attaches. | Verified via `_lifecycle.isActive` assertions and stream listener attachment tests. |
 | **III** | **Zero-Copy SSOT** | `RawBloomTerminal<T>` maintains zero shadow state: `_read() => _source._read()`. Direct field dereference on `.data`. | Confirmed via heap allocation tests and identical object identity checks. |
 | **IV** | **1-Pass Monotonic Sweep** | `RawViaTerminal` and `RawComputedTerminal` sweep unused dependency edges in exactly 1 pass with zero intermediate heap allocations. | Verified via `_BloomViaEpochMixin` edge sweep pointer unlinking. |

@@ -270,7 +270,7 @@ Motion commands are staged directly on the controller without requiring artifici
 // Staged motion: Begins cleanly from 0.0 upon widget mount without initial time skips
 final controller = DurableAnimationController(
   duration: const Duration(seconds: 2),
-  durability: DurabilityPolicy.catchUp,
+  policy: DurabilityPolicy.catchUp,
 )..repeat();
 ```
 * **Clean Mount Transition**: Initiating motion prior to widget mount stages the playback intent. When the widget mounts and connects its internal VSYNC socket, physical ticking starts cleanly from `0.0` with zero time skips.

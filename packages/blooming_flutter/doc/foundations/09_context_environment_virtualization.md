@@ -84,10 +84,10 @@ Inside a `BloomWidget` or `composed` builder scope, descendants access provided 
 // packages/blooming_flutter/lib/src/widgets/provider.dart
 extension BloomViaContextExtension on BloomVia {
   @pragma('vm:prefer-inline')
-  Bloom<T> of<T>(BuildContext context) => this(context.bloomOf<T>());
+  T of<T>(BuildContext context) => this(context.bloomOf<T>());
 
   @pragma('vm:prefer-inline')
-  Bloom<T?> maybeOf<T>(BuildContext context) => this(context.maybeBloomOf<T>());
+  T? maybeOf<T>(BuildContext context) => this(context.maybeBloomOf<T>());
 }
 ```
 - **Zero Heap Allocation**: Method calls resolve statically via inlined extensions.
@@ -100,12 +100,12 @@ extension BloomViaContextExtension on BloomVia {
 ### 4.1 Providing Scoped State via Extension DSL
 ```dart
 class StorePage extends StatelessWidget {
-  const StorePage({super.key});
+  StorePage({super.key});
+
+  final counterController = blooming<int>(0);
 
   @override
   Widget build(BuildContext context) {
-    final counterController = blooming<int>(0);
-
     return counterController.bloom.provide(
       child: const SizedBox(),
     );

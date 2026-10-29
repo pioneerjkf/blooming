@@ -172,19 +172,21 @@ base class RawViaTerminal<T> extends _RawTerminal
 /// totalTerminal.deactivate();
 /// ```
 base class RawComputedTerminal<T> extends _RawTerminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _ComputedPullMixin<T> {
+    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _ComputedPullMixin<T>
+    implements BloomState<T> {
   /// Creates a [RawComputedTerminal] with the given compute callback and invalidation listener.
   ///
-  /// * [_compute]: The computation closure receiving an injected [BloomVia] dependency tracker.
+  /// * [compute]: The computation closure receiving an injected [BloomVia] dependency tracker.
   /// * [onInvalidated]: Callback invoked synchronously when any observed upstream dependency mutates.
   /// * [onUncaughtError]: Optional error recovery handler for unhandled pull or evaluation exceptions.
   /// * [guard]: Optional reactive guard isolating precondition checks.
   RawComputedTerminal(
-    this._compute, {
+    T Function(BloomVia via) compute, {
     required super.onInvalidated,
     super.onUncaughtError,
     BloomGuard Function(BloomVia via)? guard,
-  }) : _guard = guard;
+  })  : _compute = compute,
+        _guard = guard;
 
   @override
   final T Function(BloomVia via) _compute;
@@ -276,9 +278,9 @@ base class RawComputedTerminal<T> extends _RawTerminal
 ///
 /// **GOOD:**
 /// ```dart
-/// // [Recommended] Only schedule a deferred frame or UI rebuild in onInvalidated
+/// // [Recommended] Only schedule a deferred task or mark dirty in onInvalidated
 /// final term = RawBloomTerminal(counter.bloom, onInvalidated: () {
-///   element.markNeedsBuild(); // Schedules Flutter build pass for lazy-pull
+///   scheduleMicrotask(() => render(term.data)); // Defers pull to microtask turn
 /// });
 /// ```
 ///
@@ -306,12 +308,12 @@ base class RawBloomTerminal<T> extends _RawTerminal
     implements BloomState<T> {
   /// Creates a synchronous [RawBloomTerminal] listening to [source].
   ///
-  /// * [source]: The upstream [Bloom<T>] node to observe.
+  /// * [source]: The upstream [Bloom] node to observe.
   /// * [onInvalidated]: Callback invoked synchronously when [source] mutates.
   /// * [onUncaughtError]: Optional error recovery handler for uncaught exceptions.
   ///
   /// **Requires:**
-  /// * [source] must be a valid [Bloom<T>] node.
+  /// * [source] must be a valid [Bloom] node.
   /// * [onInvalidated] must be a non-null callback scheduling downstream reaction.
   RawBloomTerminal(
     Bloom<T> source, {
