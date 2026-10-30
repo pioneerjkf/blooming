@@ -1,3 +1,8 @@
+## 0.2.4
+
+- **Dependencies**: Bumped `blooming`, `blooming_flutter`, and `blooming_test` dependencies to `^0.2.4`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.4.
+
 ## 0.2.3
 
 - **Documentation**: Audited and aligned README and widget testing harness API doc comments with the Truth Verification Protocol (TVP).

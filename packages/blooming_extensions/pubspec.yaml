@@ -13,7 +13,7 @@ topics:
 
 resolution: workspace
 
-version: 0.2.3
+version: 0.2.4
 
 environment:
   sdk: ^3.6.0
@@ -23,7 +23,7 @@ dependencies:
 
   collection: ^1.19.1
 
-  blooming: ^0.2.3
+  blooming: ^0.2.4
 
 dev_dependencies:
   lints: ^6.0.0

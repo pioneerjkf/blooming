@@ -714,7 +714,7 @@ final (data: telemetry, pending: isConnecting, done: isClosed) =
 );
 
 // 3. Combining Factory Bridge with .retainedTuple() for Stale-While-Revalidate (SWR) across remounts
-final (data: cachedProfile, isRetained: isStale) =
+final (data: cachedProfile, pending: isFetching) =
     (() => apiService.fetchProfile()).toBloom().retainedTuple();
 ```
 

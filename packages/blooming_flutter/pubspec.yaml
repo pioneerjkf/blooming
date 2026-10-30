@@ -13,7 +13,7 @@ topics:
 
 resolution: workspace
 
-version: 0.2.3
+version: 0.2.4
 
 environment:
   sdk: ^3.6.0
@@ -23,9 +23,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  blooming: ^0.2.3
+  blooming: ^0.2.4
 
-  blooming_extensions: ^0.2.3
+  blooming_extensions: ^0.2.4
   
   meta: ^1.18.0
 
@@ -36,7 +36,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   benchmark_harness: ^2.2.0
   test: ^1.25.0
-  blooming_test: ^0.2.3
+  blooming_test: ^0.2.4
 
 screenshots:
   - description: "The Blooming Flutter reactive UI engine logo."

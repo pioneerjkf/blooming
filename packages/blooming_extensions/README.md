@@ -32,8 +32,8 @@ Add `blooming` and `blooming_extensions` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  blooming: ^0.2.3
-  blooming_extensions: ^0.2.3
+  blooming: ^0.2.4
+  blooming_extensions: ^0.2.4
 ```
 
 ### Example Usage

@@ -887,6 +887,7 @@ class TimelineItem { const TimelineItem(); }
 class _ApiService {
   Future<List<TimelineItem>> fetchUserTimeline() async => [const TimelineItem()];
   Future<User> fetchUser(dynamic id) async => const User("Alice");
+  Future<User> fetchProfile([dynamic id]) async => const User("Alice");
 }
 final apiService = _ApiService();
 class _SampleStore {

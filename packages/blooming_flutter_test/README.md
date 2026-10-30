@@ -23,7 +23,7 @@ Add `blooming_flutter_test` to your `dev_dependencies` in `pubspec.yaml`:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  blooming_flutter_test: ^0.2.3
+  blooming_flutter_test: ^0.2.4
 ```
 
 ---

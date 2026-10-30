@@ -1,3 +1,14 @@
+## 0.2.4
+
+- **Lazy Factory Bridges**: Introduced `FutureFactoryBloomExtension` and `StreamFactoryBloomExtension` providing `.toBloom()`, `.toBloomTuple()`, and `.toBloomTriple()`.
+  - Defers execution of `Future<T> Function()` until `0 -> 1` subscriber activation and refetches on subsequent reactivations.
+  - Safely manages single-subscription `Stream<T>` instances (`async*` generators) across `1 -> 0 -> 1` cycles by spawning a fresh stream on each activation.
+  - Implemented bulkhead isolation upon deactivation to prevent late-settling completions from contaminating subsequent states.
+  - Unified internal factory architecture into `_AsyncFactoryMixin`.
+- **Fault Tolerance & Synchronous Resilience**: Hardened synchronous throw protection on `future.then` and `stream.listen` invocation, ensuring synchronous bridge initiation failures transition directly into error state without escaping as unhandled errors.
+- **Documentation & Spec Auditing**: Documented stream reactivation trade-offs in `_PragueVltava` and synchronized all architectural foundation documents with living documentation tests.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.4.
+
 ## 0.2.3
 
 - **Documentation & Examples**: Audited and aligned all architectural foundation documents, README, and API doc comments with the Truth Verification Protocol (TVP), converting all inline code snippets to 100% pure Dart.

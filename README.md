@@ -101,7 +101,7 @@ provide it. Blooming's focus is on the parts around the core:
 
 ```yaml
 dependencies:
-  blooming: ^0.2.3
+  blooming: ^0.2.4
 ```
 
 ```dart
@@ -141,8 +141,8 @@ Three things to know:
 dependencies:
   flutter:
     sdk: flutter
-  blooming_flutter: ^0.2.3
-  # blooming: ^0.2.3 # optional: blooming_flutter re-exports blooming
+  blooming_flutter: ^0.2.4
+  # blooming: ^0.2.4 # optional: blooming_flutter re-exports blooming
 ```
 
 ```dart

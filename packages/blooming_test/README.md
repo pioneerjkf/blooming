@@ -26,7 +26,7 @@ Add `blooming_test` to your `dev_dependencies` in `pubspec.yaml`:
 ```yaml
 dev_dependencies:
   test: ^1.25.0
-  blooming_test: ^0.2.3
+  blooming_test: ^0.2.4
 ```
 
 Or run:

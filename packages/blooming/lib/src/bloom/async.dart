@@ -226,7 +226,7 @@ extension FutureFactoryBloomExtension<T> on Future<T> Function() {
   /// );
   ///
   /// // 2. Stale-While-Revalidate (SWR) across activation cycles via .retainedTuple()
-  /// final (:data, :isRetained) = (() => fetchProfile()).toBloom().retainedTuple();
+  /// final (:data, :pending) = (() => fetchProfile()).toBloom().retainedTuple();
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> toBloom({
@@ -594,7 +594,7 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
   /// );
   ///
   /// // 2. Preserving last known reading across reconnections via .retainedTuple()
-  /// final (:data, :isRetained) = (() => watchSensor()).toBloom().retainedTuple();
+  /// final (:data, :pending) = (() => watchSensor()).toBloom().retainedTuple();
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> toBloom({
