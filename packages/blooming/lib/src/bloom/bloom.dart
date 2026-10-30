@@ -197,6 +197,10 @@ abstract base class Bloom<T> extends _Node {
   /// **Warning (Anti-Pattern Prevention):**
   /// - Do NOT invoke `Bloom.future(...)` repeatedly inside `computed` closures
   ///   without caching in a field (or using `computed.future`), as it instantiates a new asynchronous bridge on every evaluation.
+  /// - Because [future] is an already-dispatched hot [Future], `Bloom.future(future)` cannot defer execution
+  ///   until first observation or re-fetch upon reactivation. To lazily invoke a [Future] on `0 -> 1` activation
+  ///   with bulkhead isolation on `1 -> 0` deactivation, use [FutureFactoryBloomExtension.toBloom]
+  ///   (`(() => fetchProfile(userId)).toBloom()`).
   ///
   /// **BAD:**
   /// ```dart
@@ -262,14 +266,16 @@ abstract base class Bloom<T> extends _Node {
   /// * Returns a reactive [Bloom] node reflecting the latest events of [stream].
   ///
   /// **Warning (Single-Subscription Streams & Reactivation):**
-  /// - Dart's single-subscription streams (e.g. from standard `StreamController()`) cannot be
+  /// - Dart's single-subscription streams (e.g. `async*` generators or standard `StreamController()`) cannot be
   ///   listened to again after cancellation. If downstream consumers deactivate and subsequently
   ///   reactivate, re-listening to a single-subscription stream throws a [StateError], moving the
   ///   node into an error state.
   /// - For streams shared across components that frequently activate and deactivate, prefer:
-  ///   1. Converting the stream to a broadcast stream via `stream.asBroadcastStream()`, or
-  ///   2. Using `StreamController.broadcast()` at the producer source, or
-  ///   3. Supervising dynamic stream connection lifetimes with [Bloom.managed].
+  ///   1. Wrapping cold/single-subscription stream creation in a factory via [StreamFactoryBloomExtension.toBloom]
+  ///      (`(() => createStream()).toBloom(...)`) to spawn a fresh stream on every `0 -> 1` reactivation, or
+  ///   2. Converting the stream to a broadcast stream via `stream.asBroadcastStream()`, or
+  ///   3. Using `StreamController.broadcast()` at the producer source, or
+  ///   4. Supervising dynamic stream connection lifetimes with [Bloom.managed].
   ///
   /// **Warning (Anti-Pattern Prevention):**
   /// - Do NOT invoke `Bloom.stream(...)` inside reactive derivations without caching,

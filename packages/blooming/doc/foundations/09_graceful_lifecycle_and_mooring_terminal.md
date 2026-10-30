@@ -151,6 +151,21 @@ final feedBloom = socketStream.toBloom(
   initialFactory: () => const <String>[],
   graceful: const Graceful.period(Duration(seconds: 15)),
 );
+
+// 5. Future Factory Extension Mooring (Prevents Redundant Refetches on Transient Unmount):
+Future<String> fetchDashboard() async => 'Summary';
+final dashboardBloom = fetchDashboard.toBloom(
+  graceful: Graceful.microtask,
+);
+
+// 6. Single-Subscription Stream Factory Mooring (Keeps Stream Alive Across Tab Switches):
+Stream<int> watchTicker() async* {
+  yield 1;
+}
+final tickerBloom = watchTicker.toBloom(
+  initialFactory: () => 0,
+  graceful: const Graceful.period(Duration(seconds: 10)),
+);
 ```
 
 ---

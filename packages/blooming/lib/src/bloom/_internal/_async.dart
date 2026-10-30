@@ -97,129 +97,29 @@ final class _FutureBloomBridge<T> extends _DeLorean<T> {
   });
 }
 
-/// Internal coupled data proxy for lazy asynchronous factory bridges (`_LazyDeLorean` & `_LazyPragueVltava`).
-///
-/// Orchestrates strict bulkhead isolation across activation cycles (`0 -> 1` and `1 -> 0`):
-/// - Immediately upon deactivation (`1 -> 0`, before the next reactivation), swaps the underlying
-///   coupled [Bloom] reference to a brand-new initial [Bloom] instance (when `once == false`),
-///   completely sealing off any residual state or in-flight late completions from the previous turn.
-/// - Immediately prior to activation (`0 -> 1`), spawns a fresh underlying bridge (`_FutureBloomBridge`
-///   or `_StreamBloomBridge`) and couples to its brand-new [Bloom] instances.
-base class _FactoryDataBloom<T> extends _CoupledBloom<T> {
-  _FactoryDataBloom(
-    super.initialBloom, {
-    required void Function() onActivateBridge,
-    required void Function() onDeactivateBridge,
-  })  : _onActivateBridge = onActivateBridge,
-        _onDeactivateBridge = onDeactivateBridge;
-
-  final void Function() _onActivateBridge;
-  final void Function() _onDeactivateBridge;
-
-  @mustCallSuper
-  @override
-  void _activate() {
-    _onActivateBridge();
-    super._activate();
-  }
-
-  @mustCallSuper
-  @override
-  void _deactivate() {
-    super._deactivate();
-    _onDeactivateBridge();
-  }
-}
-
-/// Graceful-enabled variant of [_FactoryDataBloom] that buffers transient `1 -> 0 -> 1` unmounts.
-final class _GracefulFactoryDataBloom<T> extends _FactoryDataBloom<T> with _GracefulNodeMixin {
-  _GracefulFactoryDataBloom(
-    super.initialBloom, {
-    required Graceful graceful,
-    required super.onActivateBridge,
-    required super.onDeactivateBridge,
-  }) : _graceful = graceful;
-
-  @override
-  final Graceful _graceful;
-}
-
-/// [Easter Egg Base] Lazy variant of [_DeLorean] that defers flux-capacitor ignition
+/// [Easter Egg Base] Factory variant of [_DeLorean] that defers flux-capacitor ignition
 /// (invoking the [Future] factory) until downstream consumers actively observe the node,
 /// and enforces a strict bulkhead by spawning a brand-new [_FutureBloomBridge] on each turn.
-base class _LazyDeLorean<T> {
-  _LazyDeLorean(
+base class _FactoryDeLorean<T> with _AsyncFactoryMixin<T> {
+  _FactoryDeLorean(
     Future<T> Function() futureFactory, {
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
-    this.once = false,
     Graceful? graceful,
   })  : _futureFactory = futureFactory,
         _initialFactory = initialFactory,
         _onError = onError {
-    final initialBloom = _createFreshInitialBloom();
-    _pendingProxy = _CoupledBloom<bool>(Bloom<bool>.constant(false));
-    if (graceful != null) {
-      _dataProxy = _GracefulFactoryDataBloom<T>(
-        initialBloom,
-        graceful: graceful,
-        onActivateBridge: _activateBridge,
-        onDeactivateBridge: _deactivateBridge,
-      );
-    } else {
-      _dataProxy = _FactoryDataBloom<T>(
-        initialBloom,
-        onActivateBridge: _activateBridge,
-        onDeactivateBridge: _deactivateBridge,
-      );
-    }
+    _initFactoryProxies(graceful);
   }
 
   final Future<T> Function() _futureFactory;
+  @override
   final T Function()? _initialFactory;
+  @override
   final T Function(Object error, [StackTrace? stackTrace])? _onError;
-  final bool once;
 
-  late final _FactoryDataBloom<T> _dataProxy;
-  late final _CoupledBloom<bool> _pendingProxy;
-
-  _FutureBloomBridge<T>? _keptBridge;
-  bool _hasInvoked = false;
-
-  Bloom<T> _createFreshInitialBloom() {
-    final initialFactory = _initialFactory;
-    if (initialFactory != null) {
-      try {
-        return Bloom<T>.constant(initialFactory());
-      } catch (e, s) {
-        return Bloom<T>.error(e, s);
-      }
-    }
-    return Bloom<T>.empty();
-  }
-
-  Bloom<T> _resolveErrorBloom(Object error, StackTrace stackTrace) {
-    final onError = _onError;
-    if (onError != null) {
-      try {
-        return Bloom<T>.constant(onError.call(error, stackTrace));
-      } catch (e, s) {
-        return Bloom<T>.error(e, s);
-      }
-    }
-    return Bloom<T>.error(error, stackTrace);
-  }
-
+  @override
   void _activateBridge() {
-    if (once && _hasInvoked) {
-      final kept = _keptBridge;
-      if (kept != null) {
-        _pendingProxy._performCouple(kept.pending, true);
-      }
-      return;
-    }
-    _hasInvoked = true;
-
     try {
       final future = _futureFactory();
       // Spawn a brand-new isolated bridge (with fresh internal Bloom instances) for this turn.
@@ -228,9 +128,6 @@ base class _LazyDeLorean<T> {
         initialFactory: _initialFactory,
         onError: _onError,
       );
-      if (once) {
-        _keptBridge = bridge;
-      }
       // _dataProxy is not active yet (called before super._activate()), so notify = false.
       // super._activate() will immediately attach to bridge.bloom and pull its fresh state.
       _dataProxy._performCouple(bridge.bloom, false);
@@ -241,33 +138,23 @@ base class _LazyDeLorean<T> {
     }
   }
 
+  @override
   void _deactivateBridge() {
-    if (once) {
-      _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
-      return;
-    }
     // Immediately replace the coupled Bloom with a brand-new initial Bloom before any
     // future reactivation, guaranteeing a complete bulkhead from the previous Future's traces.
     _dataProxy._performCouple(_createFreshInitialBloom(), false);
     _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
   }
 
-  Bloom<T> get bloom => _dataProxy;
-
-  Bloom<bool> get pending => _pendingProxy;
-
-  ({Bloom<T> data, Bloom<bool> pending}) get tuple => (data: bloom, pending: pending);
-
   bool get isActive => _dataProxy.isActive || _pendingProxy.isActive;
 }
 
-/// Formal reactive bridge connecting a lazy Dart [Future] factory to the [Bloom] topology.
-final class _FutureFactoryBloomBridge<T> extends _LazyDeLorean<T> {
+/// Formal reactive bridge connecting a Dart [Future] factory to the [Bloom] topology.
+final class _FutureFactoryBloomBridge<T> extends _FactoryDeLorean<T> {
   _FutureFactoryBloomBridge(
     super.futureFactory, {
     super.initialFactory,
     super.onError,
-    super.once = false,
     super.graceful,
   });
 }
@@ -439,54 +326,139 @@ final class _StreamBloomBridge<T> extends _PragueVltava<T> {
   }
 }
 
-/// [Easter Egg Base] Lazy variant of [_PragueVltava] that spawns a brand-new isolated
-/// [_StreamBloomBridge] per activation cycle (when `once == false`) and immediately
-/// resets to a fresh initial [Bloom] upon deactivation to maintain a strict bulkhead.
-base class _LazyPragueVltava<T> {
-  _LazyPragueVltava(
+/// [Easter Egg Base] Factory variant of [_PragueVltava] that spawns a brand-new isolated
+/// [_StreamBloomBridge] per activation cycle and immediately resets to a fresh initial
+/// [Bloom] upon deactivation to maintain a strict bulkhead.
+base class _FactoryPragueVltava<T> with _AsyncFactoryMixin<T> {
+  _FactoryPragueVltava(
     Stream<T> Function() streamFactory, {
     T Function()? initialFactory,
-    this.onError,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
     this.cancelOnError,
-    this.once = false,
     this.distinct = true,
     this.equals,
     Graceful? graceful,
   })  : _streamFactory = streamFactory,
-        _initialFactory = initialFactory {
-    final initialBloom = _createFreshInitialBloom();
-    _pendingProxy = _CoupledBloom<bool>(Bloom<bool>.constant(false));
+        _initialFactory = initialFactory,
+        _onError = onError {
+    _initFactoryProxies(graceful);
     _doneProxy = _CoupledBloom<bool>(Bloom<bool>.constant(false));
-    if (graceful != null) {
-      _dataProxy = _GracefulFactoryDataBloom<T>(
-        initialBloom,
-        graceful: graceful,
-        onActivateBridge: _activateBridge,
-        onDeactivateBridge: _deactivateBridge,
-      );
-    } else {
-      _dataProxy = _FactoryDataBloom<T>(
-        initialBloom,
-        onActivateBridge: _activateBridge,
-        onDeactivateBridge: _deactivateBridge,
-      );
-    }
   }
 
   final Stream<T> Function() _streamFactory;
+  @override
   final T Function()? _initialFactory;
-  final T Function(Object error, [StackTrace? stackTrace])? onError;
+  @override
+  final T Function(Object error, [StackTrace? stackTrace])? _onError;
   final bool? cancelOnError;
-  final bool once;
   final bool distinct;
   final bool Function(T previous, T next)? equals;
 
-  late final _FactoryDataBloom<T> _dataProxy;
-  late final _CoupledBloom<bool> _pendingProxy;
   late final _CoupledBloom<bool> _doneProxy;
 
-  _StreamBloomBridge<T>? _keptBridge;
-  bool _hasInvoked = false;
+  @override
+  void _activateBridge() {
+    try {
+      final stream = _streamFactory();
+      // Spawn a brand-new isolated bridge (with fresh internal Bloom instances) for this turn.
+      final bridge = _StreamBloomBridge<T>(
+        stream,
+        initialFactory: _initialFactory,
+        onError: _onError,
+        cancelOnError: cancelOnError,
+        distinct: distinct,
+        equals: equals,
+      );
+      // _dataProxy is not active yet (called before super._activate()), so notify = false.
+      // super._activate() will immediately attach to bridge.bloom, triggering _subscribe().
+      _dataProxy._performCouple(bridge.bloom, false);
+      _pendingProxy._performCouple(bridge.pending, true);
+      _doneProxy._performCouple(bridge.done, true);
+    } catch (error, stackTrace) {
+      _dataProxy._performCouple(_resolveErrorBloom(error, stackTrace), false);
+      _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
+      _doneProxy._performCouple(Bloom<bool>.constant(false), true);
+    }
+  }
+
+  @override
+  void _deactivateBridge() {
+    // Immediately replace the coupled Blooms with brand-new initial Blooms before any
+    // future reactivation, guaranteeing a complete bulkhead from the previous Stream's traces.
+    _dataProxy._performCouple(_createFreshInitialBloom(), false);
+    _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
+    _doneProxy._performCouple(Bloom<bool>.constant(false), true);
+  }
+
+  Bloom<bool> get done => _doneProxy;
+
+  ({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done}) get triple => (data: bloom, pending: pending, done: done);
+}
+
+/// Formal reactive bridge connecting a Dart [Stream] factory to the [Bloom] topology.
+final class _StreamFactoryBloomBridge<T> extends _FactoryPragueVltava<T> {
+  _StreamFactoryBloomBridge(
+    super.streamFactory, {
+    super.initialFactory,
+    super.onError,
+    super.cancelOnError,
+    super.distinct = true,
+    super.equals,
+    super.graceful,
+  });
+
+  /// Factory creating the reactive stream factory bridge.
+  static _StreamFactoryBloomBridge<T> create<T>(
+    Stream<T> Function() streamFactory, {
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool? cancelOnError,
+    bool distinct = true,
+    bool Function(T previous, T next)? equals,
+    Graceful? graceful,
+  }) {
+    return _StreamFactoryBloomBridge<T>(
+      streamFactory,
+      initialFactory: initialFactory,
+      onError: onError,
+      cancelOnError: cancelOnError,
+      distinct: distinct,
+      equals: equals,
+      graceful: graceful,
+    );
+  }
+}
+
+/// Shared mixin providing identical proxy initialization, initial/error [Bloom] resolution,
+/// and common getters for asynchronous factory bridges ([_FactoryDeLorean] & [_FactoryPragueVltava]).
+base mixin _AsyncFactoryMixin<T> {
+  T Function()? get _initialFactory;
+  T Function(Object error, [StackTrace? stackTrace])? get _onError;
+
+  late final _LifecycleCoupledBloom<T> _dataProxy;
+  late final _CoupledBloom<bool> _pendingProxy;
+
+  void _activateBridge();
+  void _deactivateBridge();
+
+  void _initFactoryProxies(Graceful? graceful) {
+    final initialBloom = _createFreshInitialBloom();
+    _pendingProxy = _CoupledBloom<bool>(Bloom<bool>.constant(false));
+    if (graceful != null) {
+      _dataProxy = _GracefulLifecycleCoupledBloom<T>(
+        initialBloom,
+        graceful: graceful,
+        onActivate: _activateBridge,
+        onDeactivate: _deactivateBridge,
+      );
+    } else {
+      _dataProxy = _LifecycleCoupledBloom<T>(
+        initialBloom,
+        onActivate: _activateBridge,
+        onDeactivate: _deactivateBridge,
+      );
+    }
+  }
 
   Bloom<T> _createFreshInitialBloom() {
     final initialFactory = _initialFactory;
@@ -501,7 +473,7 @@ base class _LazyPragueVltava<T> {
   }
 
   Bloom<T> _resolveErrorBloom(Object error, StackTrace stackTrace) {
-    final onError = this.onError;
+    final onError = _onError;
     if (onError != null) {
       try {
         return Bloom<T>.constant(onError.call(error, stackTrace));
@@ -512,99 +484,9 @@ base class _LazyPragueVltava<T> {
     return Bloom<T>.error(error, stackTrace);
   }
 
-  void _activateBridge() {
-    if (once && _hasInvoked) {
-      final kept = _keptBridge;
-      if (kept != null) {
-        _pendingProxy._performCouple(kept.pending, true);
-        _doneProxy._performCouple(kept.done, true);
-      }
-      return;
-    }
-    _hasInvoked = true;
-
-    try {
-      final stream = _streamFactory();
-      // Spawn a brand-new isolated bridge (with fresh internal Bloom instances) for this turn.
-      final bridge = _StreamBloomBridge<T>(
-        stream,
-        initialFactory: _initialFactory,
-        onError: onError,
-        cancelOnError: cancelOnError,
-        distinct: distinct,
-        equals: equals,
-      );
-      if (once) {
-        _keptBridge = bridge;
-      }
-      // _dataProxy is not active yet (called before super._activate()), so notify = false.
-      // super._activate() will immediately attach to bridge.bloom, triggering _subscribe().
-      _dataProxy._performCouple(bridge.bloom, false);
-      _pendingProxy._performCouple(bridge.pending, true);
-      _doneProxy._performCouple(bridge.done, true);
-    } catch (error, stackTrace) {
-      _dataProxy._performCouple(_resolveErrorBloom(error, stackTrace), false);
-      _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
-      _doneProxy._performCouple(Bloom<bool>.constant(false), true);
-    }
-  }
-
-  void _deactivateBridge() {
-    if (once) {
-      _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
-      return;
-    }
-    // Immediately replace the coupled Blooms with brand-new initial Blooms before any
-    // future reactivation, guaranteeing a complete bulkhead from the previous Stream's traces.
-    _dataProxy._performCouple(_createFreshInitialBloom(), false);
-    _pendingProxy._performCouple(Bloom<bool>.constant(false), true);
-    _doneProxy._performCouple(Bloom<bool>.constant(false), true);
-  }
-
   Bloom<T> get bloom => _dataProxy;
 
   Bloom<bool> get pending => _pendingProxy;
 
-  Bloom<bool> get done => _doneProxy;
-
   ({Bloom<T> data, Bloom<bool> pending}) get tuple => (data: bloom, pending: pending);
-
-  ({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done}) get triple => (data: bloom, pending: pending, done: done);
-}
-
-/// Formal reactive bridge connecting a lazy Dart [Stream] factory to the [Bloom] topology.
-final class _StreamFactoryBloomBridge<T> extends _LazyPragueVltava<T> {
-  _StreamFactoryBloomBridge(
-    super.streamFactory, {
-    super.initialFactory,
-    super.onError,
-    super.cancelOnError,
-    super.once = false,
-    super.distinct = true,
-    super.equals,
-    super.graceful,
-  });
-
-  /// Factory creating the lazy reactive stream factory bridge.
-  static _StreamFactoryBloomBridge<T> create<T>(
-    Stream<T> Function() streamFactory, {
-    T Function()? initialFactory,
-    T Function(Object error, [StackTrace? stackTrace])? onError,
-    bool? cancelOnError,
-    bool once = false,
-    bool distinct = true,
-    bool Function(T previous, T next)? equals,
-    Graceful? graceful,
-  }) {
-    return _StreamFactoryBloomBridge<T>(
-      streamFactory,
-      initialFactory: initialFactory,
-      onError: onError,
-      cancelOnError: cancelOnError,
-      once: once,
-      distinct: distinct,
-      equals: equals,
-      graceful: graceful,
-    );
-  }
 }

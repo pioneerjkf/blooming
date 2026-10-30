@@ -325,7 +325,49 @@ Subscription detachment and cancellation dispatch execute synchronously in locks
 
 ---
 
-### 3.4 Deferred Single-Pass Resolution on Re-mount
+### 3.4 Factory Bridges & Bulkhead Isolation on Deactivation (`_FactoryDeLorean`, `_FactoryPragueVltava`, `_LifecycleCoupledBloom`)
+
+When bridging standalone asynchronous factories via `Future<T> Function().toBloom()` or `Stream<T> Function().toBloom()`, the engine employs [`_LifecycleCoupledBloom<T>`](../../lib/src/bloom/_internal/_coupler.dart) and [`_AsyncFactoryMixin<T>`](../../lib/src/bloom/_internal/_async.dart) to enforce strict bulkhead isolation across `0 -> 1` activation and `1 -> 0` deactivation cycles:
+
+```dart
+// packages/blooming/lib/src/bloom/_internal/_async.dart
+base mixin _AsyncFactoryMixin<T> {
+  T Function()? get _initialFactory;
+
+  late final _LifecycleCoupledBloom<T> _dataCoupler;
+  BloomCoupler<bool>? _pendingCoupler;
+  BloomCoupler<bool>? _doneCoupler;
+
+  void _activateBridge() {
+    try {
+      final (:data, :pending, :done) = _createActiveNodes();
+      _dataCoupler._couple(data);
+      _pendingCoupler?.couple(pending);
+      _doneCoupler?.couple(done!);
+    } catch (error, stackTrace) {
+      // Synchronous factory throw recovery
+      _dataCoupler._couple(_createErrorBloom(error, stackTrace));
+      _pendingCoupler?.couple(Bloom.constant(false));
+      _doneCoupler?.couple(Bloom.constant(true));
+    }
+  }
+
+  void _deactivateBridge() {
+    // Immediate bulkhead reset: decouples active bridge & restores fresh initial nodes
+    _dataCoupler._couple(_createInitialDataBloom());
+    _pendingCoupler?.couple(Bloom.constant(false));
+    _doneCoupler?.couple(Bloom.constant(false));
+  }
+}
+```
+
+* **Bulkhead Isolation Against Late In-Flight Completions (`1 -> 0`)**: When downstream subscribers drop to zero (`_deactivateBridge()`), `_dataCoupler`, `_pendingCoupler`, and `_doneCoupler` are synchronously coupled to brand-new initial `Bloom` instances (`Bloom.empty()` or `_initialFactory()`, and `Bloom.constant(false)`). Even if an un-cancellable Dart `Future` from the deactivated session resolves later in the background, its `_FutureBloomBridge` has already been topologically severed from `_dataCoupler`, preventing any state or version leakage into the dormant coupler or subsequent `0 -> 1` sessions.
+* **Single-Subscription Stream Reconnection (`0 -> 1`)**: For `_FactoryPragueVltava<T>` (`Stream<T> Function().toBloom()`), decouple on `1 -> 0` immediately triggers `_PragueVltava._unsubscribe()` (`_subscription?.cancel()`) on the inner `_StreamBloomBridge<T>`, while the next `0 -> 1` activation invokes `_streamFactory()` to instantiate a fresh `Stream<T>` and a fresh `_StreamBloomBridge<T>`, completely avoiding single-subscription `StateError` exceptions.
+* **Passive Facet CQS Invariant**: Only `_dataCoupler` (`_LifecycleCoupledBloom<T>`) is wired with `onActivate: _activateBridge` and `onDeactivate: _deactivateBridge`. `_pendingCoupler` and `_doneCoupler` are standard passive `BloomCoupler<bool>` instances—observing `pending` or `done` alone never triggers factory invocation.
+
+---
+
+### 3.5 Deferred Single-Pass Resolution on Re-mount
 If upstream parameters mutate repeatedly during dormancy:
 * Intermediate network requests are bypassed entirely.
 * Upon remount (`_activate()`), `_EagerDeltaBloom` inspects `_needsSwitch || _deltaTerminal._isSourceDirty`:

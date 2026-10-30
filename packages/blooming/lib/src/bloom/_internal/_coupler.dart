@@ -56,3 +56,51 @@ base class _CoupledBloom<T> extends _CoupledUnaryRelay<Bloom<T>>
   @override
   Bloom<T> _catchError(Object error, StackTrace? stackTrace) => Bloom.error(error, stackTrace);
 }
+
+// -----------------------------------------------------------------------------
+// Lifecycle-Aware Coupled Bloom Nodes
+// -----------------------------------------------------------------------------
+
+/// Lifecycle-aware [_CoupledBloom] that invokes pre-activation and post-deactivation hooks.
+///
+/// Executes [_onActivate] immediately before attaching to the upstream source on `0 -> 1`
+/// activation, and executes [_onDeactivate] immediately after detaching from the upstream
+/// source on `1 -> 0` deactivation.
+base class _LifecycleCoupledBloom<T> extends _CoupledBloom<T> {
+  _LifecycleCoupledBloom(
+    super.initialBloom, {
+    required void Function() onActivate,
+    required void Function() onDeactivate,
+  })  : _onActivate = onActivate,
+        _onDeactivate = onDeactivate;
+
+  final void Function() _onActivate;
+  final void Function() _onDeactivate;
+
+  @mustCallSuper
+  @override
+  void _activate() {
+    _onActivate();
+    super._activate();
+  }
+
+  @mustCallSuper
+  @override
+  void _deactivate() {
+    super._deactivate();
+    _onDeactivate();
+  }
+}
+
+/// Graceful-enabled variant of [_LifecycleCoupledBloom] that buffers transient `1 -> 0 -> 1` unmounts.
+final class _GracefulLifecycleCoupledBloom<T> extends _LifecycleCoupledBloom<T> with _GracefulNodeMixin {
+  _GracefulLifecycleCoupledBloom(
+    super.initialBloom, {
+    required Graceful graceful,
+    required super.onActivate,
+    required super.onDeactivate,
+  }) : _graceful = graceful;
+
+  @override
+  final Graceful _graceful;
+}

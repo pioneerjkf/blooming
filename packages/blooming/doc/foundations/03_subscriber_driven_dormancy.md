@@ -215,35 +215,42 @@ final roomMessages = computed.stream(
 * **Automatic Subscription Swapping**: When `currentRoomId` changes, the previous room's stream subscription cancels automatically before the new stream subscription opens.
 * **Background Silence**: When the chat screen closes, `roomMessages` deactivates, closing the stream subscription and preventing memory leaks or background network traffic.
 
-### 4.3 Periodic Tick & Heartbeat Streams (`Stream.periodic.toBloom()`)
+### 4.3 Periodic Tick & Heartbeat Streams (`Stream.periodic.toBloom()` vs. `(() => Stream.periodic(...)).toBloom()`)
 
-In pure Dart services and CLI monitors, periodic heartbeat or telemetry streams bridged via `.toBloom()` execute ticks strictly while an active downstream terminal observes the node:
+In pure Dart services and CLI monitors, periodic heartbeat or telemetry streams bridged via `.toBloom()` execute ticks strictly while an active downstream terminal observes the node.
+
+Because `Stream.periodic` (like `async*` generators and standard `StreamController().stream`) creates a **single-subscription stream**, canceling its subscription on `1 -> 0` deactivation permanently closes that stream instance. Wrapping the stream constructor in a factory closure (`(() => Stream<double>.periodic(...)).toBloom(...)` via `StreamFactoryBloomExtension`) spawns a fresh `Stream` on every `0 -> 1` activation and resets the node to its initial bulkhead state on `1 -> 0` deactivation, allowing unlimited reactivation cycles without throwing a `StateError`:
 
 ```dart
 import 'dart:async';
 import 'dart:math' show sin;
 import 'package:blooming/blooming.dart';
 
-// Periodic wave generator: subscribes and ticks ONLY while an active terminal is attached
-final pulseWave = Stream<double>.periodic(
-  const Duration(milliseconds: 16),
-  (tick) => (sin(tick * 0.1) + 1.0) / 2.0,
-).toBloom(initialFactory: () => 0.5);
+// Reconnectable periodic wave generator via StreamFactoryBloomExtension:
+// Spawns a fresh Stream.periodic on every 0 -> 1 activation and cancels on 1 -> 0 deactivation.
+final pulseWave = (() => Stream<double>.periodic(
+      const Duration(milliseconds: 16),
+      (tick) => (sin(tick * 0.1) + 1.0) / 2.0,
+    )).toBloom(initialFactory: () => 0.5);
 
 final terminal = RawBloomTerminal(
   pulseWave,
   onInvalidated: () {},
 );
 
-// 1. Activate terminal -> Opens periodic stream subscription
+// 1. Activate terminal (0 -> 1) -> Invokes factory and opens periodic stream subscription
 terminal.activate();
 print('Active value: ${terminal.data}');
 
-// 2. Deactivate terminal -> Cancels periodic timer immediately (0 CPU in dormancy)
+// 2. Deactivate terminal (1 -> 0) -> Cancels periodic timer immediately & resets to initial state (0 CPU in dormancy)
+terminal.deactivate();
+
+// 3. Reactivate terminal (0 -> 1) -> Safely invokes factory again without StateError!
+terminal.activate();
 terminal.deactivate();
 ```
 
-* **Demand-Driven Timer Governance**: The periodic timer runs exclusively while `terminal.isActive` is `true`. Upon `terminal.deactivate()`, the stream subscription is canceled synchronously, eliminating background CPU wakeups and phantom timer leaks. (In `package:blooming_flutter`, the same dormancy contract extends to display VSYNC tickers via `composed.drive` and `BloomVsyncWidget`.)
+* **Demand-Driven Timer Governance & Safe Reconnection**: The periodic timer runs exclusively while `terminal.isActive` is `true`. Upon `terminal.deactivate()`, the stream subscription is canceled synchronously and the bridge resets to its initial bulkhead state (`0.5`), eliminating background CPU wakeups, phantom timer leaks, and single-subscription `StateError` exceptions on remount. (In `package:blooming_flutter`, the same dormancy contract extends to display VSYNC tickers via `composed.drive` and `BloomVsyncWidget`.)
 
 ### 4.4 Dynamic Branch Pruning & Dead Subgraph Dormancy (`switched`)
 

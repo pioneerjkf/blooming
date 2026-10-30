@@ -23,7 +23,9 @@ extension FutureBloomExtension<T> on Future<T> {
   /// > [!NOTE]
   /// > A [Future] is an already dispatched, hot asynchronous operation. Converting an existing
   /// > [Future] via [toBloom] does NOT defer the underlying I/O. For true lazy on-demand
-  /// > execution where asynchronous work is deferred until actively observed, use `computed.future`.
+  /// > execution where asynchronous work is deferred until actively observed (and re-executed
+  /// > on subsequent reactivations), use [FutureFactoryBloomExtension.toBloom] (`(() => fetchFuture()).toBloom()`)
+  /// > or `computed.future`.
   ///
   /// ## System Architectural Flow
   /// ```text
@@ -51,8 +53,9 @@ extension FutureBloomExtension<T> on Future<T> {
   /// **Warning (Anti-Pattern Prevention):**
   /// - Do NOT invoke `future.toBloom(...)` repeatedly inside build methods or `computed` closures without caching,
   ///   as it creates a new [Bloom] node and re-attaches listeners on every evaluation.
-  /// - To defer starting an asynchronous operation until observed, use `computed.future((via) async => ...)`
-  ///   instead of creating a [Future] eagerly and calling `future.toBloom()`.
+  /// - To defer starting an asynchronous operation until observed, use [FutureFactoryBloomExtension.toBloom]
+  ///   (`(() => fetchFuture()).toBloom()`) or `computed.future((via) async => ...)` instead of creating a [Future]
+  ///   eagerly and calling `future.toBloom()`.
   ///
   /// **BAD:**
   /// ```dart
@@ -150,53 +153,91 @@ extension FutureIterableBloomExtension<T> on Iterable<Future<T>> {
 }
 
 /// Extension bridging a lazy [Future] factory (`Future<T> Function()`) with the reactive [Bloom] pipeline.
+///
+/// Unlike [FutureBloomExtension] (`future.toBloom()`), which binds to an already-dispatched
+/// hot [Future] instance, [FutureFactoryBloomExtension] accepts a cold factory closure or
+/// function tear-off (`() => fetchFuture()`). This solves two fundamental lifecycle challenges:
+/// 1. **Deferred Cold Execution**: The asynchronous operation is never started until a downstream
+///    consumer actively subscribes (`0 -> 1` transition).
+/// 2. **Bulkhead-Isolated Reactivation**: When all consumers unsubscribe (`1 -> 0` transition),
+///    the bridge immediately resets to a fresh initial state (`Empty` or `initialFactory`),
+///    completely isolating downstream observers from late-arriving completions of the previous
+///    in-flight [Future]. Subsequent reactivations (`0 -> 1`) invoke the factory again to
+///    fetch fresh state.
 extension FutureFactoryBloomExtension<T> on Future<T> Function() {
   /// Converts this lazy [Future] factory into a reactive [Bloom] node.
   ///
   /// Defers invoking this factory until the returned [Bloom] node is actively observed
-  /// by a downstream consumer (`0 -> 1` activation).
+  /// by a downstream consumer (`0 -> 1` activation), and spawns a fresh isolated bridge
+  /// on every subsequent reactivation cycle (`1 -> 0 -> 1`).
   ///
   /// ## System Architectural Flow
   /// ```text
-  /// [Active Consumer Subscribes (0 -> 1)] ──> [futureFactory()] ──> [Bloom<T>]
-  /// [All Consumers Unsubscribe  (1 -> 0)] ──> [Deactivated (or once: true retains)]
+  /// [Active Consumer Subscribes (0 -> 1)] ──> [futureFactory()] ──> [Fresh _FutureBloomBridge] ──> [Bloom<T>]
+  /// [All Consumers Unsubscribe  (1 -> 0)] ──> [Bulkhead Reset to Initial State (Isolates In-Flight Future)]
   /// ```
   ///
   /// ## Architectural Benefits
-  /// 1. **Lazy On-Demand Execution**: Defers network I/O or heavy asynchronous work until actively observed.
-  /// 2. **Configurable Re-invocation ([once])**: Re-invokes the factory on every reactivation (`once: false`, default)
-  ///    or memoizes after the first activation (`once: true`).
-  /// 3. **Microtask & Temporal Coalescing ([graceful])**: Buffers transient unmounts to prevent redundant refetches.
+  /// 1. **Lazy On-Demand Execution**: Defers network I/O or heavy asynchronous work until actively observed,
+  ///    eliminating wasted background requests for unmounted views.
+  /// 2. **Bulkhead Isolation on Deactivation**: Re-invokes the factory on every activation (`0 -> 1`)
+  ///    and immediately swaps the underlying coupled state to a fresh initial [Bloom] upon deactivation (`1 -> 0`),
+  ///    guaranteeing zero state contamination from late-settling futures of prior turns.
+  /// 3. **Microtask & Temporal Coalescing ([graceful])**: Buffers transient unmounts (`1 -> 0 -> 1` within
+  ///    the grace window) so the active bridge stays alive without redundantly re-invoking the factory.
+  /// 4. **Composable SWR Caching**: Pairs seamlessly with `.retained()` or `.retainedTuple()` to preserve
+  ///    stale-while-revalidate data across deactivation boundaries while still re-fetching on reactivation.
   ///
   /// * [initialFactory]: Optional factory callback returning the initial value before the future completes.
   /// * [onError]: Optional error interceptor converting an error into a valid fallback data instance.
-  /// * [once]: When `true`, invokes this factory only once upon first activation and retains the result across subsequent reactivations. Defaults to `false`.
   /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
   ///
   /// **Ensures:**
-  /// * Returns a [Bloom] node that lazily invokes this factory upon activation.
+  /// * Returns a [Bloom] node that lazily invokes this factory upon `0 -> 1` activation.
+  /// * Resets synchronously to its initial state (`Empty` or [initialFactory]) upon `1 -> 0` deactivation.
+  ///
+  /// **Warning (Anti-Pattern Prevention):**
+  /// - Pass a closure or function tear-off (`api.fetchProfile.toBloom()` or `(() => fetchProfile(id)).toBloom()`)
+  ///   rather than invoking the function eagerly (`fetchProfile(id).toBloom()`) when you need lazy activation
+  ///   and automatic refetching on remount.
+  ///
+  /// **BAD:**
+  /// ```dart
+  /// // [Anti-Pattern] Eagerly invokes fetchProfile() at construction time and never refetches on remount
+  /// final profileBloom = fetchProfile().toBloom();
+  /// ```
+  ///
+  /// **GOOD:**
+  /// ```dart
+  /// // [Recommended] Defers fetchProfile() until observed and refetches cleanly on reactivation
+  /// final profileBloom = (() => fetchProfile()).toBloom(
+  ///   graceful: Graceful.microtask,
+  /// );
+  /// ```
   ///
   /// ## Examples
   /// ```dart
   /// Future<UserProfile> fetchProfile() async => ...;
   ///
-  /// final profileBloom = (() => fetchProfile()).toBloom(
-  ///   once: true,
+  /// // 1. Basic lazy & reconnectable Future bridge (via tear-off or closure)
+  /// final profileBloom = fetchProfile.toBloom(
+  ///   initialFactory: () => UserProfile.guest(),
   ///   graceful: Graceful.microtask,
   /// );
+  ///
+  /// // 2. Stale-While-Revalidate (SWR) across activation cycles via .retainedTuple()
+  /// final (:data, :isRetained) = (() => fetchProfile()).toBloom().retainedTuple();
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> toBloom({
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
-    bool once = false,
     Graceful? graceful,
   }) =>
       _FutureFactoryBloomBridge<T>(
         this,
         initialFactory: initialFactory,
         onError: onError,
-        once: once,
         graceful: graceful,
       ).bloom;
 
@@ -204,7 +245,6 @@ extension FutureFactoryBloomExtension<T> on Future<T> Function() {
   ///
   /// * [initialFactory]: Optional factory callback returning the initial value before the future completes.
   /// * [onError]: Optional error interceptor converting an error into a valid fallback data instance.
-  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
   /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
   ///
   /// **Ensures:**
@@ -216,20 +256,20 @@ extension FutureFactoryBloomExtension<T> on Future<T> Function() {
   ///
   /// ## Examples
   /// ```dart
-  /// final (:data, :pending) = (() => fetchUser()).toBloomTuple(once: true);
+  /// final (:data, :pending) = (() => fetchUser()).toBloomTuple(
+  ///   graceful: Graceful.microtask,
+  /// );
   /// ```
   @pragma('vm:prefer-inline')
   ({Bloom<T> data, Bloom<bool> pending}) toBloomTuple({
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
-    bool once = false,
     Graceful? graceful,
   }) =>
       _FutureFactoryBloomBridge<T>(
         this,
         initialFactory: initialFactory,
         onError: onError,
-        once: once,
         graceful: graceful,
       ).tuple;
 }
@@ -240,7 +280,6 @@ extension FutureFactoryIterableBloomExtension<T> on Iterable<Future<T> Function(
   ///
   /// * [initialFactory]: Optional factory callback returning the initial value before each future completes.
   /// * [onError]: Optional error interceptor converting an error into a valid fallback data instance.
-  /// * [once]: When `true`, invokes each factory only once upon its first activation. Defaults to `false`.
   /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
   ///
   /// **Ensures:**
@@ -249,13 +288,11 @@ extension FutureFactoryIterableBloomExtension<T> on Iterable<Future<T> Function(
   Bloom<List<Bloom<T>>> toBloom({
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
-    bool once = false,
     Graceful? graceful,
   }) =>
       Bloom.constant(List<Bloom<T>>.unmodifiable(map((factory) => factory.toBloom(
             initialFactory: initialFactory,
             onError: onError,
-            once: once,
             graceful: graceful,
           ))));
 }
@@ -291,14 +328,18 @@ extension StreamBloomExtension<T> on Stream<T> {
   /// * Subscription lifecycle is fully synchronized with downstream demand.
   ///
   /// **Warning (Single-Subscription Streams & Reactivation):**
-  /// - Dart's single-subscription streams (e.g. from standard `StreamController()`) cannot be
-  ///   listened to again after cancellation. If downstream consumers deactivate and subsequently
-  ///   reactivate, re-listening to a single-subscription stream throws a [StateError], moving the
-  ///   node into an error state.
-  /// - For streams shared across components that frequently activate and deactivate, prefer:
-  ///   1. Converting the stream to a broadcast stream via `stream.asBroadcastStream().toBloom(...)`, or
-  ///   2. Using `StreamController.broadcast()` at the producer source, or
-  ///   3. Supervising dynamic stream connection lifetimes with [Bloom.managed].
+  /// - Dart's single-subscription streams (e.g. `async*` generators, standard `StreamController()`,
+  ///   HTTP response streams, or file I/O streams) cannot be listened to again after cancellation.
+  ///   If downstream consumers deactivate (`1 -> 0`, cancelling the subscription) and subsequently
+  ///   reactivate (`0 -> 1`), re-listening to the same single-subscription [Stream] instance throws a
+  ///   [StateError] (`Bad state: Stream has already been listened to`), moving the node into an error state.
+  /// - For streams that must survive `1 -> 0 -> 1` reactivation cycles, prefer:
+  ///   1. **Recommended for Cold / Single-Subscription Streams**: Wrapping the stream creation in a factory
+  ///      and using [StreamFactoryBloomExtension.toBloom] (`(() => createStream()).toBloom(...)`), which
+  ///      spawns a fresh [Stream] instance on every reactivation without throwing a [StateError], or
+  ///   2. Converting a hot stream to a broadcast stream via `stream.asBroadcastStream().toBloom(...)` or
+  ///      `StreamController.broadcast()` at the producer source, or
+  ///   3. Supervising dynamic resource lifetimes with [Bloom.managed].
   ///
   /// **Warning (Anti-Pattern Prevention):**
   /// - Do NOT invoke `stream.toBloom(...)` repeatedly inside `computed` closures without caching,
@@ -473,53 +514,93 @@ extension StreamIterableBloomExtension<T> on Iterable<Stream<T>> {
 }
 
 /// Extension bridging a lazy [Stream] factory (`Stream<T> Function()`) with the reactive [Bloom] pipeline.
+///
+/// While [StreamBloomExtension] (`stream.toBloom()`) lazily calls `.listen()` on `0 -> 1` activation
+/// and cancels the subscription on `1 -> 0` deactivation, Dart's single-subscription streams
+/// (such as `async*` generator functions, standard `StreamController().stream`, or socket/query streams)
+/// permanently expire once canceled and throw `StateError('Bad state: Stream has already been listened to')`
+/// upon reactivation (`0 -> 1`).
+///
+/// [StreamFactoryBloomExtension] solves this by invoking `Stream<T> Function()` to instantiate a
+/// brand-new [Stream] on every `0 -> 1` activation and immediately resetting the coupled state
+/// to its initial bulkhead state on `1 -> 0` deactivation.
 extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
   /// Converts this lazy [Stream] factory into a reactive [Bloom] node.
   ///
   /// Defers invoking this factory until the returned [Bloom] node is actively observed
   /// by a downstream consumer (`0 -> 1` activation), and automatically cancels the
-  /// subscription when all consumers disconnect (`1 -> 0` deactivation).
+  /// subscription and resets to a fresh initial state when all consumers disconnect (`1 -> 0` deactivation).
   ///
   /// ## System Architectural Flow
   /// ```text
-  /// [Active Consumer Subscribes (0 -> 1)] ──> [streamFactory().listen()] ──> [Bloom<T>]
-  /// [All Consumers Unsubscribe  (1 -> 0)] ──> [Subscription.cancel()]
+  /// [Active Consumer Subscribes (0 -> 1)] ──> [streamFactory().listen()] ──> [Fresh _StreamBloomBridge] ──> [Bloom<T>]
+  /// [All Consumers Unsubscribe  (1 -> 0)] ──> [Subscription.cancel() & Immediate Bulkhead Reset]
   /// ```
   ///
   /// ## Architectural Benefits
-  /// 1. **Single-Subscription Safe Reconnection**: By default (`once: false`), invokes this factory
-  ///    on every activation (`0 -> 1`), enabling single-subscription streams and `async*` generators
-  ///    to cleanly reconnect without throwing a [StateError].
-  /// 2. **Lazy One-Shot Option ([once])**: Setting `once: true` invokes the factory only on the first
-  ///    activation and caches the stream instance.
-  /// 3. **Microtask Cancellation Coalescing ([graceful])**: Buffers transient unmounts to prevent stream flickering.
+  /// 1. **Single-Subscription Safe Reconnection**: Invokes this factory on every activation (`0 -> 1`),
+  ///    enabling single-subscription streams and `async*` generators to cleanly reconnect across
+  ///    unlimited `1 -> 0 -> 1` cycles without throwing a [StateError].
+  /// 2. **Bulkhead Isolation on Deactivation**: Immediately swaps coupled nodes (`data`, `pending`, `done`)
+  ///    to fresh initial states upon `1 -> 0` deactivation, preventing stale stream emissions or terminal
+  ///    `done` flags from leaking into subsequent observation sessions.
+  /// 3. **Microtask & Temporal Coalescing ([graceful])**: Buffers transient unmounts (`1 -> 0 -> 1` within
+  ///    the grace window) to keep the existing stream subscription alive without re-invoking the factory.
+  /// 4. **Composable SWR Caching**: Pairs with `.retained()` / `.retainedTuple()` when UI consumers want to
+  ///    display the last emitted stream value while a fresh stream connection is establishing on remount.
   ///
   /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
   /// * [onError]: Optional error recovery callback invoked if the Stream emits an error event.
   /// * [cancelOnError]: If `true`, cancels the stream subscription on error.
-  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
   /// * [distinct]: When `true`, suppresses dirty notifications on identical consecutive values. Defaults to `true`.
   /// * [equals]: Custom equality comparator used when [distinct] is `true`.
   /// * [graceful]: Policy to defer unsubscription during rapid remounts or transitions.
   ///
   /// **Ensures:**
   /// * Returns a [Bloom] node reflecting the latest emitted stream events.
+  /// * Spawns a fresh [Stream] via this factory on every `0 -> 1` activation.
+  ///
+  /// **Warning (Anti-Pattern Prevention):**
+  /// - Do NOT call a single-subscription stream function eagerly (`watchSensor().toBloom()`) if the consumer
+  ///   can unmount and remount; pass the function tear-off or closure (`(() => watchSensor()).toBloom()`) instead.
+  ///
+  /// **BAD:**
+  /// ```dart
+  /// Stream<int> watchSensor() async* {
+  ///   yield 1;
+  /// }
+  ///
+  /// // [Anti-Pattern] Single-subscription stream instance throws StateError on second activation (1 -> 0 -> 1)
+  /// final sensorBloom = watchSensor().toBloom();
+  /// ```
+  ///
+  /// **GOOD:**
+  /// ```dart
+  /// // [Recommended] Factory closure spawns a fresh async* stream on every activation (0 -> 1)
+  /// final sensorBloom = (() => watchSensor()).toBloom(
+  ///   initialFactory: () => 0,
+  ///   graceful: Graceful.microtask,
+  /// );
+  /// ```
   ///
   /// ## Examples
   /// ```dart
   /// Stream<int> watchSensor() async* { ... }
   ///
+  /// // 1. Reconnectable single-subscription stream with microtask grace buffer
   /// final sensorBloom = (() => watchSensor()).toBloom(
   ///   initialFactory: () => 0,
   ///   graceful: Graceful.microtask,
   /// );
+  ///
+  /// // 2. Preserving last known reading across reconnections via .retainedTuple()
+  /// final (:data, :isRetained) = (() => watchSensor()).toBloom().retainedTuple();
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> toBloom({
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
     bool? cancelOnError,
-    bool once = false,
     bool distinct = true,
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
@@ -529,7 +610,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
         initialFactory: initialFactory,
         onError: onError,
         cancelOnError: cancelOnError,
-        once: once,
         distinct: distinct,
         equals: equals,
         graceful: graceful,
@@ -540,7 +620,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
   /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
   /// * [onError]: Optional error recovery callback.
   /// * [cancelOnError]: If `true`, cancels the subscription on error.
-  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
   /// * [distinct]: When `true`, suppresses duplicate consecutive events.
   /// * [equals]: Custom equality comparator.
   /// * [graceful]: Optional graceful deactivation policy.
@@ -561,7 +640,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
     bool? cancelOnError,
-    bool once = false,
     bool distinct = true,
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
@@ -571,7 +649,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
         initialFactory: initialFactory,
         onError: onError,
         cancelOnError: cancelOnError,
-        once: once,
         distinct: distinct,
         equals: equals,
         graceful: graceful,
@@ -582,7 +659,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
   /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
   /// * [onError]: Optional error recovery callback.
   /// * [cancelOnError]: If `true`, cancels the subscription on error.
-  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
   /// * [distinct]: When `true`, suppresses duplicate consecutive events.
   /// * [equals]: Custom equality comparator.
   /// * [graceful]: Optional graceful deactivation policy.
@@ -603,7 +679,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
     bool? cancelOnError,
-    bool once = false,
     bool distinct = true,
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
@@ -613,7 +688,6 @@ extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
         initialFactory: initialFactory,
         onError: onError,
         cancelOnError: cancelOnError,
-        once: once,
         distinct: distinct,
         equals: equals,
         graceful: graceful,
@@ -625,7 +699,6 @@ extension StreamFactoryIterableBloomExtension<T> on Iterable<Stream<T> Function(
   /// Converts this collection of lazy [Stream] factories into a reactive list of [Bloom] nodes.
   ///
   /// * [cancelOnError]: If `true`, cancels the stream subscription on error.
-  /// * [once]: When `true`, invokes each factory only once upon its first activation. Defaults to `false`.
   /// * [distinct]: When `true`, suppresses dirty notifications on identical consecutive values. Defaults to `true`.
   /// * [equals]: Custom equality comparator used when [distinct] is `true`.
   /// * [graceful]: Optional graceful deactivation policy.
@@ -635,14 +708,12 @@ extension StreamFactoryIterableBloomExtension<T> on Iterable<Stream<T> Function(
   @pragma('vm:prefer-inline')
   Bloom<List<Bloom<T>>> toBloom({
     bool? cancelOnError,
-    bool once = false,
     bool distinct = true,
     bool Function(T previous, T next)? equals,
     Graceful? graceful,
   }) =>
       Bloom.constant(List<Bloom<T>>.unmodifiable(map((factory) => factory.toBloom(
             cancelOnError: cancelOnError,
-            once: once,
             distinct: distinct,
             equals: equals,
             graceful: graceful,

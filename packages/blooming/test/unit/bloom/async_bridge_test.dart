@@ -737,8 +737,7 @@ void main() {
     // 7. FutureFactoryBloomExtension (Future<T> Function()) Tests
     // =========================================================================
     group('7. FutureFactoryBloomExtension (Future<T> Function())', () {
-      test('7.1 defers factory invocation until first activation and re-invokes on reactivation by default (once: false)',
-          () async {
+      test('7.1 defers factory invocation until first activation and re-invokes on every reactivation', () async {
         var callCount = 0;
         final completers = <Completer<int>>[];
 
@@ -765,7 +764,7 @@ void main() {
         terminal.deactivate();
         expect(untracked.state(asyncBloom).isEmpty, isTrue);
 
-        // Reactivate -> once: false (default) spawns a brand-new bridge and re-invokes factory
+        // Reactivate -> spawns a brand-new bridge and re-invokes factory
         terminal.activate();
         expect(callCount, 2);
         expect(untracked.state(asyncBloom).isEmpty, isTrue); // Fresh empty state before 2nd future completes
@@ -777,7 +776,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('7.1b bulkhead isolates late completion of previous turn Future after deactivation', () async {
+      test('7.2 bulkhead isolates late completion of previous turn Future after deactivation', () async {
         final completers = [Completer<String>(), Completer<String>()];
         var turn = 0;
 
@@ -785,8 +784,13 @@ void main() {
           initialFactory: () => 'Initial-$turn',
         );
 
-        final tData = RawBloomTerminal(data, onInvalidated: () {})..activate();
         final tPending = RawBloomTerminal(pending, onInvalidated: () {})..activate();
+
+        // Observing pending alone does NOT invoke factory
+        expect(turn, 0);
+        expect(tPending.data, isFalse);
+
+        final tData = RawBloomTerminal(data, onInvalidated: () {})..activate();
 
         expect(tData.data, 'Initial-1');
         expect(tPending.data, isTrue);
@@ -809,54 +813,6 @@ void main() {
         completers[1].complete('Valid-Turn-2');
         await Future<void>.delayed(Duration.zero);
         expect(tData.data, 'Valid-Turn-2');
-        expect(tPending.data, isFalse);
-
-        tData.deactivate();
-        tPending.deactivate();
-      });
-
-      test('7.2 once: true invokes factory only once across multiple activation cycles', () async {
-        var callCount = 0;
-        final completer = Completer<String>();
-
-        final (:data, :pending) = (() {
-          callCount++;
-          return completer.future;
-        }).toBloomTuple(once: true);
-
-        expect(callCount, 0);
-        expect(untracked(pending), isFalse);
-
-        final tData = RawBloomTerminal(data, onInvalidated: () {});
-        final tPending = RawBloomTerminal(pending, onInvalidated: () {})..activate();
-
-        // Observing pending alone does NOT invoke factory
-        expect(callCount, 0);
-        expect(tPending.data, isFalse);
-
-        // First activation invokes factory
-        tData.activate();
-        expect(callCount, 1);
-        expect(tPending.data, isTrue);
-
-        // Deactivate mid-flight and reactivate while still in-flight
-        tData.deactivate();
-        expect(tPending.data, isFalse);
-
-        tData.activate();
-        expect(callCount, 1);
-        expect(tPending.data, isTrue);
-
-        completer.complete('CachedResult');
-        await Future<void>.delayed(Duration.zero);
-        expect(tData.data, 'CachedResult');
-        expect(tPending.data, isFalse);
-
-        // Deactivate and reactivate after completion -> still 1 call
-        tData.deactivate();
-        tData.activate();
-        expect(callCount, 1);
-        expect(tData.data, 'CachedResult');
         expect(tPending.data, isFalse);
 
         tData.deactivate();
@@ -892,7 +848,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('7.4 handles initialFactory, onError, and synchronous factory throws', () async {
+      test('7.4 handles initialFactory, onError, and recovers after synchronous factory throws', () async {
         final asyncBloom = (() => Future<int>.error(Exception('Boom'))).toBloom(
           initialFactory: () => 0,
           onError: (e, [s]) => -1,
@@ -905,14 +861,23 @@ void main() {
         expect(terminal.data, -1);
         terminal.deactivate();
 
-        // Synchronous throw in factory
-        Future<int> syncThrowFactory() => throw StateError('SyncBoom');
-        final syncThrowBloom = syncThrowFactory.toBloomTuple(
+        // Synchronous throw in factory on 1st activation, then succeeds on 2nd activation
+        var attempt = 0;
+        final syncThrowBloom = (() {
+          attempt++;
+          if (attempt == 1) throw StateError('SyncBoom');
+          return Future<int>.value(42);
+        }).toBloomTuple(
           onError: (e, [s]) => 99,
         );
         final tSync = RawBloomTerminal(syncThrowBloom.data, onInvalidated: () {})..activate();
         expect(tSync.data, 99);
         expect(untracked(syncThrowBloom.pending), isFalse);
+        tSync.deactivate();
+
+        tSync.activate();
+        await Future<void>.delayed(Duration.zero);
+        expect(tSync.data, 42);
         tSync.deactivate();
       });
 
@@ -922,7 +887,7 @@ void main() {
         final group = <Future<int> Function()>[
           () async => ++count1 * 10,
           () async => ++count2 * 20,
-        ].toBloom(once: true);
+        ].toBloom();
 
         expect(count1, 0);
         expect(count2, 0);
@@ -948,8 +913,7 @@ void main() {
     // 8. StreamFactoryBloomExtension (Stream<T> Function()) Tests
     // =========================================================================
     group('8. StreamFactoryBloomExtension (Stream<T> Function())', () {
-      test(
-          '8.1 defers factory invocation until activation and safely reconnects single-subscription streams (once: false)',
+      test('8.1 defers factory invocation until activation and safely reconnects single-subscription streams',
           () async {
         var callCount = 0;
         late StreamController<String> currentController;
@@ -993,7 +957,7 @@ void main() {
         expect(tDone.data, isFalse);
         expect(tPending.data, isFalse);
 
-        // Reactivate -> once: false (default) spawns a brand-new bridge and invokes factory again
+        // Reactivate -> spawns a brand-new bridge and invokes factory again
         tData.activate();
         expect(callCount, 2);
         expect(untracked.state(data).isEmpty, isTrue);
@@ -1011,38 +975,54 @@ void main() {
         await currentController.close();
       });
 
-      test('8.2 once: true invokes stream factory only once and preserves done state on reactivation', () async {
+      test('8.2 safely reconnects mid-flight canceled single-subscription stream and recovers from sync throws',
+          () async {
         var callCount = 0;
         late StreamController<int> controller;
 
         final (:data, :pending, :done) = (() {
           callCount++;
-          controller = StreamController<int>();
+          if (callCount == 1) throw StateError('SyncStreamBoom');
+          controller = StreamController<int>(); // Single-subscription!
           return controller.stream;
-        }).toBloomTriple(once: true);
+        }).toBloomTriple();
 
         final tData = RawBloomTerminal(data, onInvalidated: () {})..activate();
         final tDone = RawBloomTerminal(done, onInvalidated: () {})..activate();
 
+        // 1st activation threw synchronously
         expect(callCount, 1);
+        expect(tData.hasError, isTrue);
+        expect(tDone.data, isFalse);
+
+        // Deactivate -> resets to empty
+        tData.deactivate();
+        expect(untracked.state(data).isEmpty, isTrue);
+
+        // 2nd activation -> succeeds, emits 1st item, then deactivated BEFORE onDone
+        tData.activate();
+        expect(callCount, 2);
         controller.add(77);
         await Future<void>.delayed(Duration.zero);
         expect(tData.data, 77);
+        expect(tDone.data, isFalse);
 
-        await controller.close();
-        await Future<void>.delayed(Duration.zero);
-        expect(tDone.data, isTrue);
-
-        // Deactivate and reactivate -> once: true does NOT re-invoke factory
+        // Deactivate mid-flight before stream completes
         tData.deactivate();
+        expect(untracked.state(data).isEmpty, isTrue);
+        await controller.close();
+
+        // 3rd activation -> spawns fresh single-subscription stream without StateError
         tData.activate();
-        expect(callCount, 1);
-        expect(tData.data, 77);
-        expect(tDone.data, isTrue);
+        expect(callCount, 3);
+        controller.add(88);
+        await Future<void>.delayed(Duration.zero);
+        expect(tData.data, 88);
         expect(untracked(pending), isFalse);
 
         tData.deactivate();
         tDone.deactivate();
+        await controller.close();
       });
 
       test('8.3 graceful buffers brief deactivation and prevents stream factory re-subscription', () async {

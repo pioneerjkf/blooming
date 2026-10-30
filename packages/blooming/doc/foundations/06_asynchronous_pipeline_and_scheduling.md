@@ -65,6 +65,32 @@ In asynchronous software engineering, lazy execution applies to **actions and fu
   - State must remain **continuously queryable**.
   - If upstream parameters mutate but asynchronous recomputation is deferred, the state node enters an inconsistent limbo where upstream dependencies have changed but the state node reflects stale reality.
 
+### 3.1 Bridging Cold Asynchronous Functions into Subscriber-Driven State (`FutureFactoryBloomExtension` & `StreamFactoryBloomExtension`)
+
+When a standalone cold asynchronous function (`Future<T> Function()` or `Stream<T> Function()`) has no upstream reactive dependencies (`via`) yet must be exposed as a subscriber-driven [`Bloom<T>`](../../lib/src/bloom/bloom.dart), [`FutureFactoryBloomExtension`](../../lib/src/bloom/async.dart) and [`StreamFactoryBloomExtension`](../../lib/src/bloom/async.dart) bridge the gap directly:
+
+```dart
+Future<String> fetchServerStatus() async => 'OK';
+Stream<int> watchHeartbeat() async* {
+  yield 1;
+}
+
+// 1. Cold Future factory -> Subscriber-driven Bloom (0 -> 1 invokes factory, 1 -> 0 resets bulkhead)
+final (:data, :pending) = fetchServerStatus.toBloomTuple(
+  graceful: Graceful.microtask,
+);
+
+// 2. Cold single-subscription Stream factory -> Reconnectable Bloom triad across 1 -> 0 -> 1 cycles
+final (data: heartbeat, pending: isStarting, done: isFinished) =
+    watchHeartbeat.toBloomTriple(
+  initialFactory: () => 0,
+);
+```
+
+* **Solving Hot `Future` Eager Execution**: Calling `fetchServerStatus().toBloom()` dispatches the HTTP request immediately at declaration time, even if no UI consumer ever mounts. Calling `fetchServerStatus.toBloom()` (or `(() => fetchServerStatus()).toBloom()`) keeps the function cold until the first subscriber activates the node (`0 -> 1`), and re-invokes it on every subsequent reactivation (`1 -> 0 -> 1`).
+* **Solving Single-Subscription `Stream` `StateError` on Remount**: Calling `watchHeartbeat().toBloom()` binds to a single `async*` generator instance; once the consumer unmounts (`1 -> 0`) and cancels the subscription, remounting (`0 -> 1`) throws `Bad state: Stream has already been listened to`. Calling `watchHeartbeat.toBloom()` invokes the generator function anew on every `0 -> 1` transition.
+* **Bulkhead Isolation on Deactivation (`1 -> 0`)**: Upon deactivation, the factory bridge immediately swaps its internal coupled nodes to fresh initial `Bloom` instances (`Empty` or `initialFactory`), ensuring late-settling futures from a canceled observation session never leak into future sessions. Pair with `.retained()` or `.retainedTuple()` when Stale-While-Revalidate (SWR) retention across remounts is desired.
+
 ---
 
 ## 4. Event Dropping and Zombie Leaks in Real-Time Streams

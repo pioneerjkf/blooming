@@ -685,6 +685,39 @@ final liveStockPricesBloom = computed.stream((via) {
 });
 ```
 
+#### Instance Bridges vs. Lazy Factory Bridges (`.toBloom`, `.toBloomTuple`, `.toBloomTriple`)
+When bridging standalone `Future<T>` or `Stream<T>` primitives outside `computed`, choose between **Instance Bridges** and **Factory Bridges** based on lifecycle requirements:
+
+* **Why Factory Bridges (`Future<T> Function()`, `Stream<T> Function()`) Exist**:
+  1. **Deferred Cold Execution (`Future<T> Function()`)**: A `Future<T>` instance is *hot*—it dispatches I/O immediately upon construction and settles once. Passing a factory closure or tear-off (`(() => fetchProfile()).toBloom()`) defers execution until the first subscriber attaches (`0 -> 1` activation) and re-invokes the factory on every subsequent reactivation (`1 -> 0 -> 1`).
+  2. **Single-Subscription Stream Reconnection (`Stream<T> Function()`)**: When a single-subscription `Stream<T>` (`async*` generator, `StreamController().stream`, or `Stream.periodic`) bridged via `stream.toBloom()` deactivates (`1 -> 0`), its subscription is canceled (`cancel()`). In Dart, a canceled single-subscription stream permanently expires and throws a `StateError` (`Bad state: Stream has already been listened to`) if reactivated (`0 -> 1`). Wrapping the stream creation in a factory (`(() => watchSensor()).toBloom()`) spawns a brand-new `Stream<T>` on every `0 -> 1` activation.
+  3. **Bulkhead Isolation on Deactivation (`1 -> 0`)**: Immediately upon `1 -> 0` deactivation, factory bridges swap their internal coupled nodes (`data`, `pending`, `done`) to fresh initial `Bloom` instances (`Empty` or `initialFactory`), completely isolating downstream consumers from late-arriving completions of previous turns.
+
+```dart
+// 1. Lazy Future Factory Bridge: defers I/O until observed (0 -> 1) & refetches on remount
+final (:data, :pending) = (() => apiService.fetchProfile()).toBloomTuple(
+  graceful: Graceful.microtask, // Buffers transient remounts without re-invoking the factory
+);
+
+// 2. Single-Subscription Stream Factory Bridge: safely reconnects async* generators across 1 -> 0 -> 1
+Stream<int> watchTelemetry() async* {
+  for (var i = 0; i < 100; i++) {
+    await Future<void>.delayed(const Duration(seconds: 1));
+    yield i;
+  }
+}
+
+final (data: telemetry, pending: isConnecting, done: isClosed) =
+    watchTelemetry.toBloomTriple(
+  initialFactory: () => 0,
+  graceful: const Graceful.period(Duration(seconds: 5)),
+);
+
+// 3. Combining Factory Bridge with .retainedTuple() for Stale-While-Revalidate (SWR) across remounts
+final (data: cachedProfile, isRetained: isStale) =
+    (() => apiService.fetchProfile()).toBloom().retainedTuple();
+```
+
 #### Dynamic Pipeline Switching (`BloomCoupler`)
 Hot-swap upstream data sources (e.g. Guest session ➔ Live user session, Mock ➔ Remote API) without rebuilding or disconnecting downstream consumers:
 
