@@ -224,6 +224,11 @@ base class _PragueVltava<T> {
   bool _isDone = false;
 
   void _subscribe() {
+    // Only guard when the stream has naturally completed (`onDone`) or is already subscribed.
+    // Do NOT set `_isDone` on mid-flight deactivation (`1 -> 0`) or `cancelOnError == true`:
+    // - Broadcast streams must be allowed to re-subscribe and recover on reactivation (`0 -> 1`).
+    // - Canceled single-subscription streams must fail fast with `StateError` on reactivation
+    //   rather than silently freezing on incomplete/partial data (use `(() => stream).toBloom()` instead).
     if (_isDone || _subscription != null) return;
 
     _pendingController.set(true);
@@ -245,6 +250,11 @@ base class _PragueVltava<T> {
             } else {
               _controller.setError(error, stackTrace);
             }
+            // Deliberately keep `_isDone == false` here instead of marking it done:
+            // - Although marking `_isDone = true` would preserve the error/fallback state on a fixed
+            //   single-subscription stream across `1 -> 0 -> 1`, it would permanently block broadcast
+            //   streams from re-subscribing and recovering on the next `0 -> 1` activation.
+            // - Single-subscription streams requiring reactivation recovery should use `(() => stream).toBloom()`.
             if (cancelOnError == true) _unsubscribe();
           } finally {
             _pendingController.set(false);
