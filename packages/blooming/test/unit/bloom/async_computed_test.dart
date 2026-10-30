@@ -380,27 +380,18 @@ void main() {
         terminal.deactivate();
       });
 
-      test('8.3 Synchronous future.then failure recovers via onError or sets error', () {
-        // Case A: onError recovers
-        final recoveredNode = computed.future<String>(
+      test('8.3 Synchronous future.then failure bypasses onError and sets error directly', () {
+        // Case A: Even when onError is provided, synchronous .then() contract failure sets error directly
+        final withOnErrorNode = computed.future<String>(
           (_) => _SyncThrowingFuture<String>(),
           onError: (e, [s]) => 'SyncRecovered',
         );
-        final tRec = RawBloomTerminal(recoveredNode, onInvalidated: () {})..activate();
-        expect(tRec.data, 'SyncRecovered');
+        final tRec = RawBloomTerminal(withOnErrorNode, onInvalidated: () {})..activate();
+        expect(tRec.hasError, isTrue);
+        expect(tRec.snapshot.error, isA<StateError>());
         tRec.deactivate();
 
-        // Case B: onError throws secondary error
-        final secondaryFailNode = computed.future<String>(
-          (_) => _SyncThrowingFuture<String>(),
-          onError: (e, [s]) => throw FormatException('SyncSecondaryFail'),
-        );
-        final tSec = RawBloomTerminal(secondaryFailNode, onInvalidated: () {})..activate();
-        expect(tSec.hasError, isTrue);
-        expect(tSec.snapshot.error, isA<FormatException>());
-        tSec.deactivate();
-
-        // Case C: No onError provided
+        // Case B: No onError provided
         final directFailNode = computed.future<String>(
           (_) => _SyncThrowingFuture<String>(),
         );
@@ -580,27 +571,18 @@ void main() {
         terminal.deactivate();
       });
 
-      test('9.6 Synchronous stream.listen failure recovers via onError or sets error', () {
-        // Case A: onError recovers
+      test('9.6 Synchronous stream.listen failure bypasses onError and sets error directly', () {
+        // Case A: Even when onError is provided, synchronous .listen() failure sets error directly
         final recNode = computed.stream<String>(
           (_) => _SyncThrowingStream<String>(),
           onError: (e, [s]) => 'StreamSyncRecovered',
         );
         final tRec = RawBloomTerminal(recNode, onInvalidated: () {})..activate();
-        expect(tRec.data, 'StreamSyncRecovered');
+        expect(tRec.hasError, isTrue);
+        expect(tRec.snapshot.error, isA<StateError>());
         tRec.deactivate();
 
-        // Case B: onError secondary throw
-        final secNode = computed.stream<String>(
-          (_) => _SyncThrowingStream<String>(),
-          onError: (e, [s]) => throw FormatException('StreamSyncSecFail'),
-        );
-        final tSec = RawBloomTerminal(secNode, onInvalidated: () {})..activate();
-        expect(tSec.hasError, isTrue);
-        expect(tSec.snapshot.error, isA<FormatException>());
-        tSec.deactivate();
-
-        // Case C: No onError
+        // Case B: No onError
         final failNode = computed.stream<String>(
           (_) => _SyncThrowingStream<String>(),
         );

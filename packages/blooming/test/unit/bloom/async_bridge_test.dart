@@ -306,7 +306,9 @@ void main() {
 
       test('3.6 single-subscription stream transitions to error state upon reactivation', () async {
         final controller = StreamController<int>();
-        final asyncBloom = controller.stream.toBloom();
+        final asyncBloom = controller.stream.toBloom(
+          onError: (error, [stackTrace]) => -1,
+        );
 
         final terminal = RawBloomTerminal(asyncBloom, onInvalidated: () {});
         terminal.activate();
@@ -319,6 +321,7 @@ void main() {
         expect(controller.hasListener, isFalse);
 
         // Reactivating attempts to re-listen to single-subscription stream, throwing StateError
+        // which bypasses onError so lifecycle violations are never masked as fallback data.
         terminal.activate();
         expect(terminal.snapshot.hasError, isTrue);
         expect(terminal.error, isA<StateError>());

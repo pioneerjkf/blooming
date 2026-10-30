@@ -61,21 +61,10 @@ base class _DeLorean<T> {
         },
       );
     } catch (error, stackTrace) {
-      try {
-        final onError = _onError;
-        if (onError != null) {
-          try {
-            _controller.set(onError.call(error, stackTrace));
-            return;
-          } catch (e, s) {
-            _controller.setError(e, s);
-            return;
-          }
-        }
-        _controller.setError(error, stackTrace);
-      } finally {
-        _pendingController.set(false);
-      }
+      // Synchronous failure in `_future.then` itself is a contract violation, not a Future completion error.
+      // Bypass `_onError` so structural errors are never silently masked as fallback data.
+      _controller.setError(error, stackTrace);
+      _pendingController.set(false);
     }
   }
 
@@ -268,20 +257,11 @@ base class _PragueVltava<T> {
         cancelOnError: cancelOnError,
       );
     } catch (error, stackTrace) {
-      try {
-        if (onError != null) {
-          try {
-            _controller.set(onError!.call(error, stackTrace));
-            return;
-          } catch (e, s) {
-            _controller.setError(e, s);
-            return;
-          }
-        }
-        _controller.setError(error, stackTrace);
-      } finally {
-        _pendingController.set(false);
-      }
+      // Synchronous failure in `_stream.listen` itself (e.g., `StateError` when re-listening
+      // to a canceled single-subscription stream) is a lifecycle violation, not a stream error event.
+      // Bypass `onError` so `StateError` is never silently masked as fallback data.
+      _controller.setError(error, stackTrace);
+      _pendingController.set(false);
     }
   }
 
