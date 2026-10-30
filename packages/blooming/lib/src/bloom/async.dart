@@ -149,6 +149,117 @@ extension FutureIterableBloomExtension<T> on Iterable<Future<T>> {
           ))));
 }
 
+/// Extension bridging a lazy [Future] factory (`Future<T> Function()`) with the reactive [Bloom] pipeline.
+extension FutureFactoryBloomExtension<T> on Future<T> Function() {
+  /// Converts this lazy [Future] factory into a reactive [Bloom] node.
+  ///
+  /// Defers invoking this factory until the returned [Bloom] node is actively observed
+  /// by a downstream consumer (`0 -> 1` activation).
+  ///
+  /// ## System Architectural Flow
+  /// ```text
+  /// [Active Consumer Subscribes (0 -> 1)] ──> [futureFactory()] ──> [Bloom<T>]
+  /// [All Consumers Unsubscribe  (1 -> 0)] ──> [Deactivated (or once: true retains)]
+  /// ```
+  ///
+  /// ## Architectural Benefits
+  /// 1. **Lazy On-Demand Execution**: Defers network I/O or heavy asynchronous work until actively observed.
+  /// 2. **Configurable Re-invocation ([once])**: Re-invokes the factory on every reactivation (`once: false`, default)
+  ///    or memoizes after the first activation (`once: true`).
+  /// 3. **Microtask & Temporal Coalescing ([graceful])**: Buffers transient unmounts to prevent redundant refetches.
+  ///
+  /// * [initialFactory]: Optional factory callback returning the initial value before the future completes.
+  /// * [onError]: Optional error interceptor converting an error into a valid fallback data instance.
+  /// * [once]: When `true`, invokes this factory only once upon first activation and retains the result across subsequent reactivations. Defaults to `false`.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns a [Bloom] node that lazily invokes this factory upon activation.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// Future<UserProfile> fetchProfile() async => ...;
+  ///
+  /// final profileBloom = (() => fetchProfile()).toBloom(
+  ///   once: true,
+  ///   graceful: Graceful.microtask,
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Bloom<T> toBloom({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool once = false,
+    Graceful? graceful,
+  }) =>
+      _FutureFactoryBloomBridge<T>(
+        this,
+        initialFactory: initialFactory,
+        onError: onError,
+        once: once,
+        graceful: graceful,
+      ).bloom;
+
+  /// Converts this lazy [Future] factory into a pair of reactive nodes: `({Bloom<T> data, Bloom<bool> pending})`.
+  ///
+  /// * [initialFactory]: Optional factory callback returning the initial value before the future completes.
+  /// * [onError]: Optional error interceptor converting an error into a valid fallback data instance.
+  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending})`.
+  ///
+  /// **Invariants & Lifecycle (Passive Facet):**
+  /// * Invoking this [Future] factory is strictly driven by downstream observation of the `data` node.
+  ///   Observing `pending` alone will NOT trigger the factory, preserving Command-Query Separation (CQS).
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final (:data, :pending) = (() => fetchUser()).toBloomTuple(once: true);
+  /// ```
+  @pragma('vm:prefer-inline')
+  ({Bloom<T> data, Bloom<bool> pending}) toBloomTuple({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool once = false,
+    Graceful? graceful,
+  }) =>
+      _FutureFactoryBloomBridge<T>(
+        this,
+        initialFactory: initialFactory,
+        onError: onError,
+        once: once,
+        graceful: graceful,
+      ).tuple;
+}
+
+/// Extension grouping multiple lazy [Future] factories into a reactive list of [Bloom] nodes.
+extension FutureFactoryIterableBloomExtension<T> on Iterable<Future<T> Function()> {
+  /// Converts this collection of lazy [Future] factories into a reactive list of [Bloom] nodes.
+  ///
+  /// * [initialFactory]: Optional factory callback returning the initial value before each future completes.
+  /// * [onError]: Optional error interceptor converting an error into a valid fallback data instance.
+  /// * [once]: When `true`, invokes each factory only once upon its first activation. Defaults to `false`.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns a constant [Bloom<List<Bloom<T>>>] holding an unmodifiable list of lazily bridged nodes.
+  @pragma('vm:prefer-inline')
+  Bloom<List<Bloom<T>>> toBloom({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool once = false,
+    Graceful? graceful,
+  }) =>
+      Bloom.constant(List<Bloom<T>>.unmodifiable(map((factory) => factory.toBloom(
+            initialFactory: initialFactory,
+            onError: onError,
+            once: once,
+            graceful: graceful,
+          ))));
+}
+
 /// Extension bridging Dart's [Stream] with the reactive [Bloom] pipeline.
 extension StreamBloomExtension<T> on Stream<T> {
   /// Converts this [Stream] into a reactive [Bloom] node.
@@ -358,5 +469,182 @@ extension StreamIterableBloomExtension<T> on Iterable<Stream<T>> {
             cancelOnError: cancelOnError,
             distinct: distinct,
             equals: equals,
+          ))));
+}
+
+/// Extension bridging a lazy [Stream] factory (`Stream<T> Function()`) with the reactive [Bloom] pipeline.
+extension StreamFactoryBloomExtension<T> on Stream<T> Function() {
+  /// Converts this lazy [Stream] factory into a reactive [Bloom] node.
+  ///
+  /// Defers invoking this factory until the returned [Bloom] node is actively observed
+  /// by a downstream consumer (`0 -> 1` activation), and automatically cancels the
+  /// subscription when all consumers disconnect (`1 -> 0` deactivation).
+  ///
+  /// ## System Architectural Flow
+  /// ```text
+  /// [Active Consumer Subscribes (0 -> 1)] ──> [streamFactory().listen()] ──> [Bloom<T>]
+  /// [All Consumers Unsubscribe  (1 -> 0)] ──> [Subscription.cancel()]
+  /// ```
+  ///
+  /// ## Architectural Benefits
+  /// 1. **Single-Subscription Safe Reconnection**: By default (`once: false`), invokes this factory
+  ///    on every activation (`0 -> 1`), enabling single-subscription streams and `async*` generators
+  ///    to cleanly reconnect without throwing a [StateError].
+  /// 2. **Lazy One-Shot Option ([once])**: Setting `once: true` invokes the factory only on the first
+  ///    activation and caches the stream instance.
+  /// 3. **Microtask Cancellation Coalescing ([graceful])**: Buffers transient unmounts to prevent stream flickering.
+  ///
+  /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
+  /// * [onError]: Optional error recovery callback invoked if the Stream emits an error event.
+  /// * [cancelOnError]: If `true`, cancels the stream subscription on error.
+  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
+  /// * [distinct]: When `true`, suppresses dirty notifications on identical consecutive values. Defaults to `true`.
+  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
+  /// * [graceful]: Policy to defer unsubscription during rapid remounts or transitions.
+  ///
+  /// **Ensures:**
+  /// * Returns a [Bloom] node reflecting the latest emitted stream events.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// Stream<int> watchSensor() async* { ... }
+  ///
+  /// final sensorBloom = (() => watchSensor()).toBloom(
+  ///   initialFactory: () => 0,
+  ///   graceful: Graceful.microtask,
+  /// );
+  /// ```
+  @pragma('vm:prefer-inline')
+  Bloom<T> toBloom({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool? cancelOnError,
+    bool once = false,
+    bool distinct = true,
+    bool Function(T previous, T next)? equals,
+    Graceful? graceful,
+  }) =>
+      _StreamFactoryBloomBridge.create<T>(
+        this,
+        initialFactory: initialFactory,
+        onError: onError,
+        cancelOnError: cancelOnError,
+        once: once,
+        distinct: distinct,
+        equals: equals,
+        graceful: graceful,
+      ).bloom;
+
+  /// Converts this lazy [Stream] factory into a pair of reactive nodes: `({Bloom<T> data, Bloom<bool> pending})`.
+  ///
+  /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
+  /// * [onError]: Optional error recovery callback.
+  /// * [cancelOnError]: If `true`, cancels the subscription on error.
+  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
+  /// * [distinct]: When `true`, suppresses duplicate consecutive events.
+  /// * [equals]: Custom equality comparator.
+  /// * [graceful]: Optional graceful deactivation policy.
+  ///
+  /// **Ensures:**
+  /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending})`.
+  ///
+  /// **Invariants & Lifecycle (Passive Facet):**
+  /// * Invoking this [Stream] factory and subscribing is strictly driven by downstream observation
+  ///   of the `data` node. Observing `pending` alone will NOT trigger the factory or subscription.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final (:data, :pending) = (() => watchStock()).toBloomTuple();
+  /// ```
+  @pragma('vm:prefer-inline')
+  ({Bloom<T> data, Bloom<bool> pending}) toBloomTuple({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool? cancelOnError,
+    bool once = false,
+    bool distinct = true,
+    bool Function(T previous, T next)? equals,
+    Graceful? graceful,
+  }) =>
+      _StreamFactoryBloomBridge.create<T>(
+        this,
+        initialFactory: initialFactory,
+        onError: onError,
+        cancelOnError: cancelOnError,
+        once: once,
+        distinct: distinct,
+        equals: equals,
+        graceful: graceful,
+      ).tuple;
+
+  /// Converts this lazy [Stream] factory into a triad of reactive nodes: `({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done})`.
+  ///
+  /// * [initialFactory]: Optional callback providing an initial value before the Stream emits its first event.
+  /// * [onError]: Optional error recovery callback.
+  /// * [cancelOnError]: If `true`, cancels the subscription on error.
+  /// * [once]: When `true`, invokes this factory only once upon first activation. Defaults to `false`.
+  /// * [distinct]: When `true`, suppresses duplicate consecutive events.
+  /// * [equals]: Custom equality comparator.
+  /// * [graceful]: Optional graceful deactivation policy.
+  ///
+  /// **Ensures:**
+  /// * Returns a Dart 3 named record `({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done})`.
+  ///
+  /// **Invariants & Lifecycle (Passive Facets):**
+  /// * Invoking this [Stream] factory and subscribing is strictly driven by downstream observation
+  ///   of the `data` node. `pending` and `done` are passive projection facets.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final (:data, :pending, :done) = (() => watchStock()).toBloomTriple();
+  /// ```
+  @pragma('vm:prefer-inline')
+  ({Bloom<T> data, Bloom<bool> pending, Bloom<bool> done}) toBloomTriple({
+    T Function()? initialFactory,
+    T Function(Object error, [StackTrace? stackTrace])? onError,
+    bool? cancelOnError,
+    bool once = false,
+    bool distinct = true,
+    bool Function(T previous, T next)? equals,
+    Graceful? graceful,
+  }) =>
+      _StreamFactoryBloomBridge.create<T>(
+        this,
+        initialFactory: initialFactory,
+        onError: onError,
+        cancelOnError: cancelOnError,
+        once: once,
+        distinct: distinct,
+        equals: equals,
+        graceful: graceful,
+      ).triple;
+}
+
+/// Extension grouping multiple lazy [Stream] factories into a reactive list of [Bloom] nodes.
+extension StreamFactoryIterableBloomExtension<T> on Iterable<Stream<T> Function()> {
+  /// Converts this collection of lazy [Stream] factories into a reactive list of [Bloom] nodes.
+  ///
+  /// * [cancelOnError]: If `true`, cancels the stream subscription on error.
+  /// * [once]: When `true`, invokes each factory only once upon its first activation. Defaults to `false`.
+  /// * [distinct]: When `true`, suppresses dirty notifications on identical consecutive values. Defaults to `true`.
+  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
+  /// * [graceful]: Optional graceful deactivation policy.
+  ///
+  /// **Ensures:**
+  /// * Returns a constant [Bloom<List<Bloom<T>>>] holding an unmodifiable list of lazily bridged nodes.
+  @pragma('vm:prefer-inline')
+  Bloom<List<Bloom<T>>> toBloom({
+    bool? cancelOnError,
+    bool once = false,
+    bool distinct = true,
+    bool Function(T previous, T next)? equals,
+    Graceful? graceful,
+  }) =>
+      Bloom.constant(List<Bloom<T>>.unmodifiable(map((factory) => factory.toBloom(
+            cancelOnError: cancelOnError,
+            once: once,
+            distinct: distinct,
+            equals: equals,
+            graceful: graceful,
           ))));
 }
