@@ -178,7 +178,8 @@ final class ComputedFutureFunctor {
   /// Evaluates [compute] when downstream consumers observe this node. When tracked reactive
   /// dependencies mutate, [compute] re-evaluates automatically.
   ///
-  /// * [compute]: Asynchronous closure returning a [Future] producing [T].
+  /// * [compute]: Asynchronous closure returning a [Future] or synchronous [FutureOr] producing [T].
+  ///   When a synchronous [T] is returned directly (e.g. cache hit), it resolves instantly in 0ms without microtask delay.
   /// * [guard]: Optional precondition check returning [BloomGuard] gating evaluation and providing diagnostic reasons.
   /// * [initialFactory]: Optional callback producing an initial synchronous payload.
   /// * [onError]: Optional error recovery handler.
@@ -251,7 +252,7 @@ final class ComputedFutureFunctor {
   ///   an `await` is dynamically registered as long as the evaluation turn remains the latest active
   ///   turn; if an upstream dependency mutates mid-flight, stale turns are isolated automatically.
   Bloom<T> call<T>(
-    Future<T> Function(BloomVia via) compute, {
+    FutureOr<T> Function(BloomVia via) compute, {
     BloomGuard Function(BloomVia via)? guard,
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,

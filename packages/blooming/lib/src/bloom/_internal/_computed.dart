@@ -172,16 +172,16 @@ base class _LifecycleAwareComputationBloom<T> extends _ComputationBloom<T> {
 /// Future-based asynchronous computation node backed by [_FutureBloomBridge] and dynamic delta.
 final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom<T> {
   _FutureComputedBloom(
-    Future<T> Function(BloomVia via) compute, {
+    FutureOr<T> Function(BloomVia via) compute, {
     BloomGuard Function(BloomVia via)? guard,
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
-  })  : _computeFuture = compute,
+  })  : _compute = compute,
         _guard = guard,
         _initialFactory = initialFactory,
         _onError = onError;
 
-  final Future<T> Function(BloomVia via) _computeFuture;
+  final FutureOr<T> Function(BloomVia via) _compute;
   final BloomGuard Function(BloomVia via)? _guard;
   final T Function()? _initialFactory;
   final T Function(Object error, [StackTrace? stackTrace])? _onError;
@@ -198,9 +198,13 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
         return Bloom.empty(decision.reason);
       }
     }
-    final future = _deltaTerminal._resultViaTrack(_computeFuture(via));
+    final result = _deltaTerminal._resultViaTrack(_compute(via));
+    if (result is! Future<T>) {
+      // Synchronous Fast-Path: Immediately couple to a constant node in 0ms!
+      return Bloom.constant(result);
+    }
     return _FutureBloomBridge<T>(
-      future,
+      result,
       initialFactory: _initialFactory,
       onError: _onError,
     ).bloom;

@@ -898,6 +898,80 @@ void main() {
         terminal.deactivate();
       });
     });
+
+    group('11. Native FutureOr<T> Support in computed.future', () {
+      test('11.1 Synchronous value returned from FutureOr resolves instantly in 0ms (zero microtask delay)', () {
+        final node = computed.future<String>((via) => 'instant_cached_data');
+
+        final terminal = RawBloomTerminal(node, onInvalidated: () {})..activate();
+
+        // Must be immediately Valid without needing any `await Future.delayed`!
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'instant_cached_data');
+
+        terminal.deactivate();
+      });
+
+      test('11.2 Dynamic switching between synchronous cache hit and asynchronous Future fallback', () async {
+        final memoryCache = <String, String>{'user_1': 'Alice (Cached)'};
+        final currentUserId = blooming('user_1');
+        var completer = Completer<String>();
+
+        final userNode = computed.future<String>((via) {
+          final id = via(currentUserId.bloom);
+          final cached = memoryCache[id];
+          if (cached != null) {
+            return cached; // 0ms instant sync return
+          }
+          return completer.future; // Async remote fetch
+        });
+
+        final terminal = RawBloomTerminal(userNode, onInvalidated: () {})..activate();
+
+        // 1. Initial observation with cache hit: 0ms instant sync data!
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'Alice (Cached)');
+
+        // 2. Switch to uncached user: transitions to pending (no data yet)
+        completer = Completer<String>();
+        currentUserId.set('user_2');
+        expect(terminal.hasData, isFalse); // Pending async fetch
+
+        // 3. Remote fetch completes: transitions to valid
+        completer.complete('Bob (Remote)');
+        await Future<void>.delayed(Duration.zero);
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'Bob (Remote)');
+
+        // 4. Switch back to cached user: instant 0ms restoration without microtask latency!
+        currentUserId.set('user_1');
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'Alice (Cached)');
+
+        terminal.deactivate();
+      });
+
+      test('11.3 Guarded FutureOr node emits Empty immediately when guard blocks', () {
+        final isAuthReady = blooming(false);
+
+        final secretData = computed.future<String>(
+          (via) => 'secret_payload',
+          guard: (via) => via(isAuthReady.bloom).guarded('NotAuthenticated'),
+        );
+
+        final terminal = RawBloomTerminal(secretData, onInvalidated: () {})..activate();
+
+        expect(terminal.isEmpty, isTrue);
+        expect(terminal.emptyReason, 'NotAuthenticated');
+
+        // Unblock guard -> immediately resolves synchronously!
+        isAuthReady.set(true);
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'secret_payload');
+
+        terminal.deactivate();
+      });
+    });
   });
 }
 
