@@ -62,19 +62,21 @@ final constantNode = computed((via) => 6 * 7);
 const answer = 6 * 7;
 
 // #case tour/avoid_escaping_via/bad
-// `via` is only valid during the synchronous evaluation pass.
-final escaped = computed.future((via) async {
+// `via` must not escape into out-of-band timers or event callbacks.
+final escaped = computed((via) {
   final id = via(count);
-  await Future<void>.delayed(const Duration(milliseconds: 10));
-  // expect_lint: avoid_escaping_via
-  return id * via(factor);
+  Timer.run(() {
+    // expect_lint: avoid_escaping_via
+    debugPrint('${via(factor)}');
+  });
+  return id;
 });
 
 // #case tour/avoid_escaping_via/good
-final synchronous = computed.future((via) async {
+final multiStepAsync = computed.future((via) async {
   final id = via(count);
-  final f = via(factor);
   await Future<void>.delayed(const Duration(milliseconds: 10));
+  final f = via(factor);
   return id * f;
 });
 

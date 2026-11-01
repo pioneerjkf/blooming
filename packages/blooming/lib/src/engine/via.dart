@@ -8,13 +8,14 @@ part of '../framework.dart';
 // Scoped Explicit Dependency Tracker (Hybrid Manifest)
 // =============================================================================
 
-/// The scoped dependency tracker interface injected into [computed], [RawViaTerminal],
+/// The scoped dependency tracker injected into [computed], [RawViaTerminal],
 /// and reactive widget build callbacks.
 ///
 /// Unlike implicit global stack tracking, [BloomVia] requires explicit
 /// observation calls (`via(node)`) during the evaluation pass. This creates an
 /// explicit, deterministic, and AI-friendly dependency manifest while preserving
-/// dynamic runtime branching and 1-pass epoch-based pruning.
+/// dynamic runtime branching, 1-pass epoch-based pruning, and on-demand
+/// asynchronous turn isolation.
 ///
 /// ## Data Propagation Flow
 /// ```text
@@ -30,14 +31,21 @@ part of '../framework.dart';
 /// 1. **Zero Tracking Stack Overhead**: Dependency registration happens purely via explicit function
 ///    calls without maintaining or unwinding global thread-local or zone-scoped context stacks.
 /// 2. **1-Pass Dynamic Epoch Sweeping**: Unused dependency edges from inactive conditional branches
-///    are swept immediately in a single pass at the end of the evaluation turn.
-/// 3. **AI Coding Agent Ground Truth**: Explicit manifests prevent AI agents and static analysis tools
+///    are swept immediately in a single pass at the end of the synchronous evaluation turn.
+/// 3. **On-Demand Asynchronous Turn Isolation**: Synchronous evaluations reuse a single [BloomVia]
+///    instance with zero heap allocations. When an evaluation returns a [Future] or [Stream]
+///    (e.g., `computed.future`, `computed.stream`, `Effect.via`), post-`await` and post-`yield`
+///    `via(...)` calls remain tracked for the latest active turn while superseded turns and
+///    deactivated scopes are isolated automatically.
+/// 4. **AI Coding Agent Ground Truth**: Explicit manifests prevent AI agents and static analysis tools
 ///    from missing reactive edges or generating rogue, untracked property reads.
 ///
 /// **Warning (Anti-Pattern Prevention):**
 /// - Do NOT read reactive nodes untracked inside a derivation closure without
 ///   wrapping them in `via(...)`.
-/// - Do NOT store or reuse the [BloomVia] instance outside the synchronous evaluation closure.
+/// - Do NOT escape or store the [BloomVia] instance in external fields, timers, or UI event
+///   callbacks outside the evaluation closure; escaped calls after a synchronous evaluation
+///   completes or from a superseded asynchronous turn are ignored.
 ///
 /// **BAD:**
 /// ```dart
@@ -80,7 +88,11 @@ part of '../framework.dart';
 ///   };
 /// });
 /// ```
-abstract interface class BloomVia {
+final class BloomVia {
+  BloomVia._(this._node);
+
+  final _BloomViaEpochMixin _node;
+
   /// Scoped watch function that tracks [bloom] as an upstream dependency
   /// and returns its underlying valid data payload of type [T].
   ///
@@ -100,7 +112,15 @@ abstract interface class BloomVia {
   /// final counter = blooming(0);
   /// final doubled = computed((via) => via(counter.bloom) * 2);
   /// ```
-  T call<T>(Bloom<T> bloom);
+  @pragma('vm:prefer-inline')
+  T call<T>(Bloom<T> bloom) {
+    _node._trackDependency(this, bloom);
+    final s = bloom._read();
+    if (s is _ValidBloomState) {
+      return s.data;
+    }
+    throw _ViaShortCircuit(s);
+  }
 
   /// Registers [bloom] as an active dependency in the current evaluation epoch
   /// and returns its 3-phase [BloomState] container without short-circuiting.
@@ -135,7 +155,11 @@ abstract interface class BloomVia {
   ///   };
   /// });
   /// ```
-  BloomState<T> state<T>(Bloom<T> bloom);
+  @pragma('vm:prefer-inline')
+  BloomState<T> state<T>(Bloom<T> bloom) {
+    _node._trackDependency(this, bloom);
+    return bloom as BloomState<T>;
+  }
 
   /// Tethers declarative [tether] to this tracking scope's lifecycle.
   ///
@@ -160,5 +184,9 @@ abstract interface class BloomVia {
   ///   return via(eventCount.bloom) * 10;
   /// });
   /// ```
-  T tether<T extends Tether>(T tether);
+  @pragma('vm:prefer-inline')
+  T tether<T extends Tether>(T tether) {
+    _node._trackDependency(this, tether);
+    return tether;
+  }
 }

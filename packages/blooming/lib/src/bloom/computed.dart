@@ -240,6 +240,16 @@ final class ComputedFutureFunctor {
   /// // Trigger fresh fetch on demand:
   /// refreshSignal.emit();
   /// ```
+  ///
+  /// ## Performance Considerations (Direct Return vs. Multi-Step `async`)
+  /// * **Single-Shot Passthrough (Direct Return Recommended)**: When forwarding a single [Future],
+  ///   return it directly (`(via) => service.fetch(via(id.bloom))`) rather than marking the closure
+  ///   `async` (`(via) async => await service.fetch(...)`). Direct return avoids allocating an extra
+  ///   Dart VM `_AsyncCompleter` state machine on every evaluation.
+  /// * **Multi-Step Sequential `await` Composition**: When chaining multiple asynchronous steps or
+  ///   post-processing results, `(via) async { ... }` is fully supported. Any `via(node)` read after
+  ///   an `await` is dynamically registered as long as the evaluation turn remains the latest active
+  ///   turn; if an upstream dependency mutates mid-flight, stale turns are isolated automatically.
   Bloom<T> call<T>(
     Future<T> Function(BloomVia via) compute, {
     BloomGuard Function(BloomVia via)? guard,

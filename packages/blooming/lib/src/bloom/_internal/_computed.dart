@@ -43,7 +43,7 @@ base mixin _ComputedPullMixin<T> on _PullResolver<T>, _BloomViaEpochMixin {
           return state;
         }
       }
-      final result = _compute(_via);
+      final result = _resultViaTrack(_compute(_via));
       final current = _state;
       if (current case final _ValidBloomState<T> s) {
         s.update(result);
@@ -111,7 +111,7 @@ base class _ComputationBloom<T> extends _ComputedBloomBase<T> {
       if (!decision.isPass) {
         state = _EmptyBloomState<T>(decision.reason);
       } else {
-        final result = _computation.compute(_via);
+        final result = _resultViaTrack(_computation.compute(_via));
         final current = _state;
         if (current case final _ValidBloomState<T> s) {
           s.update(result);
@@ -198,7 +198,7 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
         return Bloom.empty(decision.reason);
       }
     }
-    final future = _computeFuture(via);
+    final future = _deltaTerminal._resultViaTrack(_computeFuture(via));
     return _FutureBloomBridge<T>(
       future,
       initialFactory: _initialFactory,
@@ -248,7 +248,7 @@ final class _StreamComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
         return Bloom.empty(decision.reason);
       }
     }
-    final stream = _computeStream(via);
+    final stream = _deltaTerminal._resultViaTrack(_computeStream(via));
     return _StreamBloomBridge.create<T>(
       stream,
       initialFactory: _initialFactory,

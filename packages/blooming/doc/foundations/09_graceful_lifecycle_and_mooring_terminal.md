@@ -239,6 +239,14 @@ If no subscriber reconnects before expiration:
 
 ---
 
+### 4.4 Harmony with On-Demand Asynchronous `BloomVia` Turn Isolation
+When a node mixing in `_BloomViaEpochMixin` (or owning a `RawViaTerminal`, such as `computed.future` or `computed.stream`) is configured with a `Graceful` policy (`Graceful.microtask` or `Graceful.period`), its asynchronous `BloomVia` tracking lifecycle cooperates seamlessly with the mooring window:
+
+1. **Active Retention During the Grace Window**: When the last consumer detaches, `_GracefulNodeMixin` intercepts `_deactivateOptimistically()` while `_graceHandle != null` (or keeps `_hasTargets == true` via `_MooringEdge`). Consequently, `_deactivate()` is **not** invoked during the grace window. Any in-flight asynchronous evaluation (`_viaTrack == _ViaTrack.async`) continues to track post-`await` dependencies normally; if a consumer remounts before expiration, the settled result and all dynamically discovered edges are immediately ready.
+2. **Stale Turn Isolation Upon True Expiration**: Only when the grace window expires without reconnection does `_deactivateOptimistically()` proceed to invoke `_deactivate()`. At that exact boundary, `_BloomViaEpochMixin._deactivate()` rotates `_via = BloomVia._(this)` and resets `_viaTrack = _ViaTrack.closed`, isolating any lingering in-flight asynchronous turn so late post-`await` `via(...)` calls after dormancy cannot attach zombie edges to the deactivated node.
+
+---
+
 ## 5. Scheduler Prioritization & Mixin Linearization
 
 In [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart), mixin linearization dictates the exact order of batch microtask passes:

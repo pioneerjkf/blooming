@@ -1,5 +1,6 @@
 ## 0.2.4
 
+- **Lint Rules**: Aligned `avoid_escaping_via` with on-demand asynchronous `BloomVia` tracking (`_ViaTrack.async`), permitting post-`await` `via()` calls directly inside owning reactive closures while continuing to flag out-of-band `Timer`, `Future.then`, event callbacks, and nested async helper functions.
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.4.
 
 ## 0.2.3

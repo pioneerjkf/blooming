@@ -173,7 +173,8 @@ final userId = blooming('user_0');
 final filter = blooming('all');
 final page = blooming(1);
 
-final userList = computed.future((via) async {
+// Direct Future return avoids allocating an extra async state-machine wrapper
+final userList = computed.future((via) {
   final u = via(userId.bloom);
   final f = via(filter.bloom);
   final p = via(page.bloom);

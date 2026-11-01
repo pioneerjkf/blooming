@@ -592,6 +592,312 @@ void main() {
         tFail.deactivate();
       });
     });
+
+    // =========================================================================
+    // 10. On-Demand Async BloomVia Isolation & Multi-Step Await / Yield Tracking
+    // =========================================================================
+    group('10. On-Demand Async BloomVia Isolation & Multi-Step Await / Yield Tracking', () {
+      test('10.1 Synchronous nodes reuse the exact same BloomVia instance (0 allocations) and ignore leaked async via calls', () async {
+        final mainSource = blooming(10);
+        final leakedSource = blooming(100);
+        final observedVias = <BloomVia>[];
+        var evalCount = 0;
+
+        final syncNode = computed<int>((via) {
+          evalCount++;
+          observedVias.add(via);
+          // Leaked async closure inside a synchronous computed callback
+          Future<void>(() async {
+            await Future<void>.delayed(Duration.zero);
+            via(leakedSource.bloom);
+          });
+          return via(mainSource.bloom) * 2;
+        });
+
+        final terminal = RawBloomTerminal(syncNode, onInvalidated: () {})..activate();
+        expect(terminal.data, 20);
+        expect(evalCount, 1);
+
+        // Wait for the leaked Future to execute `via(leakedSource.bloom)`
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        // Mutating leakedSource must NOT trigger re-evaluation of syncNode
+        leakedSource.set(200);
+        expect(terminal.data, 20);
+        expect(evalCount, 1);
+
+        // Mutating mainSource triggers Turn 2 and reuses the exact same `via` instance (identical)
+        mainSource.set(15);
+        expect(terminal.data, 30);
+        expect(evalCount, 2);
+        expect(identical(observedVias[0], observedVias[1]), isTrue);
+
+        terminal.deactivate();
+      });
+
+      test('10.2 computed.future((via) async) tracks sequential await dependencies and forwards Empty/Error without onError', () async {
+        final step1 = blooming('A');
+        final step2 = blooming.late<String>(reason: 'Step2Pending');
+        final step3 = blooming('C');
+        var onErrorCalled = false;
+
+        final node = computed.future<String>(
+          (via) async {
+            final a = via(step1.bloom);
+            await Future<void>.delayed(Duration.zero);
+            final b = via(step2.bloom);
+            await Future<void>.delayed(Duration.zero);
+            final c = via(step3.bloom);
+            return '$a:$b:$c';
+          },
+          onError: (e, [s]) {
+            onErrorCalled = true;
+            return 'ErrorFallback';
+          },
+        );
+
+        final terminal = RawBloomTerminal(node, onInvalidated: () {})..activate();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        // 1. Short-circuited at step2 with Empty('Step2Pending') without calling onError
+        expect(terminal.isEmpty, isTrue);
+        expect(terminal.emptyReason, 'Step2Pending');
+        expect(onErrorCalled, isFalse);
+
+        // 2. step2 transitions to Error -> forwarded without calling onError
+        step2.setError(StateError('Step2Failed'));
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(terminal.hasError, isTrue);
+        expect(terminal.error, isA<StateError>());
+        expect(onErrorCalled, isFalse);
+
+        // 3. step2 transitions to Valid -> completes all 3 sequential await steps
+        step2.set('B');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'A:B:C');
+        expect(onErrorCalled, isFalse);
+
+        // 4. Mutating step3 (registered after the 2nd await) triggers re-evaluation
+        step3.set('C2');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(terminal.data, 'A:B:C2');
+
+        terminal.deactivate();
+      });
+
+      test('10.3 Stale async turn waking up after newer turn starts ignores source edge registration', () async {
+        final mode = blooming('A');
+        final branchAOnly = blooming('a1');
+        final branchBOnly = blooming('b1');
+        final step1CompleterA = Completer<void>();
+
+        var evalCount = 0;
+
+        final node = computed.future<String>((via) async {
+          evalCount++;
+          final currentMode = via(mode.bloom);
+          if (currentMode == 'A') {
+            await step1CompleterA.future;
+            // By the time step1CompleterA completes, mode has already switched to 'B' (Turn 2)!
+            final _ = via.state(branchAOnly.bloom);
+            final a = via(branchAOnly.bloom);
+            return 'ModeA:$a';
+          } else {
+            await Future<void>.delayed(Duration.zero);
+            final b = via(branchBOnly.bloom);
+            return 'ModeB:$b';
+          }
+        });
+
+        final terminal = RawBloomTerminal(node, onInvalidated: () {})..activate();
+        await Future<void>.delayed(Duration.zero);
+        expect(evalCount, 1);
+
+        // Switch mode to 'B' while Turn 1 ('A') is suspended at step1CompleterA
+        mode.set('B');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(evalCount, 2);
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'ModeB:b1');
+
+        // Now complete Turn 1's suspended await (out-of-order completion!)
+        step1CompleterA.complete();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(terminal.data, 'ModeB:b1');
+
+        // `branchAOnly` was NOT registered onto Turn 2 -> mutating it does NOT trigger re-evaluation!
+        branchAOnly.set('a2');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(evalCount, 2);
+
+        // `branchBOnly` IS registered -> mutating it triggers Turn 3!
+        branchBOnly.set('b2');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(evalCount, 3);
+        expect(terminal.data, 'ModeB:b2');
+
+        terminal.deactivate();
+      });
+
+      test('10.4 computed.stream((via) async*) tracks dependencies across sequential yield and yield*', () async {
+        final channel = blooming.late<String>(reason: 'NoChannel');
+        final middle = blooming('m1');
+        final suffix = blooming('v1');
+        var onErrorCalled = false;
+
+        final streamNode = computed.stream<String>(
+          (via) async* {
+            final ch = via(channel.bloom);
+            yield 'init:$ch';
+            final m = via(middle.bloom);
+            yield* Stream<String>.fromIterable(['mid1:$ch:$m', 'mid2:$ch:$m']);
+            final s = via(suffix.bloom);
+            yield 'live:$ch:$m:$s';
+          },
+          cancelOnError: true,
+          onError: (e, [s]) {
+            onErrorCalled = true;
+            return 'StreamFallback';
+          },
+        );
+
+        final terminal = RawBloomTerminal(streamNode, onInvalidated: () {})..activate();
+        await Future<void>.delayed(Duration.zero);
+
+        // 1. Upstream is Empty('NoChannel') -> forwarded without calling onError
+        expect(terminal.isEmpty, isTrue);
+        expect(terminal.emptyReason, 'NoChannel');
+        expect(onErrorCalled, isFalse);
+
+        // 2. Upstream transitions to Valid -> yields through yield and yield* to final yield
+        channel.set('general');
+        for (var i = 0; i < 5; i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'live:general:m1:v1');
+
+        // 3. Post-yield* dependency `suffix` mutates -> triggers re-subscription
+        suffix.set('v2');
+        for (var i = 0; i < 5; i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+        expect(terminal.data, 'live:general:m1:v2');
+
+        terminal.deactivate();
+      });
+
+      test('10.5 Effect.via((via) async) tracks post-await dependencies on latest turn and ignores stale turns', () async {
+        final mode = blooming('A');
+        final branchA = blooming('a1');
+        final branchB = blooming('b1');
+        final completerA = Completer<void>();
+        final log = <String>[];
+
+        final dispose = effect((BloomVia via) async {
+          final m = via(mode.bloom);
+          if (m == 'A') {
+            await completerA.future;
+            final a = via(branchA.bloom);
+            log.add('A:$a');
+          } else {
+            await Future<void>.delayed(Duration.zero);
+            final b = via(branchB.bloom);
+            log.add('B:$b');
+          }
+        });
+
+        await Future<void>.delayed(Duration.zero);
+
+        // Switch mode to 'B' while Turn 1 ('A') is still awaiting completerA
+        mode.set('B');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(log, ['B:b1']);
+
+        // Now complete Turn 1's completerA -> branchA must NOT be registered as a dependency!
+        completerA.complete();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        log.clear();
+        branchA.set('a2');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(log, isEmpty);
+
+        // Mutating branchB (registered after await in Turn 2) triggers Turn 3!
+        branchB.set('b2');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(log, ['B:b2']);
+
+        dispose();
+      });
+
+      test('10.6 Deactivating node during await isolates in-flight async via across dormant and reactivated states', () async {
+        final trigger = blooming(1);
+        final lateDep = blooming(100);
+        final completer = Completer<void>();
+        var evalCount = 0;
+
+        final node = computed.future<int>((via) async {
+          evalCount++;
+          final t = via(trigger.bloom);
+          if (t == 1) {
+            await completer.future;
+            return t + via(lateDep.bloom);
+          }
+          return t * 10;
+        });
+
+        final terminal = RawBloomTerminal(node, onInvalidated: () {})..activate();
+        expect(terminal.isEmpty, isTrue);
+        expect(evalCount, 1);
+
+        // Deactivate while Turn 1 is suspended at `await completer.future`
+        terminal.deactivate();
+
+        // Complete Turn 1 while node is inactive -> `via(lateDep.bloom)` must be ignored!
+        completer.complete();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        // Reactivate with trigger = 2
+        trigger.set(2);
+        terminal.activate();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        expect(terminal.data, 20);
+        expect(evalCount, 2);
+
+        // Mutating lateDep must NOT trigger re-evaluation because Turn 1's post-deactivate via was isolated
+        lateDep.set(200);
+        await Future<void>.delayed(Duration.zero);
+        expect(evalCount, 2);
+
+        terminal.deactivate();
+      });
+    });
   });
 }
 

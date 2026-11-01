@@ -44,6 +44,15 @@ base class _DeLorean<T> {
         },
         onError: (Object error, StackTrace stackTrace) {
           try {
+            if (error is _ViaShortCircuit) {
+              final state = error.state;
+              if (state is _EmptyBloomState) {
+                _controller.empty(state.emptyReason);
+              } else if (state is _ErrorBloomState) {
+                _controller.setError(state.error, state.stackTrace);
+              }
+              return;
+            }
             final onError = _onError;
             if (onError != null) {
               try {
@@ -230,6 +239,16 @@ base class _PragueVltava<T> {
         },
         onError: (Object error, StackTrace stackTrace) {
           try {
+            if (error is _ViaShortCircuit) {
+              final state = error.state;
+              if (state is _EmptyBloomState) {
+                _controller.empty(state.emptyReason);
+              } else if (state is _ErrorBloomState) {
+                _controller.setError(state.error, state.stackTrace);
+              }
+              if (cancelOnError == true) _unsubscribe();
+              return;
+            }
             if (onError != null) {
               try {
                 _controller.set(onError!.call(error, stackTrace));

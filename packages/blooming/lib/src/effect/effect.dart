@@ -245,8 +245,11 @@ sealed class Effect extends Tether {
   ///
   /// * Re-runs [action] whenever any dynamically observed node mutates.
   /// * Automatically prunes stale dependencies and registers new dependencies during re-evaluation (1-pass epoch diffing).
+  /// * Supports both synchronous and asynchronous (`async`) [action] closures: when [action] returns a
+  ///   [Future], dependencies accessed via `via(node)` after `await` points are tracked for the latest
+  ///   active turn while superseded turns are isolated automatically.
   /// * If [guard] is provided, it is evaluated with [BloomVia] before each run; returning `false` skips execution.
-  /// * If [onUncaughtError] is provided, it is invoked when an uncaught exception occurs.
+  /// * If [onUncaughtError] is provided, it is invoked when an uncaught synchronous or asynchronous exception occurs.
   ///
   /// * [action]: The dynamic tracking callback receiving [BloomVia].
   /// * [guard]: Optional boolean predicate evaluated with [BloomVia] prior to each execution.

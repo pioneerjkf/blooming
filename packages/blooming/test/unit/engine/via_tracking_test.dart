@@ -12,24 +12,24 @@ void main() {
       final a = blooming(10);
       final b = blooming(20);
 
-      var viaCalls = 0;
+      late final int valA;
+      late final BloomState<int> stateB;
 
-      final testVia = _DirectTestVia(
-        onCall: (node) {
-          viaCalls++;
-          return node;
+      final terminal = RawViaTerminal(
+        (via) {
+          // 1.1 Direct value extraction with via(a)
+          valA = via(a.bloom);
+          // 1.2 State inspection with via.state(b)
+          stateB = via.state(b.bloom);
+          return valA + stateB.data;
         },
-      );
+        onInvalidated: () {},
+      )..activate();
 
-      // 1.1 Direct value extraction with via(a)
-      final valA = testVia(a.bloom);
+      expect(terminal.evaluate(), 30);
       expect(valA, 10);
-      expect(viaCalls, 1);
-
-      // 1.2 State inspection with via.state(b)
-      final stateB = testVia.state(b.bloom);
       expect(stateB.data, 20);
-      expect(viaCalls, 2);
+      terminal.deactivate();
     });
 
     test('2. RawViaTerminal multi-dependency tracking and push-dirty invalidation', () {
@@ -665,25 +665,4 @@ void main() {
       terminal.deactivate();
     });
   });
-}
-
-final class _DirectTestVia implements BloomVia {
-  _DirectTestVia({required this.onCall});
-
-  final Bloom<dynamic> Function(Bloom<dynamic> bloom) onCall;
-
-  @override
-  T call<T>(Bloom<T> bloom) {
-    onCall(bloom);
-    return untracked(bloom);
-  }
-
-  @override
-  BloomState<T> state<T>(Bloom<T> bloom) {
-    onCall(bloom);
-    return untracked.state(bloom);
-  }
-
-  @override
-  T tether<T extends Tether>(T tether) => tether;
 }

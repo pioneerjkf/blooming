@@ -784,8 +784,9 @@ abstract final class BloomTypeChecker {
     final target = node.target;
     if (target != null) {
       final targetSource = target.toSource();
-      // Only accept 'run' if called on Timer (e.g. Timer.run or async.Timer.run)
-      if (name == 'run' && targetSource.endsWith('Timer')) {
+      //Only accept 'run' or 'periodic' if called on Timer (e.g. Timer.run, Timer.periodic)
+      if ((name == 'run' || name == 'periodic') &&
+          targetSource.endsWith('Timer')) {
         return true;
       }
       // Delayed invocations: Future.delayed or Timer.delayed

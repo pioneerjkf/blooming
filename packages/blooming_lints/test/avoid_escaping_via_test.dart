@@ -10,7 +10,8 @@ import 'package:blooming_lints/blooming_lints.dart';
 
 void main() {
   group('AvoidEscapingVia AST detection', () {
-    test('detects via() called after await in async closure', () {
+    test('permits via() called after await in owning async reactive closure',
+        () {
       final unit = parseString(content: '''
 void setup() {
   final userProfile = computed.future((via) async {
@@ -28,10 +29,34 @@ void setup() {
       }));
 
       expect(viaCalls.length, equals(2));
-      // First via(userId) is before await -> safe
+      // Both pre-await and post-await via() calls in the owning closure are tracked via _ViaTrack.async
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isFalse);
-      // Second via(authToken) is after await -> escaping!
-      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isTrue);
+      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
+    });
+
+    test('detects via() called after await inside nested async helper function',
+        () {
+      final unit = parseString(content: '''
+void setup() {
+  final task = computed((via) {
+    Future<void> nestedAsync() async {
+      await Future.delayed(Duration(milliseconds: 10));
+      print(via(counter));
+    }
+    nestedAsync();
+    return via(counter);
+  });
+}
+''').unit;
+
+      final viaCalls = <MethodInvocation>[];
+      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
+        viaCalls.add(node);
+      }));
+
+      expect(viaCalls.length, equals(2));
+      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isTrue);
+      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
     });
 
     test('detects via() inside event callback parameter', () {

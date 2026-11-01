@@ -4,26 +4,27 @@
 
 part of '../../../blooming_lints.dart';
 
-/// A lint rule prohibiting calling `BloomVia` across asynchronous gaps (after `await`),
-/// inside asynchronous dispatchers, or deferred within UI event callbacks.
+/// A lint rule prohibiting escaping `BloomVia` into asynchronous timers/dispatchers,
+/// deferred event callbacks, or nested asynchronous helper closures across `await` gaps.
 ///
 /// ### Rationale:
-/// `BloomVia` (`via(node)`) represents an explicit, ephemeral dependency tracking token valid
-/// exclusively during the synchronous evaluation pass of a reactive scope (`computed`, `BloomWidget`, etc.).
-///
-/// Calling `via(...)` after an `await` statement, inside async dispatchers (`Timer.run`, `scheduleMicrotask`),
-/// or deferred inside event callbacks (`onPressed`) causes:
-/// 1. **Temporal Inconsistency (Tearing)**: Reading newer state mixed with stale pre-await data.
-/// 2. **Broken Epoch Sweeping**: Attempting to inject dependencies into an already-closed evaluation epoch.
-/// 3. **Memory Leaks and Race Conditions**: Conflicting edges between overlapping async evaluations.
+/// `BloomVia` (`via(node)`) is bound to the evaluation turn of its owning reactive scope
+/// (`computed`, `computed.future`, `computed.stream`, `Effect.via`, `BloomWidget`, etc.).
+/// While direct `async` / `async*` reactive closures support post-`await` and post-`yield`
+/// tracking within the same turn via on-demand asynchronous tracking (`_ViaTrack.async`),
+/// escaping `via(...)` into out-of-band timers (`Timer.run`, `Timer.periodic`, `scheduleMicrotask`,
+/// `Future.delayed`, `future.then`), UI event callbacks (`onPressed`), or unawaited nested
+/// `async` helper functions causes:
+/// 1. **Dropped Dependencies**: Out-of-band callbacks execute after the evaluation epoch has closed.
+/// 2. **Temporal Inconsistency & Race Conditions**: Uncoordinated out-of-band reads bypass turn isolation.
 ///
 /// **BAD:**
 /// ```dart
-/// final userProfile = computed.future((via) async {
-///   final id = via(userIdBloom);
-///   final profile = await http.get('/user/$id');
-///   final token = via(authTokenBloom); // [Anti-Pattern] Called across async gap!
-///   return filter(profile, token);
+/// final delayedTask = computed((via) {
+///   Timer.run(() {
+///     print(via(counterBloom)); // [Anti-Pattern] Escaped into async timer dispatcher!
+///   });
+///   return via(counterBloom);
 /// });
 ///
 /// class MyWidget extends BloomWidget {
@@ -38,15 +39,15 @@ part of '../../../blooming_lints.dart';
 ///
 /// **GOOD:**
 /// ```dart
-/// // Approach 1: Extract all dependencies synchronously before the async gap
+/// // Approach 1: Track dependencies directly inside the reactive closure (including after await in async scopes)
 /// final userProfile = computed.future((via) async {
 ///   final id = via(userIdBloom);
-///   final token = via(authTokenBloom); // [Recommended] Synchronously tracked before await
 ///   final profile = await http.get('/user/$id');
+///   final token = via(authTokenBloom); // [Supported] Tracked & turn-isolated by _ViaTrack.async
 ///   return filter(profile, token);
 /// });
 ///
-/// // Approach 2: Use zero-overhead raw reads (untracked) inside event callbacks
+/// // Approach 2: Use zero-overhead raw reads (untracked) inside event or timer callbacks
 /// class MyWidget extends BloomWidget {
 ///   Widget build(BuildContext context, BloomVia via) {
 ///     return ElevatedButton(
@@ -62,9 +63,9 @@ class AvoidEscapingVia extends DartLintRule {
   static const _code = LintCode(
     name: 'avoid_escaping_via',
     problemMessage:
-        'Avoid calling via() across asynchronous gaps (after await) or deferred inside event/async callbacks.',
+        'Avoid escaping via() into event callbacks, async timer/Future callbacks, or nested async functions across await.',
     correctionMessage:
-        'Extract all reactive dependencies via(node) synchronously before await, or use untracked(node) reads inside event callbacks.',
+        'Call via(node) directly within the owning reactive scope, or use untracked(node) inside deferred event/timer callbacks.',
     errorSeverity: DiagnosticSeverity.ERROR,
   );
 
@@ -91,8 +92,8 @@ class AvoidEscapingVia extends DartLintRule {
     });
   }
 
-  /// Checks if [node] is called across an asynchronous gap, inside an async timer/dispatcher,
-  /// or deferred inside an event handler.
+  /// Checks if [node] is called inside an async timer/dispatcher, deferred inside an event handler,
+  /// or across an `await` gap inside a nested function that does not own the `via` parameter.
   static bool isEscapingViaInvocation(AstNode node) {
     AstNode? current = node.parent;
 
@@ -105,23 +106,46 @@ class AvoidEscapingVia extends DartLintRule {
         }
       }
 
-      // 2. Check if inside async dispatchers (e.g. Timer.run, scheduleMicrotask)
+      // 2. Check if inside async dispatchers or Timer constructors
+      // (e.g. Timer.run, Timer.periodic, scheduleMicrotask, Future.delayed, future.then)
       if (current is MethodInvocation) {
         if (BloomTypeChecker.isAsyncOrTimerInvocation(current)) {
           return true;
         }
       }
+      if (current is InstanceCreationExpression) {
+        final typeName = current.constructorName.type.name.lexeme;
+        if (typeName == 'Timer') {
+          return true;
+        }
+      }
 
-      // 3. Check if inside an asynchronous function body, after an await expression
+      // 3. Check if inside an asynchronous function body, after an await expression.
+      // Direct reactive closures that declare `via` (e.g., `(via) async { ... }`) are tracked
+      // by `_resultViaTrack` (`_ViaTrack.async`), whereas nested helper functions/closures
+      // that do not declare `via` escape the synchronous turn if they suspend at `await`.
       if (current is FunctionBody) {
-        if (current.isAsynchronous) {
+        final parent = current.parent;
+        final isOwningViaClosure = parent is FunctionExpression &&
+            (parent.parameters?.parameters
+                    .any(BloomTypeChecker.isBloomViaParameter) ??
+                false);
+
+        if (current.isAsynchronous && !isOwningViaClosure) {
           if (_isPrecededByAwait(current, node)) {
             return true;
           }
         }
       }
 
-      // Stop once we escape beyond the method declaration or top-level function
+      // Stop once we reach the owning BloomVia closure or method declaration
+      if (current is FunctionExpression) {
+        final params = current.parameters?.parameters;
+        if (params != null &&
+            params.any(BloomTypeChecker.isBloomViaParameter)) {
+          break;
+        }
+      }
       if (current is MethodDeclaration || current is FunctionDeclaration) {
         break;
       }

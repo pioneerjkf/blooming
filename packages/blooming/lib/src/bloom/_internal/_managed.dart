@@ -60,7 +60,7 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
       final currentState = _state;
       if (currentState != null && currentState.hasData && _updateResource != null) {
         final current = currentState.data;
-        final next = _updateResource.call(_via, current);
+        final next = _resultViaTrack(_updateResource.call(_via, current));
         if (!identical(current, next)) {
           _version++;
           try {
@@ -78,7 +78,7 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
       } else {
         _disposeCurrent();
         _version++;
-        final res = _createResource.call(_via);
+        final res = _resultViaTrack(_createResource.call(_via));
         final current = _state;
         if (current case final _ValidBloomState<T> s) {
           s.update(res);

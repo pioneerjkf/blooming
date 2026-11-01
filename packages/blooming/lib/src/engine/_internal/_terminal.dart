@@ -145,7 +145,7 @@ base mixin _ViaTerminalMixin<T> on _Terminal, _NaryEdgeMixin<_Node>, _BloomViaEp
     final currentEpoch = _beginEpoch();
     var succeeded = true;
     try {
-      return _evaluator(_via);
+      return _resultViaTrack(_evaluator(_via));
     } on _ViaShortCircuit {
       succeeded = true;
       rethrow;

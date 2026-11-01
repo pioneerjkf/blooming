@@ -178,7 +178,19 @@ When an asynchronous query branch transitions from A to B while $F_A$ is still i
 
 ---
 
-### 2.4 Formal Theorem: Complete Async Race Immunity
+### 2.4 Control-Plane Asynchronous `BloomVia` Turn Isolation and Livelock Immunity
+When `computed.future((via) async { ... })` or `computed.stream((via) async* { ... })` suspends across an `await` or `yield` boundary inside its control-plane callback (`_deltaTerminal`), two concurrent hazards can arise if an upstream parameter mutates while the prior evaluation turn $T_1$ is still in flight:
+
+1. **Stale Post-`await` Dependency Registration**: If $T_1$ resumes after $T_2$ has already begun and registers late dependencies via `via(lateBloom)`, $T_1$ could pollute $T_2$'s active dependency set.
+2. **Zombie-Edge Invalidation Livelock**: If edges observed exclusively by $T_1$ after an `await` were retained across the synchronous prefix of $T_2$ (waiting for $T_2$'s own `Future` to settle before sweeping), any mutation to those obsolete edges while $T_2$ is in flight would continuously re-invalidate `_deltaTerminal` and abort $T_2$ before it can ever settle.
+
+`_BloomViaEpochMixin` eliminates both hazards deterministically:
+* **On-Demand Instance Rotation (`_ViaTrack.async`)**: When $T_1$ returns a `Future` or `Stream`, `_resultViaTrack` transitions `_viaTrack` to `_ViaTrack.async`, keeping `_via` open across asynchronous suspensions for $T_1$. The moment $T_2$ starts (`_beginEpoch()`), seeing `_viaTrack == _ViaTrack.async` allocates a fresh `BloomVia._(this)` for $T_2$. Any late post-`await` call from $T_1$'s captured `via` fails the `!identical(_via, via)` identity guard in `_trackDependency` and becomes a topological no-op (returning the latest snapshot without mutating edges).
+* **Immediate Synchronous Prefix Sweeping**: At the end of $T_2$'s synchronous execution prefix (upon its first `await` or return), `_endEpoch` immediately runs `_sweepObsoleteEdges(currentEpoch)`. Any edge from $T_1$ (including post-`await` edges) not re-observed during $T_2$'s synchronous prefix is severed before $T_2$'s `Future` awaits network I/O, guaranteeing 100% immunity against zombie-edge invalidation livelock. Any new dependency discovered by $T_2$ after an `await` is dynamically attached on the fly with `_seenEpoch = currentEpoch`.
+
+---
+
+### 2.5 Formal Theorem: Complete Async Race Immunity
 > **Theorem**: When control plane parameters transition from state $S_k$ to $S_{k+1}$ at time $t_k$, the completion of asynchronous operation $F_k$ initiated under state $S_k$ can exert exactly $0\%$ influence on the observed state of downstream consumer $C$ at any time $t > t_k$.
 >
 > **Proof**:

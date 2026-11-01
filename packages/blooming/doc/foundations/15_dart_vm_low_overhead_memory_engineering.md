@@ -330,14 +330,18 @@ The Bloom Framework resolves dynamic branch tracking in a **single linear pass w
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### The $O(1)$ Sequential Cursor Fast-Path
+#### The $O(1)$ Sequential Cursor Fast-Path & Single Concrete `final class BloomVia`
+[`BloomVia`](../../lib/src/engine/via.dart) is declared as a single concrete `final class BloomVia` with a library-private constructor `BloomVia._(this._node)`, eliminating interface indirection and enabling unconditional static devirtualization and inlining at every `via(bloom)` call site. Furthermore, `_BloomViaEpochMixin` reuses the identical `_via` instance across all synchronous evaluations (`0` bytes allocated), only allocating a fresh `BloomVia._(this)` on demand when a previous turn returned a `Future` or `Stream` (`_ViaTrack.async`) to isolate superseded asynchronous turns.
+
 In steady-state derivation executions where branch conditions remain stable across frames (the 99% common case), dependency access ordering is identical. The `_cursor` pointer verifies the expected node in a **single pointer identity comparison**:
 
 ```dart
 // packages/blooming/lib/src/engine/_internal/_via.dart
 @pragma('vm:prefer-inline')
-void _trackDependency(_Node source) {
-  // 1. Fast-path: Check expected cursor position (O(1) sequential match)
+void _trackDependency(BloomVia via, _Node source) {
+  if (_viaTrack == _ViaTrack.closed || !identical(_via, via)) return;
+
+  // 1. Fast-path: Check expected cursor position (O(1) sequential match).
   final cursor = _cursor;
   if (cursor != null && identical(cursor._source, source)) {
     cursor._seenEpoch = _epoch;
@@ -351,23 +355,27 @@ void _trackDependency(_Node source) {
 // 2. Slow-path: Out-of-line fallback preserving inlining budget & I-Cache locality
 @pragma('vm:never-inline')
 void _trackDependencySlow(_Node source, int currentEpoch, _Edge? cursor) {
-  final matchedEdge = _findSourceEdge(source);
-  if (matchedEdge != null) {
-    if (matchedEdge._seenEpoch != currentEpoch) {
+  var edge = _findSourceEdge(source);
+  if (edge != null) {
+    if (edge._seenEpoch != currentEpoch) {
       if (cursor != null) {
-        _moveSourceEdgeBefore(matchedEdge, cursor);
+        _moveSourceEdgeBefore(edge, cursor);
       }
-      matchedEdge._seenEpoch = currentEpoch;
+      edge._seenEpoch = currentEpoch;
     }
   } else {
-    final newEdge = _lifecycle.isActive
+    edge = _lifecycle.isActive
         ? (cursor != null
             ? _addAndAttachSourceEdgeBefore(source, cursor)
             : _addAndAttachSourceEdge(source))
         : (cursor != null
             ? _addSourceEdgeBefore(source, cursor)
             : _addSourceEdge(source));
-    newEdge._seenEpoch = currentEpoch;
+    edge._seenEpoch = currentEpoch;
+  }
+  if (_viaTrack == _ViaTrack.async) {
+    source._resolve();
+    edge._pulledVersion = source._version;
   }
 }
 ```

@@ -668,16 +668,33 @@ Effect.scoped([roomId.bloom], (scope) async {
 Bloom seamlessly bridges asynchronous primitives and provides hot-swappable 1-tier relay sockets for seamless runtime rewiring.
 
 ```dart
-// 1. computed.future with SWR caching & discrete refresh triggers
+// 1. computed.future: Direct Return (Single Async Call)
+// Directly returning the Future avoids allocating an extra async state machine wrapper.
 final selectedUserId = blooming('user_123');
 final refreshTrigger = blooming.signal();
 
-final userProfileBloom = computed.future((via) async {
+final userProfileBloom = computed.future((via) {
   via(refreshTrigger.bloom);
-  return await apiService.fetchUser(via(selectedUserId.bloom));
+  return apiService.fetchUser(via(selectedUserId.bloom));
 });
 
-// 2. computed.stream with automatic subscription lifecycle management
+// 2. computed.future: Multi-Step async / await with Post-await via() Tracking
+// Unlike ambient-tracking frameworks, BloomVia remains active across `await` and `yield`
+// boundaries within the same evaluation turn. You can freely call `via()` after `await`
+// for conditional dynamic dependencies without hoisting reads to the top.
+// (If a new turn starts or the node deactivates while in flight, the previous turn's
+//  `via` is automatically isolated so stale post-`await` reads never corrupt the graph.)
+final fallbackId = blooming('guest_001');
+final resolvedUserBloom = computed.future((via) async {
+  final user = await apiService.fetchUser(via(selectedUserId.bloom));
+  if (user.isGuest) {
+    // Post-await conditional dependency: tracked ONLY when user.isGuest is true!
+    return await apiService.fetchProfile(via(fallbackId.bloom));
+  }
+  return user;
+});
+
+// 3. computed.stream with automatic subscription lifecycle management
 final activeSymbol = blooming('AAPL');
 final liveStockPricesBloom = computed.stream((via) {
   final symbol = via(activeSymbol.bloom);

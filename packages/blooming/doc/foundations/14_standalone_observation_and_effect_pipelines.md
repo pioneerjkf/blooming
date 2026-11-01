@@ -223,6 +223,15 @@ void onCleanup(void Function() cleanup) {
 
 ---
 
+### 4.4 On-Demand Asynchronous `Effect.via` and `Effect.scoped.via` Execution
+While `Effect.via` and `Effect.scoped.via` declare a `void` callback return type (`void Function(BloomVia via)` and `void Function(BloomVia via, EffectScope scope)`), Dart allows passing `async` closures (`Future<void> Function(...)`) to `void`-returning parameters. Both `_ViaEffectTerminal` and `_HandledViaEffectTerminal` natively support asynchronous effect turns:
+
+1. **Post-`await` Dependency Tracking (`_ViaTrack.async`)**: The terminal inspects the runtime return value via `_resultViaTrack(_action(...))`. When the action is an `async` function returning a `Future`, `_viaTrack` transitions to `_ViaTrack.async`, allowing `via(bloom)` calls executed after `await` points to dynamically attach upstream dependency edges for the current turn.
+2. **Turn Isolation Across Re-Triggers and Deactivation**: If an upstream dependency mutates and re-triggers the effect—or if the effect is stopped/deactivated—while a prior `async` action is still suspended at an `await`, `_beginEpoch()` (or `_deactivate()`) rotates `_via = BloomVia._(this)`. Late `via(bloom)` calls from the superseded turn are ignored via identity comparison (`!identical(_via, via)`).
+3. **Asynchronous Short-Circuit and Fault Routing**: The terminal attaches a completion handler to the returned `Future` that silently absorbs `_ViaShortCircuit` (when a post-`await` `via(bloom)` encounters an empty or error state) and routes any uncaught asynchronous errors to `_handleUncaughtError(error, stackTrace)`.
+
+---
+
 ## 5. Record-Based Declarative Extensions & Monomorphic Scopes
 
 The Bloom Framework leverages Dart 3 Record extensions (arity 2 through 5) and zero-cost extension types ([`extensions.dart`](../../lib/src/effect/extensions.dart)) to provide fluent observation syntax:

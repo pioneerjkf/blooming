@@ -312,12 +312,13 @@ final class _EffectGroupTerminal extends _Terminal with _NaryEdgeMixin<_Node> {
 base class _ViaEffectTerminal extends _Terminal
     with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ScheduledTerminalMixin {
   _ViaEffectTerminal(
-    this._action, {
+    void Function(BloomVia via) action, {
     bool Function(BloomVia via)? guard,
     super.onUncaughtError,
-  }) : _guard = guard;
+  })  : _action = action,
+        _guard = guard;
 
-  final void Function(BloomVia via) _action;
+  final Object? Function(BloomVia via) _action;
   final bool Function(BloomVia via)? _guard;
   bool _needsInitialEvaluation = true;
 
@@ -337,7 +338,16 @@ base class _ViaEffectTerminal extends _Terminal
       if (_guard case final guard?) {
         if (!guard(_via)) return;
       }
-      _action(_via);
+      final result = _resultViaTrack(_action(_via));
+      if (result is Future) {
+        result.then(
+          (_) {},
+          onError: (Object error, StackTrace stackTrace) {
+            if (error is _ViaShortCircuit) return;
+            _handleUncaughtError(error, stackTrace);
+          },
+        );
+      }
     } on _ViaShortCircuit {
       succeeded = true;
       return;
@@ -368,12 +378,13 @@ base class _ViaEffectTerminal extends _Terminal
 base class _HandledViaEffectTerminal extends _Terminal
     with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ScheduledTerminalMixin {
   _HandledViaEffectTerminal(
-    this._action, {
+    void Function(BloomVia via, EffectScope scope) action, {
     bool Function(BloomVia via)? guard,
     super.onUncaughtError,
-  }) : _guard = guard;
+  })  : _action = action,
+        _guard = guard;
 
-  final void Function(BloomVia via, EffectScope scope) _action;
+  final Object? Function(BloomVia via, EffectScope scope) _action;
   final bool Function(BloomVia via)? _guard;
   bool _needsInitialEvaluation = true;
   _EffectScopeImpl? _currentScope;
@@ -406,7 +417,16 @@ base class _HandledViaEffectTerminal extends _Terminal
       final scope = _EffectScopeImpl(this);
       _currentScope = scope;
 
-      _action(_via, scope);
+      final result = _resultViaTrack(_action(_via, scope));
+      if (result is Future) {
+        result.then(
+          (_) {},
+          onError: (Object error, StackTrace stackTrace) {
+            if (error is _ViaShortCircuit) return;
+            _handleUncaughtError(error, stackTrace);
+          },
+        );
+      }
     } on _ViaShortCircuit {
       succeeded = true;
       return;

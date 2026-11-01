@@ -1,5 +1,10 @@
 ## 0.2.4
 
+- **On-Demand Asynchronous `BloomVia` Tracking & Turn Isolation**:
+  - Enabled post-`await` and post-`yield` dependency tracking via `BloomVia` in `computed.future`, `computed.stream`, `Effect.via`, and `Effect.scoped.via` through `_ViaTrack` (`closed`, `sync`, `async`) and `_resultViaTrack`.
+  - Enforced strict turn isolation by rotating `BloomVia` instances on demand when a new epoch begins or the node deactivates while an asynchronous turn is in flight, preventing stale turns from mutating the active dependency graph.
+  - Propagated post-`await` / post-`yield` `_ViaShortCircuit` exceptions in `_DeLorean`, `_PragueVltava`, `_ViaEffectTerminal`, and `_HandledViaEffectTerminal`.
+  - Unified `BloomVia` into a single concrete `final class` and merged dependency-tracking dispatch to eliminate polymorphic call overhead on the synchronous hot path.
 - **Lazy Factory Bridges**: Introduced `FutureFactoryBloomExtension` and `StreamFactoryBloomExtension` providing `.toBloom()`, `.toBloomTuple()`, and `.toBloomTriple()`.
   - Defers execution of `Future<T> Function()` until `0 -> 1` subscriber activation and refetches on subsequent reactivations.
   - Safely manages single-subscription `Stream<T>` instances (`async*` generators) across `1 -> 0 -> 1` cycles by spawning a fresh stream on each activation.
