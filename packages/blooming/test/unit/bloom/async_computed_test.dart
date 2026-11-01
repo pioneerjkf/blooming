@@ -971,6 +971,25 @@ void main() {
 
         terminal.deactivate();
       });
+
+      test('11.4 Untyped or dynamic Future correctly unwraps without being mistaken as synchronous payload', () async {
+        final completer = Completer<dynamic>();
+        final node = computed.future<dynamic>((via) => completer.future);
+
+        final terminal = RawBloomTerminal(node, onInvalidated: () {})..activate();
+
+        // Must be in pending state initially (not constant Future object)
+        expect(terminal.hasData, isFalse);
+
+        completer.complete('untyped_resolved');
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(terminal.hasData, isTrue);
+        expect(terminal.data, 'untyped_resolved');
+
+        terminal.deactivate();
+      });
     });
   });
 }

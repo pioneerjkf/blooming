@@ -199,12 +199,12 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
       }
     }
     final result = _deltaTerminal._resultViaTrack(_compute(via));
-    if (result is! Future<T>) {
+    if (result is! Future) {
       // Synchronous Fast-Path: Immediately couple to a constant node in 0ms!
       return Bloom.constant(result);
     }
     return _FutureBloomBridge<T>(
-      result,
+      result is Future<T> ? result : (result as Future).then((v) => v as T),
       initialFactory: _initialFactory,
       onError: _onError,
     ).bloom;
