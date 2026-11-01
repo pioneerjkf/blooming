@@ -3,6 +3,7 @@
 // Grammar: see blooming_lints/test/harness/lint_harness.dart
 // ignore_for_file: avoid_print
 
+import 'dart:async' as dart_async;
 import 'package:blooming/blooming.dart';
 
 final count = blooming(0).bloom;
@@ -21,6 +22,29 @@ int computedLocally(int Function(Object via) body) => body(Object());
 final userComputed = computedLocally((via) => untracked(count));
 
 // #case regression/good/user-defined-computed-with-async
-Future<int> computed(Future<int> Function(Object via) body) => body(Object());
+dart_async.Future<int> computed(
+  dart_async.Future<int> Function(Object via) body,
+) =>
+    body(Object());
 
 final userComputedAsync = computed((via) async => untracked(count));
+
+// #case regression/good/user-defined-future-type-in-computed
+class Future<T> {
+  const Future(this.value);
+  final T value;
+}
+
+final userLocalFuture = Bloom.computed(
+  (via) => Future<int>(via(count)),
+);
+
+// #case regression/good/user-defined-stream-type-in-computed
+class Stream<T> {
+  const Stream(this.value);
+  final T value;
+}
+
+final userLocalStream = Bloom.computed(
+  (via) => Stream<int>(via(count)),
+);

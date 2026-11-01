@@ -844,33 +844,44 @@ abstract final class BloomTypeChecker {
   // 9. Asynchronous Computation Classifiers
   // ===========================================================================
 
-  /// Returns `true` if [type] is `Future`, `FutureOr`, or implements `Future`.
+  static bool _isDartAsyncLibrary(LibraryElement? lib) {
+    if (lib == null) return false;
+    final id = lib.identifier;
+    return id == 'dart:async' ||
+        id.startsWith('dart:async/') ||
+        lib.name == 'dart.async';
+  }
+
+  /// Returns `true` if [type] is `Future`, `FutureOr`, or implements `Future` from `dart:async`.
   static bool isFutureType(DartType? type) {
     if (type == null) return false;
     final element = type.element;
     final name = element?.name;
-    if (name == 'Future' || name == 'FutureOr') {
+    if ((name == 'Future' || name == 'FutureOr') &&
+        _isDartAsyncLibrary(element?.library)) {
       return true;
     }
     if (type is InterfaceType) {
       return type.allSupertypes.any((superType) {
-        return superType.element.name == 'Future';
+        return superType.element.name == 'Future' &&
+            _isDartAsyncLibrary(superType.element.library);
       });
     }
     return false;
   }
 
-  /// Returns `true` if [type] is `Stream` (or implements `Stream` when [exactOnly] is `false`).
+  /// Returns `true` if [type] is `Stream` (or implements `Stream` when [exactOnly] is `false`) from `dart:async`.
   static bool isStreamType(DartType? type, {bool exactOnly = false}) {
     if (type == null) return false;
     final element = type.element;
     final name = element?.name;
-    if (name == 'Stream') {
+    if (name == 'Stream' && _isDartAsyncLibrary(element?.library)) {
       return true;
     }
     if (!exactOnly && type is InterfaceType) {
       return type.allSupertypes.any((superType) {
-        return superType.element.name == 'Stream';
+        return superType.element.name == 'Stream' &&
+            _isDartAsyncLibrary(superType.element.library);
       });
     }
     return false;

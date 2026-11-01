@@ -32,11 +32,12 @@ void main() {
     });
 
     test('ConvertToComputedAsyncFix AST recognition for async closure', () {
-      final unit = parseString(content: '''
+      const source = '''
 void test() {
   final res = computed((via) async => 42);
 }
-''').unit;
+''';
+      final unit = parseString(content: source).unit;
 
       MethodInvocation? foundInvocation;
       unit.accept(_ComputedInvocationFinder((node) {
@@ -50,16 +51,34 @@ void test() {
         BloomTypeChecker.classifyAsyncComputation(computeArg),
         equals(AsyncComputationKind.future),
       );
+
+      final fix =
+          ConvertToComputedAsyncFix.computeReplacement(foundInvocation!);
+      expect(fix, isNotNull);
+      expect(fix!.message, equals('Convert to computed.future'));
+      expect(fix.replacement, equals('computed.future'));
+
+      final node = fix.targetNode;
+      final transformed = source.replaceRange(
+        node.offset,
+        node.offset + node.length,
+        fix.replacement,
+      );
+      expect(
+        transformed,
+        contains('final res = computed.future((via) async => 42);'),
+      );
     });
 
     test('ConvertToComputedAsyncFix AST recognition for async* generator', () {
-      final unit = parseString(content: '''
+      const source = '''
 void test() {
   final res = computed((via) async* {
     yield 42;
   });
 }
-''').unit;
+''';
+      final unit = parseString(content: source).unit;
 
       MethodInvocation? foundInvocation;
       unit.accept(_ComputedInvocationFinder((node) {
@@ -72,6 +91,23 @@ void test() {
       expect(
         BloomTypeChecker.classifyAsyncComputation(computeArg),
         equals(AsyncComputationKind.stream),
+      );
+
+      final fix =
+          ConvertToComputedAsyncFix.computeReplacement(foundInvocation!);
+      expect(fix, isNotNull);
+      expect(fix!.message, equals('Convert to computed.stream'));
+      expect(fix.replacement, equals('computed.stream'));
+
+      final node = fix.targetNode;
+      final transformed = source.replaceRange(
+        node.offset,
+        node.offset + node.length,
+        fix.replacement,
+      );
+      expect(
+        transformed,
+        contains('final res = computed.stream((via) async* {'),
       );
     });
 

@@ -17,6 +17,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/error.dart' hide LintCode;
 import 'package:analyzer/error/listener.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:meta/meta.dart';
 
 // Util parts
 part 'src/util/flutter_ast_utils.dart';

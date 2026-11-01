@@ -71,6 +71,9 @@ final class ManagedFunctor {
   /// * Returns a reactive [Bloom<T>] managing the synchronous lifecycle of the underlying resource.
   ///
   /// **Warning (Anti-Pattern Prevention):**
+  /// - Do NOT pass asynchronous closures (`async`) or return `Future`/`Stream` in `create` or `update`.
+  ///   Lifecycle allocation and disposal must remain strictly synchronous to prevent zombie resource leaks.
+  ///   For asynchronous readiness, compose with `computed.future(...)` or `computed.stream(...)`.
   /// - Do NOT instantiate `managed(...)` inside `computed()` closures,
   ///   as creating new resource nodes on each evaluation will continuously allocate and orphan lifecycle instances.
   /// - Do NOT manually call `dispose()` on the managed instance directly; let the reactive graph automatically trigger [dispose].
