@@ -116,7 +116,7 @@ class OrderBookPipeline {
     _stockSnapshots[initialSnapshot.ticker] = initialSnapshot;
 
     // Initialize Order Book Snapshot Controller
-    _snapshotController = BloomController<OrderBookSnapshot>(initialSnapshot);
+    _snapshotController = blooming<OrderBookSnapshot>(initialSnapshot);
 
     // Initialize Rolling Price History (40 slots)
     _priceHistory.addAll(List.generate(40, (i) {
@@ -124,36 +124,36 @@ class OrderBookPipeline {
     }));
     _stockPriceHistories[initialSnapshot.ticker] = List.from(_priceHistory);
     _priceHistoryController =
-        RawBloomController<List<double>>(UnmodifiableListView(_priceHistory));
+        blooming.raw<List<double>>(UnmodifiableListView(_priceHistory));
 
     // Initialize 25 Ask & 25 Bid Fine-Grained Reactive Row Controllers
     _askControllers = List.generate(25, (i) {
-      return BloomController<OrderBookRowData>(initialSnapshot.asks[i]);
+      return blooming<OrderBookRowData>(initialSnapshot.asks[i]);
     });
     _bidControllers = List.generate(25, (i) {
-      return BloomController<OrderBookRowData>(initialSnapshot.bids[i]);
+      return blooming<OrderBookRowData>(initialSnapshot.bids[i]);
     });
 
     // Initialize Benchmark Engine Control & Metrics Controllers
-    _targetTpsController = BloomController<int>(100);
-    _isSimulatingController = BloomController<bool>(false);
-    _actualTpsController = BloomController<int>(0);
-    _latencyMsController = BloomController<double>(0.0);
-    _eventLoopLagController = BloomController<double>(0.0);
-    _eventLoopHistoryController = RawBloomController<List<double>>(
+    _targetTpsController = blooming<int>(100);
+    _isSimulatingController = blooming<bool>(false);
+    _actualTpsController = blooming<int>(0);
+    _latencyMsController = blooming<double>(0.0);
+    _eventLoopLagController = blooming<double>(0.0);
+    _eventLoopHistoryController = blooming.raw<List<double>>(
         UnmodifiableListView(_eventLoopHistory));
-    _eventLoopAvg1sController = BloomController<double>(0.0);
-    _eventLoopAvg1sHistoryController = RawBloomController<List<double>>(
+    _eventLoopAvg1sController = blooming<double>(0.0);
+    _eventLoopAvg1sHistoryController = blooming.raw<List<double>>(
       UnmodifiableListView(_eventLoopAvg1sHistory),
     );
-    _eventLoopAvg5sController = BloomController<double>(0.0);
-    _eventLoopAvg5sHistoryController = RawBloomController<List<double>>(
+    _eventLoopAvg5sController = blooming<double>(0.0);
+    _eventLoopAvg5sHistoryController = blooming.raw<List<double>>(
       UnmodifiableListView(_eventLoopAvg5sHistory),
     );
     final initialScrollAnim =
         Platform.environment['BENCH_SCROLL_ANIM'] != 'false';
     _isScrollAnimationEnabledController =
-        BloomController<bool>(initialScrollAnim);
+        blooming<bool>(initialScrollAnim);
 
     final envSet =
         int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
@@ -167,7 +167,7 @@ class OrderBookPipeline {
         int.tryParse(Platform.environment['BENCH_RUN_INDEX'] ?? '') ?? 1;
     final envTotalRuns =
         int.tryParse(Platform.environment['BENCH_TOTAL_RUNS'] ?? '') ?? 1;
-    _benchmarkProgressController = BloomController<BenchmarkProgress>(
+    _benchmarkProgressController = blooming<BenchmarkProgress>(
       BenchmarkProgress(
         currentSet: envSet,
         totalSets: envTotalSets,
@@ -179,10 +179,10 @@ class OrderBookPipeline {
     );
 
     // Initialize Stock Selection & Auto-Rotation Controllers
-    _selectedStockIndexController = BloomController<int>(0);
-    _isAutoRotatingController = BloomController<bool>(false);
+    _selectedStockIndexController = blooming<int>(0);
+    _isAutoRotatingController = blooming<bool>(false);
     _rotationIntervalIndexController =
-        BloomController<int>(6); // Default 1000ms
+        blooming<int>(6); // Default 1000ms
 
     // Initialize Initial Trade Ticks Sample
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -197,16 +197,16 @@ class OrderBookPipeline {
       );
     }));
     _tradeTicksController =
-        RawBloomController<List<TradeTick>>(UnmodifiableListView(_tradeTicks));
+        blooming.raw<List<TradeTick>>(UnmodifiableListView(_tradeTicks));
 
     // Initialize Multi-Asset Watchlist Price Controllers
     for (final stock in stocks) {
       _latestStockPrices[stock.symbol] = stock.basePrice;
       _latestStockChanges[stock.symbol] = stock.priceChangePct;
       _stockPriceControllers[stock.symbol] =
-          BloomController<double>(stock.basePrice);
+          blooming<double>(stock.basePrice);
       _stockChangeControllers[stock.symbol] =
-          BloomController<double>(stock.priceChangePct);
+          blooming<double>(stock.priceChangePct);
     }
     _latestStockPrices[initialSnapshot.ticker] = initialSnapshot.lastPrice;
     _latestStockChanges[initialSnapshot.ticker] =
