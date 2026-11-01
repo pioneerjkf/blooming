@@ -20,8 +20,8 @@ void setup() {
 ''').unit;
 
       MethodInvocation? computedCall;
-      unit.visitChildren(_MethodInvocationVisitor(
-          'computed', (node) => computedCall = node));
+      unit.visitChildren(
+          _MethodInvocationVisitor('computed', (node) => computedCall = node));
 
       expect(computedCall, isNotNull);
       expect(
@@ -38,8 +38,8 @@ void setup() {
 ''').unit;
 
       MethodInvocation? computedCall;
-      unit.visitChildren(_MethodInvocationVisitor(
-          'computed', (node) => computedCall = node));
+      unit.visitChildren(
+          _MethodInvocationVisitor('computed', (node) => computedCall = node));
 
       expect(computedCall, isNotNull);
       expect(
@@ -57,8 +57,8 @@ void setup() {
 ''').unit;
 
       MethodInvocation? computedCall;
-      unit.visitChildren(_MethodInvocationVisitor(
-          'computed', (node) => computedCall = node));
+      unit.visitChildren(
+          _MethodInvocationVisitor('computed', (node) => computedCall = node));
 
       expect(computedCall, isNotNull);
       expect(
@@ -73,12 +73,12 @@ void setup() {
 ''').unit;
 
       MethodInvocation? computedCall;
-      unit.visitChildren(_MethodInvocationVisitor(
-          'computed', (node) => computedCall = node));
+      unit.visitChildren(
+          _MethodInvocationVisitor('computed', (node) => computedCall = node));
 
       expect(computedCall, isNotNull);
-      expect(
-          AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!), isFalse);
+      expect(AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!),
+          isFalse);
     });
   });
 }
@@ -96,4 +96,3 @@ class _MethodInvocationVisitor extends RecursiveAstVisitor<void> {
     super.visitMethodInvocation(node);
   }
 }
-

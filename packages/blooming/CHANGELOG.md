@@ -1,4 +1,4 @@
-## 0.2.4
+## 0.2.5
 
 - **On-Demand Asynchronous `BloomVia` Tracking & Turn Isolation**:
   - Enabled post-`await` and post-`yield` dependency tracking via `BloomVia` in `computed.future`, `computed.stream`, `Effect.via`, and `Effect.scoped.via` through `_ViaTrack` (`closed`, `sync`, `async`) and `_resultViaTrack`.
@@ -8,6 +8,9 @@
 - **Native `FutureOr<T>` Support in `computed.future`**:
   - Accepted `FutureOr<T> Function(BloomVia via) compute` in `computed.future`, enabling 0ms synchronous instant resolution (Fast-Path) when returning synchronous values (e.g. cache hits) without microtask latency.
   - Refined `Future` instance validation and dynamic subtype unwrapping, ensuring untyped or dynamic futures resolve safely through `_FutureBloomBridge`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.5.
+
+## 0.2.4
 - **Lazy Factory Bridges**: Introduced `FutureFactoryBloomExtension` and `StreamFactoryBloomExtension` providing `.toBloom()`, `.toBloomTuple()`, and `.toBloomTriple()`.
   - Defers execution of `Future<T> Function()` until `0 -> 1` subscriber activation and refetches on subsequent reactivations.
   - Safely manages single-subscription `Stream<T>` instances (`async*` generators) across `1 -> 0 -> 1` cycles by spawning a fresh stream on each activation.

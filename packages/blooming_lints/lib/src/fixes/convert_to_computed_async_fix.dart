@@ -31,9 +31,8 @@ class ConvertToComputedAsyncFix extends DartFix {
 
     final isStream = kind == AsyncComputationKind.stream;
     final suffix = isStream ? '.stream' : '.future';
-    final message = isStream
-        ? 'Convert to computed.stream'
-        : 'Convert to computed.future';
+    final message =
+        isStream ? 'Convert to computed.stream' : 'Convert to computed.future';
 
     AstNode? targetNode;
     String? replacement;

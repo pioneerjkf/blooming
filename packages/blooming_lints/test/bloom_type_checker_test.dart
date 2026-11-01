@@ -360,7 +360,8 @@ void testComputed() {
       expect(BloomTypeChecker.isInsideBloomViaScope(computedCounter), isTrue);
     });
 
-    test('isTimerCreation and isFutureCreation recognize unresolved constructors',
+    test(
+        'isTimerCreation and isFutureCreation recognize unresolved constructors',
         () {
       final unit = parseString(content: '''
 void test() {

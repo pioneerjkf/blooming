@@ -597,7 +597,9 @@ void main() {
     // 10. On-Demand Async BloomVia Isolation & Multi-Step Await / Yield Tracking
     // =========================================================================
     group('10. On-Demand Async BloomVia Isolation & Multi-Step Await / Yield Tracking', () {
-      test('10.1 Synchronous nodes reuse the exact same BloomVia instance (0 allocations) and ignore leaked async via calls', () async {
+      test(
+          '10.1 Synchronous nodes reuse the exact same BloomVia instance (0 allocations) and ignore leaked async via calls',
+          () async {
         final mainSource = blooming(10);
         final leakedSource = blooming(100);
         final observedVias = <BloomVia>[];
@@ -636,7 +638,9 @@ void main() {
         terminal.deactivate();
       });
 
-      test('10.2 computed.future((via) async) tracks sequential await dependencies and forwards Empty/Error without onError', () async {
+      test(
+          '10.2 computed.future((via) async) tracks sequential await dependencies and forwards Empty/Error without onError',
+          () async {
         final step1 = blooming('A');
         final step2 = blooming.late<String>(reason: 'Step2Pending');
         final step3 = blooming('C');
@@ -804,7 +808,8 @@ void main() {
         terminal.deactivate();
       });
 
-      test('10.5 Effect.via((via) async) tracks post-await dependencies on latest turn and ignores stale turns', () async {
+      test('10.5 Effect.via((via) async) tracks post-await dependencies on latest turn and ignores stale turns',
+          () async {
         final mode = blooming('A');
         final branchA = blooming('a1');
         final branchB = blooming('b1');
@@ -854,7 +859,8 @@ void main() {
         dispose();
       });
 
-      test('10.6 Deactivating node during await isolates in-flight async via across dormant and reactivated states', () async {
+      test('10.6 Deactivating node during await isolates in-flight async via across dormant and reactivated states',
+          () async {
         final trigger = blooming(1);
         final lateDep = blooming(100);
         final completer = Completer<void>();

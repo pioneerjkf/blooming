@@ -54,4 +54,3 @@ final goodAsync = computed.future((via) async {
   await Future<void>.delayed(const Duration(milliseconds: 10));
   return value * 2;
 });
-

@@ -59,7 +59,8 @@ class AvoidAsyncInComputed extends DartLintRule {
     CustomLintContext context,
   ) {
     void checkArgumentList(ArgumentList argumentList) {
-      final positional = argumentList.arguments.where((arg) => arg is! NamedExpression);
+      final positional =
+          argumentList.arguments.where((arg) => arg is! NamedExpression);
       if (positional.isEmpty) return;
       final computeArg = positional.first;
       if (isAsyncComputation(computeArg)) {
@@ -90,7 +91,8 @@ class AvoidAsyncInComputed extends DartLintRule {
   static bool isAsyncClosureInComputed(InvocationExpression node) {
     final name = BloomTypeChecker.resolveFunctorName(node);
     if (name != 'ComputedFunctor') return false;
-    final positional = node.argumentList.arguments.where((arg) => arg is! NamedExpression);
+    final positional =
+        node.argumentList.arguments.where((arg) => arg is! NamedExpression);
     if (positional.isEmpty) return false;
     return isAsyncComputation(positional.first);
   }
