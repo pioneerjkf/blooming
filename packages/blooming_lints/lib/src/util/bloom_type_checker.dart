@@ -787,31 +787,98 @@ abstract final class BloomTypeChecker {
     return false;
   }
 
+  // ===========================================================================
+  // 9. Asynchronous Computation Classifiers
+  // ===========================================================================
+
+  static bool _isDartAsyncLibrary(LibraryElement? lib) {
+    if (lib == null) return false;
+    final id = lib.identifier;
+    return id == 'dart:async' ||
+        id.startsWith('dart:async/') ||
+        lib.name == 'dart.async';
+  }
+
+  static bool _isDartAsyncTarget(Expression target, String expectedClassName) {
+    if (target is Identifier) {
+      final element = target.element;
+      if (element != null) {
+        return element.name == expectedClassName &&
+            _isDartAsyncLibrary(element.library);
+      }
+    }
+    final staticType = target.staticType;
+    if (staticType != null &&
+        staticType is! DynamicType &&
+        staticType is! InvalidType) {
+      final element = staticType.element;
+      return element?.name == expectedClassName &&
+          _isDartAsyncLibrary(element?.library);
+    }
+    // Fallback for unresolved ASTs (e.g. lightweight parseString tests)
+    return target.toSource().endsWith(expectedClassName);
+  }
+
+  /// Returns `true` if [type] is `Timer` from `dart:async`.
+  static bool isTimerType(DartType? type) {
+    if (type == null) return false;
+    final element = type.element;
+    return element?.name == 'Timer' && _isDartAsyncLibrary(element?.library);
+  }
+
+  /// Checks if [node] represents an instantiation of `dart:async`'s `Timer`.
+  static bool isTimerCreation(InstanceCreationExpression node) {
+    final staticType = node.staticType;
+    if (staticType != null &&
+        staticType is! DynamicType &&
+        staticType is! InvalidType) {
+      return isTimerType(staticType);
+    }
+    // Fallback for unresolved ASTs (e.g. lightweight parseString tests)
+    return node.constructorName.type.toSource().split('.').contains('Timer');
+  }
+
+  /// Checks if [node] represents an instantiation of `dart:async`'s `Future`.
+  static bool isFutureCreation(InstanceCreationExpression node) {
+    final staticType = node.staticType;
+    if (staticType != null &&
+        staticType is! DynamicType &&
+        staticType is! InvalidType) {
+      return isFutureType(staticType);
+    }
+    // Fallback for unresolved ASTs (e.g. lightweight parseString tests)
+    return node.constructorName.type.toSource().split('.').contains('Future');
+  }
+
   /// Checks if the [node] represents an asynchronous timer or dispatcher invocation
   /// (e.g., Timer.run, scheduleMicrotask, Future.microtask, future.then).
   static bool isAsyncOrTimerInvocation(MethodInvocation node) {
     final name = node.methodName.name;
 
-    // Top-level async dispatcher in dart:async
-    if (name == 'scheduleMicrotask') {
+    // Top-level async dispatcher in dart:async (or unresolved Timer(...) constructor calls)
+    if (name == 'scheduleMicrotask' || name == 'Timer') {
+      final methodElement = node.methodName.element;
+      if (methodElement != null) {
+        return _isDartAsyncLibrary(methodElement.library);
+      }
       return true;
     }
 
     final target = node.target;
     if (target != null) {
-      final targetSource = target.toSource();
-      //Only accept 'run' or 'periodic' if called on Timer (e.g. Timer.run, Timer.periodic)
+      // Only accept 'run' or 'periodic' if called on Timer (e.g. Timer.run, Timer.periodic)
       if ((name == 'run' || name == 'periodic') &&
-          targetSource.endsWith('Timer')) {
+          _isDartAsyncTarget(target, 'Timer')) {
         return true;
       }
       // Delayed invocations: Future.delayed or Timer.delayed
       if (name == 'delayed' &&
-          (targetSource.endsWith('Future') || targetSource.endsWith('Timer'))) {
+          (_isDartAsyncTarget(target, 'Future') ||
+              _isDartAsyncTarget(target, 'Timer'))) {
         return true;
       }
       // Microtask invocation: Future.microtask
-      if (name == 'microtask' && targetSource.endsWith('Future')) {
+      if (name == 'microtask' && _isDartAsyncTarget(target, 'Future')) {
         return true;
       }
       // Future chaining: future.then, future.catchError, future.whenComplete
@@ -824,32 +891,22 @@ abstract final class BloomTypeChecker {
           return true;
         }
         final elementName = targetType.element?.name;
-        if (elementName == 'Future' ||
-            elementName == 'FutureOr' ||
-            elementName == 'Completer') {
+        if ((elementName == 'Future' ||
+                elementName == 'FutureOr' ||
+                elementName == 'Completer') &&
+            _isDartAsyncLibrary(targetType.element?.library)) {
           return true;
         }
         if (targetType is InterfaceType) {
-          return targetType.allSupertypes
-              .any((t) => t.element.name == 'Future');
+          return targetType.allSupertypes.any((t) =>
+              t.element.name == 'Future' &&
+              _isDartAsyncLibrary(t.element.library));
         }
         return false;
       }
     }
 
     return false;
-  }
-
-  // ===========================================================================
-  // 9. Asynchronous Computation Classifiers
-  // ===========================================================================
-
-  static bool _isDartAsyncLibrary(LibraryElement? lib) {
-    if (lib == null) return false;
-    final id = lib.identifier;
-    return id == 'dart:async' ||
-        id.startsWith('dart:async/') ||
-        lib.name == 'dart.async';
   }
 
   /// Returns `true` if [type] is `Future`, `FutureOr`, or implements `Future` from `dart:async`.

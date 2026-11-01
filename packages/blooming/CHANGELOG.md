@@ -5,6 +5,9 @@
   - Enforced strict turn isolation by rotating `BloomVia` instances on demand when a new epoch begins or the node deactivates while an asynchronous turn is in flight, preventing stale turns from mutating the active dependency graph.
   - Propagated post-`await` / post-`yield` `_ViaShortCircuit` exceptions in `_DeLorean`, `_PragueVltava`, `_ViaEffectTerminal`, and `_HandledViaEffectTerminal`.
   - Unified `BloomVia` into a single concrete `final class` and merged dependency-tracking dispatch to eliminate polymorphic call overhead on the synchronous hot path.
+- **Native `FutureOr<T>` Support in `computed.future`**:
+  - Accepted `FutureOr<T> Function(BloomVia via) compute` in `computed.future`, enabling 0ms synchronous instant resolution (Fast-Path) when returning synchronous values (e.g. cache hits) without microtask latency.
+  - Refined `Future` instance validation and dynamic subtype unwrapping, ensuring untyped or dynamic futures resolve safely through `_FutureBloomBridge`.
 - **Lazy Factory Bridges**: Introduced `FutureFactoryBloomExtension` and `StreamFactoryBloomExtension` providing `.toBloom()`, `.toBloomTuple()`, and `.toBloomTriple()`.
   - Defers execution of `Future<T> Function()` until `0 -> 1` subscriber activation and refetches on subsequent reactivations.
   - Safely manages single-subscription `Stream<T>` instances (`async*` generators) across `1 -> 0 -> 1` cycles by spawning a fresh stream on each activation.

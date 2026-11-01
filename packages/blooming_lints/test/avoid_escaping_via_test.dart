@@ -101,6 +101,27 @@ void setup() {
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isTrue);
     });
 
+    test('detects via() inside Timer constructor callback', () {
+      final unit = parseString(content: '''
+void setup() {
+  final task = computed((via) {
+    Timer(Duration.zero, () {
+      print(via(counter));
+    });
+    return 42;
+  });
+}
+''').unit;
+
+      MethodInvocation? viaCall;
+      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
+        viaCall = node;
+      }));
+
+      expect(viaCall, isNotNull);
+      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isTrue);
+    });
+
     test('permits standard synchronous via() calls inside computed', () {
       final unit = parseString(content: '''
 void setup() {

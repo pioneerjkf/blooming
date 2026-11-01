@@ -359,7 +359,38 @@ void testComputed() {
           BloomTypeChecker.isInsideBloomViaScope(normalDirectCounter), isFalse);
       expect(BloomTypeChecker.isInsideBloomViaScope(computedCounter), isTrue);
     });
+
+    test('isTimerCreation and isFutureCreation recognize unresolved constructors',
+        () {
+      final unit = parseString(content: '''
+void test() {
+  final t = new Timer(Duration.zero, () {});
+  final f = new Future.value(1);
+  final o = new Object();
+}
+''').unit;
+
+      final creations = <InstanceCreationExpression>[];
+      unit.visitChildren(
+          _InstanceCreationCollector((node) => creations.add(node)));
+
+      expect(BloomTypeChecker.isTimerCreation(creations[0]), isTrue);
+      expect(BloomTypeChecker.isFutureCreation(creations[1]), isTrue);
+      expect(BloomTypeChecker.isTimerCreation(creations[2]), isFalse);
+      expect(BloomTypeChecker.isFutureCreation(creations[2]), isFalse);
+    });
   });
+}
+
+class _InstanceCreationCollector extends RecursiveAstVisitor<void> {
+  final void Function(InstanceCreationExpression) onCreation;
+  _InstanceCreationCollector(this.onCreation);
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    onCreation(node);
+    super.visitInstanceCreationExpression(node);
+  }
 }
 
 class _IdentifierCollector extends RecursiveAstVisitor<void> {

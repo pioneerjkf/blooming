@@ -114,8 +114,7 @@ class AvoidEscapingVia extends DartLintRule {
         }
       }
       if (current is InstanceCreationExpression) {
-        final typeName = current.constructorName.type.name.lexeme;
-        if (typeName == 'Timer') {
+        if (BloomTypeChecker.isTimerCreation(current)) {
           return true;
         }
       }

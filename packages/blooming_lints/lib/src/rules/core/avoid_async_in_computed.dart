@@ -28,9 +28,13 @@ part of '../../../blooming_lints.dart';
 ///
 /// **GOOD:**
 /// ```dart
-/// final userProfile = computed.future((via) async { // [Recommended] Dedicated async pipeline
-///   final id = via(userIdBloom);
-///   return await apiService.fetchUser(id);
+/// // Approach 1: Single-shot async request (Direct return avoids async state-machine allocation)
+/// final userProfile = computed.future((via) => apiService.fetchUser(via(userIdBloom)));
+///
+/// // Approach 2: Multi-step async pipeline with await
+/// final userWithPermissions = computed.future((via) async {
+///   final user = await apiService.fetchUser(via(userIdBloom));
+///   return await apiService.fetchPermissions(user.id);
 /// });
 /// ```
 class AvoidAsyncInComputed extends DartLintRule {

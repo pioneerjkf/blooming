@@ -110,7 +110,7 @@ Subclasses implement a single synchronous factory method:
 Bloom<T> _evaluateDelta(BloomVia via);
 ```
 * **Functional Branching (`switched`)**: Evaluates user-defined `select(via)` and optional `guard(via)` to dynamically return pre-existing or cached `Bloom<T>` subtrees.
-* **Asynchronous Computation (`computed.future`, `computed.stream`)**: Evaluates `compute(via)` to instantiate fresh `_FutureBloomBridge` or `_StreamBloomBridge` handles, rebinding them immediately to the mainstream data plane.
+* **Asynchronous Computation (`computed.future`, `computed.stream`)**: Evaluates `compute(via)`. When returning a `Future` or `Stream`, instantiates fresh `_FutureBloomBridge` or `_StreamBloomBridge` handles, rebinding them immediately to the mainstream data plane. When `computed.future` returns a synchronous value directly via `FutureOr<T>` (e.g. cache hit), it couples to `Bloom.constant(result)` instantly in 0ms without allocating an async bridge.
 
 ### 3.2 Short-Circuit Fault Propagation (`_performSwitchGuarded`)
 Control-plane routing logic evaluated inside `_evaluateDelta(via)` can encounter empty or error states from upstream lateral dependencies. Rather than crashing the LPDAG or bypassing the data plane, `_DeltaBloom` traps `_ViaShortCircuit` and couples the corresponding algebraic state directly into the mainstream pipeline:

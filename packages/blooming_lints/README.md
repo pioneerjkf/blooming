@@ -58,7 +58,7 @@ Add `blooming_lints` and `custom_lint` to your `pubspec.yaml`:
 ```yaml
 dev_dependencies:
   custom_lint: ^0.8.1
-  blooming_lints: ^0.2.4
+  blooming_lints: ^0.2.5
 ```
 
 Enable the plugin in your `analysis_options.yaml`:

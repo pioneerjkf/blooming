@@ -48,3 +48,27 @@ class Stream<T> {
 final userLocalStream = Bloom.computed(
   (via) => Stream<int>(via(count)),
 );
+
+// #case regression/good/user-defined-timer-class
+class Timer {
+  Timer(Duration duration, void Function() callback) {
+    callback();
+  }
+
+  static void run(void Function() callback) {
+    callback();
+  }
+}
+
+final userLocalTimer = Bloom.computed(
+  (via) {
+    Timer(Duration.zero, () {
+      print(via(count));
+    });
+    Timer.run(() {
+      print(via(count));
+    });
+    return via(count);
+  },
+);
+

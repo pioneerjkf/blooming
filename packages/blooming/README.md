@@ -694,7 +694,20 @@ final resolvedUserBloom = computed.future((via) async {
   return user;
 });
 
-// 3. computed.stream with automatic subscription lifecycle management
+// 3. computed.future: Native FutureOr<T> with 0ms Instant Synchronous Resolution
+// Returning a synchronous value (e.g. in-memory cache hit) resolves instantly in 0ms
+// without any microtask latency or unnecessary bridge allocation.
+final memoryCache = <String, User>{};
+final cachedUserBloom = computed.future<User>((via) {
+  final id = via(selectedUserId.bloom);
+  final cached = memoryCache[id];
+  if (cached != null) {
+    return cached; // Instant 0ms synchronous resolution!
+  }
+  return apiService.fetchUser(id); // Falls back to asynchronous Future
+});
+
+// 4. computed.stream with automatic subscription lifecycle management
 final activeSymbol = blooming('AAPL');
 final liveStockPricesBloom = computed.stream((via) {
   final symbol = via(activeSymbol.bloom);

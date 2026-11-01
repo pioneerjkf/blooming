@@ -126,8 +126,8 @@ abstract final class FlutterAstUtils {
       }
 
       if (current is InstanceCreationExpression) {
-        final typeName = current.constructorName.type.name.lexeme;
-        if (typeName == 'Timer' || typeName == 'Future') {
+        if (BloomTypeChecker.isTimerCreation(current) ||
+            BloomTypeChecker.isFutureCreation(current)) {
           return true;
         }
       }

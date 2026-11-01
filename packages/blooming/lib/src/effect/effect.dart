@@ -435,6 +435,12 @@ final class EffectScopedFunctor {
   /// Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
   /// is marked cancelled and its registered cleanups are executed in LIFO order.
   ///
+  /// * Supports both synchronous and asynchronous (`async`) [action] closures: when [action] returns a
+  ///   [Future], dependencies accessed via `via(node)` after `await` points are tracked for the latest
+  ///   active turn while superseded turns are isolated automatically.
+  /// * If [guard] is provided, it is evaluated with [BloomVia] before each run; returning `false` skips execution.
+  /// * If [onUncaughtError] is provided, it is invoked when an uncaught synchronous or asynchronous exception occurs.
+  ///
   /// * [action]: The dynamic tracking callback receiving [BloomVia] and [EffectScope].
   /// * [guard]: Optional boolean predicate evaluated with [BloomVia] prior to each execution.
   /// * [onUncaughtError]: Optional error recovery handler.

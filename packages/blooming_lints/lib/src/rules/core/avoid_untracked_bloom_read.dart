@@ -165,9 +165,15 @@ class AvoidUntrackedBloomRead extends DartLintRule {
         }
       }
 
-      // 2. If inside async dispatchers (e.g. Timer.run, scheduleMicrotask)
+      // 2. If inside async dispatchers (e.g. Timer.run, scheduleMicrotask) or async constructors
       if (current is MethodInvocation) {
         if (BloomTypeChecker.isAsyncOrTimerInvocation(current)) {
+          return true;
+        }
+      }
+      if (current is InstanceCreationExpression) {
+        if (BloomTypeChecker.isTimerCreation(current) ||
+            BloomTypeChecker.isFutureCreation(current)) {
           return true;
         }
       }
