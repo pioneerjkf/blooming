@@ -24,6 +24,57 @@ void main() {
       expect(fixes.first, isA<ReplaceViaStateDataFix>());
     });
 
+    test('AvoidAsyncInComputed registers ConvertToComputedAsyncFix', () {
+      final rule = AvoidAsyncInComputed();
+      final fixes = rule.getFixes();
+      expect(fixes.length, equals(1));
+      expect(fixes.first, isA<ConvertToComputedAsyncFix>());
+    });
+
+    test('ConvertToComputedAsyncFix AST recognition for async closure', () {
+      final unit = parseString(content: '''
+void test() {
+  final res = computed((via) async => 42);
+}
+''').unit;
+
+      MethodInvocation? foundInvocation;
+      unit.accept(_ComputedInvocationFinder((node) {
+        foundInvocation = node;
+      }));
+
+      expect(foundInvocation, isNotNull);
+      expect(foundInvocation!.methodName.name, equals('computed'));
+      final computeArg = foundInvocation!.argumentList.arguments.first;
+      expect(
+        BloomTypeChecker.classifyAsyncComputation(computeArg),
+        equals(AsyncComputationKind.future),
+      );
+    });
+
+    test('ConvertToComputedAsyncFix AST recognition for async* generator', () {
+      final unit = parseString(content: '''
+void test() {
+  final res = computed((via) async* {
+    yield 42;
+  });
+}
+''').unit;
+
+      MethodInvocation? foundInvocation;
+      unit.accept(_ComputedInvocationFinder((node) {
+        foundInvocation = node;
+      }));
+
+      expect(foundInvocation, isNotNull);
+      expect(foundInvocation!.methodName.name, equals('computed'));
+      final computeArg = foundInvocation!.argumentList.arguments.first;
+      expect(
+        BloomTypeChecker.classifyAsyncComputation(computeArg),
+        equals(AsyncComputationKind.stream),
+      );
+    });
+
     test('ReplaceViaStateDataFix AST recognition', () {
       final unit = parseString(content: '''
 void test() {
@@ -58,5 +109,18 @@ class _StateDataFinder extends RecursiveAstVisitor<void> {
       }
     }
     super.visitPropertyAccess(node);
+  }
+}
+
+class _ComputedInvocationFinder extends RecursiveAstVisitor<void> {
+  final void Function(MethodInvocation) onFound;
+  _ComputedInvocationFinder(this.onFound);
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (node.methodName.name == 'computed') {
+      onFound(node);
+    }
+    super.visitMethodInvocation(node);
   }
 }

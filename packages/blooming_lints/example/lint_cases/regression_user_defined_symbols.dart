@@ -19,3 +19,8 @@ final userEffect = Effect(() => print(untracked(count)));
 int computedLocally(int Function(Object via) body) => body(Object());
 
 final userComputed = computedLocally((via) => untracked(count));
+
+// #case regression/good/user-defined-computed-with-async
+Future<int> computed(Future<int> Function(Object via) body) => body(Object());
+
+final userComputedAsync = computed((via) async => untracked(count));

@@ -91,6 +91,14 @@ final impure = computed((via) {
 // #case tour/avoid_state_writes_in_pipeline/good
 void increment() => counter.set(counter.data + 1);
 
+// #case tour/avoid_async_in_computed/bad
+// An async closure in computed() creates an unmanaged Bloom<Future<T>>.
+// expect_lint: avoid_async_in_computed
+final badAsyncComputed = computed((via) async => via(count) * 2);
+
+// #case tour/avoid_async_in_computed/good
+final goodAsyncComputed = computed.future((via) async => via(count) * 2);
+
 // #case tour/avoid_async_in_managed/bad
 // An async `create` makes `managed` supervise a Future instead of the resource.
 final asyncResource = managed<Object?>(

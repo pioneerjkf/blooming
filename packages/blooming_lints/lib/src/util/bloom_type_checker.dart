@@ -464,6 +464,15 @@ abstract final class BloomTypeChecker {
       }
     }
 
+    // Guard: If the callee element is resolved and is NOT from a Bloom package,
+    // abort immediately to avoid false positives on user-defined symbols with matching names.
+    final calleeElement = callee is SimpleIdentifier
+        ? callee.element
+        : (callee is MethodInvocation ? callee.methodName.element : null);
+    if (calleeElement != null && !isFromBloomPackage(calleeElement)) {
+      return null;
+    }
+
     if (node is MethodInvocation && node.target != null) {
       final targetType = node.target!.staticType;
       if (targetType is InterfaceType) {
@@ -502,11 +511,18 @@ abstract final class BloomTypeChecker {
     }
 
     // Unresolved fallback
-    if (sourceStr == 'computed') return 'ComputedFunctor';
-    if (sourceStr == 'computed.future' || sourceStr == 'computed.async') {
+    if (sourceStr == 'computed' || sourceStr == 'Bloom.computed') {
+      return 'ComputedFunctor';
+    }
+    if (sourceStr == 'computed.future' ||
+        sourceStr == 'computed.async' ||
+        sourceStr == 'Bloom.computed.future') {
       return 'ComputedFutureFunctor';
     }
-    if (sourceStr == 'computed.stream') return 'ComputedStreamFunctor';
+    if (sourceStr == 'computed.stream' ||
+        sourceStr == 'Bloom.computed.stream') {
+      return 'ComputedStreamFunctor';
+    }
     if (sourceStr == 'switched') return 'SwitchedFunctor';
     if (sourceStr == 'managed' || sourceStr == 'Bloom.managed') {
       return 'ManagedFunctor';
@@ -823,4 +839,75 @@ abstract final class BloomTypeChecker {
 
     return false;
   }
+
+  // ===========================================================================
+  // 9. Asynchronous Computation Classifiers
+  // ===========================================================================
+
+  /// Returns `true` if [type] is `Future`, `FutureOr`, or implements `Future`.
+  static bool isFutureType(DartType? type) {
+    if (type == null) return false;
+    final element = type.element;
+    final name = element?.name;
+    if (name == 'Future' || name == 'FutureOr') {
+      return true;
+    }
+    if (type is InterfaceType) {
+      return type.allSupertypes.any((superType) {
+        return superType.element.name == 'Future';
+      });
+    }
+    return false;
+  }
+
+  /// Returns `true` if [type] is `Stream` (or implements `Stream` when [exactOnly] is `false`).
+  static bool isStreamType(DartType? type, {bool exactOnly = false}) {
+    if (type == null) return false;
+    final element = type.element;
+    final name = element?.name;
+    if (name == 'Stream') {
+      return true;
+    }
+    if (!exactOnly && type is InterfaceType) {
+      return type.allSupertypes.any((superType) {
+        return superType.element.name == 'Stream';
+      });
+    }
+    return false;
+  }
+
+  /// Classifies whether [expr] is an asynchronous computation (`Future` or `Stream`).
+  ///
+  /// When [exactStreamOnly] is `true`, interfaces implementing `Stream` (e.g. `ReceivePort`,
+  /// `Socket`) are treated as synchronous resources rather than pure Streams.
+  static AsyncComputationKind classifyAsyncComputation(
+    Expression expr, {
+    bool exactStreamOnly = false,
+  }) {
+    if (expr is FunctionExpression) {
+      if (expr.body.isAsynchronous) {
+        return expr.body.isGenerator
+            ? AsyncComputationKind.stream
+            : AsyncComputationKind.future;
+      }
+    }
+    final staticType = expr.staticType;
+    if (staticType is FunctionType) {
+      final returnType = staticType.returnType;
+      if (isFutureType(returnType)) {
+        return AsyncComputationKind.future;
+      }
+      if (isStreamType(returnType, exactOnly: exactStreamOnly)) {
+        return AsyncComputationKind.stream;
+      }
+    }
+    return AsyncComputationKind.none;
+  }
+}
+
+/// The asynchronous nature of a computation expression or return type.
+enum AsyncComputationKind {
+  none,
+  future,
+  stream,
 }

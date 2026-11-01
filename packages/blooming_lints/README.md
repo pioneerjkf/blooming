@@ -26,6 +26,7 @@ Rules governing the core reactive LPDAG, transactional state boundaries, and `Bl
 
 | Lint Rule | Severity | Description |
 | :--- | :---: | :--- |
+| **`avoid_async_in_computed`** | Error | Prohibits passing asynchronous closures or Future/Stream return types to synchronous `computed()` to enforce dedicated `computed.future`/`computed.stream` pipelines. |
 | **`avoid_escaping_via`** | Error | Prohibits escaping `via()` into out-of-band async timers/dispatchers, deferred event callbacks, or nested async functions across `await` to prevent dropped dependencies and race conditions. |
 | **`avoid_catching_via_short_circuit`** | Error | Prohibits catching broad exceptions around `via()` calls inside reactive scopes to prevent intercepting Bloom's internal short-circuit sentinel. |
 | **`avoid_async_in_managed`** | Error | Prohibits passing asynchronous closures or Future/Stream return types to `managed()` to maintain pure synchronous resource lifecycle supervision. |

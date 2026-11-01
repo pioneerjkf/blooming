@@ -23,6 +23,7 @@ part 'src/util/flutter_ast_utils.dart';
 part 'src/util/bloom_type_checker.dart';
 
 // Core rule parts (Pure Dart LPDAG / Reactive Invariants)
+part 'src/rules/core/avoid_async_in_computed.dart';
 part 'src/rules/core/avoid_async_in_managed.dart';
 part 'src/rules/core/avoid_catching_via_short_circuit.dart';
 part 'src/rules/core/avoid_escaping_via.dart';
@@ -44,6 +45,7 @@ part 'src/rules/flutter/prefer_bloom_widget.dart';
 part 'src/fixes/wrap_with_via_fix.dart';
 part 'src/fixes/replace_via_state_data_fix.dart';
 part 'src/fixes/replace_stateless_with_bloom_widget_fix.dart';
+part 'src/fixes/convert_to_computed_async_fix.dart';
 
 /// Entrypoint for the `blooming_lints` custom_lint analyzer plugin.
 PluginBase createPlugin() => _BloomingLinter();
@@ -52,6 +54,7 @@ class _BloomingLinter extends PluginBase {
   @override
   List<LintRule> getLintRules(CustomLintConfigs configs) => [
         // Core Reactive Invariant Rules (Pure Dart)
+        AvoidAsyncInComputed(),
         AvoidAsyncInManaged(),
         AvoidCatchingViaShortCircuit(),
         AvoidEscapingVia(),

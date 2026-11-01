@@ -8,9 +8,16 @@ part of '../../../blooming_lints.dart';
 ///
 /// ### Rationale:
 /// `managed` strictly supervises pure synchronous external resource lifecycles (`create`, `update`, `dispose`).
-/// Passing an `async` closure to `create` or `update` causes Dart to infer `managed<Future<T>>`, supervising
-/// the `Future` object itself instead of the underlying resource, preventing timely disposal and causing
-/// catastrophic resource leaks.
+/// Passing an `async` or `async*` closure to `create` or `update` causes Dart to infer `managed<Future<T>>`
+/// or `managed<Stream<T>>`, supervising the asynchronous container itself instead of the underlying resource,
+/// preventing timely disposal and causing catastrophic resource leaks.
+///
+/// Synchronous resources that implement `Stream` (such as `ReceivePort` or `Socket`) are fully permitted
+/// because their allocation and disposal remain synchronous.
+///
+/// For `dispose`, asynchronous closures (`async`) are prohibited to prevent fire-and-forget concurrency
+/// issues, but synchronous functions returning `Future<void>` (such as `(sub) => sub.cancel()`) are
+/// allowed.
 ///
 /// Asynchronous data querying must be cleanly separated into `computed.future` or `computed.stream`.
 ///
@@ -34,7 +41,13 @@ part of '../../../blooming_lints.dart';
 ///   dispose: (t) => t.cancel(),
 /// );
 ///
-/// // Approach 2: Asynchronous querying in computed.future
+/// // Approach 2: Synchronous stream resource (e.g. ReceivePort)
+/// final port = managed<ReceivePort>(
+///   create: (via) => ReceivePort(),
+///   dispose: (p) => p.close(),
+/// );
+///
+/// // Approach 3: Asynchronous querying in computed.future
 /// final clientData = computed.future((via) async {
 ///   final targetUrl = via(urlBloom); // [Recommended] Tracked synchronously before await
 ///   final c = HttpClient();
@@ -78,16 +91,28 @@ class AvoidAsyncInManaged extends DartLintRule {
     });
   }
 
-  /// Returns all asynchronous create/update/dispose [FunctionExpression]s in the given [argumentList].
-  static List<FunctionExpression> findAsyncClosures(ArgumentList argumentList) {
-    final asyncClosures = <FunctionExpression>[];
+  /// Returns all asynchronous create/update/dispose [Expression]s in the given [argumentList].
+  static List<Expression> findAsyncClosures(ArgumentList argumentList) {
+    final asyncClosures = <Expression>[];
     for (final arg in argumentList.arguments) {
       if (arg is NamedExpression) {
         final paramName = arg.name.label.name;
-        if (paramName == 'create' ||
-            paramName == 'update' ||
-            paramName == 'dispose') {
-          final expr = arg.expression;
+        final expr = arg.expression;
+
+        // 1. For create and update, prohibit async closures AND functions returning Future or exact Stream.
+        // Synchronous resources implementing Stream (e.g. ReceivePort, Socket) are permitted.
+        if (paramName == 'create' || paramName == 'update') {
+          final kind = BloomTypeChecker.classifyAsyncComputation(
+            expr,
+            exactStreamOnly: true,
+          );
+          if (kind != AsyncComputationKind.none) {
+            asyncClosures.add(expr);
+          }
+        }
+        // 2. For dispose, prohibit async closures (body.isAsynchronous) but allow synchronous
+        // functions returning Future<void> (e.g. dispose: (sub) => sub.cancel())
+        else if (paramName == 'dispose') {
           if (expr is FunctionExpression && expr.body.isAsynchronous) {
             asyncClosures.add(expr);
           }
