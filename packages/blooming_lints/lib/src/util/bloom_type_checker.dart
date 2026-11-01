@@ -515,7 +515,6 @@ abstract final class BloomTypeChecker {
       return 'ComputedFunctor';
     }
     if (sourceStr == 'computed.future' ||
-        sourceStr == 'computed.async' ||
         sourceStr == 'Bloom.computed.future') {
       return 'ComputedFutureFunctor';
     }

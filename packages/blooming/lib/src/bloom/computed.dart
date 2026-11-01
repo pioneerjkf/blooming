@@ -37,11 +37,9 @@ part of '../framework.dart';
 ///   │                                  └─ Precondition gating via [BloomGuard]
 ///   │
 ///   ├─ .future(...)              ──> Single-shot asynchronous request with SWR ([Bloom])
-///   │    │                             ├─ Auto-refetch on reactive dependency mutation
-///   │    │                             ├─ Instant SWR cache preload ([initialFactory])
-///   │    │                             └─ Error fallback recovery ([onError])
-///   │    │
-///   │    └─ .async(...)          ──> Inlined keyword alias for [future]
+///   │                                  ├─ Auto-refetch on reactive dependency mutation
+///   │                                  ├─ Instant SWR cache preload ([initialFactory])
+///   │                                  └─ Error fallback recovery ([onError])
 ///   │
 ///   └─ .stream(...)              ──> Continuous real-time stream subscription ([Bloom])
 ///                                      ├─ Auto-switching & async* generator synthesis
@@ -146,11 +144,6 @@ final class ComputedFunctor {
         compute,
         guard: guard,
       );
-
-  /// Intuitive keyword alias for [future] (zero-cost inlined).
-  ///
-  /// See [ComputedFutureFunctor.call] for detailed real-world patterns.
-  ComputedFutureFunctor get async => const ComputedFutureFunctor._();
 
   /// Functor for Future-based single-evaluation asynchronous computations (`computed.future`).
   ///

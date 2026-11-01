@@ -26,12 +26,7 @@ void main() {
       final term = RawBloomTerminal(futureNode, onInvalidated: () {});
       term.activate();
 
-      // 1.3 async alias
-      final completer2 = Completer<int>();
-      final asyncNode = computed.async((via) => completer2.future);
-      expect(asyncNode, isA<Bloom<int>>());
-
-      // 1.4 stream
+      // 1.3 stream
       final sc = StreamController<int>.broadcast();
       final streamNode = computed.stream((via) => sc.stream);
       expect(streamNode, isA<Bloom<int>>());

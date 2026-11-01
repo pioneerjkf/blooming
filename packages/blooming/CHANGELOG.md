@@ -8,6 +8,7 @@
 - **Native `FutureOr<T>` Support in `computed.future`**:
   - Accepted `FutureOr<T> Function(BloomVia via) compute` in `computed.future`, enabling 0ms synchronous instant resolution (Fast-Path) when returning synchronous values (e.g. cache hits) without microtask latency.
   - Refined `Future` instance validation and dynamic subtype unwrapping, ensuring untyped or dynamic futures resolve safely through `_FutureBloomBridge`.
+- **API Refinement**: Liquidated redundant `computed.async` alias in favor of explicit `computed.future` and `computed.stream` primitives.
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.5.
 
 ## 0.2.4

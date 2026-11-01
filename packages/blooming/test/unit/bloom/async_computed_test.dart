@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 import '../../test_utils.dart';
 
 void main() {
-  group('ComputedFunctor (computed.future, computed.stream, computed.async)', () {
+  group('ComputedFunctor (computed.future, computed.stream)', () {
     test('1.1 computed.future completes and transitions state', () async {
       final completer = Completer<String>();
       final greeting = computed.future((_) => completer.future);
@@ -37,30 +37,7 @@ void main() {
       dispose();
     });
 
-    test('1.2 computed.async alias behaves identically to computed.future', () async {
-      final completer = Completer<int>();
-      final count = computed.async((_) => completer.future);
-
-      expect(untracked.state(count).isEmpty, isTrue);
-
-      int? observed;
-      final dispose = effect((via) {
-        if (via.state(count).hasData) {
-          observed = via(count);
-        }
-      });
-
-      completer.complete(999);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(untracked.state(count).hasData, isTrue);
-      expect(untracked(count), 999);
-      expect(observed, 999);
-
-      dispose();
-    });
-
-    test('1.3 computed.future supports initialFactory', () async {
+    test('1.2 computed.future supports initialFactory', () async {
       final completer = Completer<String>();
       final withInitialFactory = computed.future(
         (_) => completer.future,
