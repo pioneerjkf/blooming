@@ -10,6 +10,9 @@ part of '../framework.dart';
 
 /// Producer controller managing a reactive state with transactional draft edits.
 ///
+/// Also accessible via the ergonomic collection type aliases [BloomingList],
+/// [BloomingSet], and [BloomingMap].
+///
 /// Combines zero-overhead immutable replacement ([set], [data]) with
 /// transactional draft edits ([edit], [editGuarded]).
 ///

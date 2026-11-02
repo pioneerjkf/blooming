@@ -51,6 +51,16 @@ void main() {
           BloomTypeChecker.isControllerOrCouplerType('BloomSignalController'),
           isTrue);
 
+      // Ergonomic Producer aliases
+      expect(BloomTypeChecker.isControllerOrCouplerType('Blooming'), isTrue);
+      expect(BloomTypeChecker.isControllerOrCouplerType('BloomingRaw'), isTrue);
+      expect(
+          BloomTypeChecker.isControllerOrCouplerType('BloomingList'), isTrue);
+      expect(BloomTypeChecker.isControllerOrCouplerType('BloomingSet'), isTrue);
+      expect(BloomTypeChecker.isControllerOrCouplerType('BloomingMap'), isTrue);
+      expect(
+          BloomTypeChecker.isControllerOrCouplerType('BloomingSignal'), isTrue);
+
       // Terminals and non-producers are exempt
       expect(BloomTypeChecker.isControllerOrCouplerType('RawBloomTerminal'),
           isFalse);
