@@ -17,7 +17,7 @@ Traditional state management frameworks couple deeply to UI component lifecycles
 3. **Differentiating Observation from Action Dispatch**:  
    Failing to separate state observation from external mutation risks re-entrant loops, notification storms, and race conditions.
 
-The Bloom Framework resolves this with **Declarative Side-Effects ([`Effect`](../../lib/src/effect/effect.dart))** and **Standalone Runners ([`EffectRunner`](../../lib/src/effect/runner.dart))**, backed by **1-Tick Microtask Batch Compression ([`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart))**.
+The Bloom Framework resolves this with **Declarative Side-Effects ([`Effect`](../../lib/src/effect/effect.dart))** and **Standalone Runners ([`EffectRunner`](../../lib/src/effect/runner.dart))**, backed by **1-Tick Microtask Batch Compression ([`_Scheduler`](../../lib/src/graph/_internal/_scheduler.dart))**.
 
 ---
 
@@ -84,10 +84,10 @@ abstract interface class EffectRunner implements LpdagStatus {
 
 When upstream sources mutate repeatedly within a single event loop turn, invoking listeners synchronously on every mutation causes notification storms, UI layout thrashing, and transient glitches.
 
-All `Effect` terminals mix in [`_ScheduledTerminalMixin`](../../lib/src/engine/_internal/_terminal.dart), routing invalidations through the central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart):
+All `Effect` terminals mix in [`_ScheduledTerminalMixin`](../../lib/src/graph/_internal/_terminal.dart), routing invalidations through the central [`_Scheduler`](../../lib/src/graph/_internal/_scheduler.dart):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_terminal.dart
+// packages/blooming/lib/src/graph/_internal/_terminal.dart
 base mixin _ScheduledTerminalMixin on _Terminal implements _TerminalSchedulable {
   @override
   @pragma('vm:prefer-inline')
@@ -126,7 +126,7 @@ base mixin _ScheduledTerminalMixin on _Terminal implements _TerminalSchedulable 
 ```
 
 ### 3.1 Linearized Scheduler Execution Sequence
-The central [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart) coordinates batch execution across five strictly linearized phases:
+The central [`_Scheduler`](../../lib/src/graph/_internal/_scheduler.dart) coordinates batch execution across five strictly linearized phases:
 1. `_SchedulerBase`: Resets `_isScheduled = false`.
 2. `_CoalescedSchedulerMixin`: Flushes trailing coalesced state pulses (`bloom.coalesced()`) in the DAG first.
 3. `_EagerSchedulerMixin`: Resolves eager dynamic routing nodes (`computed.future`, `computed.stream`, `switched`) next.

@@ -77,7 +77,7 @@ extension ValueListenableBloomExtension<T> on ValueListenable<T> {
 * **Demand-Driven Handshake**: Listener is attached inside `_onActivate()` and removed inside `_onDeactivate()`.
 * **Activation Catch-Up**: Calls `_controller.setGuarded(() => _listenable.value)` upon activation to catch any mutations that occurred while dormant.
 * **Distinct Deduplication**: Suppresses downstream dirty pulses if consecutive emissions match according to `equals`.
-* **Graceful Mooring Support**: Accepts optional [`Graceful`](../../../blooming/lib/src/engine/graceful.dart) policy to defer listener teardown during rapid unmount/remount intervals (e.g. tab switches).
+* **Graceful Mooring Support**: Accepts optional [`Graceful`](../../../blooming/lib/src/graph/graceful.dart) policy to defer listener teardown during rapid unmount/remount intervals (e.g. tab switches).
 
 ---
 
@@ -114,7 +114,7 @@ extension BloomListenableExtension<T> on Bloom<T> {
 }
 ```
 
-* **Zero-Overhead Terminal Mooring**: Internally instantiates a [`RawBloomTerminal<T>`](../../../blooming/lib/src/engine/terminal.dart) when the first listener attaches (`_head` becomes non-null), and deactivates it when the last listener detaches (`_head == null`). Traverses listeners via an intrusive doubly-linked list with zero heap allocation per notification pass.
+* **Zero-Overhead Terminal Mooring**: Internally instantiates a [`RawBloomTerminal<T>`](../../../blooming/lib/src/graph/terminal.dart) when the first listener attaches (`_head` becomes non-null), and deactivates it when the last listener detaches (`_head == null`). Traverses listeners via an intrusive doubly-linked list with zero heap allocation per notification pass.
 * **Synchronous vs. Coalesced Modes**:
   - `sync: true` (default): Synchronously dispatches notifications upon state mutation, satisfying Flutter's immediate contract.
   - `sync: false`: Routes through `_bloom.coalesced()`, batching high-frequency invalidations into a single microtask turn.

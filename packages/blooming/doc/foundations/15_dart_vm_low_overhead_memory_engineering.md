@@ -54,7 +54,7 @@ The Bloom Framework instantiates zero `List`, `Set`, or `Map` collection wrapper
 Downstream subscriber chains (Target lists) and upstream dependency chains (Source lists) are stitched directly via raw pointer fields:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_edge.dart
+// packages/blooming/lib/src/graph/_internal/_edge.dart
 abstract interface class _TargetEdge {
   _TargetEdge? _prevTarget;
   _TargetEdge? _nextTarget;
@@ -111,12 +111,12 @@ final class _Edge implements _TargetEdge {
 
 ### 2.2 Zero-Allocation Unary Specialization (`_UnaryEdgeMixin`)
 
-A significant percentage of reactive connections are strictly 1:1 relationships (e.g., `a.map(...)`, `a.effect(...)`, unary terminals like [`RawBloomTerminal`](../../lib/src/engine/terminal.dart), unary relays [`_UnaryRelay`](../../lib/src/engine/_internal/_relay.dart), and [`EffectRunner`](../../lib/src/effect/runner.dart)).
+A significant percentage of reactive connections are strictly 1:1 relationships (e.g., `a.map(...)`, `a.effect(...)`, unary terminals like [`RawBloomTerminal`](../../lib/src/graph/terminal.dart), unary relays [`_UnaryRelay`](../../lib/src/graph/_internal/_relay.dart), and [`EffectRunner`](../../lib/src/effect/runner.dart)).
 
-In these scenarios, allocating even an `_Edge` object is redundant. Under [`_UnaryEdgeMixin`](../../lib/src/engine/_internal/_edge.dart), **the downstream node itself implements `_TargetEdge`**:
+In these scenarios, allocating even an `_Edge` object is redundant. Under [`_UnaryEdgeMixin`](../../lib/src/graph/_internal/_edge.dart), **the downstream node itself implements `_TargetEdge`**:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_edge.dart
+// packages/blooming/lib/src/graph/_internal/_edge.dart
 base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle
     implements _TargetEdge, _DirtyListener, _DirtySyncable {
   @override
@@ -153,12 +153,12 @@ base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle
 
 ### 2.3 N-ary Edge Pooling & Lifecycle Retention (`_NaryEdgeMixin`)
 
-For multi-dependency nodes (`computed`, `switched`, `managed`, `Effect(...)`), [`_NaryEdgeMixin`](../../lib/src/engine/_internal/_edge.dart) manages an intrusive doubly-linked list of `_Edge` instances (`_sourceHead` to `_sourceTail`).
+For multi-dependency nodes (`computed`, `switched`, `managed`, `Effect(...)`), [`_NaryEdgeMixin`](../../lib/src/graph/_internal/_edge.dart) manages an intrusive doubly-linked list of `_Edge` instances (`_sourceHead` to `_sourceTail`).
 
 When an N-ary node enters dormancy upon subscriber count reaching zero, **it retains its allocated `_Edge` chain locally**:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_edge.dart
+// packages/blooming/lib/src/graph/_internal/_edge.dart
 @pragma('vm:prefer-inline')
 void _detachSourceEdges() {
   for (var curr = _sourceHead; curr != null; curr = curr._nextSource) {
@@ -174,10 +174,10 @@ void _detachSourceEdges() {
 
 ### 2.4 Optimistic Pointer Swapping ($O(1)$) in `_Node`
 
-Pointer mutations in [`_Node`](../../lib/src/engine/_internal/_node.dart) execute in guaranteed $O(1)$ time with hardware-friendly conditional branching:
+Pointer mutations in [`_Node`](../../lib/src/graph/_internal/_node.dart) execute in guaranteed $O(1)$ time with hardware-friendly conditional branching:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_node.dart
+// packages/blooming/lib/src/graph/_internal/_node.dart
 @mustCallSuper
 @pragma('vm:prefer-inline')
 void _attachTargetEdgeOptimistically(_TargetEdge target) {
@@ -218,10 +218,10 @@ In traditional frameworks backed by `List` or `Set`, mutating the subscriber lis
 
 ### 3.2 In-Place Pointer Repair via `_propagatingTarget`
 
-The Bloom Framework achieves **concurrent iteration safety with zero allocations** through in-place pointer repair in [`_Node`](../../lib/src/engine/_internal/_node.dart):
+The Bloom Framework achieves **concurrent iteration safety with zero allocations** through in-place pointer repair in [`_Node`](../../lib/src/graph/_internal/_node.dart):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_node.dart
+// packages/blooming/lib/src/graph/_internal/_node.dart
 @pragma('vm:prefer-inline')
 void _propagateDirty() {
   final prevPropagating = _propagatingTarget;
@@ -242,10 +242,10 @@ void _propagateDirty() {
 }
 ```
 
-When a subscriber detaches during `_propagateDirty()`, [`_detachTargetEdgeOptimistically`](../../lib/src/engine/_internal/_node.dart) immediately inspects and repairs `_propagatingTarget`:
+When a subscriber detaches during `_propagateDirty()`, [`_detachTargetEdgeOptimistically`](../../lib/src/graph/_internal/_node.dart) immediately inspects and repairs `_propagatingTarget`:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_node.dart
+// packages/blooming/lib/src/graph/_internal/_node.dart
 @mustCallSuper
 @pragma('vm:prefer-inline')
 void _detachTargetEdgeOptimistically(_TargetEdge target) {
@@ -304,7 +304,7 @@ This requires allocating two `Set` instances, computing object hash codes, and r
 
 ### 4.2 Monotonic Epoch Sweeping with Cursor Acceleration (`_BloomViaEpochMixin`)
 
-The Bloom Framework resolves dynamic branch tracking in a **single linear pass with zero heap allocations** via [`_BloomViaEpochMixin`](../../lib/src/engine/_internal/_via.dart).
+The Bloom Framework resolves dynamic branch tracking in a **single linear pass with zero heap allocations** via [`_BloomViaEpochMixin`](../../lib/src/graph/_internal/_via.dart).
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -331,12 +331,12 @@ The Bloom Framework resolves dynamic branch tracking in a **single linear pass w
 ```
 
 #### The $O(1)$ Sequential Cursor Fast-Path & Single Concrete `final class BloomVia`
-[`BloomVia`](../../lib/src/engine/via.dart) is declared as a single concrete `final class BloomVia` with a library-private constructor `BloomVia._(this._node)`, eliminating interface indirection and enabling unconditional static devirtualization and inlining at every `via(bloom)` call site. Furthermore, `_BloomViaEpochMixin` reuses the identical `_via` instance across all synchronous evaluations (`0` bytes allocated), only allocating a fresh `BloomVia._(this)` on demand when a previous turn returned a `Future` or `Stream` (`_ViaTrack.async`) to isolate superseded asynchronous turns.
+[`BloomVia`](../../lib/src/graph/via.dart) is declared as a single concrete `final class BloomVia` with a library-private constructor `BloomVia._(this._node)`, eliminating interface indirection and enabling unconditional static devirtualization and inlining at every `via(bloom)` call site. Furthermore, `_BloomViaEpochMixin` reuses the identical `_via` instance across all synchronous evaluations (`0` bytes allocated), only allocating a fresh `BloomVia._(this)` on demand when a previous turn returned a `Future` or `Stream` (`_ViaTrack.async`) to isolate superseded asynchronous turns.
 
 In steady-state derivation executions where branch conditions remain stable across frames (the 99% common case), dependency access ordering is identical. The `_cursor` pointer verifies the expected node in a **single pointer identity comparison**:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_via.dart
+// packages/blooming/lib/src/graph/_internal/_via.dart
 @pragma('vm:prefer-inline')
 void _trackDependency(BloomVia via, _Node source) {
   if (_viaTrack == _ViaTrack.closed || !identical(_via, via)) return;
@@ -381,10 +381,10 @@ void _trackDependencySlow(_Node source, int currentEpoch, _Edge? cursor) {
 ```
 
 #### 1-Pass Pruning & Atomic Version Commit
-Once the evaluation body completes, [`_sweepObsoleteEdges`](../../lib/src/engine/_internal/_via.dart) iterates through `_sourceHead` in a single pass:
+Once the evaluation body completes, [`_sweepObsoleteEdges`](../../lib/src/graph/_internal/_via.dart) iterates through `_sourceHead` in a single pass:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_via.dart
+// packages/blooming/lib/src/graph/_internal/_via.dart
 @pragma('vm:prefer-inline')
 void _sweepObsoleteEdges(int currentEpoch, {required bool commitVersions}) {
   final isActive = _lifecycle.isActive;
@@ -472,7 +472,7 @@ final class _BloomUntrackedImpl implements BloomUntracked {
 Feature abstractions in Bloom leverage Dart 3 `extension type`s:
 * [`BloomEffectScope`](../../lib/src/effect/extensions.dart) and [`UnaryBloomEffectScope`](../../lib/src/effect/extensions.dart)
 * [`BloomIterableElements`](../../lib/src/bloom/elements.dart), [`BloomListElements`](../../lib/src/bloom/elements.dart), [`BloomSetElements`](../../lib/src/bloom/elements.dart), [`BloomMapElements`](../../lib/src/bloom/elements.dart)
-* [`BloomDebug`](../../lib/src/engine/debug.dart)
+* [`BloomDebug`](../../lib/src/graph/debug.dart)
 
 Extension types provide zero-cost abstractions: at compile time, the Dart compiler completely erases the wrapper type, compiling directly to raw object references without heap headers, wrapper allocations, or pointer chasing.
 
@@ -500,10 +500,10 @@ extension BloomStateRecord2Extension<T1, T2> on (BloomState<T1>, BloomState<T2>)
 
 ### 5.6 Double-Buffered Microtask Scheduler with Tear-Off Caching
 
-The central asynchronous microtask scheduler ([`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart)) coordinates coalesced pulses, eager switches, terminals, and graceful deactivations using **double-buffered swap sets**:
+The central asynchronous microtask scheduler ([`_Scheduler`](../../lib/src/graph/_internal/_scheduler.dart)) coordinates coalesced pulses, eager switches, terminals, and graceful deactivations using **double-buffered swap sets**:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_scheduler.dart
+// packages/blooming/lib/src/graph/_internal/_scheduler.dart
 base mixin _TerminalSchedulerMixin on _SchedulerBase {
   Set<_TerminalSchedulable> _terminalSet = <_TerminalSchedulable>{};
   Set<_TerminalSchedulable> _terminalSwapSet = <_TerminalSchedulable>{};
@@ -542,10 +542,10 @@ base mixin _TerminalSchedulerMixin on _SchedulerBase {
 
 ### 5.7 Stack Trace Suppression in Fast Derivation Short-Circuits
 
-When [`BloomVia.call`](../../lib/src/engine/_internal/_via.dart) encounters an empty or error state during derivation execution, it throws an internal sentinel to abort the compute pass:
+When [`BloomVia.call`](../../lib/src/graph/_internal/_via.dart) encounters an empty or error state during derivation execution, it throws an internal sentinel to abort the compute pass:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_via.dart
+// packages/blooming/lib/src/graph/_internal/_via.dart
 final class _ViaShortCircuit implements Error {
   const _ViaShortCircuit(this.state);
   final _BloomState<Object?> state;

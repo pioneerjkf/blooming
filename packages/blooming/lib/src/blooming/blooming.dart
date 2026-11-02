@@ -71,56 +71,6 @@ part of '../framework.dart';
 /// ```
 const blooming = BloomingFunctor._();
 
-// =============================================================================
-// Producer Type Aliases (blooming.* result types)
-// =============================================================================
-
-/// Ergonomic type alias of [BloomController]: the producer handle created by `blooming(...)`.
-///
-/// Under the strict **Producer/Consumer Separation (Has-a)** architecture:
-/// - [Blooming] represents the mutable producer handle (the entity actively blooming state).
-///   It encapsulates state mutation methods ([BloomController.data], [BloomController.set],
-///   [BloomController.empty], [BloomController.setError]).
-/// - Downstream derivations and UI consumers should only observe the read-only [Bloom]
-///   view exposed via [BloomController.bloom].
-///
-/// Fully interchangeable with [BloomController] with zero runtime overhead:
-/// ```dart
-/// Blooming<int> counter = blooming(0);
-/// Bloom<int> get count => counter.bloom;
-/// ```
-typedef Blooming<T> = BloomController<T>;
-
-/// Ergonomic type alias of [RawBloomController]: the producer handle created by `blooming.raw(...)`.
-///
-/// Bypasses equality checks for ultra-hot mutation sequences or in-place mutable objects.
-/// Fully interchangeable with [RawBloomController] with zero runtime overhead.
-typedef BloomingRaw<T> = RawBloomController<T>;
-
-/// Ergonomic type alias of [BloomDraftController] for lists: created by `blooming.list(...)`.
-///
-/// Simplifies the nested collection generic signature: `BloomingList<T>` flattens
-/// `BloomDraftController<List<T>>` down to the element type `T`.
-typedef BloomingList<T> = BloomDraftController<List<T>>;
-
-/// Ergonomic type alias of [BloomDraftController] for sets: created by `blooming.set(...)`.
-///
-/// Simplifies the nested collection generic signature: `BloomingSet<T>` flattens
-/// `BloomDraftController<Set<T>>` down to the element type `T`.
-typedef BloomingSet<T> = BloomDraftController<Set<T>>;
-
-/// Ergonomic type alias of [BloomDraftController] for maps: created by `blooming.map(...)`.
-///
-/// Simplifies the nested collection generic signature: `BloomingMap<K, V>` flattens
-/// `BloomDraftController<Map<K, V>>` down to key-value types `K, V`.
-typedef BloomingMap<K, V> = BloomDraftController<Map<K, V>>;
-
-/// Ergonomic type alias of [BloomSignalController]: created by `blooming.signal(...)`.
-///
-/// Represents the discrete event notification emitter handle. Downstream consumers
-/// observe the read-only [BloomSignal] view via [BloomSignalController.bloom].
-typedef BloomingSignal = BloomSignalController;
-
 /// Callable implementation class for the top-level [blooming] state creation functor.
 @immutable
 final class BloomingFunctor {
@@ -179,7 +129,7 @@ final class BloomingFunctor {
   /// }
   /// ```
   @pragma('vm:prefer-inline')
-  Blooming<T> call<T>(
+  BloomController<T> call<T>(
     T data, {
     bool distinct = true,
     bool Function(T previous, T next)? equals,
@@ -218,7 +168,7 @@ final class BloomingFunctor {
   ///   [BloomEmptyExtractionException]. Use [BloomState.dataOrNull] or
   ///   [BloomState.dataOrElse] for safe total inspection.
   @pragma('vm:prefer-inline')
-  Blooming<T> late<T>({
+  BloomController<T> late<T>({
     Object? reason,
     bool distinct = true,
     bool Function(T previous, T next)? equals,
@@ -255,7 +205,7 @@ final class BloomingFunctor {
   ///   [BloomErrorExtractionException]. Inspect [BloomState.error] or
   ///   use [BloomState.dataOrNull] for safe recovery.
   @pragma('vm:prefer-inline')
-  Blooming<T> error<T>(
+  BloomController<T> error<T>(
     Object error, {
     StackTrace? stackTrace,
     bool distinct = true,
@@ -300,7 +250,7 @@ final class BloomingRawFunctor {
   /// * Returns an unfiltered [RawBloomController] in the Data state
   ///   ([BloomState.hasData] == true).
   @pragma('vm:prefer-inline')
-  BloomingRaw<T> call<T>(
+  RawBloomController<T> call<T>(
     T data, {
     void Function()? onActivated,
     void Function()? onDeactivated,
@@ -327,7 +277,7 @@ final class BloomingRawFunctor {
   /// * Reading [RawBloomController.data] before setting a value throws
   ///   [BloomEmptyExtractionException].
   @pragma('vm:prefer-inline')
-  BloomingRaw<T> late<T>({
+  RawBloomController<T> late<T>({
     Object? reason,
     void Function()? onActivated,
     void Function()? onDeactivated,
@@ -355,7 +305,7 @@ final class BloomingRawFunctor {
   /// * Reading [RawBloomController.data] while in the Error state throws
   ///   [BloomErrorExtractionException]. Inspect [BloomState.error] for details.
   @pragma('vm:prefer-inline')
-  BloomingRaw<T> error<T>(
+  RawBloomController<T> error<T>(
     Object error, {
     StackTrace? stackTrace,
     void Function()? onActivated,
@@ -398,7 +348,7 @@ final class BloomingListFunctor {
   /// * Attempting to mutate [BloomDraftController.data] directly throws [UnsupportedError].
   ///   Always apply modifications inside a [BloomDraftController.edit] draft.
   @pragma('vm:prefer-inline')
-  BloomingList<T> call<T>(
+  BloomDraftController<List<T>> call<T>(
     Iterable<T> data, {
     bool Function(List<T> previous, List<T> next)? equals,
   }) =>
@@ -411,7 +361,7 @@ final class BloomingListFunctor {
   /// **Ensures:**
   /// * Returns an empty [BloomDraftController] awaiting initial assignment.
   @pragma('vm:prefer-inline')
-  BloomingList<T> late<T>({
+  BloomDraftController<List<T>> late<T>({
     bool Function(List<T> previous, List<T> next)? equals,
   }) =>
       _BloomListControllerImpl<T>.late(equals: equals);
@@ -425,7 +375,7 @@ final class BloomingListFunctor {
   /// **Ensures:**
   /// * Returns a [BloomDraftController] initialized in the Error state.
   @pragma('vm:prefer-inline')
-  BloomingList<T> error<T>(
+  BloomDraftController<List<T>> error<T>(
     Object error, {
     StackTrace? stackTrace,
     bool Function(List<T> previous, List<T> next)? equals,
@@ -464,7 +414,7 @@ final class BloomingSetFunctor {
   /// * Attempting to mutate [BloomDraftController.data] directly throws [UnsupportedError].
   ///   Always apply modifications inside a [BloomDraftController.edit] draft.
   @pragma('vm:prefer-inline')
-  BloomingSet<E> call<E>(
+  BloomDraftController<Set<E>> call<E>(
     Iterable<E> data, {
     bool Function(Set<E> previous, Set<E> next)? equals,
   }) =>
@@ -477,7 +427,7 @@ final class BloomingSetFunctor {
   /// **Ensures:**
   /// * Returns an empty [BloomDraftController] awaiting initial assignment.
   @pragma('vm:prefer-inline')
-  BloomingSet<E> late<E>({
+  BloomDraftController<Set<E>> late<E>({
     bool Function(Set<E> previous, Set<E> next)? equals,
   }) =>
       _BloomSetControllerImpl<E>.late(equals: equals);
@@ -491,7 +441,7 @@ final class BloomingSetFunctor {
   /// **Ensures:**
   /// * Returns a [BloomDraftController] initialized in the Error state.
   @pragma('vm:prefer-inline')
-  BloomingSet<E> error<E>(
+  BloomDraftController<Set<E>> error<E>(
     Object error, {
     StackTrace? stackTrace,
     bool Function(Set<E> previous, Set<E> next)? equals,
@@ -530,7 +480,7 @@ final class BloomingMapFunctor {
   /// * Attempting to mutate [BloomDraftController.data] directly throws [UnsupportedError].
   ///   Always apply modifications inside a [BloomDraftController.edit] draft.
   @pragma('vm:prefer-inline')
-  BloomingMap<K, V> call<K, V>(
+  BloomDraftController<Map<K, V>> call<K, V>(
     Map<K, V> data, {
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,
   }) =>
@@ -543,7 +493,7 @@ final class BloomingMapFunctor {
   /// **Ensures:**
   /// * Returns an empty [BloomDraftController] awaiting initial assignment.
   @pragma('vm:prefer-inline')
-  BloomingMap<K, V> late<K, V>({
+  BloomDraftController<Map<K, V>> late<K, V>({
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,
   }) =>
       _BloomMapControllerImpl<K, V>.late(equals: equals);
@@ -557,7 +507,7 @@ final class BloomingMapFunctor {
   /// **Ensures:**
   /// * Returns a [BloomDraftController] initialized in the Error state.
   @pragma('vm:prefer-inline')
-  BloomingMap<K, V> error<K, V>(
+  BloomDraftController<Map<K, V>> error<K, V>(
     Object error, {
     StackTrace? stackTrace,
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,
@@ -593,7 +543,7 @@ final class BloomingSignalFunctor {
   /// **Ensures:**
   /// * Returns an active [BloomSignalController].
   @pragma('vm:prefer-inline')
-  BloomingSignal call({
+  BloomSignalController call({
     void Function()? onActivated,
     void Function()? onDeactivated,
   }) =>

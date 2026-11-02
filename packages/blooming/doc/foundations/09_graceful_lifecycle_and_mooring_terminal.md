@@ -36,7 +36,7 @@ To reconcile pure lazy dormancy with seamless user navigation, the Bloom Framewo
 
 ## 2. The Mooring Architecture: Topological Anchoring via `_MooringTerminal`
 
-Mooring anchors unobserved reactive nodes to an internal virtual terminal ([`_MooringTerminal`](../../lib/src/engine/_internal/_mooring.dart)) when subscriber counts temporarily hit zero, keeping upstream pipelines active:
+Mooring anchors unobserved reactive nodes to an internal virtual terminal ([`_MooringTerminal`](../../lib/src/graph/_internal/_mooring.dart)) when subscriber counts temporarily hit zero, keeping upstream pipelines active:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -62,10 +62,10 @@ Mooring anchors unobserved reactive nodes to an internal virtual terminal ([`_Mo
 ```
 
 ### 2.1 The Tranquil Harbor (`_MooringTerminal`)
-Unlike ordinary consumer terminals that pull data and trigger UI rebuilds, [`_MooringTerminal`](../../lib/src/engine/_internal/_mooring.dart) is a tranquil harbor: it holds topological edges purely to prevent upstream lifecycles from sinking into dormant deactivation.
+Unlike ordinary consumer terminals that pull data and trigger UI rebuilds, [`_MooringTerminal`](../../lib/src/graph/_internal/_mooring.dart) is a tranquil harbor: it holds topological edges purely to prevent upstream lifecycles from sinking into dormant deactivation.
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_mooring.dart
+// packages/blooming/lib/src/graph/_internal/_mooring.dart
 final class _MooringTerminal extends _Terminal {
   _MooringTerminal._();
   static final _MooringTerminal instance = _MooringTerminal._();
@@ -89,7 +89,7 @@ final class _MooringTerminal extends _Terminal {
 ---
 
 ### 2.2 Intrusive Edge Management (`_MooringEdge`)
-`_MooringTerminal` manages lightweight intrusive [`_MooringEdge`](../../lib/src/engine/_internal/_mooring.dart) instances:
+`_MooringTerminal` manages lightweight intrusive [`_MooringEdge`](../../lib/src/graph/_internal/_mooring.dart) instances:
 * When a node enters period grace, `moor(node, duration)` instantiates a lightweight `_MooringEdge` and prepends it to `_mooringHead` via intrusive pointers (`_prevMooring`, `_nextMooring`) in $O(1)$.
 * When unmoored or expired, the edge is unlinked in $O(1)$ and cleanly detached, rendering it unreachable and eligible for subsequent Dart VM GC reclamation.
 * **Zero Engine Leaks**: Intrusive unlinking guarantees that the reactive engine retains zero dangling references; actual memory deallocation and generational collection are handled naturally by the Dart VM runtime.
@@ -114,12 +114,12 @@ The Bloom Framework provides two distinct grace policy implementations matching 
 ```
 
 ### 3.1 Microtask Deferral (`Graceful.microtask` / `Graceful()`)
-* **Underlying Engine**: Backed by [`_MicrotaskGraceHandle`](../../lib/src/engine/_internal/_graceful.dart) and [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart).
+* **Underlying Engine**: Backed by [`_MicrotaskGraceHandle`](../../lib/src/graph/_internal/_graceful.dart) and [`_Scheduler`](../../lib/src/graph/_internal/_scheduler.dart).
 * **Zero-Allocation Optimization**: It does **not** allocate `_MooringEdge` objects or Dart `Timer` handles. It registers directly in `_Scheduler.instance._scheduleGraceHandle(this)`.
 * **Application**: Perfect for Flutter widget tree rebuilding, `Hero` transitions, and list element reparenting occurring within the same event loop tick.
 
 ### 3.2 Time-Based Mooring (`Graceful.period(Duration)`)
-* **Underlying Engine**: Backed by [`_PeriodGraceHandle`](../../lib/src/engine/_internal/_mooring.dart) and `_MooringTerminal`.
+* **Underlying Engine**: Backed by [`_PeriodGraceHandle`](../../lib/src/graph/_internal/_mooring.dart) and `_MooringTerminal`.
 * **Application**: Multi-second retention for screen navigation (bottom navigation bars, master-detail transitions, tab pages).
 * **Stream In-Flight Continuity**: WebSockets and broadcast streams remain connected; events arriving while unobserved are buffered and available instantly upon remount.
 
@@ -172,10 +172,10 @@ final tickerBloom = watchTicker.toBloom(
 
 ## 4. Topological Mechanics: `_GracefulNodeMixin`
 
-Nodes with graceful support mix in [`_GracefulNodeMixin`](../../lib/src/engine/_internal/_graceful.dart):
+Nodes with graceful support mix in [`_GracefulNodeMixin`](../../lib/src/graph/_internal/_graceful.dart):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_graceful.dart
+// packages/blooming/lib/src/graph/_internal/_graceful.dart
 base mixin _GracefulNodeMixin on _Node {
   Graceful get _graceful;
   _GraceHandle? _graceHandle;
@@ -249,10 +249,10 @@ When a node mixing in `_BloomViaEpochMixin` (or owning a `RawViaTerminal`, such 
 
 ## 5. Scheduler Prioritization & Mixin Linearization
 
-In [`_Scheduler`](../../lib/src/engine/_internal/_scheduler.dart), mixin linearization dictates the exact order of batch microtask passes:
+In [`_Scheduler`](../../lib/src/graph/_internal/_scheduler.dart), mixin linearization dictates the exact order of batch microtask passes:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_scheduler.dart
+// packages/blooming/lib/src/graph/_internal/_scheduler.dart
 base class _Scheduler extends _SchedulerBase
     with
         _CoalescedSchedulerMixin, // 1. Flush trailing coalesced dirty pulses
@@ -266,7 +266,7 @@ Even if subscriber counts drop to zero during an active tick, **active effects r
 
 If deactivation ran before effect execution:
 * Executing effects would encounter destroyed connections or disposed controllers, throwing `StateError` anomalies.
-* By scheduling [`_GracefulSchedulerMixin`](../../lib/src/engine/_internal/_scheduler.dart) strictly at the tail of the scheduler loop, all side-effects and reads complete safely against coherent state before deallocations commence.
+* By scheduling [`_GracefulSchedulerMixin`](../../lib/src/graph/_internal/_scheduler.dart) strictly at the tail of the scheduler loop, all side-effects and reads complete safely against coherent state before deallocations commence.
 
 ---
 

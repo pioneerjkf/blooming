@@ -184,7 +184,7 @@ final activeDashboardFeed = switched(
 );
 ```
 
-When `guard` evaluates to `isBlock`, [`_SwitchedSelectionMixin._evaluateDelta()`](../../lib/src/bloom/_internal/_switched.dart) immediately binds to the static constant node `Bloom.empty(decision.reason)`. The candidate subtrees (`normalFeed` and `adminFeed`) are completely decoupled ([`_performCouple`](../../lib/src/engine/_internal/_relay.dart)), returning them to inactive dormancy and halting all upstream background computation.
+When `guard` evaluates to `isBlock`, [`_SwitchedSelectionMixin._evaluateDelta()`](../../lib/src/bloom/_internal/_switched.dart) immediately binds to the static constant node `Bloom.empty(decision.reason)`. The candidate subtrees (`normalFeed` and `adminFeed`) are completely decoupled ([`_performCouple`](../../lib/src/graph/_internal/_relay.dart)), returning them to inactive dormancy and halting all upstream background computation.
 
 ### 3.4 Encapsulated Domain Preconditions in `Computation<T>`
 

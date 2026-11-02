@@ -71,7 +71,7 @@ void renderView(Observable<int> observable) {
 
 This violates the **Object-Capability Model**: any component that can observe the value also inherits the latent capability to mutate it via dynamic type casting (`is` / `as`).
 
-In Bloom, [`BloomController<T>`](../../lib/src/bloom/controller.dart#L81) **never inherits or implements [`Bloom<T>`](../../lib/src/bloom/bloom.dart#L12)**:
+In Bloom, [`BloomController<T>`](../../lib/src/blooming/controller.dart#L81) **never inherits or implements [`Bloom<T>`](../../lib/src/bloom/bloom.dart#L12)**:
 * **Strict "Has-a" Composition**: `BloomController<T>` owns and encapsulates a private physical entry node inside the engine. It exposes the read-only consumer interface solely via `controller.bloom`.
 * **Zero Downcasting Vulnerability**: A `Bloom<T>` instance passed to presentation layers cannot be downcast to a `BloomController` under any circumstance. Attempting `bloom is BloomController<T>` evaluates to `false` statically or throws a `TypeError` at runtime:
   ```dart
@@ -81,13 +81,13 @@ In Bloom, [`BloomController<T>`](../../lib/src/bloom/controller.dart#L81) **neve
   assert(consumerView is Bloom<int>);
   assert(consumerView is! BloomController<int>); // Downcasting is strictly impossible!
   ```
-* **Discrete Event Signals**: The identical capability separation governs discrete pulses: [`BloomSignalController`](../../lib/src/bloom/signal.dart#L10) (producer handle with `emit()`) exposes [`BloomSignal`](../../lib/src/bloom/signal.dart#L12) (read-only consumer view implementing `Bloom<int>`).
+* **Discrete Event Signals**: The identical capability separation governs discrete pulses: [`BloomSignalController`](../../lib/src/blooming/signal.dart#L10) (producer handle with `emit()`) exposes [`BloomSignal`](../../lib/src/blooming/signal.dart#L12) (read-only consumer view implementing `Bloom<int>`).
 
 ### 2.3 `BloomController` vs. `RawBloomController`: Distinct Filtering vs. Manual Invalidation
 
 The framework provides two controller variants engineered for distinct operational requirements:
 
-| Dimension | [`BloomController<T>`](../../lib/src/bloom/controller.dart#L81) | [`RawBloomController<T>`](../../lib/src/bloom/controller.dart#L274) |
+| Dimension | [`BloomController<T>`](../../lib/src/blooming/controller.dart#L81) | [`RawBloomController<T>`](../../lib/src/blooming/controller.dart#L274) |
 | :--- | :--- | :--- |
 | **Default Equality Guard** | `distinct: true` (Enabled by default) | **Zero Check** (Equality check completely bypassed) |
 | **Invalidation Trigger** | Emits Push-Dirty only when new value differs via `equals` | Emits Push-Dirty on every assignment or explicit `markDirty()` |
@@ -141,10 +141,10 @@ In a Directed Acyclic Graph (DAG), an unhandled exception thrown inside an inter
 
 ### 3.1 The Danger of Escaping Uncaught Exceptions
 
-In 2-Phase LPDAG engines, [`_PullResolver._resolve()`](../../lib/src/engine/_internal/_pull.dart#L47) maintains recursion guards (`_isResolving`) to detect cycles (`LpdagCycleError`):
+In 2-Phase LPDAG engines, [`_PullResolver._resolve()`](../../lib/src/graph/_internal/_pull.dart#L47) maintains recursion guards (`_isResolving`) to detect cycles (`LpdagCycleError`):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_pull.dart
+// packages/blooming/lib/src/graph/_internal/_pull.dart
 @pragma('vm:prefer-inline')
 void _resolve() {
   if (_isResolving) {
@@ -230,10 +230,10 @@ _BloomState<T> _pull() {
 
 ### 3.3 Terminal & Lifecycle Exception Dispatch (`LpdagUncaughtErrorHandler`)
 
-While derivation exceptions are encapsulated as first-class `Error` states, exceptions occurring outside derivation bounds (e.g. within terminal invalidation callbacks or asynchronous lifecycle cleanups in `managed`) are routed through [`_dispatchUncaughtError`](../../lib/src/engine/_internal/_uncaught.dart#L10):
+While derivation exceptions are encapsulated as first-class `Error` states, exceptions occurring outside derivation bounds (e.g. within terminal invalidation callbacks or asynchronous lifecycle cleanups in `managed`) are routed through [`_dispatchUncaughtError`](../../lib/src/graph/_internal/_uncaught.dart#L10):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_uncaught.dart
+// packages/blooming/lib/src/graph/_internal/_uncaught.dart
 @pragma('vm:prefer-inline')
 void _dispatchUncaughtError(Object error, StackTrace stackTrace, {Object? context}) {
   final handler = LpdagUncaughtErrorHandler.instance;
@@ -252,8 +252,8 @@ void _dispatchUncaughtError(Object error, StackTrace stackTrace, {Object? contex
 }
 ```
 
-1. **Downstream Terminal Routing**: [`_Node._handleUncaughtError`](../../lib/src/engine/_internal/_node.dart#L148) first traverses downstream edges to deliver the failure to active terminals via `terminal._handleUncaughtError`.
-2. **Global Telemetry Integration**: If no active terminal intercepts the failure, it routes to [`LpdagUncaughtErrorHandler.instance`](../../lib/src/engine/uncaught.dart#L11). Applications attach centralized telemetry (e.g., Sentry, Firebase Crashlytics) without incurring hot-path performance penalties:
+1. **Downstream Terminal Routing**: [`_Node._handleUncaughtError`](../../lib/src/graph/_internal/_node.dart#L148) first traverses downstream edges to deliver the failure to active terminals via `terminal._handleUncaughtError`.
+2. **Global Telemetry Integration**: If no active terminal intercepts the failure, it routes to [`LpdagUncaughtErrorHandler.instance`](../../lib/src/graph/uncaught.dart#L11). Applications attach centralized telemetry (e.g., Sentry, Firebase Crashlytics) without incurring hot-path performance penalties:
    ```dart
    final class TelemetryErrorHandler implements LpdagUncaughtErrorHandler {
      @override

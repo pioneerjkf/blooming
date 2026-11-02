@@ -44,7 +44,7 @@ The Bloom Framework resolves these structural defects through the **[`BloomState
 
 In the Bloom Framework, state observation is standardized through the **[`BloomState<T>`](../../lib/src/bloom/state.dart#L94)** Universal Reactive State Protocol. 
 
-Imperative state controllers ([`BloomController`](../../lib/src/bloom/controller.dart)), immutable snapshots ([`BloomSnapshot`](../../lib/src/bloom/snapshot.dart)), consumer terminals ([`RawBloomTerminal`](../../lib/src/engine/terminal.dart#L182)), domain computations ([`Computation`](../../lib/src/bloom/computed.dart#L468)), and untracked state views ([`untracked.state(bloom)`](../../lib/src/bloom/untracked.dart)) all implement the [`BloomState`](../../lib/src/bloom/state.dart#L94) protocol.
+Imperative state controllers ([`BloomController`](../../lib/src/blooming/controller.dart)), immutable snapshots ([`BloomSnapshot`](../../lib/src/bloom/snapshot.dart)), consumer terminals ([`RawBloomTerminal`](../../lib/src/graph/terminal.dart#L182)), domain computations ([`Computation`](../../lib/src/bloom/computed.dart#L468)), and untracked state views ([`untracked.state(bloom)`](../../lib/src/bloom/untracked.dart)) all implement the [`BloomState`](../../lib/src/bloom/state.dart#L94) protocol.
 
 *(Note: [`Bloom`](../../lib/src/bloom/bloom.dart) itself is an opaque handle with zero public read getters. Reading raw values or inspecting states outside tracking scopes is provided via the symmetrical [`untracked(bloom)`](../../lib/src/bloom/untracked.dart) and [`untracked.state(bloom)`](../../lib/src/bloom/untracked.dart) functors).*
 
@@ -114,7 +114,7 @@ final display = switch (snap.phase) {
 
 ## 3. Total Fault Isolation & Non-Escaping Invariants
 
-The core engine implements strict exception sandboxing across every derivation boundary ([`_PullResolver`](../../lib/src/engine/_internal/_pull.dart) and [`_ComputedPullMixin`](../../lib/src/bloom/_internal/_computed.dart)):
+The core engine implements strict exception sandboxing across every derivation boundary ([`_PullResolver`](../../lib/src/graph/_internal/_pull.dart) and [`_ComputedPullMixin`](../../lib/src/bloom/_internal/_computed.dart)):
 
 ```dart
 // packages/blooming/lib/src/bloom/_internal/_computed.dart
@@ -198,7 +198,7 @@ If an exception occurs after reading `useRemote` but before reading `remoteSourc
 The Bloom Framework guards dynamic topology via the `succeeded` epoch flag:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_via.dart
+// packages/blooming/lib/src/graph/_internal/_via.dart
 @pragma('vm:prefer-inline')
 void _endEpoch(int currentEpoch, {required bool succeeded, required bool commitVersions}) {
   _cursor = null;

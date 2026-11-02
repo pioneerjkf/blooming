@@ -109,8 +109,6 @@ abstract base class BloomSignal implements Bloom<int> {}
 
 /// Producer controller handle for emitting discrete reactive signals.
 ///
-/// Also accessible via the ergonomic type alias [BloomingSignal].
-///
 /// Exposes a read-only [bloom] consumer view for downstream observation,
 /// completely encapsulating emission capabilities.
 abstract base class BloomSignalController implements LpdagStatus {

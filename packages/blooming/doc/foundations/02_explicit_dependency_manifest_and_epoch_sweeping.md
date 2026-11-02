@@ -19,7 +19,7 @@ However, in large-scale production applications and high-throughput Flutter envi
 3. **Memory Leaks and Ghost Computations from Stale Dependencies**:
    In conditional branches (`condition ? a : b`), when conditions flip, nodes from previously active branches (`b`) remain bound as listeners unless expensive differential reconciliation is performed, leading to zombie subscriptions and ghost recomputations.
 
-The Bloom Framework resolves these challenges using an **Explicit Dependency Manifest ([`BloomVia`](../../lib/src/engine/via.dart))** and a **1-Pass Epoch Sweeping** algorithm ([`_BloomViaEpochMixin`](../../lib/src/engine/_internal/_via.dart#L55)).
+The Bloom Framework resolves these challenges using an **Explicit Dependency Manifest ([`BloomVia`](../../lib/src/graph/via.dart))** and a **1-Pass Epoch Sweeping** algorithm ([`_BloomViaEpochMixin`](../../lib/src/graph/_internal/_via.dart#L55)).
 
 ---
 
@@ -51,14 +51,14 @@ The Bloom Framework resolves these challenges using an **Explicit Dependency Man
 
 ### 2.1 The Complete BloomVia Surface: Three Scoped Operations
 
-Inside any reactive tracking scope ([`computed`](../../lib/src/bloom/computed.dart), [`switched`](../../lib/src/bloom/switched.dart), [`managed`](../../lib/src/bloom/managed.dart), `RawViaTerminal`, `composed`, or `BloomWidget.build`), dependencies are registered strictly through the injected [`BloomVia`](../../lib/src/engine/via.dart) instance:
+Inside any reactive tracking scope ([`computed`](../../lib/src/bloom/computed.dart), [`switched`](../../lib/src/bloom/switched.dart), [`managed`](../../lib/src/bloom/managed.dart), `RawViaTerminal`, `composed`, or `BloomWidget.build`), dependencies are registered strictly through the injected [`BloomVia`](../../lib/src/graph/via.dart) instance:
 
 1. **`via(bloom)` — Direct Payload Extraction with Short-Circuiting**:
-   Registers `bloom` as an upstream dependency for the current evaluation epoch. If `bloom` contains valid data (`_ValidBloomState`), returns `T` directly. If `bloom` is empty or holds an error, throws an internal [`_ViaShortCircuit`](../../lib/src/engine/_internal/_via.dart#L44) sentinel to immediately bypass downstream calculation without running invalid logic.
+   Registers `bloom` as an upstream dependency for the current evaluation epoch. If `bloom` contains valid data (`_ValidBloomState`), returns `T` directly. If `bloom` is empty or holds an error, throws an internal [`_ViaShortCircuit`](../../lib/src/graph/_internal/_via.dart#L44) sentinel to immediately bypass downstream calculation without running invalid logic.
 2. **`via.state(bloom)` — Defensive State Inspection**:
    Registers `bloom` as an upstream dependency and returns its zero-allocation [`BloomState<T>`](../../lib/src/bloom/state.dart) container without short-circuiting, enabling exhaustive pattern matching (`switch (state.phase)`) inside derivations.
 3. **`via.tether(tether)` — Declarative Lifecycle Binding**:
-   Binds a non-propagating lifecycle node ([`Tether`](../../lib/src/engine/tether.dart)) to the enclosing scope's active/dormant state and epoch lifecycle.
+   Binds a non-propagating lifecycle node ([`Tether`](../../lib/src/graph/tether.dart)) to the enclosing scope's active/dormant state and epoch lifecycle.
 
 ### 2.2 Symmetrical Gateway: Tracked `via(...)` vs. Untracked `untracked(...)`
 
@@ -107,7 +107,7 @@ Traditional reactive frameworks allocate previous and next dependency collection
 
 ### 3.2 1-Pass Monotonic Epoch Sweeping in Bloom
 
-Bloom implements dependency tracking via [`_BloomViaEpochMixin`](../../lib/src/engine/_internal/_via.dart#L55) on an intrusive doubly linked list of [`_Edge`](../../lib/src/engine/_internal/_edge.dart#L17) structures (`_sourceHead`, `_sourceTail`, `_prevSource`, `_nextSource`). By tracking a monotonically incrementing integer field (`_epoch`) per node and a timestamp (`_seenEpoch`) on each edge, Bloom eliminates set allocations and performs pruning in **zero heap allocations and $O(\text{edges})$ linear time**.
+Bloom implements dependency tracking via [`_BloomViaEpochMixin`](../../lib/src/graph/_internal/_via.dart#L55) on an intrusive doubly linked list of [`_Edge`](../../lib/src/graph/_internal/_edge.dart#L17) structures (`_sourceHead`, `_sourceTail`, `_prevSource`, `_nextSource`). By tracking a monotonically incrementing integer field (`_epoch`) per node and a timestamp (`_seenEpoch`) on each edge, Bloom eliminates set allocations and performs pruning in **zero heap allocations and $O(\text{edges})$ linear time**.
 
 Furthermore, Bloom incorporates an **$O(1)$ Sequential Cursor Fast-Path Optimization** for the 99% common case where dependency access order remains stable.
 
@@ -181,13 +181,13 @@ flowchart TD
 2. **Zero Heap Allocation**: Never creates temporary `List` or `Set` objects; operates purely by updating `_seenEpoch` and intrusive pointer fields of existing `_Edge` instances.
 3. **Deterministic Pruning**: Stale edges are severed synchronously in a single linked-list pass ($O(S)$). Unused branches never emit background invalidation pulses downstream.
 4. **Combined Version Stamping**: In terminal nodes (`commitVersions: true`), upstream versions are committed during the sweeping traversal, avoiding separate post-processing passes.
-5. **Cycle Immunity**: Circular dependencies during evaluation are intercepted immediately, raising an [`LpdagCycleError`](../../lib/src/engine/exception.dart#L74) rather than freezing in an infinite loop.
+5. **Cycle Immunity**: Circular dependencies during evaluation are intercepted immediately, raising an [`LpdagCycleError`](../../lib/src/graph/exception.dart#L74) rather than freezing in an infinite loop.
 
 ---
 
 ## 4. The Short-Circuiting Mechanics: `_ViaShortCircuit` and State Forwarding
 
-When [`BloomVia.call`](../../lib/src/engine/via.dart) evaluates an upstream node that is currently in an `Empty` or `Error` state, evaluating downstream user expressions (e.g. string formatting, arithmetic) is unsafe:
+When [`BloomVia.call`](../../lib/src/graph/via.dart) evaluates an upstream node that is currently in an `Empty` or `Error` state, evaluating downstream user expressions (e.g. string formatting, arithmetic) is unsafe:
 
 ```dart
 final userBloom = blooming.late<({String name, String role})>().bloom;
@@ -202,9 +202,9 @@ final profile = computed((via) {
 To short-circuit execution cleanly and defensively:
 1. `BloomVia.call(bloom)` invokes `_node._trackDependency(this, bloom)` and reads `bloom._read()`.
 2. If `_ValidBloomState`, returns the raw payload `s.data`.
-3. If `Empty` or `Error`, throws [`_ViaShortCircuit(s)`](../../lib/src/engine/_internal/_via.dart):
+3. If `Empty` or `Error`, throws [`_ViaShortCircuit(s)`](../../lib/src/graph/_internal/_via.dart):
    ```dart
-   // packages/blooming/lib/src/engine/_internal/_via.dart
+   // packages/blooming/lib/src/graph/_internal/_via.dart
    final class _ViaShortCircuit implements Error {
      const _ViaShortCircuit(this.state);
      final _BloomState<Object?> state;
@@ -248,7 +248,7 @@ In [`_ComputedPullMixin`](../../lib/src/bloom/_internal/_computed.dart):
 
 A fundamental failure mode of implicit ambient reactivity (`dep.value` backed by a global `_currentConsumer` stack) is its inability to survive asynchronous suspension (`await`, `yield`, `yield*`) in the Dart event loop. When an `async` function suspends at an `await` point, an ambient framework must immediately pop `_currentConsumer` from the global stack so unrelated microtasks do not accidentally register as dependencies. Once resumed by the event loop, the global stack is empty—any `dep.value` read after the first `await` is silently untracked unless the framework wraps every evaluation in a heavy custom `Zone` (`runZoned`).
 
-Because [`BloomVia`](../../lib/src/engine/via.dart) is passed as an explicit lexical parameter, the `via` reference is naturally captured inside the Dart compiler's async state-machine closure frame across arbitrary sequential `await`, `yield`, and `yield*` suspension points with **zero `Zone` overhead**.
+Because [`BloomVia`](../../lib/src/graph/via.dart) is passed as an explicit lexical parameter, the `via` reference is naturally captured inside the Dart compiler's async state-machine closure frame across arbitrary sequential `await`, `yield`, and `yield*` suspension points with **zero `Zone` overhead**.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -271,7 +271,7 @@ Because [`BloomVia`](../../lib/src/engine/via.dart) is passed as an explicit lex
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Key Mechanics of [`_ViaTrack`](../../lib/src/engine/_internal/_via.dart):
+#### Key Mechanics of [`_ViaTrack`](../../lib/src/graph/_internal/_via.dart):
 1. **Zero-Allocation Synchronous Invariant (`_ViaTrack.sync` -> `_ViaTrack.closed`)**:
    Synchronous evaluations never allocate new `BloomVia` instances. `_beginEpoch()` sets `_viaTrack = _ViaTrack.sync` and reuses the node's single `_via` instance. Upon synchronous return, `_endEpoch()` transitions `_viaTrack` to `_ViaTrack.closed`, blocking any illegally escaped closures (`Future(() => via(other))`) with zero heap allocations.
 2. **On-Demand Asynchronous Detection (`_resultViaTrack`)**:
@@ -291,7 +291,7 @@ The Bloom Framework physically separates two orthogonal planes across reactive t
 
 1. **Data Plane ([`Bloom<T>`](../../lib/src/bloom/bloom.dart))**:
    - Nodes that compute values and propagate state changes downstream via the 2-Phase Push-Dirty / Lazy-Pull engine.
-2. **Lifecycle Plane ([`Tether`](../../lib/src/engine/tether.dart))**:
+2. **Lifecycle Plane ([`Tether`](../../lib/src/graph/tether.dart))**:
    - Non-propagating nodes (`_isNewerThan() == false`) that never emit dirty pulses or version increments downstream.
    - They purely bind to the surrounding scope's active/dormant state and lifecycle termination driven by 1-Pass Epoch Sweeping.
 
@@ -360,9 +360,9 @@ The Bloom Framework guards against this at compile time via `package:blooming_li
 3. **Pure Field Dereference Equivalence**:  
    Calling `untracked(bloom)` traverses no proxy wrappers, compiling down directly to native machine field read instructions via inlined VM pragma.
 4. **Lifecycle Plane Orthogonality**:  
-   [`Tether`](../../lib/src/engine/tether.dart) nodes bound via `via.tether()` never emit invalidation pulses to parent scopes (`_isNewerThan() == false`), synchronizing solely with parent dormancy and epoch sweeps.
+   [`Tether`](../../lib/src/graph/tether.dart) nodes bound via `via.tether()` never emit invalidation pulses to parent scopes (`_isNewerThan() == false`), synchronizing solely with parent dormancy and epoch sweeps.
 5. **Short-Circuit Clean Sweeping**:  
-   When a short-circuit sentinel ([`_ViaShortCircuit`](../../lib/src/engine/_internal/_via.dart)) is thrown, `succeeded: true` ensures that previously active edges for dead branches are swept immediately while preserving upstream error/empty diagnostics.
+   When a short-circuit sentinel ([`_ViaShortCircuit`](../../lib/src/graph/_internal/_via.dart)) is thrown, `succeeded: true` ensures that previously active edges for dead branches are swept immediately while preserving upstream error/empty diagnostics.
 6. **On-Demand Asynchronous Turn Isolation**:  
    Synchronous evaluations reuse a single `BloomVia` instance with zero heap allocations (`_ViaTrack.sync` -> `_ViaTrack.closed`), whereas `Future`/`Stream`-returning evaluations keep tracking open for the latest turn (`_ViaTrack.async`) and isolate superseded turns on `_beginEpoch` or `_deactivate`.
 

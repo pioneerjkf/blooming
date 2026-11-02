@@ -71,7 +71,7 @@ Bloom's asynchronous computation pipelines (`computed.future`, `computed.stream`
 The moment a parameter transition (A $\to$ B) occurs in the control plane, `_EagerDeltaBloom` evaluates `_evaluateDelta(via)` in a microtask (or synchronously upon pull) to create the new bridge node, and executes `_performCouple`:
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_relay.dart
+// packages/blooming/lib/src/graph/_internal/_relay.dart
 abstract base class _CoupledUnaryRelay<N extends _Node> extends _UnaryRelay<N> with _PushOriginMixin {
   ...
   @pragma('vm:prefer-inline')
@@ -137,9 +137,9 @@ When an asynchronous query branch transitions from A to B while $F_A$ is still i
 
 #### Dual Lines of Defense in Engine Mechanics:
 1. **Line of Defense 1 (Root Inactive Short-Circuit)**:
-   In `_Entry._markDirty()` (`packages/blooming/lib/src/bloom/_internal/_entry.dart`):
+   In `_Entry._markDirty()` (`packages/blooming/lib/src/blooming/_internal/_entry.dart`):
    ```dart
-   // packages/blooming/lib/src/bloom/_internal/_entry.dart
+   // packages/blooming/lib/src/blooming/_internal/_entry.dart
    @mustCallSuper
    @pragma('vm:prefer-inline')
    void _markDirty() {
@@ -154,9 +154,9 @@ When an asynchronous query branch transitions from A to B while $F_A$ is still i
    > While $F_A$ remains in flight, the pending `Future.then` closure maintains a strong reference to `Bridge A`'s controller, keeping the bridge in memory. The framework provides **topological race immunity** by cutting off all downstream propagation channels; once $F_A$ settles and the `.then` callback returns, the closure reference is released, allowing Dart VM GC to reclaim the ghost node.
 2. **Line of Defense 2 (Severed Topological Link Traversal)**:
    Even if dirty propagation were invoked on the node:
-   In `_Node._propagateDirty()` (`packages/blooming/lib/src/engine/_internal/_node.dart`):
+   In `_Node._propagateDirty()` (`packages/blooming/lib/src/graph/_internal/_node.dart`):
    ```dart
-   // packages/blooming/lib/src/engine/_internal/_node.dart
+   // packages/blooming/lib/src/graph/_internal/_node.dart
    @pragma('vm:prefer-inline')
    void _propagateDirty() {
      final prevPropagating = _propagatingTarget;

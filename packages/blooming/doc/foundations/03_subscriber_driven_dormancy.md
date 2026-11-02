@@ -70,10 +70,10 @@ The reactive DAG operates under a demand-driven subscription model. Topological 
 
 ### 2.1 The Two-State Lifecycle Machine (`_LifecycleState`)
 
-Every reactive node and terminal implements [`_Lifecycle`](../../lib/src/engine/_internal/_lifecycle.dart#L25), which maintains a two-state finite state machine governed by [`_LifecycleState`](../../lib/src/engine/_internal/_lifecycle.dart#L14):
+Every reactive node and terminal implements [`_Lifecycle`](../../lib/src/graph/_internal/_lifecycle.dart#L25), which maintains a two-state finite state machine governed by [`_LifecycleState`](../../lib/src/graph/_internal/_lifecycle.dart#L14):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_lifecycle.dart
+// packages/blooming/lib/src/graph/_internal/_lifecycle.dart
 enum _LifecycleState {
   inactive,
   running;
@@ -88,10 +88,10 @@ enum _LifecycleState {
 
 ### 2.2 Activation and Deactivation Transitions in `_Node`
 
-Topological transitions in [`_Node`](../../lib/src/engine/_internal/_node.dart#L48) occur automatically based on the presence of downstream targets (`_hasTargets => _targetHead != null`):
+Topological transitions in [`_Node`](../../lib/src/graph/_internal/_node.dart#L48) occur automatically based on the presence of downstream targets (`_hasTargets => _targetHead != null`):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_node.dart
+// packages/blooming/lib/src/graph/_internal/_node.dart
 @mustCallSuper
 @pragma('vm:prefer-inline')
 void _attachTargetEdgeOptimistically(_TargetEdge target) {
@@ -112,9 +112,9 @@ void _detachTargetEdgeOptimistically(_TargetEdge target) {
 ```
 
 1. **Subscriber-Driven Activation ($0 \rightarrow 1$)**:  
-   When the first downstream subscriber attaches to `_targetHead`, [`_activateOptimistically()`](../../lib/src/engine/_internal/_lifecycle.dart#L45) transitions the node from `inactive` to `running`. The node connects its upstream source edges via [`_activate()`](../../lib/src/engine/_internal/_edge.dart#L61) and prepares for lazy-pull resolution.
+   When the first downstream subscriber attaches to `_targetHead`, [`_activateOptimistically()`](../../lib/src/graph/_internal/_lifecycle.dart#L45) transitions the node from `inactive` to `running`. The node connects its upstream source edges via [`_activate()`](../../lib/src/graph/_internal/_edge.dart#L61) and prepares for lazy-pull resolution.
 2. **Instant Deactivation on Zero Subscribers ($1 \rightarrow 0$)**:  
-   When the last downstream subscriber detaches (`!_hasTargets`), [`_deactivateOptimistically()`](../../lib/src/engine/_internal/_lifecycle.dart#L55) immediately transitions the node back to `inactive`. The node unlinks from its upstream sources via [`_deactivate()`](../../lib/src/engine/_internal/_edge.dart#L68).
+   When the last downstream subscriber detaches (`!_hasTargets`), [`_deactivateOptimistically()`](../../lib/src/graph/_internal/_lifecycle.dart#L55) immediately transitions the node back to `inactive`. The node unlinks from its upstream sources via [`_deactivate()`](../../lib/src/graph/_internal/_edge.dart#L68).
 
 ### 2.3 Recursive Cascading Dormancy
 
@@ -134,7 +134,7 @@ Dormancy cascades recursively up the reactive hierarchy. When a UI element unmou
 ```
 
 * **No Orphan Background Tasks**: Because upstream edges are detached the moment a node enters dormancy, upstream nodes also detect when their subscriber count hits zero, propagating deactivation all the way to root sources.
-* **Edge Retention for Zero-Allocation Wake-Up**: Under [`_NaryEdgeMixin`](../../lib/src/engine/_internal/_edge.dart#L95), detaching upstream edges unlinks them from upstream target lists but preserves the allocated `_Edge` instances in `_sourceHead`. If the node reactivates later, it relinks the existing edges with **zero heap allocations**.
+* **Edge Retention for Zero-Allocation Wake-Up**: Under [`_NaryEdgeMixin`](../../lib/src/graph/_internal/_edge.dart#L95), detaching upstream edges unlinks them from upstream target lists but preserves the allocated `_Edge` instances in `_sourceHead`. If the node reactivates later, it relinks the existing edges with **zero heap allocations**.
 
 ---
 
@@ -277,7 +277,7 @@ Immediate deactivation upon unmount can introduce undesirable thrashing in fast-
 * **Route Transitions**: If a user pushes a detail view and navigates back 200ms later, destroying and reconstructing state, network sockets, or video decoders causes visible loading spinners and jank.
 * **Hero Animations & Element Reparenting**: During element tree restructuring, an element unmounts from its original position and remounts at the target destination within the same tick.
 
-The Bloom Framework resolves this with a two-tiered **Graceful Lifecycle** architecture ([`Graceful`](../../lib/src/engine/graceful.dart)):
+The Bloom Framework resolves this with a two-tiered **Graceful Lifecycle** architecture ([`Graceful`](../../lib/src/graph/graceful.dart)):
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -306,7 +306,7 @@ The Bloom Framework resolves this with a two-tiered **Graceful Lifecycle** archi
 
 ### 5.1 Tier 1: Microtask Deferral (`Graceful()` / `Graceful.microtask`)
 
-Implemented via [`_MicrotaskGraceHandle`](../../lib/src/engine/_internal/_graceful.dart#L19) and [`_GracefulSchedulerMixin`](../../lib/src/engine/_internal/_scheduler.dart#L181):
+Implemented via [`_MicrotaskGraceHandle`](../../lib/src/graph/_internal/_graceful.dart#L19) and [`_GracefulSchedulerMixin`](../../lib/src/graph/_internal/_scheduler.dart#L181):
 * Defers deactivation until the trailing microtask pass of the current tick.
 * If a new consumer attaches before the microtask runs, `_attachTargetEdgeOptimistically` cancels the grace handle immediately:
   $$\Delta \text{Allocations} = 0, \quad \Delta \text{Deactivations} = 0$$
@@ -314,12 +314,12 @@ Implemented via [`_MicrotaskGraceHandle`](../../lib/src/engine/_internal/_gracef
 
 ### 5.2 Tier 2: Time-Based Mooring (`Graceful.period(Duration)` / `_MooringTerminal`)
 
-For long-lived route transitions, nodes are moored to the global [`_MooringTerminal`](../../lib/src/engine/_internal/_mooring.dart#L43):
+For long-lived route transitions, nodes are moored to the global [`_MooringTerminal`](../../lib/src/graph/_internal/_mooring.dart#L43):
 
-1. **Topological Docking**: The node is anchored via a virtual [`_MooringEdge`](../../lib/src/engine/_internal/_mooring.dart#L12), maintaining `_hasTargets == true` so the node remains in `_LifecycleState.running`.
+1. **Topological Docking**: The node is anchored via a virtual [`_MooringEdge`](../../lib/src/graph/_internal/_mooring.dart#L12), maintaining `_hasTargets == true` so the node remains in `_LifecycleState.running`.
 2. **The Non-Pulling Invariant**:  
    ```dart
-   // packages/blooming/lib/src/engine/_internal/_mooring.dart
+   // packages/blooming/lib/src/graph/_internal/_mooring.dart
    @override
    void _invalidate() {
      // Tranquil harbor: strictly drops invalidation ripples without pulling data.

@@ -91,18 +91,18 @@ Consumer reads terminal.data
 ```
 
 ### 3.1 Phase 1: Synchronous Push-Dirty Phase (Control Plane)
-1. When a source node mutates via [`BloomController.set`](../../lib/src/bloom/controller.dart), its underlying `_Entry` increments `_version++` and enqueues itself into [`_PushScope.queueOrigin()`](../../lib/src/engine/_internal/_push.dart#L27), which drains via [`_Node._propagateDirty()`](../../lib/src/engine/_internal/_node.dart#L129).
-2. The dirty wave traverses downstream through intrusive target edges via [`_Node._propagateDirty()`](../../lib/src/engine/_internal/_node.dart#L129), invoking [`_DirtyPusher._pushDirty()`](../../lib/src/engine/_internal/_dirty.dart#L33) on intermediate relays.
-3. Intermediate relay nodes ([`_PullRelay`](../../lib/src/engine/_internal/_relay.dart#L133)) receive `_invalidate()` and mark their internal state as `_DirtyState.check`.
-4. Leaf consumers ([`_RawTerminal`](../../lib/src/engine/_internal/_terminal.dart#L72)) are enqueued into [`_PushScope._flushTerminalHead`](../../lib/src/engine/_internal/_push.dart#L20).
+1. When a source node mutates via [`BloomController.set`](../../lib/src/blooming/controller.dart), its underlying `_Entry` increments `_version++` and enqueues itself into [`_PushScope.queueOrigin()`](../../lib/src/graph/_internal/_push.dart#L27), which drains via [`_Node._propagateDirty()`](../../lib/src/graph/_internal/_node.dart#L129).
+2. The dirty wave traverses downstream through intrusive target edges via [`_Node._propagateDirty()`](../../lib/src/graph/_internal/_node.dart#L129), invoking [`_DirtyPusher._pushDirty()`](../../lib/src/graph/_internal/_dirty.dart#L33) on intermediate relays.
+3. Intermediate relay nodes ([`_PullRelay`](../../lib/src/graph/_internal/_relay.dart#L133)) receive `_invalidate()` and mark their internal state as `_DirtyState.check`.
+4. Leaf consumers ([`_RawTerminal`](../../lib/src/graph/_internal/_terminal.dart#L72)) are enqueued into [`_PushScope._flushTerminalHead`](../../lib/src/graph/_internal/_push.dart#L20).
 5. **Phase 1 Invariants**:
    - **Zero User Closures Executed**: No derivation functions or selectors run during Phase 1.
    - **Zero Heap Allocations**: Edits walk intrusive doubly linked list pointers without allocating queue objects or closures.
    - **$O(E)$ Bounds**: Traversal is strictly bounded by the number of active downstream edges $E$.
 
 ### 3.2 Phase 2: On-Demand Lazy-Pull Phase (Data Plane)
-1. Downstream consumers (e.g. Flutter widgets during layout/build or [`RawBloomTerminal.data`](../../lib/src/engine/terminal.dart)) pull data via `_read()` &rarr; `_resolve()`.
-2. [`_PullResolver._resolve()`](../../lib/src/engine/_internal/_pull.dart#L47) inspects `_dirtyState`:
+1. Downstream consumers (e.g. Flutter widgets during layout/build or [`RawBloomTerminal.data`](../../lib/src/graph/terminal.dart)) pull data via `_read()` &rarr; `_resolve()`.
+2. [`_PullResolver._resolve()`](../../lib/src/graph/_internal/_pull.dart#L47) inspects `_dirtyState`:
    - If `_DirtyState.clean` (on active nodes): Returns the cached `_state` in $O(1)$ immediate field access.
    - If `_DirtyState.check`: Calls `_resolveDirty()` to verify whether upstream sources actually mutated.
    - If `_DirtyState.dirty` (or if `_resolveDirty()` confirms an upstream version increment): Executes `_pull()` to compute the new value, updates `_dirtyState = _DirtyState.clean`, and synchronizes versions via `_pullVersion()`.
@@ -112,7 +112,7 @@ Consumer reads terminal.data
 
 ## 4. Tri-Color State Machine: Clean, Check, Dirty
 
-Every derived node ([`_PullResolver<T>`](../../lib/src/engine/_internal/_pull.dart#L18)) maintains a 3-state finite state machine governed by [`_DirtyState`](../../lib/src/engine/_internal/_dirty.dart#L7):
+Every derived node ([`_PullResolver<T>`](../../lib/src/graph/_internal/_pull.dart#L18)) maintains a 3-state finite state machine governed by [`_DirtyState`](../../lib/src/graph/_internal/_dirty.dart#L7):
 
 ```text
              _markDirty() (Push Phase)
@@ -144,10 +144,10 @@ Every derived node ([`_PullResolver<T>`](../../lib/src/engine/_internal/_pull.da
   - Reading the node requires executing `_pull()` to recompute the value.
 
 ### 4.2 Why Mark `check` Rather Than `dirty` in `_markDirty()`?
-In [`_PullRelay`](../../lib/src/engine/_internal/_relay.dart#L137):
+In [`_PullRelay`](../../lib/src/graph/_internal/_relay.dart#L137):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_relay.dart
+// packages/blooming/lib/src/graph/_internal/_relay.dart
 base mixin _PullRelay<T> on _Relay, _PullResolver<T> {
   @mustCallSuper
   @override
@@ -162,10 +162,10 @@ base mixin _PullRelay<T> on _Relay, _PullResolver<T> {
 
 If the Push phase marked nodes as `dirty` unconditionally, **short-circuit memoization** would be impossible.
 
-By marking nodes as `check`, Bloom enables downstream short-circuiting in [`_PullResolver`](../../lib/src/engine/_internal/_pull.dart#L58):
+By marking nodes as `check`, Bloom enables downstream short-circuiting in [`_PullResolver`](../../lib/src/graph/_internal/_pull.dart#L58):
 
 ```dart
-// packages/blooming/lib/src/engine/_internal/_pull.dart
+// packages/blooming/lib/src/graph/_internal/_pull.dart
 if (_dirtyState == _DirtyState.check) {
   // Recursively resolve upstream relays and verify whether their versions incremented
   if (!_resolveDirty() && _state != null) {
@@ -221,19 +221,19 @@ The Bloom Framework rejects external collection wrappers (`List<Edge>`, `Set<Nod
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Intrusive Pointers ([`_TargetEdge`](../../lib/src/engine/_internal/_edge.dart#L8))**:
+1. **Intrusive Pointers ([`_TargetEdge`](../../lib/src/graph/_internal/_edge.dart#L8))**:
    Edges maintain intrusive `_prevTarget` and `_nextTarget` pointer fields directly on the edge instances.
 2. **$O(1)$ Edge Attachment and Removal**:
    Connecting or detaching a subscriber is an $O(1)$ linked-list insertion/removal without reallocating arrays.
 3. **Dual Edge Modalities**:
-   - **[`_UnaryEdgeMixin`](../../lib/src/engine/_internal/_edge.dart#L44)**: Optimizes 1:1 topological connections (e.g. single-source relays, transformers), requiring zero intermediate edge wrapper objects.
-   - **[`_NaryEdgeMixin`](../../lib/src/engine/_internal/_edge.dart#L95)**: Manages dynamic multi-source dependencies (e.g. [`computed`](../../lib/src/bloom/computed.dart) and [`switched`](../../lib/src/bloom/switched.dart)), maintaining both upstream `_sourceHead` and downstream `_targetHead` intrusive lists.
+   - **[`_UnaryEdgeMixin`](../../lib/src/graph/_internal/_edge.dart#L44)**: Optimizes 1:1 topological connections (e.g. single-source relays, transformers), requiring zero intermediate edge wrapper objects.
+   - **[`_NaryEdgeMixin`](../../lib/src/graph/_internal/_edge.dart#L95)**: Manages dynamic multi-source dependencies (e.g. [`computed`](../../lib/src/bloom/computed.dart) and [`switched`](../../lib/src/bloom/switched.dart)), maintaining both upstream `_sourceHead` and downstream `_targetHead` intrusive lists.
 4. **Monotonic Version Tracking**:
    - Every `_Node` maintains an integer `_version = 0`.
    - Mutating a controller or completing a computation increments `_version++`.
    - Edges store `_pulledVersion` to detect staleness synchronously:
      ```dart
-     // packages/blooming/lib/src/engine/_internal/_edge.dart
+     // packages/blooming/lib/src/graph/_internal/_edge.dart
      bool get _isSourceDirty => _source._isNewerThan(_pulledVersion);
      ```
 
@@ -274,12 +274,12 @@ batch(() {
 ```
 
 ### 6.1 Read-Your-Own-Writes (RYOW) Guarantee
-Unlike batch systems that delay dirty propagation, Bloom's [`_PushScope`](../../lib/src/engine/_internal/_push.dart#L16) propagates Phase 1 dirty signals **eagerly** inside `batch()`:
+Unlike batch systems that delay dirty propagation, Bloom's [`_PushScope`](../../lib/src/graph/_internal/_push.dart#L16) propagates Phase 1 dirty signals **eagerly** inside `batch()`:
 - Intermediate reads within the batch immediately reflect the latest upstream mutations.
 - Only Phase 2 terminal dispatches (such as Flutter `markNeedsBuild()` or side-effect callbacks) are deferred until the outermost batch exits.
 
 ### 6.2 Trampoline Reentrancy Protection
-If a terminal flush callback executes new mutations, [`_PushScope._drain()`](../../lib/src/engine/_internal/_push.dart#L92) uses a trampoline loop:
+If a terminal flush callback executes new mutations, [`_PushScope._drain()`](../../lib/src/graph/_internal/_push.dart#L92) uses a trampoline loop:
 - The flush yields immediately back to Phase 1 so new dirty states propagate through the graph before subsequent terminals are flushed.
 - This prevents call stack recursion and guarantees deterministic event ordering.
 
@@ -291,10 +291,10 @@ If a terminal flush callback executes new mutations, [`_PushScope._drain()`](../
 
 ## 7. Diagnostics, Cycle Detection, and Re-entrancy Protection
 
-### 7.1 $O(1)$ Cycle Detection ([`LpdagCycleError`](../../lib/src/engine/exception.dart#L74))
-In cyclic topologies ($A \to B \to A$), recursive pull models risk infinite stack overflows. Bloom implements an $O(1)$ recursion bit in [`_PullResolver._resolve()`](../../lib/src/engine/_internal/_pull.dart#L48):
+### 7.1 $O(1)$ Cycle Detection ([`LpdagCycleError`](../../lib/src/graph/exception.dart#L74))
+In cyclic topologies ($A \to B \to A$), recursive pull models risk infinite stack overflows. Bloom implements an $O(1)$ recursion bit in [`_PullResolver._resolve()`](../../lib/src/graph/_internal/_pull.dart#L48):
 ```dart
-// packages/blooming/lib/src/engine/_internal/_pull.dart
+// packages/blooming/lib/src/graph/_internal/_pull.dart
 if (_isResolving) {
   throw LpdagCycleError(
     'Cyclic evaluation loop detected in $runtimeType while resolving state.',
@@ -309,10 +309,10 @@ try {
 ```
 If a node attempts to read its own state while resolution is in-flight, it immediately aborts with an informative diagnostic error.
 
-### 7.2 Reentrancy Guard ([`LpdagReentrancyError`](../../lib/src/engine/exception.dart#L34))
-A node cannot initiate a new `_pushDirty()` phase while it is already actively propagating dirty signals. In [`_DirtyPusher._pushDirty()`](../../lib/src/engine/_internal/_dirty.dart#L33):
+### 7.2 Reentrancy Guard ([`LpdagReentrancyError`](../../lib/src/graph/exception.dart#L34))
+A node cannot initiate a new `_pushDirty()` phase while it is already actively propagating dirty signals. In [`_DirtyPusher._pushDirty()`](../../lib/src/graph/_internal/_dirty.dart#L33):
 ```dart
-// packages/blooming/lib/src/engine/_internal/_dirty.dart
+// packages/blooming/lib/src/graph/_internal/_dirty.dart
 if (_isPushingDirty) {
   throw LpdagReentrancyError(''
       'Reentrant call to _pushDirty detected. A dirty point cannot '

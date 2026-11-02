@@ -250,54 +250,5 @@ void main() {
         terminal.deactivate();
       });
     });
-
-    // =========================================================================
-    // 8. Producer Type Aliases (Blooming, BloomingRaw, BloomingList, ...)
-    // =========================================================================
-    group('8. Producer Type Aliases (Declaration Site Ergonomics)', () {
-      test('8.1 Blooming<T> aliases BloomController<T>', () {
-        final Blooming<int> counter = blooming(42);
-        expect(counter, isA<BloomController<int>>());
-        expect(counter.data, 42);
-        counter.data = 100;
-        expect(counter.data, 100);
-        expect(counter.bloom, isA<Bloom<int>>());
-      });
-
-      test('8.2 BloomingRaw<T> aliases RawBloomController<T>', () {
-        final BloomingRaw<List<int>> raw = blooming.raw([1, 2]);
-        expect(raw, isA<RawBloomController<List<int>>>());
-        raw.data.add(3);
-        raw.markDirty();
-        expect(raw.data, [1, 2, 3]);
-      });
-
-      test('8.3 BloomingList<T> aliases BloomDraftController<List<T>>', () {
-        final BloomingList<String> list = blooming.list(['hello']);
-        expect(list, isA<BloomDraftController<List<String>>>());
-        list.edit((draft) => draft.add('world'));
-        expect(list.data, ['hello', 'world']);
-      });
-
-      test('8.4 BloomingSet<T> aliases BloomDraftController<Set<T>>', () {
-        final BloomingSet<int> set = blooming.set({1, 2});
-        expect(set, isA<BloomDraftController<Set<int>>>());
-        set.edit((draft) => draft.add(3));
-        expect(set.data, {1, 2, 3});
-      });
-
-      test('8.5 BloomingMap<K, V> aliases BloomDraftController<Map<K, V>>', () {
-        final BloomingMap<String, int> map = blooming.map({'a': 1});
-        expect(map, isA<BloomDraftController<Map<String, int>>>());
-        map.edit((draft) => draft['b'] = 2);
-        expect(map.data, {'a': 1, 'b': 2});
-      });
-
-      test('8.6 BloomingSignal aliases BloomSignalController', () {
-        final BloomingSignal signal = blooming.signal();
-        expect(signal, isA<BloomSignalController>());
-        expect(signal.bloom, isA<BloomSignal>());
-      });
-    });
   });
 }

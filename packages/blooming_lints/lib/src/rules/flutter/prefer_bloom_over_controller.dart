@@ -45,12 +45,6 @@ class PreferBloomOverController extends DartLintRule {
     'BloomDraftController',
     'BloomCoupler',
     'BloomSignalController',
-    'Blooming',
-    'BloomingRaw',
-    'BloomingList',
-    'BloomingSet',
-    'BloomingMap',
-    'BloomingSignal',
   };
 
   @override

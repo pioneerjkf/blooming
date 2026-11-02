@@ -70,12 +70,6 @@ abstract final class BloomTypeChecker {
     'BloomDraftController',
     'BloomCoupler',
     'BloomSignalController',
-    'Blooming',
-    'BloomingRaw',
-    'BloomingList',
-    'BloomingSet',
-    'BloomingMap',
-    'BloomingSignal',
 
     // 3. Dependency Manifest & Signals
     'BloomVia',
@@ -226,12 +220,6 @@ abstract final class BloomTypeChecker {
     'BloomDraftController',
     'BloomCoupler',
     'BloomSignalController',
-    'Blooming',
-    'BloomingRaw',
-    'BloomingList',
-    'BloomingSet',
-    'BloomingMap',
-    'BloomingSignal',
   };
 
   /// Returns `true` if the [typeName] is a stateful controller or coupler type.

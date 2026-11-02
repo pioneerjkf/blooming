@@ -15,7 +15,7 @@ While Bloom's 2-Phase LPDAG delivers high performance, enterprise codebases with
 2. **The Observability Tax**:
    As Directed Acyclic Graphs grow complex, diagnosing why a node rebuilt or identifying which widget holds a node active becomes difficult. Conversely, attaching debug metadata (names, creation stack traces) directly as instance fields inflates object sizes across tens of thousands of nodes in release builds, triggering GC pauses and memory bloat.
 
-The Bloom Framework resolves these challenges through **Class-Based Domain Components ([Computation<T>](../../lib/src/bloom/computed.dart), [BloomLifecycleAware](../../lib/src/bloom/computed.dart))** and an `Expando`-backed **Zero-Overhead Diagnostic Ecosystem ([BloomDebug](../../lib/src/engine/debug.dart))**.
+The Bloom Framework resolves these challenges through **Class-Based Domain Components ([Computation<T>](../../lib/src/bloom/computed.dart), [BloomLifecycleAware](../../lib/src/bloom/computed.dart))** and an `Expando`-backed **Zero-Overhead Diagnostic Ecosystem ([BloomDebug](../../lib/src/graph/debug.dart))**.
 
 ---
 
@@ -208,7 +208,7 @@ base class LocationTrackingComputation extends Computation<Location> with BloomL
 
 Attaching debug labels, allocation metadata, and creation stack traces to node instances permanently inflates object memory. In large-scale apps with tens of thousands of reactive nodes, instance field bloat induces severe GC latency and increases heap pressure.
 
-Bloom resolves this by combining **Dart VM `assert` tree-shaking** with **[Expando](../../lib/src/engine/_internal/_debug.dart)** tables, achieving **zero memory overhead in release builds**:
+Bloom resolves this by combining **Dart VM `assert` tree-shaking** with **[Expando](../../lib/src/graph/_internal/_debug.dart)** tables, achieving **zero memory overhead in release builds**:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -262,15 +262,15 @@ The Bloom diagnostic ecosystem provides targeted zero-overhead extensions across
 
 | Target Type | Debug Extension | Available Capabilities |
 | :--- | :--- | :--- |
-| **`Bloom<T>`** | [BloomDebugExtension](../../lib/src/engine/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `@visibleForTesting` `.debugVersion`, `.debugSourceCount` |
-| **`Computation<T>`** | [ComputationDebugExtension](../../lib/src/engine/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
-| **`BloomController<T>`** | [BloomControllerDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` (synchronizes label to underlying `bloom`) |
-| **`BloomSignalController`** | [BloomSignalControllerDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
-| **`BloomCoupler<T>`** | [BloomCouplerDebugExtension](../../lib/src/engine/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `@visibleForTesting` `.debugVersion` |
-| **`RawTerminal`** | [RawTerminalDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugDependencies`, `.debugTethers` |
-| **`Tether` / `Effect`** | [TetherDebugExtension](../../lib/src/engine/debug.dart), [EffectDebugExtension](../../lib/src/engine/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugDependencies` |
+| **`Bloom<T>`** | [BloomDebugExtension](../../lib/src/graph/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `@visibleForTesting` `.debugVersion`, `.debugSourceCount` |
+| **`Computation<T>`** | [ComputationDebugExtension](../../lib/src/graph/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
+| **`BloomController<T>`** | [BloomControllerDebugExtension](../../lib/src/graph/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` (synchronizes label to underlying `bloom`) |
+| **`BloomSignalController`** | [BloomSignalControllerDebugExtension](../../lib/src/graph/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()` |
+| **`BloomCoupler<T>`** | [BloomCouplerDebugExtension](../../lib/src/graph/debug.dart) | `.debug` (`BloomDebug`), `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `@visibleForTesting` `.debugVersion` |
+| **`RawTerminal`** | [RawTerminalDebugExtension](../../lib/src/graph/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugDependencies`, `.debugTethers` |
+| **`Tether` / `Effect`** | [TetherDebugExtension](../../lib/src/graph/debug.dart), [EffectDebugExtension](../../lib/src/graph/debug.dart) | `.debugLabel`, `.withDebugLabel()`, `.debugTrace()`, `.debugDependencies` |
 
-* **[BloomDebugSnapshot](../../lib/src/engine/debug.dart)**: An immutable value object capturing a complete instant state snapshot:
+* **[BloomDebugSnapshot](../../lib/src/graph/debug.dart)**: An immutable value object capturing a complete instant state snapshot:
   - `name`: Assigned debug label, falling back to runtime class type.
   - `version`: Internal DAG mutation version counter.
   - `isActive` & `targetCount`: Live topological connection indicators.
@@ -283,10 +283,10 @@ The Bloom diagnostic ecosystem provides targeted zero-overhead extensions across
 
 During Flutter development, modifying calculation formulas inside a `computed` closure or `Computation.compute()` often leads to confusion if the screen continues displaying stale memoized values after a Hot Reload.
 
-Bloom's terminal interface ([RawTerminal](../../lib/src/engine/terminal.dart)) standardizes a dedicated recovery hook for the hot reload lifecycle:
+Bloom's terminal interface ([RawTerminal](../../lib/src/graph/terminal.dart)) standardizes a dedicated recovery hook for the hot reload lifecycle:
 
 ```dart
-// packages/blooming/lib/src/engine/terminal.dart
+// packages/blooming/lib/src/graph/terminal.dart
 abstract interface class RawTerminal implements LpdagStatus {
   ...
   /// Debug & Hot-Reload hook that recursively invalidates upstream intermediate caches
@@ -325,7 +325,7 @@ Re-evaluates fresh computation closures with modified code in 0ms!
 
 * **Zero-Release Overhead**: In `_Terminal`, `debugForceInvalidate()` is wrapped directly in an `assert`:
   ```dart
-  // packages/blooming/lib/src/engine/_internal/_terminal.dart
+  // packages/blooming/lib/src/graph/_internal/_terminal.dart
   @override
   void debugForceInvalidate() {
     assert(() {
@@ -356,6 +356,6 @@ Re-evaluates fresh computation closures with modified code in 0ms!
 
 ## 7. Engineering Conclusions
 
-**Object-Oriented Domain Computation ([Computation](../../lib/src/bloom/computed.dart))** and **Zero-Overhead Diagnostics ([BloomDebug](../../lib/src/engine/debug.dart))** elevate Bloom beyond a simple reactive store into a comprehensive domain modeling framework.
+**Object-Oriented Domain Computation ([Computation](../../lib/src/bloom/computed.dart))** and **Zero-Overhead Diagnostics ([BloomDebug](../../lib/src/graph/debug.dart))** elevate Bloom beyond a simple reactive store into a comprehensive domain modeling framework.
 
 Engineers encapsulate complex business rules into modular classes, enjoy real-time DAG inspection and hot reload resilience in development, and deploy with maximum native efficiency in production.

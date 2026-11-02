@@ -34,39 +34,6 @@ class MyWidget extends StatelessWidget {
       expect(typeStr, startsWith('BloomController'));
     });
 
-    test('detects Blooming and Blooming* producer alias parameters', () {
-      final unit = parseString(content: '''
-class MyWidget extends StatelessWidget {
-  const MyWidget({
-    super.key,
-    required this.counter,
-    required this.raw,
-    required this.list,
-  });
-  final Blooming<int> counter;
-  final BloomingRaw<int> raw;
-  final BloomingList<String> list;
-
-  @override
-  Widget build(BuildContext context) => Container();
-}
-''').unit;
-
-      ClassDeclaration? clazz;
-      unit.visitChildren(_ClassVisitor((node) => clazz = node));
-
-      expect(clazz, isNotNull);
-      final constructor =
-          clazz!.members.whereType<ConstructorDeclaration>().first;
-      final params = constructor.parameters.parameters.sublist(1);
-
-      for (final param in params) {
-        final typeStr =
-            PreferBloomOverController.getParameterTypeString(param, clazz!);
-        expect(typeStr, startsWith('Blooming'));
-      }
-    });
-
     test('permits read-only Bloom<T> parameter in StatelessWidget', () {
       final unit = parseString(content: '''
 class MyWidget extends StatelessWidget {

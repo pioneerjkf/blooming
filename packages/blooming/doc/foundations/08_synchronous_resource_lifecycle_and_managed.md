@@ -151,7 +151,7 @@ void _disposeCurrent() {
 
 1. **State Nullification**: `_state = null` and `_dirtyState = _DirtyState.dirty`.
 2. **Synchronous Disposal**: `_disposeResource.call(oldState.data)` executes synchronously.
-3. **Resilient Exception Handling**: Any exception thrown by external resource disposal is caught and safely dispatched to `_handleUncaughtError` via [`LpdagUncaughtErrorHandler`](../../lib/src/engine/uncaught.dart), preventing crashes in the reactive engine.
+3. **Resilient Exception Handling**: Any exception thrown by external resource disposal is caught and safely dispatched to `_handleUncaughtError` via [`LpdagUncaughtErrorHandler`](../../lib/src/graph/uncaught.dart), preventing crashes in the reactive engine.
 
 ---
 
@@ -278,7 +278,7 @@ Bloom<T> call<T>({
 * On deactivation, pending microtask evaluations are purged via `_Scheduler.instance._cancelEager(this)`.
 
 ### 7.3 Graceful Mooring (`graceful: Graceful`)
-* Backed by [`_GracefulNodeMixin`](../../lib/src/engine/_internal/_graceful.dart).
+* Backed by [`_GracefulNodeMixin`](../../lib/src/graph/_internal/_graceful.dart).
 * When downstream subscribers drop to zero (e.g., during screen pop/push transitions or page swiping), deallocation is buffered for a microtask or a duration (`Graceful.period(Duration(milliseconds: 300))`).
 * **0ms Instant Reuse**: If a subscriber reconnects within the mooring window, the existing instance is reused immediately with zero teardown and zero re-allocation.
 

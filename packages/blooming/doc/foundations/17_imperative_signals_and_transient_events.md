@@ -16,7 +16,7 @@ This creates three critical architectural defects:
 2. **Re-triggering on Remount (The Zombie Dialog Bug)**: If a widget unmounts and remounts (e.g. during tab switching, list recycling, or route pop/push), the reactive subscriber re-evaluates upon mounting. Because the cached payload is still `"Network Connection Lost"`, the Snackbar or Dialog fires a second time unexpectedly, causing severe UX glitches.
 3. **Manual Nullification Boilerplate & Race Hazards**: Developers are forced to author defensive `onDismissed` or `onComplete` callbacks purely to nullify state (`set(null)`). If a second event occurs before nullification completes, the second event can be lost or overwritten by race conditions.
 
-The Bloom Framework resolves this fundamental dichotomy by introducing **`BloomSignal`** and **`BloomSignalController`** ([BloomSignal](../../lib/src/bloom/signal.dart), [BloomSignalController](../../lib/src/bloom/signal.dart))—specialized primitives dedicated strictly to discrete, stateless event pulses.
+The Bloom Framework resolves this fundamental dichotomy by introducing **`BloomSignal`** and **`BloomSignalController`** ([BloomSignal](../../lib/src/blooming/signal.dart), [BloomSignalController](../../lib/src/blooming/signal.dart))—specialized primitives dedicated strictly to discrete, stateless event pulses.
 
 ---
 
@@ -54,10 +54,10 @@ The Bloom Framework resolves this fundamental dichotomy by introducing **`BloomS
 
 ### 2.1 The Monotonic Integer Sequence Engine
 
-Under the hood, [BloomSignal](../../lib/src/bloom/signal.dart) implements [`Bloom<int>`](../../lib/src/bloom/bloom.dart). Internally, `_SignalEntry` is a specialized root node initialized to `0`. Each invocation of `BloomSignalController.emit()` executes:
+Under the hood, [BloomSignal](../../lib/src/blooming/signal.dart) implements [`Bloom<int>`](../../lib/src/bloom/bloom.dart). Internally, `_SignalEntry` is a specialized root node initialized to `0`. Each invocation of `BloomSignalController.emit()` executes:
 
 ```dart
-// packages/blooming/lib/src/bloom/_internal/_signal.dart
+// packages/blooming/lib/src/blooming/_internal/_signal.dart
 @override
 void emit() {
   final entry = _target as _RawEntry<int>;
@@ -252,7 +252,7 @@ final pushEventSignal = blooming.signal(
 
 ### 4.7 Zero-Overhead Debugging & Diagnostics
 
-`BloomSignalController` integrates seamlessly into Bloom's zero-cost diagnostic ecosystem via [BloomSignalControllerDebugExtension](../../lib/src/engine/debug.dart):
+`BloomSignalController` integrates seamlessly into Bloom's zero-cost diagnostic ecosystem via [BloomSignalControllerDebugExtension](../../lib/src/graph/debug.dart):
 
 ```dart
 final refreshSignal = blooming.signal().withDebugLabel('OrderRefreshSignal');

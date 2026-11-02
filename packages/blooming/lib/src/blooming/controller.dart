@@ -10,8 +10,6 @@ part of '../framework.dart';
 
 /// Imperative producer controller managing state mutations into the Bloom reactive DAG.
 ///
-/// Also accessible via the ergonomic type alias [Blooming].
-///
 /// Under the strict **Producer/Consumer Separation (Has-a)** architecture:
 /// - [BloomController] owns and encapsulates an internal physical reactive DAG entry node.
 /// - It does **NOT** implement [Bloom], completely preventing mutation methods from being
@@ -149,8 +147,6 @@ abstract base class BloomController<T> implements BloomState<T> {
 }
 
 /// Raw unfiltered producer controller bypassing distinct checks and supporting manual [markDirty].
-///
-/// Also accessible via the ergonomic type alias [BloomingRaw].
 ///
 /// Engineered for high-throughput mutation sequences, mutable in-place data structures, or
 /// performance-critical scenarios where equality checks incur non-trivial overhead.
