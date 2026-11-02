@@ -684,14 +684,22 @@ final userProfileBloom = computed.future((via) {
 // for conditional dynamic dependencies without hoisting reads to the top.
 // (If a new turn starts or the node deactivates while in flight, the previous turn's
 //  `via` is automatically isolated so stale post-`await` reads never corrupt the graph.)
-final fallbackId = blooming('guest_001');
-final resolvedUserBloom = computed.future((via) async {
-  final user = await apiService.fetchUser(via(selectedUserId.bloom));
-  if (user.isGuest) {
-    // Post-await conditional dependency: tracked ONLY when user.isGuest is true!
-    return await apiService.fetchProfile(via(fallbackId.bloom));
+final checkout = computed.future<CheckoutSummary>((via) async {
+  final cart = via(cartBloom);
+  final inventory = await api.checkInventory(cart);
+
+  if (!inventory.hasPhysicalItems) {
+    // Digital items require no shipping: address & options are NEVER subscribed to!
+    return api.quoteDigitalItems(cart);
   }
-  return user;
+
+  // Read the address after the first await, only when shipping is needed.
+  final address = via(shippingAddressBloom);
+  final shippingOptions = await api.fetchShippingOptions(address);
+
+  // Read the selected shipping option after the second await.
+  final shippingOption = via(selectedShippingOptionBloom);
+  return api.calculateCheckout(cart, shippingOptions, shippingOption);
 });
 
 // 3. computed.future: Native FutureOr<T> with 0ms Instant Synchronous Resolution
