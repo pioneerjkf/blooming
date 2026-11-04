@@ -5,11 +5,11 @@
 part of '../../../blooming_lints.dart';
 
 /// A lint rule prohibiting direct, untracked reactive payload extraction (`untracked(bloom)`, `untracked.state(bloom)`, `.data`, `.snapshot`, etc.)
-/// inside explicit `BloomVia` scopes without establishing dependency registration via `via()`.
+/// inside explicit `BloomVia` or `EffectVia` scopes without establishing dependency registration via `via()`.
 ///
 /// ### Rationale:
-/// Bloom uses explicit `BloomVia` dependency manifests (`computed((via) => ...)`, `composed((context, via) => ...)`,
-/// `switched((via) => ...)`, `Effect((via) => ...)`, `BloomWidget.build(context, via)`) to achieve
+/// Bloom uses explicit `BloomVia` and `EffectVia` dependency manifests (`computed((via) => ...)`, `composed((context, via) => ...)`,
+/// `switched((via) => ...)`, `Effect.via((via) => ...)`, `BloomWidget.build(context, via)`) to achieve
 /// zero-overhead raw reads with zero implicit tracking scope.
 ///
 /// Reading a reactive node's payload directly via `untracked(node)`, `untracked.state(node)`, or controller `.data` inside a `BloomVia`
@@ -206,7 +206,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
   static bool isInsideBloomViaScope(AstNode node) =>
       BloomTypeChecker.isInsideBloomViaScope(node);
 
-  /// Returns `true` if the [node] is already tracked via `via(node).prop` or inside `via(...)`.
+  /// Returns `true` if the [node] is already tracked via `via(node).prop` or inside dependency-tracking `via(...)`.
   static bool isAlreadyTrackedByVia(AstNode node) {
     // 1. If target is directly a via() invocation, via.state(), or alias thereof
     if (node is PropertyAccess) {
@@ -227,10 +227,10 @@ class AvoidUntrackedBloomRead extends DartLintRule {
       }
     }
 
-    // 2. If node is an argument to via(...) (e.g. via(node))
+    // 2. If node is an argument to a dependency-tracking via call (e.g. via(node), via.state(node))
     AstNode? current = node.parent;
     while (current != null) {
-      if (BloomTypeChecker.isBloomViaInvocation(current)) {
+      if (BloomTypeChecker.isBloomViaTrackingInvocation(current)) {
         return true;
       }
       // via(...) is an expression invocation, so searching beyond a statement
@@ -250,7 +250,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
   static bool _isExpressionTrackedByVia(Expression? expr, [int aliasHops = 0]) {
     if (expr == null) return false;
     final unwrapped = expr.unParenthesized;
-    if (BloomTypeChecker.isBloomViaInvocation(unwrapped)) return true;
+    if (BloomTypeChecker.isBloomViaTrackingInvocation(unwrapped)) return true;
 
     // Only variable alias resolution hops consume aliasHops budget.
     if (aliasHops < _maxAliasHops &&

@@ -33,7 +33,7 @@ Traditional reactive streams and observables push eager data payloads through th
 ## Key Architectural Invariants
 
 * **Separation of Producer and Consumer**: `Bloom<T>` is the read-only, observation-only reactive interface. Mutation methods (`set`, `empty`, `setError`) are encapsulated strictly within `BloomController<T>` / `RawBloomController<T>`.
-* **Explicit Dependency Manifest (`BloomVia`)**: All dynamic derivations and effects explicitly declare observed nodes via injected `BloomVia` (e.g., `computed((via) => via(a) + via(b))`). No ambient thread-local stacks.
+* **Explicit Dependency Manifest (`BloomVia` / `EffectVia`)**: All dynamic derivations and effects explicitly declare observed nodes via an injected manifest parameter (`BloomVia` for state derivations, `EffectVia` for side-effect pipelines; e.g., `computed((via) => via(a) + via(b))`, `Effect.via((via) => ...)`). No ambient thread-local stacks.
 * **Zero-Overhead Raw Reads**: Accessing `untracked(node)` or `untracked.state(node)` provides direct raw reads with zero tracking overhead.
 * **1-Pass Epoch Sweeping**: Dynamic branches (e.g., ternary conditions inside `computed` or `switched`) immediately prune and detach unobserved upstream edges in O(edges) during evaluation.
 * **Subscriber-Driven Inactive Dormancy**: When a pipeline has no active downstream terminals (effect runners, active UI elements), all upstream computation edges detach and enter zero-leak dormant state.
@@ -602,7 +602,7 @@ Bloom completely separates side-effects into declarative first-class entities wi
 │                                                                            │
 │  Effect(...)                ──> Manifest N-ary effect (Effect)             │
 │    ├── .unary(...)          ──> Fast-path single-target unary effect       │
-│    ├── .via(...)            ──> Dynamic discovery effect via BloomVia      │
+│    ├── .via(...)            ──> Dynamic discovery effect via EffectVia     │
 │    │                                                                       │
 │    ├── .scoped(...)         ──> Scoped effect with RAII (EffectScope)      │
 │    │     ├── .unary(...)    ──> Scoped single-target unary effect          │

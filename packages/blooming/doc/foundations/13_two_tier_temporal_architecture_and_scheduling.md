@@ -12,7 +12,7 @@ In reactive systems, debounce, throttle, and coalesce operators are essential fo
 
 The Bloom Framework's 2-Phase LPDAG strictly adheres to the **Push-Dirty (proportional to the affected subgraph) + Lazy-Pull (On-Demand)** model. Attempting to delay invalidation (dirty) pulses arbitrarily inside dynamic downstream terminals causes three critical anomalies:
 
-1. **The Initial Evaluation Dilemma**: Dynamic dependency scopes (`BloomVia`) must establish tracking edges synchronously upon mounting. If a terminal delays its initial execution, edges remain unformed (0 edges), dropping upstream mutations occurring during the delay. Conversely, if the terminal runs immediately on mount, side-effects (e.g., network queries) fire with uninitialized, empty payloads.
+1. **The Initial Evaluation Dilemma**: Dynamic dependency scopes (`BloomVia` / `EffectVia`) must establish tracking edges synchronously upon mounting. If a terminal delays its initial execution, edges remain unformed (0 edges), dropping upstream mutations occurring during the delay. Conversely, if the terminal runs immediately on mount, side-effects (e.g., network queries) fire with uninitialized, empty payloads.
 2. **Cache Limbo & Read-Uncommitted Anomalies**: If an upstream node mutates to a fresh version while an observing terminal holds an asynchronous timer, allowing uncommitted reads leaks intermediate, transient state to sibling UI widgets, causing split-brain presentation glitches.
 3. **Engine Scheduler Pollution**: Mixing asynchronous platform `Timer` callbacks arbitrarily into the synchronous microtask batch scheduler (`_Scheduler`) breaks deterministic topological evaluation order and transactional atomicity.
 

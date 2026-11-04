@@ -329,5 +329,45 @@ void main() {
         );
       });
     });
+
+    // =========================================================================
+    // 5. Escaped BloomVia exit & exitIfInactive Behavior
+    // =========================================================================
+    group('5. Escaped BloomVia exit & exitIfInactive behavior', () {
+      test('5.1 escaped via.exit() throws unhandled Error outside evaluation scope', () {
+        BloomVia? escapedVia;
+        final node = computed<int>((via) {
+          escapedVia = via;
+          return 42;
+        });
+
+        expect(untracked(node), 42);
+        expect(escapedVia, isNotNull);
+
+        // Calling exit() on escaped via cannot be no-op (returns Never) and throws Error
+        expect(
+          () => escapedVia!.exit(emptyReason: 'EscapedExit'),
+          throwsA(isA<Error>()),
+        );
+      });
+
+      test('5.2 escaped via.exitIfInactive() delegates to exit() and throws Error when inactive', () {
+        BloomVia? escapedVia;
+        final node = computed<int>((via) {
+          escapedVia = via;
+          return 100;
+        });
+
+        // Evaluate once; node is dormant/inactive
+        expect(untracked(node), 100);
+        expect(escapedVia, isNotNull);
+
+        // Inactive scope causes exitIfInactive() to call exit(), throwing Error
+        expect(
+          () => escapedVia!.exitIfInactive(emptyReason: 'EscapedExitIfInactive'),
+          throwsA(isA<Error>()),
+        );
+      });
+    });
   });
 }

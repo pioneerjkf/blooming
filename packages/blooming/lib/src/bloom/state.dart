@@ -316,7 +316,6 @@ extension BloomStateRecord2Extension on (BloomState, BloomState) {
   }
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
-  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
   bool hasAnyEmpty() {
     final e1 = $1.isEmpty, e2 = $2.isEmpty;

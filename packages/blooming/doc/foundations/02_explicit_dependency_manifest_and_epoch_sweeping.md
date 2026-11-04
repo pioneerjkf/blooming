@@ -273,7 +273,9 @@ Because [`BloomVia`](../../lib/src/bloom/via.dart) is passed as an explicit lexi
 
 #### Key Mechanics of [`_ViaTrack`](../../lib/src/graph/_internal/_via.dart):
 1. **Zero-Allocation Synchronous Invariant (`_ViaTrack.sync` -> `_ViaTrack.closed`)**:
-   Synchronous evaluations never allocate new tracker instances. `_beginEpoch()` sets `_viaTrack = _ViaTrack.sync` and reuses the node's single tracker instance (`_via` or `_effectVia`). Upon synchronous return, `_endEpoch()` transitions `_viaTrack` to `_ViaTrack.closed`, blocking any illegally escaped closures (`Future(() => via(other))`) with zero heap allocations.
+   Synchronous evaluations never allocate new tracker instances. `_beginEpoch()` sets `_viaTrack = _ViaTrack.sync` and reuses the node's single tracker instance (`_via` or `_effectVia`). Upon synchronous return, `_endEpoch()` transitions `_viaTrack` to `_ViaTrack.closed`, blocking any illegally escaped dependency registrations (`Future(() => via(other))`) with zero heap allocations.
+   > [!WARNING]
+   > While **dependency registration** is silently ignored after an epoch closes, control-flow methods ([`BloomVia.exit`](../../lib/src/bloom/via.dart) and [`BloomVia.exitIfInactive`](../../lib/src/bloom/via.dart) when inactive) and evaluating empty/error nodes via `via(...)` unconditionally throw the internal short-circuit sentinel (`_ViaShortCircuit`). If invoked outside the framework's evaluation scope (e.g., from an escaped timer callback or UI event), no framework resolver is present to trap the sentinel, resulting in an unhandled `Error`.
 2. **On-Demand Asynchronous Detection (`_resultViaTrack`)**:
    When the evaluated closure returns a `Future` or `Stream`, `_resultViaTrack` transitions `_viaTrack` to `_ViaTrack.async`, keeping dependency registration open across sequential `await`, `yield`, and `yield*` boundaries for that active tracker instance. Late-discovered edges immediately resolve the upstream node (`source._resolve()`) and synchronize `edge._pulledVersion = source._version`.
 3. **Stale Turn & Deactivation Quarantine**:
@@ -354,7 +356,7 @@ The Bloom Framework guards against this at compile time via `package:blooming_li
 ## 7. Core Engineering Invariants
 
 1. **No Ambient Leakage Invariant**:  
-   The core engine contains zero global `_currentScope` or `Zone` tracking variables. All reactive dependency registrations proceed exclusively through the injected `BloomVia` parameter.
+   The core engine contains zero global `_currentScope` or `Zone` tracking variables. All reactive dependency registrations proceed exclusively through the injected manifest parameter ([`BloomVia`](../../lib/src/bloom/via.dart) for reactive derivations and widgets, [`EffectVia`](../../lib/src/effect/via.dart) for side-effect pipelines).
 2. **1-Pass Pruning Precision**:  
    Deactivated branch edges are severed synchronously upon completion of evaluation, never deferred to subsequent frames or the garbage collector.
 3. **Pure Field Dereference Equivalence**:  
@@ -364,14 +366,14 @@ The Bloom Framework guards against this at compile time via `package:blooming_li
 5. **Short-Circuit Clean Sweeping**:  
    When a short-circuit sentinel ([`_ViaShortCircuit`](../../lib/src/graph/_internal/_via.dart)) is thrown, `succeeded: true` ensures that previously active edges for dead branches are swept immediately while preserving upstream error/empty diagnostics.
 6. **On-Demand Asynchronous Turn Isolation**:  
-   Synchronous evaluations reuse a single `BloomVia` instance with zero heap allocations (`_ViaTrack.sync` -> `_ViaTrack.closed`), whereas `Future`/`Stream`-returning evaluations keep tracking open for the latest turn (`_ViaTrack.async`) and isolate superseded turns on `_beginEpoch` or `_deactivate`.
+   Synchronous evaluations reuse a single tracker instance (`BloomVia` or `EffectVia`) with zero heap allocations (`_ViaTrack.sync` -> `_ViaTrack.closed`), whereas `Future`/`Stream`-returning evaluations keep tracking open for the latest turn (`_ViaTrack.async`) and isolate superseded turns on `_beginEpoch` or `_deactivate`.
 
 ---
 
 ## 8. Engineering Conclusions
 
 1. **Deterministic Dependency Discovery**:  
-   Explicit tracking via `BloomVia` eliminates ambient scope ambiguities, thread-local stack inspection, and accidental dependencies across asynchronous tasks.
+   Explicit tracking via `BloomVia` (for state derivations) and `EffectVia` (for side-effect pipelines) eliminates ambient scope ambiguities, thread-local stack inspection, and accidental dependencies across asynchronous tasks.
 2. **Zero-Allocation Dynamic Re-Topologizing**:  
    1-Pass Monotonic Epoch Sweeping manages dynamic branching with zero collections (`List`, `Set`) allocated on the heap, keeping Dart GC overhead at zero.
 3. **Sequential Cursor Optimization**:  

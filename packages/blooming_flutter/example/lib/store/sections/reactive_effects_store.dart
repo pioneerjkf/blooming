@@ -55,7 +55,7 @@ class ReactiveEffectsStore {
   late final Effect effects;
 
   void _initEffects() {
-    // 1. Dynamic Discovery BloomVia Effect
+    // 1. Dynamic Discovery EffectVia Effect
     // Only tracks nodes wrapped in `via()`. Direct raw reads remain untracked!
     watchEffect = Effect.via((via) {
       final current = via(counter);
@@ -245,7 +245,7 @@ base class UserAlertWidget extends BloomWidget {
   }
 }
 
-// 2. Dynamic Discovery BloomVia Effect
+// 2. Dynamic Discovery EffectVia Effect
 // Only tracks nodes wrapped in `via()`. Reading directly is NOT tracked!
 final watchEffect = Effect.via((via) {
   final count = via(counter);
@@ -267,7 +267,7 @@ final effects = Effect.group([
         highlights: const [
           'Zero-Dispose via.tether(): Automatically anchors effects to widget lifecycle with zero manual dispose() boilerplate or memory leak trauma.',
           'Zero UI Dirty Pulses: Executes pure side-effects without triggering widget tree rebuilds.',
-          'Dynamic Dependency Discovery: Explicit BloomVia branch pruning & untracked execution boundary.',
+          'Dynamic Dependency Discovery: Explicit EffectVia branch pruning & untracked execution boundary.',
           'Declarative Effect.group: Bundles multiple store effects for zero-cost batch lifecycle tethering.',
         ],
         roadmapTree: '''

@@ -44,8 +44,12 @@ part of '../framework.dart';
 /// - Do NOT read reactive nodes untracked inside a derivation closure without
 ///   wrapping them in `via(...)`.
 /// - Do NOT escape or store the [BloomVia] instance in external fields, timers, or UI event
-///   callbacks outside the evaluation closure; escaped calls after a synchronous evaluation
-///   completes or from a superseded asynchronous turn are ignored.
+///   callbacks outside the evaluation closure. While dependency tracking registrations
+///   ([BloomVia.call], [state], [tether]) are silently ignored after a synchronous
+///   evaluation completes or from a superseded asynchronous turn, control-flow methods
+///   ([exit] and [exitIfInactive] when inactive) and evaluating empty or error nodes
+///   throw an internal short-circuit sentinel. If invoked outside the framework's evaluation
+///   scope, no resolver is present to trap this sentinel, causing an uncaught [Error].
 ///
 /// **BAD:**
 /// ```dart
@@ -196,6 +200,18 @@ final class BloomVia {
   /// This method never returns (returns [Never]), allowing Dart's control flow
   /// analysis to safely promote types and eliminate dead code.
   ///
+  /// This method must strictly be invoked within the synchronous or asynchronous
+  /// execution flow of a reactive evaluation closure (e.g., [computed], [managed], or custom
+  /// terminals) managed by the framework. Because it returns [Never], it unconditionally
+  /// throws an internal short-circuit sentinel (`_ViaShortCircuit` implementing [Error]) that
+  /// is trapped and handled by the enclosing evaluation resolver.
+  ///
+  /// **Escaped Call Behavior:**
+  /// Calling [exit] on an escaped or stored [BloomVia] instance outside the evaluation closure
+  /// (such as inside a deferred timer or UI event callback) cannot be safely ignored as a no-op
+  /// due to the [Never] return type. It will throw the internal sentinel into open application code,
+  /// resulting in an uncaught [Error].
+  ///
   /// ## Examples
   /// ```dart
   /// final validPrice = computed((via) {
@@ -214,6 +230,17 @@ final class BloomVia {
   ///
   /// Call this immediately after an `await` point to prevent wasteful execution
   /// of downstream computations when the result is no longer needed.
+  ///
+  /// This method must strictly be invoked within an asynchronous derivation closure
+  /// (e.g., `computed.future`, `computed.stream`) managed by the framework. If the turn has
+  /// been deactivated or superseded, it delegates to [exit], throwing an internal short-circuit
+  /// sentinel that is trapped and handled by the asynchronous derivation bridge.
+  ///
+  /// **Escaped Call Behavior:**
+  /// Calling [exitIfInactive] on an escaped or stored [BloomVia] instance outside the evaluation
+  /// closure evaluates as inactive (stale or closed tracker), delegating to [exit] and throwing
+  /// the internal sentinel. Because no framework resolver is present outside the evaluation
+  /// scope, this will result in an uncaught [Error].
   ///
   /// ## Examples
   /// ```dart

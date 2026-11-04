@@ -56,6 +56,18 @@ Widget badComposed() => composed((context, via) {
       return Text('${untracked(count)}');
     });
 
+// #case avoid_untracked_bloom_read/bad/untracked-in-via-exit
+final badExitReason = computed((via) {
+  // expect_lint: avoid_untracked_bloom_read
+  via.exit(emptyReason: untracked(count));
+});
+
+// #case avoid_untracked_bloom_read/bad/data-in-via-exit
+final badExitData = computed((via) {
+  // expect_lint: avoid_untracked_bloom_read
+  via.exit(emptyReason: counter.data);
+});
+
 // =============================================================================
 // GOOD
 // =============================================================================

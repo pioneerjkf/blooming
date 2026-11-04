@@ -61,7 +61,7 @@ abstract final class FlutterAstUtils {
   }
 
   /// Returns `true` if the [node] represents a synchronous Bloom pipeline invocation,
-  /// an `Effect` instance creation, a closure receiving `BloomVia`, or a Flutter widget `build` method.
+  /// an `Effect` instance creation, a closure receiving `BloomVia` or `EffectVia`, or a Flutter widget `build` method.
   static bool isPipelineOrBuildNode(AstNode node) {
     if ((node is MethodInvocation || node is FunctionExpressionInvocation) &&
         BloomTypeChecker.isBloomPipelineInvocation(node)) {

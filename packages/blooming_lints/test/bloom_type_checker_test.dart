@@ -380,7 +380,76 @@ void test() {
       expect(BloomTypeChecker.isTimerCreation(creations[2]), isFalse);
       expect(BloomTypeChecker.isFutureCreation(creations[2]), isFalse);
     });
+
+    test(
+        'isBloomViaInvocation vs isBloomViaTrackingInvocation distinguishes tracking from control flow',
+        () {
+      final unit = parseString(content: '''
+void testVia(BloomVia via, dynamic context) {
+  via(counter);
+  via.state(counter);
+  via.tether(effect);
+  via.of(context);
+  via.maybeOf(context);
+  via.exit(emptyReason: 'done');
+  via.exitIfInactive(emptyReason: 'stale');
+}
+''').unit;
+
+      final invocations = <AstNode>[];
+      unit.visitChildren(_AstNodeCollector((node) {
+        if (node is MethodInvocation || node is FunctionExpressionInvocation) {
+          invocations.add(node);
+        }
+      }));
+
+      // Find specific calls
+      final callVia = invocations.firstWhere((n) => n.toSource() == 'via(counter)');
+      final stateCall = invocations.firstWhere((n) => n.toSource() == 'via.state(counter)');
+      final tetherCall = invocations.firstWhere((n) => n.toSource() == 'via.tether(effect)');
+      final ofCall = invocations.firstWhere((n) => n.toSource() == 'via.of(context)');
+      final maybeOfCall = invocations.firstWhere((n) => n.toSource() == 'via.maybeOf(context)');
+      final exitCall = invocations.firstWhere((n) => n.toSource() == "via.exit(emptyReason: 'done')");
+      final exitIfInactiveCall = invocations.firstWhere((n) => n.toSource() == "via.exitIfInactive(emptyReason: 'stale')");
+
+      // All are recognized as general BloomVia invocations
+      expect(BloomTypeChecker.isBloomViaInvocation(callVia), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(stateCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(tetherCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(ofCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(maybeOfCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(exitCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(exitIfInactiveCall), isTrue);
+
+      // Only dependency-tracking calls are recognized by isBloomViaTrackingInvocation
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(callVia), isTrue);
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(stateCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(tetherCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(ofCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(maybeOfCall), isTrue);
+
+      // exit and exitIfInactive are control flow and do NOT register dependencies
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitCall), isFalse);
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitIfInactiveCall), isFalse);
+    });
   });
+}
+
+class _AstNodeCollector extends RecursiveAstVisitor<void> {
+  final void Function(AstNode) onNode;
+  _AstNodeCollector(this.onNode);
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    onNode(node);
+    super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    onNode(node);
+    super.visitFunctionExpressionInvocation(node);
+  }
 }
 
 class _InstanceCreationCollector extends RecursiveAstVisitor<void> {

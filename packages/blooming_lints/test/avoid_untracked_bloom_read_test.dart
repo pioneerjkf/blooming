@@ -405,5 +405,79 @@ void testFunc() {
       expect(() => unit.accept(visitor), returnsNormally);
       expect(visitor.untrackedNodes.length, greaterThanOrEqualTo(1));
     });
+
+    test('detects untracked read inside via.exit(emptyReason: ...)', () {
+      final unit = parseString(content: '''
+void testExit() {
+  final result = computed((via) {
+    if (shouldExit) {
+      via.exit(emptyReason: untracked(reasonBloom));
+    }
+    return 42;
+  });
+}
+''').unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      unit.accept(visitor);
+
+      expect(visitor.untrackedNodes.length, equals(1));
+    });
+
+    test('detects .data read inside via.exit(emptyReason: ...)', () {
+      final unit = parseString(content: '''
+void testExitData() {
+  final result = computed((via) {
+    if (shouldExit) {
+      via.exit(emptyReason: reasonBloom.data);
+    }
+    return 42;
+  });
+}
+''').unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      unit.accept(visitor);
+
+      expect(visitor.untrackedNodes.length, equals(1));
+    });
+
+    test('detects untracked read inside via.exitIfInactive(emptyReason: ...)', () {
+      final unit = parseString(content: '''
+void testExitIfInactive() {
+  final result = computed.future((via) async {
+    await fetch();
+    via.exitIfInactive(emptyReason: untracked(reasonBloom));
+    return 42;
+  });
+}
+''').unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      unit.accept(visitor);
+
+      expect(visitor.untrackedNodes.length, equals(1));
+    });
+
+    test('permits tracked via(reasonBloom) or constant string inside via.exit', () {
+      final unit = parseString(content: '''
+void testSafeExit() {
+  final result = computed((via) {
+    if (shouldExit) {
+      via.exit(emptyReason: via(reasonBloom));
+    }
+    if (anotherCondition) {
+      via.exit(emptyReason: 'Safe constant string');
+    }
+    return 42;
+  });
+}
+''').unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      unit.accept(visitor);
+
+      expect(visitor.untrackedNodes.length, equals(0));
+    });
   });
 }

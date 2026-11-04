@@ -574,18 +574,33 @@ abstract final class BloomTypeChecker {
   }
 
   /// Returns `true` if the invocation represents a call to `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, `via.exit(...)`, `via.exitIfInactive(...)`, or `via.of(context)` / `via.maybeOf(context)`.
-  static bool isBloomViaInvocation(AstNode? node) {
+  static bool isBloomViaInvocation(AstNode? node) =>
+      _isBloomViaInvocationInternal(node, includeControlFlow: true);
+
+  /// Returns `true` if the invocation represents a dependency-tracking call:
+  /// `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, or `via.of(context)` / `via.maybeOf(context)`.
+  ///
+  /// Unlike [isBloomViaInvocation], this explicitly excludes control-flow termination methods
+  /// such as `via.exit(...)` and `via.exitIfInactive(...)`, which do not register reactive dependencies.
+  static bool isBloomViaTrackingInvocation(AstNode? node) =>
+      _isBloomViaInvocationInternal(node, includeControlFlow: false);
+
+  static bool _isBloomViaInvocationInternal(
+    AstNode? node, {
+    required bool includeControlFlow,
+  }) {
     if (node == null) return false;
 
     // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfInactive(...)`
     if (node is MethodInvocation) {
       final methodName = node.methodName.name;
-      if (methodName == 'of' ||
+      final isMatchingMethod = methodName == 'of' ||
           methodName == 'maybeOf' ||
           methodName == 'state' ||
           methodName == 'tether' ||
-          methodName == 'exit' ||
-          methodName == 'exitIfInactive') {
+          (includeControlFlow &&
+              (methodName == 'exit' || methodName == 'exitIfInactive'));
+      if (isMatchingMethod) {
         final target = node.target;
         if (target != null) {
           final targetType = target.staticType;
@@ -689,7 +704,7 @@ abstract final class BloomTypeChecker {
     return false;
   }
 
-  /// Returns `true` if the [expr] represents a `BloomVia` target expression.
+  /// Returns `true` if the [expr] represents a `BloomVia` or `EffectVia` target expression.
   static bool isBloomViaTarget(Expression? expr) {
     if (expr == null) return false;
     final unwrapped = expr.unParenthesized;
@@ -718,8 +733,8 @@ abstract final class BloomTypeChecker {
     return isBloomViaParameter(params[1]);
   }
 
-  /// Returns `true` if the [node] is physically enclosed inside a `BloomVia` manifest scope
-  /// (`BloomWidget.build`, `computed`, `composed`, `switched`, `Effect`, or closure with `via` parameter).
+  /// Returns `true` if the [node] is physically enclosed inside a `BloomVia` or `EffectVia` manifest scope
+  /// (`BloomWidget.build`, `computed`, `composed`, `switched`, `Effect.via`, or closure with `via` parameter).
   static bool isInsideBloomViaScope(AstNode node) {
     AstNode? current = node.parent;
     while (current != null) {
@@ -728,7 +743,7 @@ abstract final class BloomTypeChecker {
         return true;
       }
 
-      // 4. Closures with a parameter typed 'BloomVia' or named 'via'
+      // 4. Closures with a parameter typed 'BloomVia', 'EffectVia', or named 'via'
       if (current is FunctionExpression) {
         final params = current.parameters?.parameters;
         if (params != null && params.any(isBloomViaParameter)) {

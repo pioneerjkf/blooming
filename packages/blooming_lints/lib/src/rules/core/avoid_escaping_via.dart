@@ -4,11 +4,11 @@
 
 part of '../../../blooming_lints.dart';
 
-/// A lint rule prohibiting escaping `BloomVia` into asynchronous timers/dispatchers,
+/// A lint rule prohibiting escaping `BloomVia` or `EffectVia` into asynchronous timers/dispatchers,
 /// deferred event callbacks, or nested asynchronous helper closures across `await` gaps.
 ///
 /// ### Rationale:
-/// `BloomVia` (`via(node)`) is bound to the evaluation turn of its owning reactive scope
+/// `BloomVia` or `EffectVia` (`via(node)`) is bound to the evaluation turn of its owning reactive scope
 /// (`computed`, `computed.future`, `computed.stream`, `Effect.via`, `BloomWidget`, etc.).
 /// While direct `async` / `async*` reactive closures support post-`await` and post-`yield`
 /// tracking within the same turn via on-demand asynchronous tracking (`_ViaTrack.async`),
@@ -17,6 +17,9 @@ part of '../../../blooming_lints.dart';
 /// `async` helper functions causes:
 /// 1. **Dropped Dependencies**: Out-of-band callbacks execute after the evaluation epoch has closed.
 /// 2. **Temporal Inconsistency & Race Conditions**: Uncoordinated out-of-band reads bypass turn isolation.
+/// 3. **Unhandled Short-Circuit Sentinels**: Invoking `via.exit()` or `via.exitIfInactive()` (or
+///    evaluating empty/error nodes via `via(...)`) throws an internal short-circuit sentinel (`_ViaShortCircuit`).
+///    Outside the framework's evaluation scope, there is no resolver to trap this sentinel, causing an uncaught `Error`.
 ///
 /// **BAD:**
 /// ```dart
@@ -137,7 +140,7 @@ class AvoidEscapingVia extends DartLintRule {
         }
       }
 
-      // Stop once we reach the owning BloomVia closure or method declaration
+      // Stop once we reach the owning BloomVia or EffectVia closure or method declaration
       if (current is FunctionExpression) {
         final params = current.parameters?.parameters;
         if (params != null &&
