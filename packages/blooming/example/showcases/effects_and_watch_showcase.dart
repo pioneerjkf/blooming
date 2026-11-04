@@ -10,7 +10,7 @@ import 'package:blooming/blooming.dart';
 ///
 /// Demonstrates Bloom's terminal side-effects architecture:
 /// 1. `bloom.effect().start()`: Standalone active runner dedicated to executing a 1:1 single node side-effect
-/// 2. [Effect] via [EffectRunner]: Dynamic [BloomVia] dependency tracking with standalone execution
+/// 2. [Effect] via [EffectRunner]: Dynamic [EffectVia] dependency tracking with standalone execution
 /// 3. [EffectScope]: Declarative effect providing [EffectScope] for teardown / cleanup callbacks
 /// 4. `bloom.effect.debounce()` & `bloom.effect.throttle()`: Time-domain rate limiters
 void main() async {
@@ -32,7 +32,7 @@ void main() async {
   print('');
 
   // ---------------------------------------------------------------------------
-  // 2. Effect.via + start(): Dynamic BloomVia Terminal Sink
+  // 2. Effect.via + start(): Dynamic EffectVia Terminal Sink
   // ---------------------------------------------------------------------------
   print('--- 2. Effect.via().start() ---');
   final user = blooming<String>('Alice');

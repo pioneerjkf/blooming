@@ -305,7 +305,7 @@ final class _EffectGroupTerminal extends _Terminal with _NaryEdgeMixin<_Node> {
 }
 
 // =============================================================================
-// BloomVia Dynamic Terminals
+// EffectVia Dynamic Terminals
 // =============================================================================
 
 /// Internal terminal executing dynamic [EffectVia] tracking effects with `_Scheduler` batching.

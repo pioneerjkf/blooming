@@ -607,7 +607,7 @@ void main() {
       terminal.deactivate();
     });
 
-    test('20. BloomVia Effect forwards uncaught errors to onUncaughtError during reactive evaluation', () async {
+    test('20. EffectVia Effect forwards uncaught errors to onUncaughtError during reactive evaluation', () async {
       final source = blooming<int>(0);
       final caughtErrors = <Object>[];
 
@@ -616,7 +616,7 @@ void main() {
           (via) {
             final val = via(source.bloom);
             if (val > 0) {
-              throw StateError('BloomVia reactive error: $val');
+              throw StateError('EffectVia reactive error: $val');
             }
           },
           onUncaughtError: (error, stack) {
@@ -634,7 +634,7 @@ void main() {
 
       expect(caughtErrors.length, 1);
       expect(caughtErrors.first, isA<StateError>());
-      expect((caughtErrors.first as StateError).message, 'BloomVia reactive error: 1');
+      expect((caughtErrors.first as StateError).message, 'EffectVia reactive error: 1');
 
       terminal.deactivate();
     });
