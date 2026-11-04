@@ -48,6 +48,25 @@ final class EffectVia {
   /// Tethers declarative [tether] to this tracking scope's lifecycle.
   ///
   /// * [tether]: The scoped lifecycle resource or side-effect to attach.
+  ///
+  /// **Ensures:**
+  /// * The tether is automatically activated when this scope activates, and
+  ///   deactivated (dormant) when this scope deactivates or is unmounted.
+  /// * Emits zero dirty invalidation pulses downstream to parent scopes.
+  /// * Returns the identical [tether] instance.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final eventCount = blooming(0);
+  /// final analyticsLoggerEffect = Effect([eventCount.bloom], () {
+  ///   print('Logged event: ${untracked(eventCount.bloom)}');
+  /// });
+  ///
+  /// final parentEffect = Effect.via((via) {
+  ///   via.tether(analyticsLoggerEffect);
+  ///   print('Observed: ${via(eventCount.bloom)}');
+  /// });
+  /// ```
   @pragma('vm:prefer-inline')
   T tether<T extends Tether>(T tether) {
     _node._trackDependency(this, tether);

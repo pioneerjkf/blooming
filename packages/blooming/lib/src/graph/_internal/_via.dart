@@ -4,7 +4,7 @@
 
 part of '../../framework.dart';
 
-/// Internal short-circuit sentinel thrown when [BloomVia.call] encounters
+/// Internal short-circuit sentinel thrown when [BloomVia.call] or [EffectVia.call] encounters
 /// a non-data state (empty or error).
 ///
 /// Implements [Error] to avoid being accidentally intercepted by standard
@@ -34,7 +34,7 @@ enum _ViaTrack {
 }
 
 /// Mixin that provides dynamic epoch-based explicit dependency tracking and 1-pass pruning
-/// for n-ary nodes and terminals via [BloomVia].
+/// for n-ary nodes and terminals via [BloomVia] or [EffectVia].
 base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
   int _epoch = 0;
   _Edge? _cursor;

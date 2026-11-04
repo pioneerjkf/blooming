@@ -287,7 +287,7 @@ Because [`BloomVia`](../../lib/src/bloom/via.dart) is passed as an explicit lexi
 
 ---
 
-## 5. Decoupling Data and Lifecycle Planes: Tether and `via.tether()`
+## 5. Decoupling Data and Lifecycle Planes: Tether and `via.tether()` (`BloomVia` / `EffectVia`)
 
 The Bloom Framework physically separates two orthogonal planes across reactive topologies:
 
@@ -295,14 +295,14 @@ The Bloom Framework physically separates two orthogonal planes across reactive t
    - Nodes that compute values and propagate state changes downstream via the 2-Phase Push-Dirty / Lazy-Pull engine.
 2. **Lifecycle Plane ([`Tether`](../../lib/src/graph/tether.dart))**:
    - Non-propagating nodes (`_isNewerThan() == false`) that never emit dirty pulses or version increments downstream.
-   - They purely bind to the surrounding scope's active/dormant state and lifecycle termination driven by 1-Pass Epoch Sweeping.
+   - They purely bind to the surrounding scope's active/dormant state and lifecycle termination driven by 1-Pass Epoch Sweeping via [`BloomVia.tether`](../../lib/src/bloom/via.dart) or [`EffectVia.tether`](../../lib/src/effect/via.dart).
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │             Data Plane (Bloom) vs. Lifecycle Plane (Tether)                      │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
-│   [ Tracking Scope: computed / RawViaTerminal ]                                 │
+│   [ Tracking Scope: computed / Effect.via / RawViaTerminal ]                    │
 │          │                                                                      │
 │          ├─► via(sourceBloom) ──► Data Plane Edge (State Propagation)            │
 │          │                                                                      │

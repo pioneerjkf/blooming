@@ -14,7 +14,7 @@ part of '../framework.dart';
 /// - **Data Plane ([Bloom])**: Evaluates and propagates state mutations downstream via the
 ///   2-Phase Push-Dirty / Lazy-Pull DAG.
 /// - **Lifecycle Plane ([Tether])**: Declarative lifecycle entities governed by enclosing
-///   tracking scopes via [BloomVia.tether] or executed imperatively via [EffectRunner].
+///   tracking scopes via [BloomVia.tether] or [EffectVia.tether], or executed imperatively via [EffectRunner].
 /// - An [Effect] encapsulates an internal terminal (`_Terminal`) that acts as a non-propagating
 ///   terminal sink (`_isNewerThan` always returns `false`), executing pure side-effects
 ///   (analytics, external I/O sync, storage, audio/haptic feedback) without mutating intermediate

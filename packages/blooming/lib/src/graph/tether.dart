@@ -11,7 +11,7 @@ part of '../framework.dart';
 /// Top-level declarative lifecycle-bound entity in the Bloom reactive DAG.
 ///
 /// A [Tether] represents a non-propagating lifecycle node whose active state
-/// is strictly governed by enclosing tracking scopes via [BloomVia.tether].
+/// is strictly governed by enclosing tracking scopes via [BloomVia.tether] or [EffectVia.tether].
 ///
 /// ## Architectural Separation of Concerns
 /// In the Bloom framework, reactivity is organized across two decoupled planes:
@@ -23,7 +23,7 @@ part of '../framework.dart';
 ///
 /// ## System Architectural Flow
 /// ```text
-/// [Enclosing Scope (computed / terminal)]
+/// [Enclosing Scope (computed / Effect.via / terminal)]
 ///            │
 ///            ▼ (via.tether(tetherNode))
 ///     [Tether Node (e.g. Effect)]

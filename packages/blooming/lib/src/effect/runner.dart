@@ -11,7 +11,7 @@ part of '../framework.dart';
 /// An active standalone execution terminal that imperatively controls the lifecycle of an [Effect].
 ///
 /// While declarative [Effect] nodes are typically tethered to reactive tracking scopes
-/// via [BloomVia.tether], an [EffectRunner] enables executing effects imperatively
+/// via [BloomVia.tether] or [EffectVia.tether], an [EffectRunner] enables executing effects imperatively
 /// outside reactive scopes (e.g. in domain services, ViewModels, or background workers).
 ///
 /// ## System Architectural Flow

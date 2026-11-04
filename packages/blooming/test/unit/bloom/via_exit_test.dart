@@ -328,6 +328,37 @@ void main() {
           throwsA(isA<TypeError>()),
         );
       });
+
+      test('4.5 EffectVia supports tether() lifecycle binding', () async {
+        final trigger = blooming(1);
+        final childTrigger = blooming(10);
+        var childExecuted = false;
+
+        final childEffect = Effect([childTrigger.bloom], () {
+          childExecuted = true;
+        });
+
+        final parentEffect = Effect.via((via) {
+          via(trigger.bloom);
+          via.tether(childEffect);
+        });
+
+        final terminal = RawViaTerminal((via) {
+          via.tether(parentEffect);
+        }, onInvalidated: () {});
+        terminal.activate();
+        terminal.evaluate();
+
+        await Future<void>.delayed(Duration.zero);
+        expect(childEffect.isActive, isTrue);
+
+        childTrigger.data = 20;
+        await Future<void>.delayed(Duration.zero);
+        expect(childExecuted, isTrue);
+
+        terminal.deactivate();
+        expect(childEffect.isActive, isFalse);
+      });
     });
 
     // =========================================================================
