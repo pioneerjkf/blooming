@@ -1,3 +1,17 @@
+## 0.3.0
+
+- **Algebraic Early-Exit Control Flow (`via.exit`)**:
+  - Replaced legacy `BloomGuard` with algebraic early-exit control flow via `via.exit({Object? emptyReason})` and `via.exitIfInactive({Object? emptyReason})`.
+  - Migrated derived computations (`computed`, `switched`, `managed`, `Computation`) and record tuple extensions (`.allHaveData()` + `via.exit()`) to the algebraic early-exit protocol.
+  - Hardened turn-isolation and exception propagation so that `via.exit()` thrown out-of-band or escaped outside evaluation closures immediately bubbles up as an unhandled `_ViaShortCircuit`.
+- **Domain Separation (`BloomVia` & `EffectVia`)**:
+  - Decoupled reactive data evaluation from side-effect pipelines: `BloomVia` is used exclusively for state evaluation (`computed`, `switched`, `managed`), while `EffectVia` is used for side-effect dispatch (`Effect.via`, `Effect.scoped.via`).
+- **Tether Binding Alignment**:
+  - Standardized `.tether()` contract across both `BloomVia.tether` and `EffectVia.tether` to link child effect lifetimes to their parent reactive scope.
+- **Architectural 5-Tier Domain Structure**:
+  - Restructured internal architecture into Graph (`src/graph/`), Blooming (`src/blooming/`), Bloom (`src/bloom/`), Effect (`src/effect/`), and Reflector (`src/reflector/`).
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.0.
+
 ## 0.2.5
 
 - **On-Demand Asynchronous Tracking & Turn Isolation**:

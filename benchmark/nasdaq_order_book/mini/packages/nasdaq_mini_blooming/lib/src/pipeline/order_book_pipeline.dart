@@ -140,8 +140,8 @@ class OrderBookPipeline {
     _actualTpsController = blooming<int>(0);
     _latencyMsController = blooming<double>(0.0);
     _eventLoopLagController = blooming<double>(0.0);
-    _eventLoopHistoryController = blooming.raw<List<double>>(
-        UnmodifiableListView(_eventLoopHistory));
+    _eventLoopHistoryController =
+        blooming.raw<List<double>>(UnmodifiableListView(_eventLoopHistory));
     _eventLoopAvg1sController = blooming<double>(0.0);
     _eventLoopAvg1sHistoryController = blooming.raw<List<double>>(
       UnmodifiableListView(_eventLoopAvg1sHistory),
@@ -152,8 +152,7 @@ class OrderBookPipeline {
     );
     final initialScrollAnim =
         Platform.environment['BENCH_SCROLL_ANIM'] != 'false';
-    _isScrollAnimationEnabledController =
-        blooming<bool>(initialScrollAnim);
+    _isScrollAnimationEnabledController = blooming<bool>(initialScrollAnim);
 
     final envSet =
         int.tryParse(Platform.environment['BENCH_SET_INDEX'] ?? '') ?? 1;
@@ -181,8 +180,7 @@ class OrderBookPipeline {
     // Initialize Stock Selection & Auto-Rotation Controllers
     _selectedStockIndexController = blooming<int>(0);
     _isAutoRotatingController = blooming<bool>(false);
-    _rotationIntervalIndexController =
-        blooming<int>(6); // Default 1000ms
+    _rotationIntervalIndexController = blooming<int>(6); // Default 1000ms
 
     // Initialize Initial Trade Ticks Sample
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -203,8 +201,7 @@ class OrderBookPipeline {
     for (final stock in stocks) {
       _latestStockPrices[stock.symbol] = stock.basePrice;
       _latestStockChanges[stock.symbol] = stock.priceChangePct;
-      _stockPriceControllers[stock.symbol] =
-          blooming<double>(stock.basePrice);
+      _stockPriceControllers[stock.symbol] = blooming<double>(stock.basePrice);
       _stockChangeControllers[stock.symbol] =
           blooming<double>(stock.priceChangePct);
     }

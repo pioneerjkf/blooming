@@ -1,3 +1,13 @@
+## 0.3.0
+
+- **Lint Rules**:
+  - Refined `avoid_untracked_bloom_read` to recognize `BloomVia` and `EffectVia` scopes and distinguish between dependency-tracking reads and early-exit arguments.
+  - Eliminated false negatives when reading untracked Bloom data inside `emptyReason` parameters of `via.exit()` and `via.exitIfInactive()`.
+- **Type Checker**:
+  - Updated `BloomTypeChecker` to disambiguate dependency-tracking `via(...)` calls from control-flow `via.exit(...)` calls via `isBloomViaTrackingInvocation`.
+  - Added full AST detection and symbol validation for `EffectVia` and `via.exit` / `via.exitIfInactive`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.0.
+
 ## 0.2.5
 
 - **Lint Rules**: Added `avoid_async_in_computed` prohibiting passing asynchronous closures (`async`/`async*`) or `Future`/`Stream` return types to synchronous `computed()`, directing users to `computed.future()` and `computed.stream()`.

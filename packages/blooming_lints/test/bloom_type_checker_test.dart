@@ -404,13 +404,20 @@ void testVia(BloomVia via, dynamic context) {
       }));
 
       // Find specific calls
-      final callVia = invocations.firstWhere((n) => n.toSource() == 'via(counter)');
-      final stateCall = invocations.firstWhere((n) => n.toSource() == 'via.state(counter)');
-      final tetherCall = invocations.firstWhere((n) => n.toSource() == 'via.tether(effect)');
-      final ofCall = invocations.firstWhere((n) => n.toSource() == 'via.of(context)');
-      final maybeOfCall = invocations.firstWhere((n) => n.toSource() == 'via.maybeOf(context)');
-      final exitCall = invocations.firstWhere((n) => n.toSource() == "via.exit(emptyReason: 'done')");
-      final exitIfInactiveCall = invocations.firstWhere((n) => n.toSource() == "via.exitIfInactive(emptyReason: 'stale')");
+      final callVia =
+          invocations.firstWhere((n) => n.toSource() == 'via(counter)');
+      final stateCall =
+          invocations.firstWhere((n) => n.toSource() == 'via.state(counter)');
+      final tetherCall =
+          invocations.firstWhere((n) => n.toSource() == 'via.tether(effect)');
+      final ofCall =
+          invocations.firstWhere((n) => n.toSource() == 'via.of(context)');
+      final maybeOfCall =
+          invocations.firstWhere((n) => n.toSource() == 'via.maybeOf(context)');
+      final exitCall = invocations
+          .firstWhere((n) => n.toSource() == "via.exit(emptyReason: 'done')");
+      final exitIfInactiveCall = invocations.firstWhere(
+          (n) => n.toSource() == "via.exitIfInactive(emptyReason: 'stale')");
 
       // All are recognized as general BloomVia invocations
       expect(BloomTypeChecker.isBloomViaInvocation(callVia), isTrue);
@@ -426,11 +433,13 @@ void testVia(BloomVia via, dynamic context) {
       expect(BloomTypeChecker.isBloomViaTrackingInvocation(stateCall), isTrue);
       expect(BloomTypeChecker.isBloomViaTrackingInvocation(tetherCall), isTrue);
       expect(BloomTypeChecker.isBloomViaTrackingInvocation(ofCall), isTrue);
-      expect(BloomTypeChecker.isBloomViaTrackingInvocation(maybeOfCall), isTrue);
+      expect(
+          BloomTypeChecker.isBloomViaTrackingInvocation(maybeOfCall), isTrue);
 
       // exit and exitIfInactive are control flow and do NOT register dependencies
       expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitCall), isFalse);
-      expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitIfInactiveCall), isFalse);
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitIfInactiveCall),
+          isFalse);
     });
   });
 }

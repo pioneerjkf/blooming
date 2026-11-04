@@ -1099,7 +1099,8 @@ void main() {}
         'final addressBloom = blooming<Address>(const Address()).bloom;',
       if (isUsed('shippingAddressBloom') && !isDefined('shippingAddressBloom'))
         'final shippingAddressBloom = blooming<Address>(const Address()).bloom;',
-      if (isUsed('selectedShippingOptionBloom') && !isDefined('selectedShippingOptionBloom'))
+      if (isUsed('selectedShippingOptionBloom') &&
+          !isDefined('selectedShippingOptionBloom'))
         'final selectedShippingOptionBloom = blooming<String>("Standard").bloom;',
       if (isUsed('feedBloom') && !isDefined('feedBloom'))
         'final feedBloom = blooming<String>("feed").bloom;',

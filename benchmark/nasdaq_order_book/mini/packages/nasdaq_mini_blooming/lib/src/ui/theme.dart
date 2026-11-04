@@ -808,8 +808,7 @@ final class NasdaqThemeStore {
   ];
 
   final BloomController<NasdaqThemeData> _controller;
-  final BloomController<bool> _isAutoRotatingController =
-      blooming<bool>(false);
+  final BloomController<bool> _isAutoRotatingController = blooming<bool>(false);
   final BloomController<int> _rotationIntervalIndexController =
       blooming<int>(6); // Index 6 = 1000ms
 

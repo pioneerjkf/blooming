@@ -457,7 +457,8 @@ void testExitData() {
       expect(visitor.untrackedNodes.length, equals(1));
     });
 
-    test('detects untracked read inside via.exitIfInactive(emptyReason: ...)', () {
+    test('detects untracked read inside via.exitIfInactive(emptyReason: ...)',
+        () {
       final unit = parseString(content: '''
 void testExitIfInactive() {
   final result = computed.future((via) async {
@@ -474,7 +475,8 @@ void testExitIfInactive() {
       expect(visitor.untrackedNodes.length, equals(1));
     });
 
-    test('permits tracked via(reasonBloom) or constant string inside via.exit', () {
+    test('permits tracked via(reasonBloom) or constant string inside via.exit',
+        () {
       final unit = parseString(content: '''
 void testSafeExit() {
   final result = computed((via) {
