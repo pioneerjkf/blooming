@@ -178,10 +178,25 @@ void testSwitched() {
       expect(visitor.untrackedNodes.length, equals(2));
     });
 
-    test('detects untracked .data in Effect((via) => ...)', () {
+    test('detects untracked .data in Effect.via((EffectVia via) => ...)', () {
       final unit = parseString(content: '''
 void testEffect() {
-  Effect((via) {
+  Effect.via((EffectVia via) {
+    print(counter.data); // [Anti-Pattern] Untracked
+  });
+}
+''').unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      unit.accept(visitor);
+
+      expect(visitor.untrackedNodes.length, equals(1));
+    });
+
+    test('detects untracked .data in Effect.via((via) => ...)', () {
+      final unit = parseString(content: '''
+void testEffectInferred() {
+  Effect.via((via) {
     print(counter.data); // [Anti-Pattern] Untracked
   });
 }

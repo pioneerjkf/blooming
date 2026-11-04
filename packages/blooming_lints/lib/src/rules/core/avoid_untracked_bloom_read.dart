@@ -48,7 +48,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
   static const _code = LintCode(
     name: 'avoid_untracked_bloom_read',
     problemMessage:
-        'Avoid reading reactive payload directly (\'{0}\') inside BloomVia scopes without calling via().',
+        'Avoid reading reactive payload directly (\'{0}\') inside BloomVia/EffectVia scopes without calling via().',
     correctionMessage:
         'Wrap the reactive node with via(node) or via.state(node) to establish dynamic dependency tracking.',
     errorSeverity: DiagnosticSeverity.ERROR,
@@ -57,7 +57,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
   static const _castCode = LintCode(
     name: 'avoid_untracked_bloom_read',
     problemMessage:
-        'Avoid casting Bloom node to BloomState inside BloomVia scopes to bypass reactive tracking.',
+        'Avoid casting Bloom node to BloomState inside BloomVia/EffectVia scopes to bypass reactive tracking.',
     correctionMessage:
         'Use via(node) or via.state(node) instead of manual casting to establish dynamic dependency tracking.',
     errorSeverity: DiagnosticSeverity.ERROR,
@@ -66,7 +66,7 @@ class AvoidUntrackedBloomRead extends DartLintRule {
   static const _untrackedCode = LintCode(
     name: 'avoid_untracked_bloom_read',
     problemMessage:
-        'Avoid calling untracked(...) inside BloomVia scopes without establishing dependency tracking.',
+        'Avoid calling untracked(...) inside BloomVia/EffectVia scopes without establishing dependency tracking.',
     correctionMessage:
         'Use via(node) or via.state(node) instead of untracked(...) to establish dynamic dependency tracking.',
     errorSeverity: DiagnosticSeverity.ERROR,
