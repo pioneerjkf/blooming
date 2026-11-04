@@ -702,7 +702,9 @@ void main() {
         var disposeCount = 0;
 
         final res = managed<String>(
-          guard: (via) => via(isEnabled.bloom).guarded(),
+          guard: (via) {
+            if (!via(isEnabled.bloom)) via.exit();
+          },
           create: (via) {
             createCount++;
             return 'Resource-${via(payload.bloom)}';

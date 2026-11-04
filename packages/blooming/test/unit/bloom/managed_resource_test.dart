@@ -388,7 +388,9 @@ void main() {
       int disposed = 0;
 
       final res = managed<String>(
-        guard: (via) => via(enabled.bloom).guarded('NotEnabled'),
+        guard: (via) {
+          if (!via(enabled.bloom)) via.exit(emptyReason: 'NotEnabled');
+        },
         create: (_) => 'ActiveResource',
         dispose: (_) => disposed++,
       );

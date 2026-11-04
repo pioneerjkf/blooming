@@ -309,7 +309,11 @@ final inputC = blooming(3).bloom;
 final total = computed(
   (via) => via(inputA) + via(inputB) + via(inputC),
   // Evaluates without allocating List/Set wrapper collections:
-  guard: (via) => (via.state(inputA), via.state(inputB), via.state(inputC)).guarded('AwaitingInputs'),
+  guard: (via) {
+    if (!(via.state(inputA), via.state(inputB), via.state(inputC)).allHaveData()) {
+      via.exit(emptyReason: 'AwaitingInputs');
+    }
+  },
 );
 ```
 
@@ -339,12 +343,12 @@ The core reactive graph in Bloom is driven by three unified functors:
 │     ├── (via) => T                     : Pure synchronous derivation       │
 │     ├── .future((via) => Future<T>)    : Async single-shot fetch (SWR)     │
 │     └── .stream((via) => Stream<T>)    : Real-time continuous stream / WS  │
-│         * Common Options: guard: (via) => BloomGuard                        │
+│         * Common Options: guard: (via) { ... }                              │
 │                                                                            │
 │  2. switched: Dynamic Pipeline Switching (Unified Entrypoint)              │
 │     └── (via) => Bloom<T>               : Dynamic DAG edge redirection      │
 │         * Options: eager: false (Pure Lazy, default) │ eager: true         │
-│                    guard: (via) => BloomGuard                                │
+│                    guard: (via) { ... }                                    │
 │                                                                            │
 │  3. managed: Pure Synchronous External Resource Lifecycle                  │
 │     └── call(create, update, dispose)  : Supervised resource allocation    │
@@ -352,7 +356,7 @@ The core reactive graph in Bloom is driven by three unified functors:
 │                    update:  (via, current) => T (optional)                 │
 │                    dispose: (resource) => void                             │
 │         * Options: eager: false (Lazy, default) │ eager: true              │
-│                    guard: (via) => BloomGuard │ graceful: Graceful           │
+│                    guard: (via) { ... } │ graceful: Graceful               │
 │                                                                            │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -372,7 +376,11 @@ final searchResults = computed(
     via(refreshTrigger.bloom); // Declarative re-evaluation trigger
     return performSearch(via(searchQuery.bloom));
   },
-  guard: (via) => (via(searchQuery.bloom).trim().length >= 2).guarded('QueryTooShort'),
+  guard: (via) {
+    if (via(searchQuery.bloom).trim().length < 2) {
+      via.exit(emptyReason: 'QueryTooShort');
+    }
+  },
 );
 ```
 
@@ -400,7 +408,11 @@ final isLoggedIn = blooming(false);
 // Subtree Gating: Entire feed graph is uninstantiated until user is authenticated
 final currentFeed = switched(
   (via) => via(selectedTab.bloom) == 0 ? homeFeed.bloom : trendingFeed.bloom,
-  guard: (via) => via(isLoggedIn.bloom).guarded('UserNotAuthenticated'),
+  guard: (via) {
+    if (!via(isLoggedIn.bloom)) {
+      via.exit(emptyReason: 'UserNotAuthenticated');
+    }
+  },
 );
 ```
 
@@ -453,8 +465,11 @@ final clientHandle = managed<ApiClient>(
   create: (via) => ApiClient(port: 8080),
   dispose: (client) => client.close(),
   // Gated on active session: when loggedIn becomes false, engine immediately disposes the client!
-  guard: (via) => (via(loggedInBloom) && via.state(tokenBloom).hasData)
-      .guarded('AwaitingAuthentication'),
+  guard: (via) {
+    if (!via(loggedInBloom) || !via.state(tokenBloom).hasData) {
+      via.exit(emptyReason: 'AwaitingAuthentication');
+    }
+  },
 );
 
 // 2. Multi-Input Gating & Granular Diagnostic Reasons:
@@ -464,16 +479,15 @@ final addressBloom = blooming(const Address()).bloom;
 final orderSummary = computed(
   (via) => OrderPricing(total: via(cartBloom).items.length * 10.0),
   guard: (via) {
-    if (via.state(cartBloom).isEmpty) return BloomGuard.block('CartIsEmpty');
-    if (via.state(addressBloom).isEmpty) return BloomGuard.block('AddressRequired');
-    return BloomGuard.pass;
+    if (via.state(cartBloom).isEmpty) via.exit(emptyReason: 'CartIsEmpty');
+    if (via.state(addressBloom).isEmpty) via.exit(emptyReason: 'AddressRequired');
   },
 );
 ```
 
 * **Deterministic Auto-Disposal**: When dependencies in `guard` collapse (e.g. `isLoggedIn` becomes `false`), `managed` nodes **immediately invoke `dispose()` and transition to `Empty`**. No manual teardown logic required on logout.
 * **Execution Gating**: Gated `computed` derivations and asynchronous I/O (`computed.future`, `computed.stream`) are aborted at the threshold, preventing unneeded network traffic.
-* **Zero-Heap Record Tuples**: Multi-state checks like `(via.state(a), via.state(b)).guarded()` evaluate on the call stack with **0 heap allocations**.
+* **Zero-Heap Record Tuples**: Multi-state checks like `!(via.state(a), via.state(b)).allHaveData()` evaluate on the call stack with **0 heap allocations**.
 * [Read Deep-Dive Whitepaper: 18. Precondition Guarding & Algebraic State Gating](doc/foundations/18_precondition_guarding_and_algebraic_gating.md)
 
 ---

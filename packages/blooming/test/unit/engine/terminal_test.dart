@@ -642,7 +642,11 @@ void main() {
         final count = blooming<int>(0);
         final terminal = RawComputedTerminal<int>(
           (via) => via(count.bloom) * 2,
-          guard: (via) => (via(count.bloom) > 0).guarded('Count must be positive'),
+          guard: (via) {
+            if (via(count.bloom) <= 0) {
+              via.exit(emptyReason: 'Count must be positive');
+            }
+          },
           onInvalidated: () {},
         )..activate();
 

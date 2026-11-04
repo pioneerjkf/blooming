@@ -19,7 +19,7 @@ abstract base class _ComputedBloomBase<T> extends _NaryRelay<_Node>
 /// isolation, and 1-pass epoch sweeping for any node that evaluates a [BloomVia] closure.
 base mixin _ComputedPullMixin<T> on _PullResolver<T>, _BloomViaEpochMixin {
   T Function(BloomVia via) get _compute;
-  BloomGuard Function(BloomVia via)? get _guard;
+  void Function(BloomVia via)? get _guard;
 
   @override
   @pragma('vm:prefer-inline')
@@ -35,14 +35,7 @@ base mixin _ComputedPullMixin<T> on _PullResolver<T>, _BloomViaEpochMixin {
     _BloomState<T> state;
     var succeeded = true;
     try {
-      final guard = _guard;
-      if (guard != null) {
-        final decision = guard(_via);
-        if (!decision.isPass) {
-          state = _EmptyBloomState<T>(decision.reason);
-          return state;
-        }
-      }
+      _guard?.call(_via);
       final result = _resultViaTrack(_compute(_via));
       final current = _state;
       if (current case final _ValidBloomState<T> s) {
@@ -72,13 +65,13 @@ base mixin _ComputedPullMixin<T> on _PullResolver<T>, _BloomViaEpochMixin {
 base class _ComputedBloom<T> extends _ComputedBloomBase<T> with _ComputedPullMixin<T> {
   _ComputedBloom(
     this._compute, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
   }) : _guard = guard;
 
   @override
   final T Function(BloomVia via) _compute;
   @override
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
 }
 
 /// Internal reactive node powering a [Computation] component.
@@ -107,18 +100,14 @@ base class _ComputationBloom<T> extends _ComputedBloomBase<T> {
     _BloomState<T> state;
     var succeeded = true;
     try {
-      final decision = _computation.guard(_via);
-      if (!decision.isPass) {
-        state = _EmptyBloomState<T>(decision.reason);
+      _computation.guard(_via);
+      final result = _resultViaTrack(_computation.compute(_via));
+      final current = _state;
+      if (current case final _ValidBloomState<T> s) {
+        s.update(result);
+        state = s;
       } else {
-        final result = _resultViaTrack(_computation.compute(_via));
-        final current = _state;
-        if (current case final _ValidBloomState<T> s) {
-          s.update(result);
-          state = s;
-        } else {
-          state = _ValidBloomState<T>(result);
-        }
+        state = _ValidBloomState<T>(result);
       }
     } on _ViaShortCircuit catch (e) {
       succeeded = true;
@@ -173,7 +162,7 @@ base class _LifecycleAwareComputationBloom<T> extends _ComputationBloom<T> {
 final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom<T> {
   _FutureComputedBloom(
     FutureOr<T> Function(BloomVia via) compute, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
   })  : _compute = compute,
@@ -182,7 +171,7 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
         _onError = onError;
 
   final FutureOr<T> Function(BloomVia via) _compute;
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
   final T Function()? _initialFactory;
   final T Function(Object error, [StackTrace? stackTrace])? _onError;
 
@@ -191,13 +180,7 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
 
   @override
   Bloom<T> _evaluateDelta(BloomVia via) {
-    final guard = _guard;
-    if (guard != null) {
-      final decision = guard.call(via);
-      if (!decision.isPass) {
-        return Bloom.empty(decision.reason);
-      }
-    }
+    _guard?.call(via);
     final result = _deltaTerminal._resultViaTrack(_compute(via));
     if (result is! Future) {
       // Synchronous Fast-Path: Immediately couple to a constant node in 0ms!
@@ -215,7 +198,7 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
 final class _StreamComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom<T> {
   _StreamComputedBloom(
     Stream<T> Function(BloomVia via) compute, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
     bool? cancelOnError,
@@ -232,7 +215,7 @@ final class _StreamComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
         _graceful = graceful;
 
   final Stream<T> Function(BloomVia via) _computeStream;
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
   final T Function()? _initialFactory;
   final T Function(Object error, [StackTrace? stackTrace])? _onError;
   final bool? _cancelOnError;
@@ -245,13 +228,7 @@ final class _StreamComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
 
   @override
   Bloom<T> _evaluateDelta(BloomVia via) {
-    final guard = _guard;
-    if (guard != null) {
-      final decision = guard.call(via);
-      if (!decision.isPass) {
-        return Bloom.empty(decision.reason);
-      }
-    }
+    _guard?.call(via);
     final stream = _deltaTerminal._resultViaTrack(_computeStream(via));
     return _StreamBloomBridge.create<T>(
       stream,

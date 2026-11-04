@@ -16,7 +16,11 @@ void main() {
         int disposeCount = 0;
 
         final clientRes = managed<String>(
-          guard: (via) => via.state(token.bloom).hasData.guarded('AwaitingAuthToken'),
+          guard: (via) {
+            if (!via.state(token.bloom).hasData) {
+              via.exit(emptyReason: 'AwaitingAuthToken');
+            }
+          },
           create: (via) {
             createCount++;
             return 'Client(${via(token.bloom)})';
@@ -63,7 +67,9 @@ void main() {
         final disposedList = <String>[];
 
         final socketRes = managed<String>(
-          guard: (via) => via(isOnline.bloom).guarded('NetworkOffline'),
+          guard: (via) {
+            if (!via(isOnline.bloom)) via.exit(emptyReason: 'NetworkOffline');
+          },
           create: (via) {
             createCount++;
             return 'SocketConnection-$createCount';
@@ -105,7 +111,9 @@ void main() {
         final disposed = <String>[];
 
         final poolRes = managed<String>(
-          guard: (via) => via(enabled.bloom).guarded('PoolDisabled'),
+          guard: (via) {
+            if (!via(enabled.bloom)) via.exit(emptyReason: 'PoolDisabled');
+          },
           create: (via) {
             createCount++;
             return 'Pool(${via(server.bloom)})';
@@ -181,10 +189,10 @@ void main() {
 
       test('1.5 Unified Class Architecture: Bloom.managed creates _LazyManagedBloom or _LazyGracefulManagedBloom', () {
         final pure = managed<int>(create: (_) => 42, dispose: (_) {});
-        final guarded = managed<int>(create: (_) => 42, dispose: (_) {}, guard: (_) => BloomGuard.pass);
+        final guarded = managed<int>(create: (_) => 42, dispose: (_) {}, guard: (_) {});
         final pureGraceful = managed<int>(create: (_) => 42, dispose: (_) {}, graceful: const Graceful());
         final guardedGraceful =
-            managed<int>(create: (_) => 42, dispose: (_) {}, guard: (_) => BloomGuard.pass, graceful: const Graceful());
+            managed<int>(create: (_) => 42, dispose: (_) {}, guard: (_) {}, graceful: const Graceful());
 
         // Standard managed nodes are unified under _LazyManagedBloom
         expect(pure.runtimeType.toString(), contains('_LazyManagedBloom'));
@@ -202,7 +210,6 @@ void main() {
         final errorRes = managed<String>(
           guard: (via) {
             if (via(shouldThrow.bloom)) throw StateError('GuardEvaluationFailed');
-            return BloomGuard.pass;
           },
           create: (_) => 'ActiveResource',
           dispose: (r) => disposed.add(r),
@@ -230,7 +237,9 @@ void main() {
         int disposeCount = 0;
 
         final res = managed<String>(
-          guard: (via) => via(online.bloom).guarded('Offline'),
+          guard: (via) {
+            if (!via(online.bloom)) via.exit(emptyReason: 'Offline');
+          },
           create: (_) => 'GracefulClient',
           dispose: (_) => disposeCount++,
           graceful: const Graceful(),
@@ -272,7 +281,9 @@ void main() {
             computeCallCount++;
             return via(count.bloom) * 2;
           },
-          guard: (via) => via(ready.bloom).guarded('NotReadyYet'),
+          guard: (via) {
+            if (!via(ready.bloom)) via.exit(emptyReason: 'NotReadyYet');
+          },
         );
 
         final terminal = RawBloomTerminal(calc, onInvalidated: () {});
@@ -310,7 +321,7 @@ void main() {
 
       test('2.2 Unified Class Architecture: Bloom.computed creates _ComputedBloom', () {
         final pure = computed((via) => 42);
-        final guarded = computed((via) => 42, guard: (via) => BloomGuard.pass);
+        final guarded = computed((via) => 42, guard: (via) {});
 
         // Both pure and guarded computed nodes are unified under _ComputedBloom
         expect(pure.runtimeType.toString(), contains('_ComputedBloom'));
@@ -329,7 +340,9 @@ void main() {
 
         final comp = computed(
           (via) => 'Hello, ${via(name.bloom)}',
-          guard: (via) => via(ready.bloom).guarded('WaitingReady'),
+          guard: (via) {
+            if (!via(ready.bloom)) via.exit(emptyReason: 'WaitingReady');
+          },
         );
 
         expect(untracked.state(comp).isEmpty, isTrue);
@@ -346,7 +359,6 @@ void main() {
           (via) => 100,
           guard: (via) {
             if (via(shouldFail.bloom)) throw FormatException('GuardCheckFailed');
-            return BloomGuard.pass;
           },
         );
 
@@ -380,7 +392,9 @@ void main() {
             switchCallCount++;
             return via(mode.bloom) == 'dark' ? darkTheme.bloom : lightTheme.bloom;
           },
-          guard: (via) => via(loggedIn.bloom).guarded('UserLoggedOut'),
+          guard: (via) {
+            if (!via(loggedIn.bloom)) via.exit(emptyReason: 'UserLoggedOut');
+          },
         );
 
         final terminal = RawBloomTerminal(currentTheme, onInvalidated: () {});
@@ -416,7 +430,9 @@ void main() {
 
         final eagerSwitched = switched(
           (_) => branchA.bloom,
-          guard: (via) => via(ready.bloom).guarded('EagerNotReady'),
+          guard: (via) {
+            if (!via(ready.bloom)) via.exit(emptyReason: 'EagerNotReady');
+          },
           eager: true,
         );
 
@@ -444,7 +460,9 @@ void main() {
 
         final guarded = computed(
           (via) => via(controller.bloom),
-          guard: (via) => via(isAllowed.bloom).guarded('InsufficientPermissions'),
+          guard: (via) {
+            if (!via(isAllowed.bloom)) via.exit(emptyReason: 'InsufficientPermissions');
+          },
         );
 
         final terminal = RawBloomTerminal(guarded, onInvalidated: () {});
@@ -475,7 +493,7 @@ void main() {
           (via) => 42,
           guard: (via) {
             final r = via(reason.bloom);
-            return BloomGuard.block(r);
+            via.exit(emptyReason: r);
           },
         );
         final distinct = comp.distinct();
@@ -510,8 +528,11 @@ void main() {
             computeCount++;
             return via(guarded) * 10;
           },
-          guard: (via) =>
-              via.state(guarded).hasData.guarded(untracked.state(guarded).emptyReason ?? 'PrerequisiteNotMet'),
+          guard: (via) {
+            if (!via.state(guarded).hasData) {
+              via.exit(emptyReason: untracked.state(guarded).emptyReason ?? 'PrerequisiteNotMet');
+            }
+          },
         );
         expect(untracked.state(mapped).isEmpty, isTrue);
         expect(untracked.state(mapped).snapshot.emptyReason, 'GuardedEmpty');
@@ -569,7 +590,7 @@ void main() {
 
         final guarded = computed(
           (via) => via(writeableLate.bloom),
-          guard: (via) => BloomGuard.block('GuardReason'),
+          guard: (via) => via.exit(emptyReason: 'GuardReason'),
         );
         expect(untracked.state(guarded).emptyReason, 'GuardReason');
 
@@ -609,20 +630,18 @@ void main() {
         expect(untracked.state(rawCtrl.bloom).emptyReason, 'RawReset');
       });
 
-      test('5.6 BloomGuard.block supports const factory construction and prerequisiteNotMet', () {
-        expect(BloomGuard.prerequisiteNotMet, 'PrerequisiteNotMet');
+      test('5.6 via.exit() short-circuits with optional emptyReason', () {
+        final nodeDefault = computed((via) {
+          via.exit();
+        });
+        expect(untracked.state(nodeDefault).isEmpty, isTrue);
+        expect(untracked.state(nodeDefault).emptyReason, isNull);
 
-        const defaultBlock = BloomGuard.block();
-        expect(defaultBlock.isBlock, isTrue);
-        expect(defaultBlock.isPass, isFalse);
-        expect(defaultBlock.reason, BloomGuard.prerequisiteNotMet);
-
-        const customBlock = BloomGuard.block('CustomPrecondition');
-        expect(customBlock.isBlock, isTrue);
-        expect(customBlock.reason, 'CustomPrecondition');
-
-        expect(identical(defaultBlock, const BloomGuard.block()), isTrue);
-        expect(identical(customBlock, const BloomGuard.block('CustomPrecondition')), isTrue);
+        final nodeCustom = computed((via) {
+          via.exit(emptyReason: 'CustomPrecondition');
+        });
+        expect(untracked.state(nodeCustom).isEmpty, isTrue);
+        expect(untracked.state(nodeCustom).emptyReason, 'CustomPrecondition');
       });
     });
   });

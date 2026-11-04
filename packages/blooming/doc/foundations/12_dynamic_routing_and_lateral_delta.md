@@ -361,7 +361,7 @@ final class SwitchedFunctor {
 
   Bloom<T> call<T>(
     Bloom<T> Function(BloomVia via) select, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     bool eager = false,
   }) =>
       eager
@@ -383,7 +383,7 @@ final class SwitchedFunctor {
                                          [Downstream Consumer]
 ```
 
-### 6.2 Precondition Gating with `BloomGuard`
+### 6.2 Precondition Gating with `guard` and `via.exit(...)`
 `switched` supports precondition guards to gate branch switching and avoid instantiating heavy subtrees until prerequisites are satisfied:
 ```dart
 final homeFeed = blooming('home');
@@ -394,7 +394,11 @@ final isLoggedIn = blooming(false);
 final currentFeed = switched(
   (via) => via(selectedTab.bloom) == 0 ? homeFeed.bloom : trendingFeed.bloom,
   // Gating: Entire downstream feed graph remains uninstantiated until user authenticates
-  guard: (via) => via(isLoggedIn.bloom).guarded('UserNotAuthenticated'),
+  guard: (via) {
+    if (!via(isLoggedIn.bloom)) {
+      via.exit(emptyReason: 'UserNotAuthenticated');
+    }
+  },
 );
 ```
 

@@ -10,7 +10,7 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
     with _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
     implements Bloom<T> {
   _ManagedBloom({
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     required T Function(BloomVia via) create,
     T Function(BloomVia via, T current)? update,
     required void Function(T resource) dispose,
@@ -19,7 +19,7 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
         _updateResource = update,
         _disposeResource = dispose;
 
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
   final T Function(BloomVia via) _createResource;
   final T Function(BloomVia via, T current)? _updateResource;
   final void Function(T resource) _disposeResource;
@@ -42,27 +42,16 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
   _BloomState<T> _pull() {
     final currentEpoch = _beginEpoch();
     var succeeded = true;
+    final oldState = _state;
     try {
-      final guard = _guard;
-      if (guard != null) {
-        final decision = guard(_via);
-        if (!decision.isPass) {
-          final oldState = _state;
-          _disposeCurrent();
-          final reason = decision.reason;
-          if (oldState is! _EmptyBloomState<T> || !identical(oldState.emptyReason, reason)) {
-            _version++;
-          }
-          return _state = reason != null ? _EmptyBloomState<T>(reason) : const _EmptyBloomState();
-        }
-      }
+      _guard?.call(_via);
 
       final currentState = _state;
       if (currentState != null && currentState.hasData && _updateResource != null) {
         final current = currentState.data;
         final next = _resultViaTrack(_updateResource.call(_via, current));
+        _version++;
         if (!identical(current, next)) {
-          _version++;
           try {
             _disposeResource.call(current);
           } catch (error, stackTrace) {
@@ -77,21 +66,21 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
         }
       } else {
         _disposeCurrent();
-        _version++;
         final res = _resultViaTrack(_createResource.call(_via));
-        final current = _state;
-        if (current case final _ValidBloomState<T> s) {
-          s.update(res);
-          return _state = s;
-        } else {
-          return _state = _ValidBloomState(res);
-        }
+        _version++;
+        return _state = _ValidBloomState(res);
       }
     } on _ViaShortCircuit catch (e) {
       succeeded = true;
       _disposeCurrent();
-      _version++;
-      return _state = e.state._retype<T>();
+      final newState = e.state._retype<T>();
+      final isSameEmpty = oldState is _EmptyBloomState<T> &&
+          newState is _EmptyBloomState<T> &&
+          identical(oldState.emptyReason, newState.emptyReason);
+      if (!isSameEmpty) {
+        _version++;
+      }
+      return _state = newState;
     } catch (error, stackTrace) {
       succeeded = false;
       _disposeCurrent();

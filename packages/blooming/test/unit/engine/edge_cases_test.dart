@@ -415,7 +415,7 @@ void main() {
     test('Bloom.computed.stream respects guard and dormant resolution in delta', () {
       final streamBloom = Bloom.computed.stream<int>(
         (via) => Stream.value(100),
-        guard: (via) => BloomGuard.block('Stream is guarded'),
+        guard: (via) => via.exit(emptyReason: 'Stream is guarded'),
       );
 
       // Read while dormant (inactive) triggers _isGuarded and delta lines 82-84
@@ -432,7 +432,7 @@ void main() {
     test('Top-level switched functor creates eager and lazy variants', () {
       final sEager = switched((via) => Bloom.constant(1), eager: true);
       final sLazy = switched((via) => Bloom.constant(2), eager: false);
-      final sGuarded = switched((via) => Bloom.constant(3), guard: (via) => BloomGuard.block('switched_guarded'));
+      final sGuarded = switched((via) => Bloom.constant(3), guard: (via) => via.exit(emptyReason: 'switched_guarded'));
 
       expect(untracked(sEager), 1);
       expect(untracked(sLazy), 2);

@@ -31,14 +31,14 @@ While inline `computed` lambdas are optimal for concise derivations, [Computatio
 │   class OrderPricingComputation extends Computation<OrderPricing>      │
 │   - Encapsulated dependencies (cart, user, promoCode)                  │
 │   - Private domain helper methods (_applyPromo, _calculateTax)         │
-│   - Precondition guard() returning BloomGuard                           │
+│   - Precondition guard() with via.exit(...)                            │
 │                                                                        │
 │   [ Downstream Pull (.data / .snapshot / terminal evaluation) ]       │
 │                   │                                                    │
 │                   ▼                                                    │
-│         [ guard(via).isPass? ]                                         │
-│        ├── No  ──► Emits Empty(decision.reason) (compute Bypassed)     │
-│        └── Yes ──► Invokes compute(via) with 1-Pass Epoch Sweeping     │
+│         [ guard(via) ]                                                 │
+│        ├── via.exit() ──► Emits Empty(emptyReason) (compute Bypassed)  │
+│        └── Normal     ──► Invokes compute(via) with 1-Pass Epoch Sweeping │
 │                         │                                              │
 │                         ▼                                              │
 │               Returns Fresh [T] Payload (0-Compute on cache hit)       │
@@ -74,14 +74,13 @@ base class OrderPricingComputation extends Computation<OrderPricing> {
 
   // 1. Precondition Guard: Computes only when cart has items and user profile is loaded
   @override
-  BloomGuard guard(BloomVia via) {
+  void guard(BloomVia via) {
     if (via.state(cart).isEmpty || via(cart).isEmpty) {
-      return BloomGuard.block('Cart is empty.');
+      via.exit(emptyReason: 'Cart is empty.');
     }
     if (via.state(user).isEmpty) {
-      return BloomGuard.block('Loading user profile...');
+      via.exit(emptyReason: 'Loading user profile...');
     }
-    return BloomGuard.pass;
   }
 
   // 2. Pure Calculation Pipeline

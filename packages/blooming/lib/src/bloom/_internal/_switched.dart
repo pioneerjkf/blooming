@@ -10,7 +10,7 @@ part of '../../framework.dart';
 
 /// Common functional selection mixin for dynamically switched implementations.
 base mixin _SwitchedSelectionMixin<T> on _DeltaBloom<T> implements Bloom<T> {
-  BloomGuard Function(BloomVia via)? get _guard;
+  void Function(BloomVia via)? get _guard;
   Bloom<T> Function(BloomVia via) get _select;
 
   @override
@@ -18,40 +18,33 @@ base mixin _SwitchedSelectionMixin<T> on _DeltaBloom<T> implements Bloom<T> {
 
   @override
   Bloom<T> _evaluateDelta(BloomVia via) {
-    final guard = _guard;
-    if (guard != null) {
-      final decision = guard.call(via);
-      if (!decision.isPass) {
-        return Bloom.empty(decision.reason);
-      }
-    }
-
+    _guard?.call(via);
     return _select(via);
   }
 }
 
 base class _LazySwitchedBloom<T> extends _LazyDeltaBloom<T> with _SwitchedSelectionMixin<T> {
   _LazySwitchedBloom({
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     required Bloom<T> Function(BloomVia via) select,
   })  : _guard = guard,
         _select = select;
 
   @override
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
   @override
   final Bloom<T> Function(BloomVia via) _select;
 }
 
 base class _EagerSwitchedBloom<T> extends _EagerDeltaBloom<T> with _SwitchedSelectionMixin<T> {
   _EagerSwitchedBloom({
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     required Bloom<T> Function(BloomVia via) select,
   })  : _guard = guard,
         _select = select;
 
   @override
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
   @override
   final Bloom<T> Function(BloomVia via) _select;
 }

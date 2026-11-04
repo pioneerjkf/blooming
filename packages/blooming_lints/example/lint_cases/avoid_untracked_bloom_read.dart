@@ -104,10 +104,12 @@ final goodAlias = computed((via) {
 // #case avoid_untracked_bloom_read/good/regression-P4-renamed-via-parameter
 final goodRenamed = computed((BloomVia v) => v(count));
 
-// #case avoid_untracked_bloom_read/good/regression-P5-guard-with-bloom-guard
+// #case avoid_untracked_bloom_read/good/regression-P5-guard-with-via-exit
 final goodGuard = computed(
   (via) => via(count),
-  guard: (via) => (via(other) > 0).guarded('otherNonPositive'),
+  guard: (via) {
+    if (via(other) <= 0) via.exit(emptyReason: 'otherNonPositive');
+  },
 );
 
 // #case avoid_untracked_bloom_read/good/regression-P10-manifest-effect-targets

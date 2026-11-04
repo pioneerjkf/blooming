@@ -116,7 +116,7 @@ extension BloomTickerProviderDriveExtension on TickerProvider {
   ///    120fps error cascades.
   /// 5. **Microtask Remount Deferral**: Supports [Graceful] policies (e.g. `Graceful.microtask()`)
   ///    to prevent rapid ticker restarts during widget tree reshuffles.
-  /// 6. **Guarded Dynamic Delegation**: Uses [switched] with `.hasData.guarded(...)` to isolate
+  /// 6. **Guarded Dynamic Delegation**: Uses [switched] with `via.exit(...)` to isolate
   ///    uninitialized or torn-down states without runtime null dereference panics.
   ///
   /// * [onTick]: Callback computing state of type [T] from the elapsed frame [Duration].
@@ -236,9 +236,14 @@ extension BloomTickerProviderDriveExtension on TickerProvider {
 
     return switched(
       (via) => via(resourceNode).bloom,
-      guard: (via) => via.state(resourceNode).hasData.guarded(
-            untracked.state(resourceNode).emptyReason ?? 'TickerNotInitialized',
-          ),
+      guard: (via) {
+        if (!via.state(resourceNode).hasData) {
+          via.exit(
+            emptyReason: untracked.state(resourceNode).emptyReason ??
+                'TickerNotInitialized',
+          );
+        }
+      },
       eager: true,
     );
   }

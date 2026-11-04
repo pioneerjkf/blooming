@@ -50,7 +50,7 @@ void setup() {
       final unit = parseString(content: '''
 void setup() {
   final bad = computed(
-    guard: (via) => BloomGuard.pass,
+    guard: (via) {},
     (via) async => 42,
   );
 }

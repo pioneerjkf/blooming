@@ -90,7 +90,7 @@ void main() {
       final text = blooming('Initial');
       final logs = <String>[];
 
-      final dispose = effect((BloomVia via) {
+      final dispose = effect((via) {
         final state = via.state(text.bloom);
         logs.add(state.hasData ? 'Logged: ${state.data}' : 'Logged: None');
       });

@@ -308,18 +308,18 @@ final class _EffectGroupTerminal extends _Terminal with _NaryEdgeMixin<_Node> {
 // BloomVia Dynamic Terminals
 // =============================================================================
 
-/// Internal terminal executing dynamic [BloomVia] tracking effects with `_Scheduler` batching.
+/// Internal terminal executing dynamic [EffectVia] tracking effects with `_Scheduler` batching.
 base class _ViaEffectTerminal extends _Terminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ScheduledTerminalMixin {
+    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _EffectViaEpochMixin, _ScheduledTerminalMixin {
   _ViaEffectTerminal(
-    void Function(BloomVia via) action, {
-    bool Function(BloomVia via)? guard,
+    FutureOr<void> Function(EffectVia via) action, {
+    bool Function(EffectVia via)? guard,
     super.onUncaughtError,
   })  : _action = action,
         _guard = guard;
 
-  final Object? Function(BloomVia via) _action;
-  final bool Function(BloomVia via)? _guard;
+  final Object? Function(EffectVia via) _action;
+  final bool Function(EffectVia via)? _guard;
   bool _needsInitialEvaluation = true;
 
   @mustCallSuper
@@ -336,9 +336,9 @@ base class _ViaEffectTerminal extends _Terminal
     var succeeded = true;
     try {
       if (_guard case final guard?) {
-        if (!guard(_via)) return;
+        if (!guard(_effectVia)) return;
       }
-      final result = _resultViaTrack(_action(_via));
+      final result = _resultViaTrack(_action(_effectVia));
       if (result is Future) {
         result.then(
           (_) {},
@@ -374,18 +374,18 @@ base class _ViaEffectTerminal extends _Terminal
   }
 }
 
-/// Internal terminal executing dynamic [BloomVia] tracking handled effects providing [EffectScope].
+/// Internal terminal executing dynamic [EffectVia] tracking handled effects providing [EffectScope].
 base class _HandledViaEffectTerminal extends _Terminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ScheduledTerminalMixin {
+    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _EffectViaEpochMixin, _ScheduledTerminalMixin {
   _HandledViaEffectTerminal(
-    void Function(BloomVia via, EffectScope scope) action, {
-    bool Function(BloomVia via)? guard,
+    FutureOr<void> Function(EffectVia via, EffectScope scope) action, {
+    bool Function(EffectVia via)? guard,
     super.onUncaughtError,
   })  : _action = action,
         _guard = guard;
 
-  final Object? Function(BloomVia via, EffectScope scope) _action;
-  final bool Function(BloomVia via)? _guard;
+  final Object? Function(EffectVia via, EffectScope scope) _action;
+  final bool Function(EffectVia via)? _guard;
   bool _needsInitialEvaluation = true;
   _EffectScopeImpl? _currentScope;
 
@@ -411,13 +411,13 @@ base class _HandledViaEffectTerminal extends _Terminal
     var succeeded = true;
     try {
       if (_guard case final guard?) {
-        if (!guard(_via)) return;
+        if (!guard(_effectVia)) return;
       }
       _currentScope?._dispose();
       final scope = _EffectScopeImpl(this);
       _currentScope = scope;
 
-      final result = _resultViaTrack(_action(_via, scope));
+      final result = _resultViaTrack(_action(_effectVia, scope));
       if (result is Future) {
         result.then(
           (_) {},

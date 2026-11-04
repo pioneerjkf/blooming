@@ -118,7 +118,9 @@ void main() {
         (via) => via(a.bloom) * 2,
         guard: (via) {
           final state = via.state(a.bloom);
-          return (state.hasData && state.data > 10) ? BloomGuard.pass : BloomGuard.block('ValueTooLow');
+          if (!state.hasData || state.data <= 10) {
+            via.exit(emptyReason: 'ValueTooLow');
+          }
         },
       );
 

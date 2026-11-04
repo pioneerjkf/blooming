@@ -751,7 +751,9 @@ void main() {
 
         final guarded = computed(
           (via) => via(controller.bloom),
-          guard: (via) => (via(controller.bloom) >= 0 && via(isReady.bloom)).guarded(),
+          guard: (via) {
+            if (!(via(controller.bloom) >= 0 && via(isReady.bloom))) via.exit();
+          },
         );
 
         int dirtyCount = 0;
@@ -793,7 +795,9 @@ void main() {
 
         final guarded = computed(
           (via) => via(controller.bloom),
-          guard: (via) => via(isReady.bloom).guarded(),
+          guard: (via) {
+            if (!via(isReady.bloom)) via.exit();
+          },
         );
 
         int dirtyCount = 0;
@@ -836,8 +840,7 @@ void main() {
           (via) => via(controller.bloom),
           guard: (via) {
             final reason = via(blockReason.bloom);
-            if (reason != null) return BloomGuard.block(reason);
-            return BloomGuard.pass;
+            if (reason != null) via.exit(emptyReason: reason);
           },
         );
 
@@ -874,14 +877,18 @@ void main() {
 
         final guarded = computed(
           (via) => via(controller.bloom),
-          guard: (via) => via(isReady.bloom).guarded(),
+          guard: (via) {
+            if (!via(isReady.bloom)) via.exit();
+          },
         );
         final doubled = computed(
           (via) {
             mapExecCount++;
             return via(guarded) * 2;
           },
-          guard: (via) => via(isReady.bloom).guarded(),
+          guard: (via) {
+            if (!via(isReady.bloom)) via.exit();
+          },
         );
 
         int dirtyCount = 0;
@@ -915,14 +922,18 @@ void main() {
 
         final adminBranch = computed(
           (via) => via(controller.bloom),
-          guard: (via) => via(permAdmin.bloom).guarded(),
+          guard: (via) {
+            if (!via(permAdmin.bloom)) via.exit();
+          },
         );
         int adminDirty = 0;
         final adminTerminal = RawBloomTerminal(adminBranch, onInvalidated: () => adminDirty++);
 
         final userBranch = computed(
           (via) => via(controller.bloom),
-          guard: (via) => via(permUser.bloom).guarded(),
+          guard: (via) {
+            if (!via(permUser.bloom)) via.exit();
+          },
         );
         int userDirty = 0;
         final userTerminal = RawBloomTerminal(userBranch, onInvalidated: () => userDirty++);
@@ -974,7 +985,6 @@ void main() {
             if (via(throwInGuard.bloom)) {
               throw const FormatException('Unexpected guard internal error');
             }
-            return BloomGuard.pass;
           },
         );
 

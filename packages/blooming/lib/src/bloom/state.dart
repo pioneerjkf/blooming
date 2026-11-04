@@ -264,7 +264,7 @@ extension BloomStateCollectionExtension<E extends BloomState<dynamic>> on Iterab
 /// High-performance multi-state inspection and reactive guard extensions on 2-tuples of [BloomState].
 ///
 /// Provides zero-heap inspection methods ([allHaveData], [hasAnyEmpty], [hasAnyError])
-/// and precondition gating ([guarded]) across 2 [BloomState] entities.
+/// across 2 [BloomState] entities.
 ///
 /// ## Why Record Tuples instead of `List`
 /// While `[a, b].allHaveData()` allocates a `List` on the heap and executes dynamic
@@ -272,27 +272,37 @@ extension BloomStateCollectionExtension<E extends BloomState<dynamic>> on Iterab
 /// zero heap allocations and single-read eager dependency registration.
 ///
 /// ## Unified Guard Pattern Across the Dynamic Triad
-/// Record tuples serve as the canonical multi-prerequisite guard for all nodes in the
+/// Record tuples serve as the canonical multi-prerequisite check for all nodes in the
 /// **Dynamic Triad** (`computed`, `switched`, `managed`):
 ///
 /// ```dart
 /// // 1. Multi-input calculation (computed)
 /// final total = computed(
 ///   (via) => via(a) + via(b) + via(c),
-///   guard: (via) => (via.state(a), via.state(b), via.state(c)).guarded(),
+///   guard: (via) {
+///     if (!(via.state(a), via.state(b), via.state(c)).allHaveData()) via.exit();
+///   },
 /// );
 ///
 /// // 2. Protected external resource (managed)
 /// final client = managed(
 ///   create: (via) => WebSocketClient(via(url), token: via(token)),
 ///   dispose: (ws) => ws.close(),
-///   guard: (via) => (via.state(url), via.state(token)).guarded('AwaitingAuthCredentials'),
+///   guard: (via) {
+///     if (!(via.state(url), via.state(token)).allHaveData()) {
+///       via.exit(emptyReason: 'AwaitingAuthCredentials');
+///     }
+///   },
 /// );
 ///
 /// // 3. Gated dynamic branch switching (switched)
 /// final activeFeed = switched(
 ///   (via) => via(isVip) ? vipFeed : publicFeed,
-///   guard: (via) => (via.state(session), via.state(userProfile)).guarded('AwaitingSession'),
+///   guard: (via) {
+///     if (!(via.state(session), via.state(userProfile)).allHaveData()) {
+///       via.exit(emptyReason: 'AwaitingSession');
+///     }
+///   },
 /// );
 /// ```
 extension BloomStateRecord2Extension on (BloomState, BloomState) {
@@ -305,14 +315,7 @@ extension BloomStateRecord2Extension on (BloomState, BloomState) {
     return d1 && d2;
   }
 
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
-
+  /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
   bool hasAnyEmpty() {
@@ -339,14 +342,6 @@ extension BloomStateRecord3Extension on (BloomState, BloomState, BloomState) {
     return d1 && d2 && d3;
   }
 
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
-
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
   bool hasAnyEmpty() {
@@ -372,14 +367,6 @@ extension BloomStateRecord4Extension on (BloomState, BloomState, BloomState, Blo
     final d1 = $1.hasData, d2 = $2.hasData, d3 = $3.hasData, d4 = $4.hasData;
     return d1 && d2 && d3 && d4;
   }
-
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
@@ -416,14 +403,6 @@ extension BloomStateRecord5Extension on (
     final d5 = $5.hasData;
     return d1 && d2 && d3 && d4 && d5;
   }
-
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
@@ -468,14 +447,6 @@ extension BloomStateRecord6Extension on (
     final d6 = $6.hasData;
     return d1 && d2 && d3 && d4 && d5 && d6;
   }
-
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
@@ -524,14 +495,6 @@ extension BloomStateRecord7Extension on (
     final d7 = $7.hasData;
     return d1 && d2 && d3 && d4 && d5 && d6 && d7;
   }
-
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
@@ -584,14 +547,6 @@ extension BloomStateRecord8Extension on (
     final d8 = $8.hasData;
     return d1 && d2 && d3 && d4 && d5 && d6 && d7 && d8;
   }
-
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')
@@ -648,14 +603,6 @@ extension BloomStateRecord9Extension on (
     final d9 = $9.hasData;
     return d1 && d2 && d3 && d4 && d5 && d6 && d7 && d8 && d9;
   }
-
-  /// Evaluates across all entities in this tuple, returning [BloomGuard.pass] if all have data,
-  /// or [BloomGuard.block] with [reason] if any entity is empty or in error.
-  ///
-  /// * [reason]: Diagnostic reason attached to [BloomGuard.block] when any entity lacks data.
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData() ? BloomGuard.pass : BloomGuard.block(reason);
 
   /// Returns `true` if at least one entity in this tuple is in an empty state ([BloomState.isEmpty] == `true`).
   @pragma('vm:prefer-inline')

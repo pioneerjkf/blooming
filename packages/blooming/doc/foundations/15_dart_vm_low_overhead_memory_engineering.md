@@ -331,7 +331,7 @@ The Bloom Framework resolves dynamic branch tracking in a **single linear pass w
 ```
 
 #### The $O(1)$ Sequential Cursor Fast-Path & Single Concrete `final class BloomVia`
-[`BloomVia`](../../lib/src/graph/via.dart) is declared as a single concrete `final class BloomVia` with a library-private constructor `BloomVia._(this._node)`, eliminating interface indirection and enabling unconditional static devirtualization and inlining at every `via(bloom)` call site. Furthermore, `_BloomViaEpochMixin` reuses the identical `_via` instance across all synchronous evaluations (`0` bytes allocated), only allocating a fresh `BloomVia._(this)` on demand when a previous turn returned a `Future` or `Stream` (`_ViaTrack.async`) to isolate superseded asynchronous turns.
+[`BloomVia`](../../lib/src/bloom/via.dart) is declared as a single concrete `final class BloomVia` with a library-private constructor `BloomVia._(this._node)`, eliminating interface indirection and enabling unconditional static devirtualization and inlining at every `via(bloom)` call site. Furthermore, `_BloomViaEpochMixin` reuses the identical `_via` instance across all synchronous evaluations (`0` bytes allocated), only allocating a fresh `BloomVia._(this)` on demand when a previous turn returned a `Future` or `Stream` (`_ViaTrack.async`) to isolate superseded asynchronous turns.
 
 In steady-state derivation executions where branch conditions remain stable across frames (the 99% common case), dependency access ordering is identical. The `_cursor` pointer verifies the expected node in a **single pointer identity comparison**:
 
@@ -482,16 +482,12 @@ Multi-state inspection and reactive guards operate across 2- to 9-tuples using c
 
 ```dart
 // packages/blooming/lib/src/bloom/state.dart
-extension BloomStateRecord2Extension<T1, T2> on (BloomState<T1>, BloomState<T2>) {
+extension BloomStateRecord2Extension on (BloomState, BloomState) {
   @pragma('vm:prefer-inline')
   bool allHaveData() {
     final d1 = $1.hasData, d2 = $2.hasData;
     return d1 && d2;
   }
-
-  @pragma('vm:prefer-inline')
-  BloomGuard guarded([Object reason = BloomGuard.prerequisiteNotMet]) =>
-      allHaveData().guarded(reason);
 }
 ```
 
@@ -542,7 +538,7 @@ base mixin _TerminalSchedulerMixin on _SchedulerBase {
 
 ### 5.7 Stack Trace Suppression in Fast Derivation Short-Circuits
 
-When [`BloomVia.call`](../../lib/src/graph/_internal/_via.dart) encounters an empty or error state during derivation execution, it throws an internal sentinel to abort the compute pass:
+When [`BloomVia.call`](../../lib/src/bloom/via.dart) encounters an empty or error state during derivation execution, it throws an internal sentinel to abort the compute pass:
 
 ```dart
 // packages/blooming/lib/src/graph/_internal/_via.dart

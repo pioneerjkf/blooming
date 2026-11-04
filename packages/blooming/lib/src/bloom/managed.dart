@@ -19,14 +19,14 @@ part of '../framework.dart';
 /// [Active Subscriber Connects]
 ///            │
 ///            ▼
-///   [guard.isPass?]
-///    ├── No (block) ──> Emits Empty(guard.reason) [create() NOT called]
-///    └── Yes (pass) ──> Invokes create() ──> Valid(resource)
+///     [guard evaluates]
+///    ├── via.exit() invoked ──> Emits Empty(emptyReason) [create() NOT called]
+///    └── Normal completion  ──> Invokes create() ──> Valid(resource)
 ///            │
 ///            ▼
 ///   [Upstream Dependencies Mutate]
-///    ├── guard becomes block ──> Calls dispose() ──> Empty(guard.reason)
-///    └── guard remains pass  ──> Calls update() (or dispose() + create())
+///    ├── via.exit() invoked ──> Calls dispose() ──> Empty(emptyReason)
+///    └── Normal completion  ──> Calls update() (or dispose() + create())
 ///            │
 ///            ▼
 /// [All Subscribers Disconnect] ──> Invokes dispose() ──> Dormant
@@ -59,9 +59,10 @@ final class ManagedFunctor {
   /// Instantiates external objects only when actively observed by downstream consumers,
   /// and automatically invokes [dispose] when all downstream subscribers deactivate.
   ///
-  /// * [guard]: Optional precondition check returning [BloomGuard] gating resource creation and providing diagnostic reasons.
+  /// * [guard]: Optional precondition check evaluated before resource creation; call `via.exit(...)` to short-circuit into an empty state.
   /// * [create]: Factory callback creating the resource when downstream subscribers activate.
   /// * [update]: Optional update callback invoked when tracked dependencies change, allowing instance reuse.
+  ///   Returning the identical instance skips [dispose] while incrementing version to notify downstream observers of in-place mutations.
   /// * [dispose]: Teardown callback invoked to release the resource when all downstream subscribers deactivate or when replaced.
   /// * [eager]: If `true`, pre-emptively resolves the resource in microtask when active.
   ///   Defaults to `false` (on-demand Lazy evaluation).
@@ -135,14 +136,14 @@ final class ManagedFunctor {
   ///   create: (via) => ApiClient(port: via(serverPort.bloom)),
   ///   update: (via, current) {
   ///     current.updatePort(via(serverPort.bloom));
-  ///     return current; // Returning same instance skips dispose()!
+  ///     return current; // Returning same instance skips dispose(), while notifying downstream of in-place changes!
   ///   },
   ///   dispose: (c) => c.close(),
   /// );
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> call<T>({
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     required T Function(BloomVia via) create,
     T Function(BloomVia via, T current)? update,
     required void Function(T resource) dispose,

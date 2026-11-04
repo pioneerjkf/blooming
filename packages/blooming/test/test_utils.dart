@@ -9,9 +9,13 @@ import 'package:blooming/effect.dart' as b;
 void Function() effect(Function callback) {
   final term = RawViaTerminal((via) {
     via.tether(
-      b.Effect.via(
-        callback is void Function(BloomVia) ? callback : (v) => (callback as dynamic)(),
-      ),
+      b.Effect.via((v) {
+        if (callback is Function(Never)) {
+          return (callback as dynamic)(v);
+        } else {
+          return (callback as dynamic)();
+        }
+      }),
     );
   }, onInvalidated: () {})
     ..activate()

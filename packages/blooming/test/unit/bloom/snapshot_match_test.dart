@@ -278,7 +278,11 @@ void main() {
 
       final comp = computed<int>(
         (via) => (via(a.bloom) + via(b.bloom) + via(c.bloom)).toInt(),
-        guard: (via) => (via.state(a.bloom), via.state(b.bloom), via.state(c.bloom)).guarded('Waiting'),
+        guard: (via) {
+          if (!(via.state(a.bloom), via.state(b.bloom), via.state(c.bloom)).allHaveData()) {
+            via.exit(emptyReason: 'Waiting');
+          }
+        },
       );
 
       expect(untracked.state(comp).isEmpty, isTrue);
@@ -321,7 +325,11 @@ void main() {
 
       final comp = computed<int>(
         (via) => (via(a.bloom) + via(b.bloom) + via(c.bloom)).toInt(),
-        guard: (via) => (via.state(a.bloom), via.state(b.bloom), via.state(c.bloom)).guarded('Waiting'),
+        guard: (via) {
+          if (!(via.state(a.bloom), via.state(b.bloom), via.state(c.bloom)).allHaveData()) {
+            via.exit(emptyReason: 'Waiting');
+          }
+        },
       );
 
       expect(untracked.state(comp).isEmpty, isTrue);

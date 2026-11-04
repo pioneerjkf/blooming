@@ -62,7 +62,10 @@ part of '../framework.dart';
 ///   syncProfile(untracked(user.bloom), untracked(auth.bloom));
 /// });
 /// ```
-extension type const BloomEffectScope(Iterable<Bloom> _targets) {
+extension type const BloomEffectScope._(Iterable<Bloom> _targets) {
+  /// Internal constructor for [BloomEffectScope] wrapping [targets].
+  const BloomEffectScope(Iterable<Bloom> targets) : _targets = targets;
+
   /// Defines an explicit manifest [Effect] attached to the scoped targets.
   ///
   /// * Skips initial evaluation (0 runs upon construction/mount).
@@ -309,7 +312,10 @@ extension type const BloomEffectScope(Iterable<Bloom> _targets) {
 ///   print('New counter value: ${untracked(counter.bloom)}');
 /// });
 /// ```
-extension type const UnaryBloomEffectScope(Bloom _target) {
+extension type const UnaryBloomEffectScope._(Bloom _target) {
+  /// Internal constructor for [UnaryBloomEffectScope] wrapping [target].
+  const UnaryBloomEffectScope(Bloom target) : _target = target;
+
   /// Defines an explicit manifest [Effect] attached to this node.
   ///
   /// * Skips initial evaluation (0 runs upon construction/mount).

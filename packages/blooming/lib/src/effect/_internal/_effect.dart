@@ -110,8 +110,8 @@ final class _EffectGroup extends Effect {
 /// Concrete implementation of [Effect] composing a [_ViaEffectTerminal].
 final class _ViaEffect extends Effect {
   _ViaEffect(
-    void Function(BloomVia via) action, {
-    bool Function(BloomVia via)? guard,
+    FutureOr<void> Function(EffectVia via) action, {
+    bool Function(EffectVia via)? guard,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   })  : _terminal = _ViaEffectTerminal(
           action,
@@ -127,8 +127,8 @@ final class _ViaEffect extends Effect {
 /// Concrete implementation of [Effect] composing a [_HandledViaEffectTerminal].
 final class _HandledViaEffect extends Effect {
   _HandledViaEffect(
-    void Function(BloomVia via, EffectScope scope) action, {
-    bool Function(BloomVia via)? guard,
+    FutureOr<void> Function(EffectVia via, EffectScope scope) action, {
+    bool Function(EffectVia via)? guard,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   })  : _terminal = _HandledViaEffectTerminal(
           action,

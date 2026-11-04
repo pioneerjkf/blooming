@@ -127,15 +127,8 @@ _BloomState<T> _pull() {
   _BloomState<T> state;
   var succeeded = true;
   try {
-    final guard = _guard;
-    if (guard != null) {
-      final decision = guard(_via);
-      if (!decision.isPass) {
-        state = _EmptyBloomState<T>(decision.reason);
-        return state;
-      }
-    }
-    final result = _compute(_via);
+    _computation.guard(_via);
+    final result = _resultViaTrack(_computation.compute(_via));
     final current = _state;
     if (current case final _ValidBloomState<T> s) {
       s.update(result);
@@ -274,7 +267,11 @@ final c = blooming(3).bloom;
 final total = computed(
   (via) => via(a) + via(b) + via(c),
   // Zero-Heap Record Multi-Guard: evaluates on CPU registers & call stack
-  guard: (via) => (via.state(a), via.state(b), via.state(c)).guarded('AwaitingInputs'),
+  guard: (via) {
+    if (!(via.state(a), via.state(b), via.state(c)).allHaveData()) {
+      via.exit(emptyReason: 'AwaitingInputs');
+    }
+  },
 );
 ```
 

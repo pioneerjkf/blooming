@@ -199,8 +199,8 @@ final currentState = _state;
 if (currentState != null && currentState.hasData && _updateResource != null) {
   final current = currentState.data;
   final next = _updateResource.call(_via, current);
+  _version++;
   if (!identical(current, next)) {
-    _version++;
     try {
       _disposeResource.call(current); // Dispose old instance only if replaced!
     } catch (error, stackTrace) {
@@ -215,17 +215,20 @@ if (currentState != null && currentState.hasData && _updateResource != null) {
   }
 } else {
   _disposeCurrent();
-  _version++;
   final res = _createResource.call(_via);
-  ...
+  _version++;
+  return _state = _ValidBloomState(res);
 }
 ```
 
 | Return Value from `update` | `dispose()` Called on Old Instance? | Reference Identity Preserved? | Version Increment |
 | :--- | :--- | :--- | :--- |
-| **`identical(current, next)`** | **No** (Disposal bypassed) | **Yes** (Same object instance) | **No** (Suppressed) |
+| **`identical(current, next)`** | **No** (Disposal bypassed) | **Yes** (Same object instance) | **Yes** (`_version++` for in-place mutation) |
 | **`!identical(current, next)`** | **Yes** (Old instance disposed) | **No** (New object instance) | **Yes** (`_version++`) |
 | **`update` omitted** | **Yes** (`_disposeCurrent()`) | **No** (Full re-creation) | **Yes** (`_version++`) |
+
+> [!NOTE]
+> **In-Place Mutation & Invalidation Contract**: When `update` returns the identical object instance (`identical(current, next)`), `dispose()` is bypassed to avoid costly teardown and re-allocation of external resources. However, `_version` is incremented unconditionally on each `update` execution so downstream observers (such as `computed`, `BloomWidget`, or terminals) are reliably notified that the mutable resource's internal properties have changed. To suppress updates when upstream values are unchanged, wrap upstream dependencies with `.distinct()`.
 
 ---
 
@@ -237,7 +240,11 @@ External resources frequently depend on authentication tokens, permissions, or n
 final authToken = blooming.late<String>();
 
 final apiClient = managed<ApiClient>(
-  guard: (via) => via.state(authToken.bloom).hasData.guarded('AwaitingAuthToken'),
+  guard: (via) {
+    if (!via.state(authToken.bloom).hasData) {
+      via.exit(emptyReason: 'AwaitingAuthToken');
+    }
+  },
   create: (via) => ApiClient(
     port: via(authToken.bloom).length + 8000,
   ),
@@ -246,7 +253,7 @@ final apiClient = managed<ApiClient>(
 ```
 
 ### Invariants:
-1. **Allocation Suppression**: While `guard.isPass == false`, `create()` is **never called**. The node emits `EmptyBloomState('AwaitingAuthToken')`.
+1. **Allocation Suppression**: While `guard` exits via `via.exit()`, `create()` is **never called**. The node emits `EmptyBloomState('AwaitingAuthToken')`.
 2. **Deterministic Teardown on Revocation**: If the token transitions to empty or invalid while active, `_disposeCurrent()` executes immediately, closing the open socket before transitioning to `EmptyBloomState`.
 
 ---
@@ -258,7 +265,7 @@ final apiClient = managed<ApiClient>(
 ```dart
 // packages/blooming/lib/src/bloom/managed.dart
 Bloom<T> call<T>({
-  BloomGuard Function(BloomVia via)? guard,
+  void Function(BloomVia via)? guard,
   required T Function(BloomVia via) create,
   T Function(BloomVia via, T current)? update,
   required void Function(T resource) dispose,

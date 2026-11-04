@@ -44,7 +44,11 @@ void main() {
         int disposed = 0;
 
         final ws = managed<String>(
-          guard: (via) => via.state(token.bloom).hasData.guarded('AwaitingAuthToken'),
+          guard: (via) {
+            if (!via.state(token.bloom).hasData) {
+              via.exit(emptyReason: 'AwaitingAuthToken');
+            }
+          },
           create: (via) {
             created++;
             return 'WebSocket(${via(token.bloom)})';
@@ -137,7 +141,9 @@ void main() {
 
         final feed = switched(
           (via) => via(tab.bloom) == 0 ? feed0.bloom : feed1.bloom,
-          guard: (via) => via(isAuth.bloom).guarded('AwaitingLogin'),
+          guard: (via) {
+            if (!via(isAuth.bloom)) via.exit(emptyReason: 'AwaitingLogin');
+          },
         );
 
         final terminal = RawBloomTerminal(feed, onInvalidated: () {});
@@ -165,7 +171,9 @@ void main() {
 
         // 1. Managed resource
         final socket = managed<String>(
-          guard: (via) => via(isConnected.bloom).guarded('Disconnected'),
+          guard: (via) {
+            if (!via(isConnected.bloom)) via.exit(emptyReason: 'Disconnected');
+          },
           create: (_) => 'SocketClient',
           dispose: (_) {},
         );
@@ -173,7 +181,11 @@ void main() {
         // 2. Computed derivation
         final socketStatus = computed(
           (via) => '${via(socket)} is active on channel ${via(channelId.bloom)}',
-          guard: (via) => via.state(socket).hasData.guarded('SocketNotReady'),
+          guard: (via) {
+            if (!via.state(socket).hasData) {
+              via.exit(emptyReason: 'SocketNotReady');
+            }
+          },
         );
 
         // 3. Switched subtree

@@ -187,15 +187,8 @@ _BloomState<T> _pull() {
   _BloomState<T> state;
   var succeeded = true;
   try {
-    final guard = _guard;
-    if (guard != null) {
-      final decision = guard(_via);
-      if (!decision.isPass) {
-        state = _EmptyBloomState<T>(decision.reason);
-        return state;
-      }
-    }
-    final result = _compute(_via);
+    _computation.guard(_via);
+    final result = _resultViaTrack(_computation.compute(_via));
     final current = _state;
     if (current case final _ValidBloomState<T> s) {
       s.update(result);
@@ -300,7 +293,7 @@ Every stateful entity in Bloom conforms to a deterministic **3-State Finite Stat
 * **Empty (`isEmpty == true`)**: Uninitialized, gated, or dormant state with an optional causal attribution reason ([`emptyReason`](../../lib/src/bloom/state.dart#L158)).
 * **Error (`hasError == true`)**: Failure state capturing the underlying failure object and stack trace.
 
-### 4.1 Zero-Allocation Record Multi-Guarding (`(a, b, c).guarded()`)
+### 4.1 Zero-Allocation Record Multi-Guarding (`(a, b, c).allHaveData()`)
 
 When derivations depend on multiple upstream inputs, evaluating readiness using `List` allocations incurs garbage collection pressure. The Bloom Framework provides zero-cost Dart 3 Record extensions (arity 2 through 9):
 
@@ -313,15 +306,19 @@ String buildProfileQuery(String id, String token, String role) => '$id:$role';
 final profileQuery = computed(
   (via) => buildProfileQuery(via(userId.bloom), via(authToken.bloom), via(userRole.bloom)),
   // Evaluates on CPU registers with ZERO heap allocations
-  guard: (via) => (
-    via.state(userId.bloom),
-    via.state(authToken.bloom),
-    via.state(userRole.bloom),
-  ).guarded('AwaitingCredentials'),
+  guard: (via) {
+    if (!(
+      via.state(userId.bloom),
+      via.state(authToken.bloom),
+      via.state(userRole.bloom),
+    ).allHaveData()) {
+      via.exit(emptyReason: 'AwaitingCredentials');
+    }
+  },
 );
 ```
 
-* **Short-Circuit Gating**: If any credential node is empty or in error, the guard returns `BloomGuard.block('AwaitingCredentials')`. `computed` transitions directly to `Empty` with the given reason, preventing the derivation closure from executing on uninitialized data.
+* **Short-Circuit Gating**: If any credential node is empty or in error, the guard calls `via.exit(emptyReason: 'AwaitingCredentials')`. `computed` transitions directly to `Empty` with the given reason, preventing the derivation closure from executing on uninitialized data.
 
 ---
 

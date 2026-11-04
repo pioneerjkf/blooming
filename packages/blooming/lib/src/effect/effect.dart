@@ -237,7 +237,7 @@ sealed class Effect extends Tether {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Creates an explicit dynamic discovery [Effect] using [BloomVia].
+  /// Creates an explicit dynamic discovery [Effect] using [EffectVia].
   ///
   /// Unlike manifest effects which skip initial evaluation, [Effect.via] schedules
   /// an initial evaluation on the microtask scheduler upon activation to dynamically
@@ -248,15 +248,15 @@ sealed class Effect extends Tether {
   /// * Supports both synchronous and asynchronous (`async`) [action] closures: when [action] returns a
   ///   [Future], dependencies accessed via `via(node)` after `await` points are tracked for the latest
   ///   active turn while superseded turns are isolated automatically.
-  /// * If [guard] is provided, it is evaluated with [BloomVia] before each run; returning `false` skips execution.
+  /// * If [guard] is provided, it is evaluated with [EffectVia] before each run; returning `false` skips execution.
   /// * If [onUncaughtError] is provided, it is invoked when an uncaught synchronous or asynchronous exception occurs.
   ///
-  /// * [action]: The dynamic tracking callback receiving [BloomVia].
-  /// * [guard]: Optional boolean predicate evaluated with [BloomVia] prior to each execution.
+  /// * [action]: The dynamic tracking callback receiving [EffectVia].
+  /// * [guard]: Optional boolean predicate evaluated with [EffectVia] prior to each execution.
   /// * [onUncaughtError]: Optional error recovery handler.
   ///
   /// **Ensures:**
-  /// * Returns a dynamic [Effect] with explicit [BloomVia] edge tracking.
+  /// * Returns a dynamic [Effect] with explicit [EffectVia] edge tracking.
   ///
   /// ## Examples
   /// ```dart
@@ -269,8 +269,8 @@ sealed class Effect extends Tether {
   /// ```
   @pragma('vm:prefer-inline')
   factory Effect.via(
-    void Function(BloomVia via) action, {
-    bool Function(BloomVia via)? guard,
+    FutureOr<void> Function(EffectVia via) action, {
+    bool Function(EffectVia via)? guard,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
       _ViaEffect(
@@ -426,7 +426,7 @@ final class EffectScopedFunctor {
         onUncaughtError: onUncaughtError,
       );
 
-  /// Creates an explicit dynamic discovery [Effect] using [BloomVia] and [EffectScope].
+  /// Creates an explicit dynamic discovery [Effect] using [EffectVia] and [EffectScope].
   ///
   /// Schedules an initial evaluation on the microtask scheduler upon activation to discover
   /// dynamic dependencies via `via(node)`, providing an [EffectScope] to register turn
@@ -438,15 +438,15 @@ final class EffectScopedFunctor {
   /// * Supports both synchronous and asynchronous (`async`) [action] closures: when [action] returns a
   ///   [Future], dependencies accessed via `via(node)` after `await` points are tracked for the latest
   ///   active turn while superseded turns are isolated automatically.
-  /// * If [guard] is provided, it is evaluated with [BloomVia] before each run; returning `false` skips execution.
+  /// * If [guard] is provided, it is evaluated with [EffectVia] before each run; returning `false` skips execution.
   /// * If [onUncaughtError] is provided, it is invoked when an uncaught synchronous or asynchronous exception occurs.
   ///
-  /// * [action]: The dynamic tracking callback receiving [BloomVia] and [EffectScope].
-  /// * [guard]: Optional boolean predicate evaluated with [BloomVia] prior to each execution.
+  /// * [action]: The dynamic tracking callback receiving [EffectVia] and [EffectScope].
+  /// * [guard]: Optional boolean predicate evaluated with [EffectVia] prior to each execution.
   /// * [onUncaughtError]: Optional error recovery handler.
   ///
   /// **Ensures:**
-  /// * Returns a dynamic [Effect] with explicit [BloomVia] edge tracking and [EffectScope] lifecycle.
+  /// * Returns a dynamic [Effect] with explicit [EffectVia] edge tracking and [EffectScope] lifecycle.
   ///
   /// ## Examples
   /// ```dart
@@ -458,8 +458,8 @@ final class EffectScopedFunctor {
   /// ```
   @pragma('vm:prefer-inline')
   Effect via(
-    void Function(BloomVia via, EffectScope scope) action, {
-    bool Function(BloomVia via)? guard,
+    FutureOr<void> Function(EffectVia via, EffectScope scope) action, {
+    bool Function(EffectVia via)? guard,
     void Function(Object error, StackTrace stackTrace)? onUncaughtError,
   }) =>
       _HandledViaEffect(

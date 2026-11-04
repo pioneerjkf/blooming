@@ -105,7 +105,10 @@ part of '../framework.dart';
 /// // Trigger refresh
 /// refreshSignal.emit();
 /// ```
-abstract base class BloomSignal implements Bloom<int> {}
+abstract base class BloomSignal implements Bloom<int> {
+  /// Private constructor preventing direct instantiation; use `blooming.signal` instead.
+  BloomSignal._();
+}
 
 /// Producer controller handle for emitting discrete reactive signals.
 ///

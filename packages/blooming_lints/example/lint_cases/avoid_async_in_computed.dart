@@ -36,7 +36,7 @@ final badDirectFuture = computed(
 
 // #case avoid_async_in_computed/bad/guard-before-compute
 final badGuardBefore = computed(
-  guard: (via) => BloomGuard.pass,
+  guard: (via) {},
   // expect_lint: avoid_async_in_computed
   (via) async => via(count),
 );

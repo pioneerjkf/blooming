@@ -200,7 +200,7 @@ base class RawBloomTerminal<T> extends _RawTerminal
 
 ### 3.3 `RawViaTerminal<T>`: N-ary Explicit Reactive Evaluator
 
-[`RawViaTerminal<T>`](../../lib/src/graph/terminal.dart) is designed for multi-dependency observation where dependencies are registered dynamically via an injected [`BloomVia`](../../lib/src/graph/via.dart) handle during an explicit evaluation call.
+[`RawViaTerminal<T>`](../../lib/src/graph/terminal.dart) is designed for multi-dependency observation where dependencies are registered dynamically via an injected [`BloomVia`](../../lib/src/bloom/via.dart) handle during an explicit evaluation call.
 
 ```dart
 // packages/blooming/lib/src/graph/terminal.dart
@@ -250,7 +250,7 @@ base class RawComputedTerminal<T> extends _RawTerminal
     T Function(BloomVia via) compute, {
     required super.onInvalidated,
     super.onUncaughtError,
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
   })  : _compute = compute,
         _guard = guard;
   ...

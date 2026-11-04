@@ -901,12 +901,25 @@ final store = _SampleStore();
 Future<User> fetchProfile(dynamic id) async => const User("Alice");
 Future<List<String>> fetchFeed() async => ['item1', 'item2'];
 void sendAnalytics(String event) {}
+class _DemoInventory {
+  bool get hasPhysicalItems => true;
+}
+${!cleanCode.contains('class CheckoutSummary') ? '''
+class CheckoutSummary {
+  const CheckoutSummary({this.subtotal = 0.0});
+  final double subtotal;
+}
+''' : ''}
 class _DemoApi {
   Future<String> login() async => 'ok';
   Future<String> fetchUserFeed() async => 'feed';
   Future<String> fetchUserTimeline() async => 'timeline';
   Future<String> fetchWeatherForecast() async => 'sunny';
   Future<void> submit() async {}
+  Future<_DemoInventory> checkInventory(dynamic cart) async => _DemoInventory();
+  Future<CheckoutSummary> quoteDigitalItems(dynamic cart) async => const CheckoutSummary(subtotal: 0.0);
+  Future<List<String>> fetchShippingOptions(dynamic address) async => ['express', 'ground'];
+  Future<CheckoutSummary> calculateCheckout(dynamic cart, dynamic options, dynamic selected) async => const CheckoutSummary(subtotal: 0.0);
 }
 final api = _DemoApi();
 class ApiClient {
@@ -1084,6 +1097,10 @@ void main() {}
         'final cartBloom = blooming<Cart>(Cart()).bloom;',
       if (isUsed('addressBloom') && !isDefined('addressBloom'))
         'final addressBloom = blooming<Address>(const Address()).bloom;',
+      if (isUsed('shippingAddressBloom') && !isDefined('shippingAddressBloom'))
+        'final shippingAddressBloom = blooming<Address>(const Address()).bloom;',
+      if (isUsed('selectedShippingOptionBloom') && !isDefined('selectedShippingOptionBloom'))
+        'final selectedShippingOptionBloom = blooming<String>("Standard").bloom;',
       if (isUsed('feedBloom') && !isDefined('feedBloom'))
         'final feedBloom = blooming<String>("feed").bloom;',
       if (isUsed('roomId') && !isDefined('roomId'))

@@ -130,6 +130,7 @@ export 'src/framework.dart'
         // Effect Domain symbols (exported exclusively via package:blooming/effect.dart)
         Effect,
         EffectScope,
+        EffectVia,
         EffectScopedFunctor,
         EffectDebounceFunctor,
         EffectThrottleFunctor,

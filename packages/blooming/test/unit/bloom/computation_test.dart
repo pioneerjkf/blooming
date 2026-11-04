@@ -52,7 +52,9 @@ final class _OverriddenGuardedComputation extends Computation<String> {
   final Bloom<String> payload;
 
   @override
-  BloomGuard guard(BloomVia via) => via(auth).guarded('AuthRequired');
+  void guard(BloomVia via) {
+    if (!via(auth)) via.exit(emptyReason: 'AuthRequired');
+  }
 
   @override
   String compute(BloomVia via) => 'Payload: ${via(payload)}';
@@ -61,7 +63,9 @@ final class _OverriddenGuardedComputation extends Computation<String> {
 final class _ConstructorGuardedComputation extends Computation<String> {
   _ConstructorGuardedComputation(Bloom<bool> ready, this.content)
       : super(
-          guard: (via) => via(ready).guarded('AwaitingReady'),
+          guard: (via) {
+            if (!via(ready)) via.exit(emptyReason: 'AwaitingReady');
+          },
         );
 
   final Bloom<String> content;
@@ -100,11 +104,10 @@ final class _FailingComputation extends Computation<int> {
   final bool failInGuard;
 
   @override
-  BloomGuard guard(BloomVia via) {
+  void guard(BloomVia via) {
     if (failInGuard && via(source) < 0) {
       throw RangeError('Negative values rejected in guard');
     }
-    return BloomGuard.pass;
   }
 
   @override
@@ -197,7 +200,7 @@ void main() {
     // =========================================================================
     // 2. Reactive Guards (Preconditions & Empty Reasons)
     // =========================================================================
-    group('2. Reactive Guards (BloomGuard)', () {
+    group('2. Reactive Guards (via.exit)', () {
       test('2.1 Constructor-based guard parameters gate computation', () {
         final ready = blooming(false);
         final content = blooming('Hello World');
@@ -225,7 +228,7 @@ void main() {
         expect(comp.emptyReason, 'AwaitingReady');
       });
 
-      test('2.2 Overridden method guard() returns BloomGuard', () {
+      test('2.2 Overridden method guard() calls via.exit()', () {
         final auth = blooming(false);
         final payload = blooming('Secret Data');
 

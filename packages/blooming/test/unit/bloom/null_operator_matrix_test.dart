@@ -111,7 +111,11 @@ void main() {
 
         final guarded = computed(
           (via) => via(count.bloom),
-          guard: (via) => via(canProceed.bloom).guarded('Blocked by security guard'),
+          guard: (via) {
+            if (!via(canProceed.bloom)) {
+              via.exit(emptyReason: 'Blocked by security guard');
+            }
+          },
         );
 
         expect(untracked.state(guarded).hasData, isTrue);

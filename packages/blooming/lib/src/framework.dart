@@ -9,8 +9,8 @@
 ///
 /// 1. **Graph Domain (`src/graph/`)**:
 ///    The topological core containing intrusive doubly-linked list DAG edges (`_Edge`,
-///    `_TargetEdge`), the Push-Dirty invalidation loop (`_push.dart`), explicit dependency tracking
-///    (`via.dart`), the 1-tick microtask queue coordinator (`_scheduler.dart`), and
+///    `_TargetEdge`), the Push-Dirty invalidation loop (`_push.dart`), DAG edge tracking mixins
+///    (`_via.dart`), the 1-tick microtask queue coordinator (`_scheduler.dart`), and
 ///    terminal anchors (`terminal.dart`, `graceful.dart`).
 ///
 /// 2. **Blooming Domain (`src/blooming/`)**:
@@ -47,7 +47,6 @@ part 'graph/status.dart';
 part 'graph/terminal.dart';
 part 'graph/tether.dart';
 part 'graph/uncaught.dart';
-part 'graph/via.dart';
 part 'graph/_internal/_batch.dart';
 part 'graph/_internal/_debug.dart';
 part 'graph/_internal/_dirty.dart';
@@ -87,19 +86,18 @@ part 'bloom/computed.dart';
 part 'bloom/coupler.dart';
 part 'bloom/elements.dart';
 part 'bloom/exception.dart';
-part 'bloom/guard.dart';
 part 'bloom/managed.dart';
 part 'bloom/snapshot.dart';
 part 'bloom/state.dart';
 part 'bloom/switched.dart';
 part 'bloom/untracked.dart';
+part 'bloom/via.dart';
 part 'bloom/_internal/_async.dart';
 part 'bloom/_internal/_bloom.dart';
 part 'bloom/_internal/_computed.dart';
 part 'bloom/_internal/_coupler.dart';
 part 'bloom/_internal/_delta.dart';
 part 'bloom/_internal/_elements.dart';
-part 'bloom/_internal/_guard.dart';
 part 'bloom/_internal/_managed.dart';
 part 'bloom/_internal/_snapshot.dart';
 part 'bloom/_internal/_state.dart';
@@ -112,6 +110,7 @@ part 'bloom/_internal/_untracked.dart';
 part 'effect/effect.dart';
 part 'effect/extensions.dart';
 part 'effect/runner.dart';
+part 'effect/via.dart';
 part 'effect/_internal/_base.dart';
 part 'effect/_internal/_effect.dart';
 part 'effect/_internal/_runner.dart';

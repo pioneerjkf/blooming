@@ -338,7 +338,9 @@ void main() {
 
       final guarded = computed(
         (via) => via(secret.bloom),
-        guard: (via) => authorized.guarded('Access Denied'),
+        guard: (via) {
+          if (!authorized) via.exit(emptyReason: 'Access Denied');
+        },
       );
 
       var effectRuns = 0;
@@ -510,7 +512,9 @@ void main() {
       final query = blooming('sensitive_data');
       final guarded = computed(
         (via) => via(query.bloom),
-        guard: (via) => via(allowed.bloom).guarded('Access Denied'),
+        guard: (via) {
+          if (!via(allowed.bloom)) via.exit(emptyReason: 'Access Denied');
+        },
       );
 
       var effectRuns = 0;

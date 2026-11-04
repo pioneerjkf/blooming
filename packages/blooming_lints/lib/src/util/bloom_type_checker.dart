@@ -73,6 +73,7 @@ abstract final class BloomTypeChecker {
 
     // 3. Dependency Manifest & Signals
     'BloomVia',
+    'EffectVia',
     'BloomUntracked',
     'BloomSignal',
 
@@ -546,13 +547,14 @@ abstract final class BloomTypeChecker {
   // 4. BloomVia AST Manifest Helpers
   // ===========================================================================
 
-  /// Returns `true` if the parameter represents a `BloomVia` dependency manifest handle.
+  /// Returns `true` if the parameter represents a `BloomVia` or `EffectVia` dependency manifest handle.
   static bool isBloomViaParameter(FormalParameter param) {
     final element = param.declaredFragment?.element;
     if (element != null) {
       final type = element.type;
       if (type is! DynamicType && type is! InvalidType) {
-        return _isBloomClass(type, 'BloomVia');
+        return _isBloomClass(type, 'BloomVia') ||
+            _isBloomClass(type, 'EffectVia');
       }
     }
 
@@ -561,29 +563,37 @@ abstract final class BloomTypeChecker {
 
     if (param is SimpleFormalParameter) {
       final typeStr = param.type?.toSource();
-      if (typeStr == 'BloomVia' || typeStr == 'BloomVia?') return true;
+      if (typeStr == 'BloomVia' ||
+          typeStr == 'BloomVia?' ||
+          typeStr == 'EffectVia' ||
+          typeStr == 'EffectVia?') {
+        return true;
+      }
     }
     return false;
   }
 
-  /// Returns `true` if the invocation represents a call to `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, or `via.of(context)` / `via.maybeOf(context)`.
+  /// Returns `true` if the invocation represents a call to `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, `via.exit(...)`, `via.exitIfInactive(...)`, or `via.of(context)` / `via.maybeOf(context)`.
   static bool isBloomViaInvocation(AstNode? node) {
     if (node == null) return false;
 
-    // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`
+    // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfInactive(...)`
     if (node is MethodInvocation) {
       final methodName = node.methodName.name;
       if (methodName == 'of' ||
           methodName == 'maybeOf' ||
           methodName == 'state' ||
-          methodName == 'tether') {
+          methodName == 'tether' ||
+          methodName == 'exit' ||
+          methodName == 'exitIfInactive') {
         final target = node.target;
         if (target != null) {
           final targetType = target.staticType;
           if (targetType != null &&
               targetType is! DynamicType &&
               targetType is! InvalidType) {
-            if (_isBloomClass(targetType, 'BloomVia')) {
+            if (_isBloomClass(targetType, 'BloomVia') ||
+                _isBloomClass(targetType, 'EffectVia')) {
               return true;
             }
           }
@@ -606,7 +616,8 @@ abstract final class BloomTypeChecker {
       if (staticType != null &&
           staticType is! DynamicType &&
           staticType is! InvalidType) {
-        return _isBloomClass(staticType, 'BloomVia');
+        return _isBloomClass(staticType, 'BloomVia') ||
+            _isBloomClass(staticType, 'EffectVia');
       }
     }
 
@@ -686,7 +697,10 @@ abstract final class BloomTypeChecker {
     if (staticType != null &&
         staticType is! DynamicType &&
         staticType is! InvalidType) {
-      if (_isBloomClass(staticType, 'BloomVia')) return true;
+      if (_isBloomClass(staticType, 'BloomVia') ||
+          _isBloomClass(staticType, 'EffectVia')) {
+        return true;
+      }
     }
     if (unwrapped is SimpleIdentifier && unwrapped.name == 'via') {
       return true;

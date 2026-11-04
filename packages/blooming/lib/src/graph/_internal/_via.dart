@@ -40,14 +40,23 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
   _Edge? _cursor;
   _ViaTrack _viaTrack = _ViaTrack.closed;
 
+  /// Active tracker instance ([BloomVia] or [EffectVia]).
+  late Object _activeVia = _initVia();
+
   /// [BloomVia] instance passed into compute and build callbacks.
-  late BloomVia _via = BloomVia._(this);
+  late BloomVia _via = _activeVia as BloomVia;
+
+  Object _initVia() => BloomVia._(this);
+
+  void _refreshVia() {
+    _activeVia = _via = BloomVia._(this);
+  }
 
   @mustCallSuper
   @override
   void _deactivate() {
     if (_viaTrack == _ViaTrack.async) {
-      _via = BloomVia._(this);
+      _refreshVia();
       _viaTrack = _ViaTrack.closed;
     }
     super._deactivate();
@@ -57,7 +66,7 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
   @pragma('vm:prefer-inline')
   int _beginEpoch() {
     if (_viaTrack == _ViaTrack.async) {
-      _via = BloomVia._(this);
+      _refreshVia();
     }
     _viaTrack = _ViaTrack.sync;
     _cursor = _sourceHead;
@@ -99,8 +108,8 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
   /// Records [source] as an upstream dependency for the current evaluation epoch
   /// when [via] is the active tracker for this node.
   @pragma('vm:prefer-inline')
-  void _trackDependency(BloomVia via, _Node source) {
-    if (_viaTrack == _ViaTrack.closed || !identical(_via, via)) return;
+  void _trackDependency(Object via, _Node source) {
+    if (_viaTrack == _ViaTrack.closed || !identical(_activeVia, via)) return;
 
     // 1. Fast-path: Check expected cursor position (O(1) sequential match).
     final cursor = _cursor;
@@ -165,5 +174,20 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
       }
       curr = next;
     }
+  }
+}
+
+/// Mixin for [Effect] terminals that binds dependency tracking to [EffectVia]
+/// instead of [BloomVia].
+base mixin _EffectViaEpochMixin on _BloomViaEpochMixin {
+  /// [EffectVia] instance passed into effect callbacks and guards.
+  late EffectVia _effectVia = _activeVia as EffectVia;
+
+  @override
+  Object _initVia() => EffectVia._(this);
+
+  @override
+  void _refreshVia() {
+    _activeVia = _effectVia = EffectVia._(this);
   }
 }

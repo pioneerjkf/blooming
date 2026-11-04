@@ -112,6 +112,7 @@ export 'src/framework.dart'
         // Core Contract & Types
         Effect,
         EffectScope,
+        EffectVia,
         EffectScopedFunctor,
         EffectDebounceFunctor,
         EffectThrottleFunctor,

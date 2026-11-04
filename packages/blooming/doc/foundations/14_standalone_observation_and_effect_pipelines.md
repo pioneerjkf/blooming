@@ -55,7 +55,7 @@ Every side-effect in Bloom is represented as a declarative blueprint extending `
 3. **Scoped Manifest (`Effect.scoped`, `Effect.scoped.unary`)**:  
    Provides an [`EffectScope`](../../lib/src/effect/effect.dart) for cleanups (`onCleanup`), execution turn status flags (`isActive`, `isCancelled`), and RAII lifecycle teardowns.
 4. **Dynamic Discovery (`Effect.via`, `Effect.scoped.via`)**:  
-   Explicit dependency discovery via `BloomVia` with 1-pass monotonic epoch sweeping.
+   Explicit dependency discovery via `EffectVia` with 1-pass monotonic epoch sweeping.
 5. **Rate-Limited Sinks (`Effect.debounce`, `Effect.throttle`)**:  
    Time-domain rate limiting with configurable `leading` and `trailing` edge policies.
 6. **Composite Groups (`Effect.group(...)`, `(e1, e2).group`)**:  
@@ -224,10 +224,10 @@ void onCleanup(void Function() cleanup) {
 ---
 
 ### 4.4 On-Demand Asynchronous `Effect.via` and `Effect.scoped.via` Execution
-While `Effect.via` and `Effect.scoped.via` declare a `void` callback return type (`void Function(BloomVia via)` and `void Function(BloomVia via, EffectScope scope)`), Dart allows passing `async` closures (`Future<void> Function(...)`) to `void`-returning parameters. Both `_ViaEffectTerminal` and `_HandledViaEffectTerminal` natively support asynchronous effect turns:
+`Effect.via` and `Effect.scoped.via` accept asynchronous or synchronous callbacks (`FutureOr<void> Function(EffectVia via)` and `FutureOr<void> Function(EffectVia via, EffectScope scope)`). Both `_ViaEffectTerminal` and `_HandledViaEffectTerminal` natively support asynchronous effect turns:
 
 1. **Post-`await` Dependency Tracking (`_ViaTrack.async`)**: The terminal inspects the runtime return value via `_resultViaTrack(_action(...))`. When the action is an `async` function returning a `Future`, `_viaTrack` transitions to `_ViaTrack.async`, allowing `via(bloom)` calls executed after `await` points to dynamically attach upstream dependency edges for the current turn.
-2. **Turn Isolation Across Re-Triggers and Deactivation**: If an upstream dependency mutates and re-triggers the effect—or if the effect is stopped/deactivated—while a prior `async` action is still suspended at an `await`, `_beginEpoch()` (or `_deactivate()`) rotates `_via = BloomVia._(this)`. Late `via(bloom)` calls from the superseded turn are ignored via identity comparison (`!identical(_via, via)`).
+2. **Turn Isolation Across Re-Triggers and Deactivation**: If an upstream dependency mutates and re-triggers the effect—or if the effect is stopped/deactivated—while a prior `async` action is still suspended at an `await`, `_beginEpoch()` (or `_deactivate()`) rotates `_effectVia = EffectVia._(this)`. Late `via(bloom)` calls from the superseded turn are ignored via identity comparison (`!identical(_effectVia, via)`).
 3. **Asynchronous Short-Circuit and Fault Routing**: The terminal attaches a completion handler to the returned `Future` that silently absorbs `_ViaShortCircuit` (when a post-`await` `via(bloom)` encounters an empty or error state) and routes any uncaught asynchronous errors to `_handleUncaughtError(error, stackTrace)`.
 
 ---

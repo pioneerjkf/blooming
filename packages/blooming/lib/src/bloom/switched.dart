@@ -56,7 +56,7 @@ final class SwitchedFunctor {
   /// flattening downstream subscriptions into a single continuous pipeline.
   ///
   /// * [select]: Pure synchronous selector closure returning the active [Bloom] branch.
-  /// * [guard]: Optional precondition check returning [BloomGuard] gating branch switching and providing diagnostic reasons.
+  /// * [guard]: Optional precondition check evaluated before branch switching; call `via.exit(...)` to short-circuit into an empty state.
   /// * [eager]: If `true`, pre-emptively resolves the selected branch in microtask when active.
   ///   Defaults to `false` (on-demand Lazy evaluation).
   ///
@@ -103,13 +103,15 @@ final class SwitchedFunctor {
   /// // Gating: Entire downstream feed graph is uninstantiated until user is authenticated
   /// final currentFeed = switched(
   ///   (via) => via(selectedTab.bloom) == 0 ? homeFeed.bloom : trendingFeed.bloom,
-  ///   guard: (via) => via(isLoggedIn.bloom).guarded('UserNotAuthenticated'),
+  ///   guard: (via) {
+  ///     if (!via(isLoggedIn.bloom)) via.exit(emptyReason: 'UserNotAuthenticated');
+  ///   },
   /// );
   /// ```
   @pragma('vm:prefer-inline')
   Bloom<T> call<T>(
     Bloom<T> Function(BloomVia via) select, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     bool eager = false,
   }) =>
       eager

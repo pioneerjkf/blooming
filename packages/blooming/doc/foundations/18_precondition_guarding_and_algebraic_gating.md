@@ -29,15 +29,15 @@ Imperatively calls socket.close(), timer.cancel(), tracker.stop() (Human Error R
 Upstream State Change (e.g., User Logs Out)
        │
        ▼ (1-Bit Push-Dirty Pulse)
-[ guard(via).isPass == false ]
+[ guard(via) invokes via.exit(emptyReason: ...) ]
        │
-       ├──► computed:    Bypasses calculation; atomically emits Empty(decision.reason)
+       ├──► computed:    Bypasses calculation; atomically emits Empty(emptyReason)
        ├──► managed:     Automatically invokes dispose(); releases handles; emits Empty
        ├──► switched:    Decouples active branch; keeps candidate subtree dormant
        └──► Computation: Bypasses compute(); surfaces .isEmpty & .emptyReason directly to UI
 ```
 
-The Bloom Framework resolves these failure modes at the engine level through **Precondition Guarding**. In the Bloom architecture, a guard is a pure, declarative callback (`BloomGuard Function(BloomVia via)?`) that acts as an algebraic barrier. It physically gates node execution, automatically tears down active resources when prerequisites collapse, and cleanly transitions nodes into the framework's canonical `Empty` state without exceptions or type compromises.
+The Bloom Framework resolves these failure modes at the engine level through **Precondition Guarding**. In the Bloom architecture, a guard is a pure, declarative callback (`void Function(BloomVia via)?`) that acts as an algebraic barrier. It physically gates node execution, automatically tears down active resources when prerequisites collapse, and cleanly transitions nodes into the framework's canonical `Empty` state without exceptions or type compromises via `via.exit({emptyReason})`.
 
 ---
 
@@ -45,27 +45,27 @@ The Bloom Framework resolves these failure modes at the engine level through **P
 
 The Bloom Framework models state through a strict 3-state algebraic finite state machine: **Data**, **Empty**, and **Error** (see [Algebraic State Protocol](05_algebraic_state_protocol_and_self_healing_fault_tolerance.md)). 
 
-The `guard` mechanism maps directly to this algebraic protocol via the [`BloomGuard`](../../lib/src/bloom/guard.dart) type:
+The `guard` mechanism maps directly to this algebraic protocol via the [`via.exit()`](../../lib/src/bloom/via.dart) control-flow mechanism:
 
 ```text
                           [ Downstream Observation (Pull) ]
                                           │
                                           ▼
-                               [ guard(via).isPass? ]
-                              ├── No  ────► Emits Empty(decision.reason)
-                              │           (Execution / Allocation Aborted;
-                              │            reason stored directly in emptyReason)
+                                    [ guard(via) ]
+                              ├── via.exit() ─► Emits Empty(emptyReason)
+                              │                (Execution / Allocation Aborted;
+                              │                 reason stored directly in emptyReason)
                               │
-                              └── Yes ────► Executes Core Logic
+                              └── Normal ─────► Executes Core Logic
                                           ├── Success ────► Valid(T)
                                           └── Throws  ────► Error(error, stackTrace)
 ```
 
 ### 2.1 The Precondition Gating Invariant
-When `guard` evaluates to `BloomGuard.block([reason])`:
+When `guard` invokes `via.exit({emptyReason})`:
 - The core payload logic (`compute`, `create`, or `select`) is **completely bypassed**.
 - The node transitions to or remains in `_EmptyBloomState<T>`.
-- The diagnostic `decision.reason` payload is stored directly in `BloomSnapshot.emptyReason` with zero boxing overhead.
+- The diagnostic `emptyReason` payload is stored directly in `BloomSnapshot.emptyReason` with zero boxing overhead.
 
 This ensures that downstream consumers never observe corrupted or half-initialized data. Downstream UI components can inspect `.isEmpty` and `.emptyReason` directly to declaratively render explanatory placeholders, disable action buttons, or guide the user, all without treating an unmet prerequisite as an application crash.
 
@@ -92,16 +92,17 @@ final a = blooming<int>(10).bloom;
 final b = blooming<int>(20).bloom;
 final orderTotal = computed(
   (via) => via(a) + via(b),
-  guard: (via) => (via.state(a), via.state(b)).guarded(),
+  guard: (via) {
+    if (!(via.state(a), via.state(b)).allHaveData()) via.exit();
+  },
 );
 
 // 2. Granular early-return pattern with distinct diagnostic reasons:
 final checkoutGate = computed(
   (via) => 'Order total: \$${via(a)}',
   guard: (via) {
-    if (via.state(a).isEmpty) return BloomGuard.block('CartIsEmpty');
-    if (via.state(b).isEmpty) return BloomGuard.block('AddressRequired');
-    return BloomGuard.pass;
+    if (via.state(a).isEmpty) via.exit(emptyReason: 'CartIsEmpty');
+    if (via.state(b).isEmpty) via.exit(emptyReason: 'AddressRequired');
   },
 );
 
@@ -109,13 +110,16 @@ final checkoutGate = computed(
 final authToken = blooming<String>('valid_token').bloom;
 final userProfile = computed.future(
   (via) => api.fetchUserFeed(),
-  guard: (via) => (via.state(authToken).hasData && via(authToken).isNotEmpty)
-      .guarded('AwaitingAuthentication'),
+  guard: (via) {
+    if (!via.state(authToken).hasData || via(authToken).isEmpty) {
+      via.exit(emptyReason: 'AwaitingAuthentication');
+    }
+  },
 );
 ```
 
 **Engine Guarantee:**
-Inside [`_ComputedPullMixin._pull()`](../../lib/src/bloom/_internal/_computed.dart), if `!decision.isPass`, the computation closure is aborted before invocation. For asynchronous pipelines ([`_FutureComputedBloom`](../../lib/src/bloom/_internal/_computed.dart) and [`_StreamComputedBloom`](../../lib/src/bloom/_internal/_computed.dart)), the asynchronous task or stream subscription is never initiated, eliminating unneeded HTTP requests, thread hops, and connection overhead.
+Inside [`_ComputedPullMixin._pull()`](../../lib/src/bloom/_internal/_computed.dart), when `guard` executes `via.exit()`, the computation closure is aborted before invocation. For asynchronous pipelines ([`_FutureComputedBloom`](../../lib/src/bloom/_internal/_computed.dart) and [`_StreamComputedBloom`](../../lib/src/bloom/_internal/_computed.dart)), the asynchronous task or stream subscription is never initiated, eliminating unneeded HTTP requests, thread hops, and connection overhead.
 
 ### 3.2 Deterministic Auto-Disposal in `managed`
 
@@ -128,8 +132,11 @@ final deviceId = blooming<String>('dev_42').bloom;
 final liveTelemetry = managed<ApiClient>(
   create: (via) => ApiClient(port: 8080),
   dispose: (client) => client.close(),
-  guard: (via) => (via(isTrackingEnabled) && via.state(deviceId).hasData)
-      .guarded('TrackingDisabled'),
+  guard: (via) {
+    if (!via(isTrackingEnabled) || !via.state(deviceId).hasData) {
+      via.exit(emptyReason: 'TrackingDisabled');
+    }
+  },
 );
 ```
 
@@ -138,35 +145,35 @@ final liveTelemetry = managed<ApiClient>(
 [ Active Subscriber Connected ]
               │
               ▼
-    [ guard(via).isPass? ]
-     ├── No  ──► Emits Empty(decision.reason) [create() NOT called]
-     └── Yes ──► Calls create() ──► Valid(resource)
+        [ guard(via) ]
+     ├── via.exit() ─► Emits Empty(emptyReason) [create() NOT called]
+     └── Normal ────► Calls create() ──► Valid(resource)
               │
               ▼
     [ Upstream Dependency Mutates ]
-     ├── guard remains pass  ──► Calls update() (or dispose() + create())
-     └── guard becomes block ──► Immediately calls dispose()! ──► Transitions to Empty(decision.reason)
+     ├── guard succeeds  ──► Calls update() (or dispose() + create())
+     └── guard exits     ──► Immediately calls dispose()! ──► Transitions to Empty(emptyReason)
 ```
 
 **The Engine Invariant:**
 As implemented in [`_ManagedBloom._pull()`](../../lib/src/bloom/_internal/_managed.dart):
 ```dart
 // packages/blooming/lib/src/bloom/_internal/_managed.dart
-final guard = _guard;
-if (guard != null) {
-  final decision = guard(_via);
-  if (!decision.isPass) {
-    final oldState = _state;
-    _disposeCurrent();
-    final reason = decision.reason;
-    if (oldState is! _EmptyBloomState<T> || !identical(oldState.emptyReason, reason)) {
-      _version++;
-    }
-    return _state = reason != null ? _EmptyBloomState<T>(reason) : const _EmptyBloomState();
+try {
+  _guard?.call(_via);
+  // creates or updates resource...
+} on _ViaShortCircuit catch (e) {
+  succeeded = true;
+  final oldState = _state;
+  _disposeCurrent();
+  final newState = e.state._retype<T>();
+  if (oldState is! _EmptyBloomState<T> || oldState.emptyReason != newState.emptyReason) {
+    _version++;
   }
+  return _state = newState;
 }
 ```
-If an active resource is currently held, and any dependency in `guard` changes such that the decision becomes `isBlock`, **the engine synchronously invokes `dispose` on the active instance and cleans the slot**. When the condition becomes true again in the future, `create` is invoked to re-instantiate the handle. Human-managed cleanup code is reduced to zero.
+If an active resource is currently held, and any dependency in `guard` changes such that `via.exit()` is invoked, **the engine synchronously invokes `dispose` on the active instance and cleans the slot**. If the node was already empty with the identical `emptyReason`, `_version` is preserved to prevent redundant downstream invalidations. When the condition becomes true again in the future, `create` is invoked to re-instantiate the handle. Human-managed cleanup code is reduced to zero.
 
 ### 3.3 Subtree Gating in `switched`
 
@@ -180,15 +187,17 @@ final isSessionValid = blooming<bool>(true).bloom;
 
 final activeDashboardFeed = switched(
   (via) => via(selectedTab) == 0 ? normalFeed : adminFeed,
-  guard: (via) => via(isSessionValid).guarded('SessionExpired'),
+  guard: (via) {
+    if (!via(isSessionValid)) via.exit(emptyReason: 'SessionExpired');
+  },
 );
 ```
 
-When `guard` evaluates to `isBlock`, [`_SwitchedSelectionMixin._evaluateDelta()`](../../lib/src/bloom/_internal/_switched.dart) immediately binds to the static constant node `Bloom.empty(decision.reason)`. The candidate subtrees (`normalFeed` and `adminFeed`) are completely decoupled ([`_performCouple`](../../lib/src/graph/_internal/_relay.dart)), returning them to inactive dormancy and halting all upstream background computation.
+When `guard` invokes `via.exit()`, [`_SwitchedSelectionMixin._evaluateDelta()`](../../lib/src/bloom/_internal/_switched.dart) immediately binds to the static constant node `Bloom.empty(emptyReason)`. The candidate subtrees (`normalFeed` and `adminFeed`) are completely decoupled ([`_performCouple`](../../lib/src/graph/_internal/_relay.dart)), returning them to inactive dormancy and halting all upstream background computation.
 
 ### 3.4 Encapsulated Domain Preconditions in `Computation<T>`
 
-In class-based domain components ([`Computation<T>`](../../lib/src/bloom/computed.dart)), `guard` can be configured via constructor parameter or by overriding the `BloomGuard guard(BloomVia via)` method:
+In class-based domain components ([`Computation<T>`](../../lib/src/bloom/computed.dart)), `guard` can be configured via constructor parameter or by overriding the `void guard(BloomVia via)` method:
 
 ```dart
 class CheckoutSummary {
@@ -204,17 +213,16 @@ base class CheckoutComputation extends Computation<CheckoutSummary> {
   final Bloom<Address?> shippingAddress;
 
   @override
-  BloomGuard guard(BloomVia via) {
+  void guard(BloomVia via) {
     if (via.state(cart).isEmpty || via(cart).items.isEmpty) {
-      return BloomGuard.block('Your cart is empty.');
+      via.exit(emptyReason: 'Your cart is empty.');
     }
     if (via.state(shippingAddress).isEmpty) {
-      return BloomGuard.block('Please specify a shipping address.');
+      via.exit(emptyReason: 'Please specify a shipping address.');
     }
     if (via.state(paymentMethod).isEmpty) {
-      return BloomGuard.block('Please select a valid payment method.');
+      via.exit(emptyReason: 'Please select a valid payment method.');
     }
-    return BloomGuard.pass;
   }
 
   @override
@@ -238,7 +246,7 @@ Real-world preconditions frequently depend on multiple upstream entities (e.g., 
 In conventional Dart code, multi-entity checks often introduce heap allocation overhead:
 ```dart
 // [Anti-Pattern] Allocates a temporary List and an Iterator on every evaluation
-// guard: (via) => [via(a), via(b), via(c)].every((s) => s.hasData).guarded();
+// guard: (via) { if (![via(a), via(b), via(c)].every((s) => s.hasData)) via.exit(); }
 ```
 
 To eliminate allocation on hot evaluation paths, Bloom provides compile-time extensions across **Dart 3 Record tuples from arity 2 through 9** (see [`BloomStateRecord2Extension` through `BloomStateRecord9Extension`](../../lib/src/bloom/state.dart)):
@@ -251,18 +259,21 @@ final nodeC = blooming<int>(3).bloom;
 final combinedQuote = computed(
   (via) => via(nodeA) + via(nodeB) + via(nodeC),
   // Zero-Heap Record Tuple Multi-Guard:
-  guard: (via) => (via.state(nodeA), via.state(nodeB), via.state(nodeC)).guarded('PrerequisitesIncomplete'),
+  guard: (via) {
+    if (!(via.state(nodeA), via.state(nodeB), via.state(nodeC)).allHaveData()) {
+      via.exit(emptyReason: 'PrerequisitesIncomplete');
+    }
+  },
 );
 ```
 
 ### 4.1 Tuple Capabilities across Arities 2 Through 9
 
-Each record tuple extension (`BloomStateRecord2Extension` through `BloomStateRecord9Extension`) exposes four zero-cost primitives:
+Each record tuple extension (`BloomStateRecord2Extension` through `BloomStateRecord9Extension`) exposes three zero-cost inspection primitives:
 
 | Method | Behavior | Return Type |
 | :--- | :--- | :--- |
 | **`allHaveData()`** | Returns `true` if all tuple members have valid data (`hasData == true`). | `bool` |
-| **`guarded([reason])`** | Returns `BloomGuard.pass` if all have data, or `BloomGuard.block(reason)` otherwise. | `BloomGuard` |
 | **`hasAnyEmpty()`** | Returns `true` if at least one tuple member is in empty state (`isEmpty == true`). | `bool` |
 | **`hasAnyError()`** | Returns `true` if at least one tuple member is in error state (`hasError == true`). | `bool` |
 
@@ -286,13 +297,13 @@ extension BloomStateRecord3Extension on (BloomState, BloomState, BloomState) {
 
 ## 5. Architectural Comparison: Traditional Approaches vs. Bloom Framework
 
-| Metric / Scenario | Traditional Frameworks (Riverpod / MobX / Bloc) | Bloom Framework (`BloomGuard` Architecture) |
+| Metric / Scenario | Traditional Frameworks (Riverpod / MobX / Bloc) | Bloom Framework (`via.exit` Architecture) |
 | :--- | :--- | :--- |
-| **Prerequisite Failure State** | Throws exceptions, returns `null`, or requires custom `AsyncLoading` hacks | Clean, first-class algebraic `Empty(emptyReason)` state via `BloomGuard.block` |
-| **Resource Teardown on Invalidation** | Manual imperative calls in controller / bloc logout handlers | **Automatic, deterministic `dispose()` upon `guard.isBlock`** |
+| **Prerequisite Failure State** | Throws exceptions, returns `null`, or requires custom `AsyncLoading` hacks | Clean, first-class algebraic `Empty(emptyReason)` state via `via.exit(...)` |
+| **Resource Teardown on Invalidation** | Manual imperative calls in controller / bloc logout handlers | **Automatic, deterministic `dispose()` upon `via.exit()`** |
 | **Tab/Route Navigation Retention** | Immediate termination or complex `keepAlive()` state leaks | Optional `graceful` mooring prevents connection thrashing |
 | **Subtree Activation Gating** | Unselected streams still execute in background unless manually unsubscribed | `switched(guard: ...)` keeps unselected subtrees unconditionally dormant |
-| **Multi-Entity Guard Evaluation** | Temporary `List` or iterator allocation on heap | **0-Heap Dart 3 Record Tuple Evaluation (`guarded()`)** |
+| **Multi-Entity Guard Evaluation** | Temporary `List` or iterator allocation on heap | **0-Heap Dart 3 Record Tuple Evaluation (`.allHaveData()`)** |
 | **Self-Healing Mechanics** | Requires manual re-dispatch or `ref.refresh()` | **Automatic on Push-Dirty: resumes instantaneously when guard passes** |
 
 ---
@@ -328,8 +339,11 @@ final isLoggedIn = blooming<bool>(true).bloom;
 final chatSocket = managed<ApiClient>(
   create: (via) => ApiClient(port: 8080),
   dispose: (client) => client.close(),
-  guard: (via) => (via(isLoggedIn) && via.state(token).hasData)
-      .guarded('UserNotAuthenticated'),
+  guard: (via) {
+    if (!via(isLoggedIn) || !via.state(token).hasData) {
+      via.exit(emptyReason: 'UserNotAuthenticated');
+    }
+  },
 );
 ```
 
@@ -359,15 +373,15 @@ String renderCheckoutAction(Computation<CheckoutSummary> checkout) {
 ## 7. Core Engineering Invariants
 
 1. **Algebraic Convergence Invariant**:
-   A blocked guard always deterministically transitions the node to `BloomState.isEmpty` with `decision.reason` preserved. It never throws exceptions or produces synthetic nullable payloads.
+   A blocked guard (calling `via.exit()`) always deterministically transitions the node to `BloomState.isEmpty` with `emptyReason` preserved. It never throws exceptions or produces synthetic nullable payloads.
 2. **Computation Bypassing Invariant**:
-   When `guard(via)` returns `isBlock`, core derivation bodies (`compute`, `_computeFuture`, `_computeStream`, `create`, `select`) are strictly bypassed, consuming 0 execution cycles and initiating 0 network or stream tasks.
+   When `guard(via)` invokes `via.exit()`, core derivation bodies (`compute`, `_computeFuture`, `_computeStream`, `create`, `select`) are strictly bypassed, consuming 0 execution cycles and initiating 0 network or stream tasks.
 3. **Deterministic Auto-Disposal Invariant in `managed`**:
-   In `managed`, transitioning from `guard.isPass` to `guard.isBlock` synchronously invokes `dispose(currentResource)` and clears the internal resource slot immediately.
+   In `managed`, invoking `via.exit()` synchronously invokes `dispose(currentResource)` and clears the internal resource slot immediately.
 4. **Dormancy Subtree Decoupling Invariant in `switched`**:
-   In `switched`, when `guard` blocks, the active branch is decoupled and replaced with `Bloom.empty(decision.reason)`, returning candidate subtrees to inactive dormancy.
+   In `switched`, when `guard` exits, the active branch is decoupled and replaced with `Bloom.empty(emptyReason)`, returning candidate subtrees to inactive dormancy.
 5. **Zero-Heap Record Devirtualization Invariant**:
-   Multi-guard checks via Dart 3 Record tuples (`(stateA, stateB, ...).guarded()`) from arity 2 through 9 execute with exactly 0 heap allocations, compiling into inline register bitwise checks.
+   Multi-guard checks via Dart 3 Record tuples (`(stateA, stateB, ...).allHaveData()`) from arity 2 through 9 execute with exactly 0 heap allocations, compiling into inline register bitwise checks.
 6. **Push-Phase Purity Invariant**:
    Guards are strictly evaluated in the Pull phase (lazy pull). The Push phase never executes user guard closures.
 
@@ -375,7 +389,7 @@ String renderCheckoutAction(Computation<CheckoutSummary> checkout) {
 
 ## 8. Architectural Conclusions
 
-The `BloomGuard` mechanism in the Bloom Framework elevates precondition checking from an arbitrary procedural `if`-statement to an **algebraic fault-barrier embedded within the LPDAG topology**:
+The `via.exit()` mechanism in the Bloom Framework elevates precondition checking from an arbitrary procedural `if`-statement to an **algebraic fault-barrier embedded within the LPDAG topology**:
 
 1. It guarantees that calculations and asynchronous pipelines never execute with incomplete or corrupted prerequisites.
 2. It guarantees that external synchronous resources managed via `managed` are deterministically closed and released the instant their prerequisites collapse.

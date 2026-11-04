@@ -34,7 +34,7 @@ part of '../framework.dart';
 /// ```text
 /// computed(...)                  ──> Synchronous derivation ([Bloom])
 ///   │                                  ├─ Fast-path zero-allocation inline evaluation
-///   │                                  └─ Precondition gating via [BloomGuard]
+///   │                                  └─ Precondition gating via guard / via.exit
 ///   │
 ///   ├─ .future(...)              ──> Single-shot asynchronous request with SWR ([Bloom])
 ///   │                                  ├─ Auto-refetch on reactive dependency mutation
@@ -87,7 +87,7 @@ final class ComputedFunctor {
   /// Evaluates [compute] synchronously on-demand via the 2-phase LPDAG (Lazy-Pull DAG).
   ///
   /// * [compute]: Pure synchronous calculation closure receiving [BloomVia] to explicitly track dependencies.
-  /// * [guard]: Optional precondition check returning [BloomGuard] gating evaluation and providing diagnostic reasons.
+  /// * [guard]: Optional precondition check gating evaluation (call `via.exit(...)` to short-circuit).
   ///
   /// **Requires:**
   /// * [compute] must be a pure, synchronous function without side-effects or mutations.
@@ -138,7 +138,7 @@ final class ComputedFunctor {
   @pragma('vm:prefer-inline')
   Bloom<T> call<T>(
     T Function(BloomVia via) compute, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
   }) =>
       _ComputedBloom<T>(
         compute,
@@ -173,7 +173,7 @@ final class ComputedFutureFunctor {
   ///
   /// * [compute]: Asynchronous closure returning a [Future] or synchronous payload [T] (via [FutureOr]).
   ///   When a synchronous [T] is returned directly (e.g. cache hit), it resolves instantly in 0ms without microtask delay.
-  /// * [guard]: Optional precondition check returning [BloomGuard] gating evaluation and providing diagnostic reasons.
+  /// * [guard]: Optional precondition check gating evaluation (call `via.exit(...)` to short-circuit).
   /// * [initialFactory]: Optional callback producing an initial synchronous payload.
   /// * [onError]: Optional error recovery handler.
   ///
@@ -201,7 +201,11 @@ final class ComputedFutureFunctor {
   /// // gracefully halts network call and emits Empty('QueryTooShort') without throwing:
   /// final searchResults = computed.future(
   ///   (via) => searchService.searchProducts(via(searchQuery.bloom).trim()),
-  ///   guard: (via) => (via(searchQuery.bloom).trim().length >= 2).guarded('QueryTooShort'),
+  ///   guard: (via) {
+  ///     if (via(searchQuery.bloom).trim().length < 2) {
+  ///       via.exit(emptyReason: 'QueryTooShort');
+  ///     }
+  ///   },
   ///   initialFactory: () => const <Product>[],
   /// );
   /// ```
@@ -248,7 +252,7 @@ final class ComputedFutureFunctor {
   ///   directly resolves instantly in 0ms without allocating an async bridge or awaiting microtask turns.
   Bloom<T> call<T>(
     FutureOr<T> Function(BloomVia via) compute, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
   }) =>
@@ -269,7 +273,7 @@ final class ComputedStreamFunctor {
   /// Continuously listens to the stream returned by [compute] and emits updates into the reactive DAG.
   ///
   /// * [compute]: Closure returning a [Stream] producing [T].
-  /// * [guard]: Optional precondition check returning [BloomGuard] gating stream creation and providing diagnostic reasons.
+  /// * [guard]: Optional precondition check gating stream creation (call `via.exit(...)` to short-circuit).
   /// * [initialFactory]: Optional callback producing an initial synchronous payload.
   /// * [onError]: Optional error recovery handler.
   /// * [cancelOnError]: Whether to cancel the stream subscription on error.
@@ -314,7 +318,9 @@ final class ComputedStreamFunctor {
   ///     yield* feedService.watchUserFeed(userId);
   ///   },
   ///   // Gating: only open stream when user is actively logged in
-  ///   guard: (via) => via(isLoggedIn.bloom).guarded('UserNotAuthenticated'),
+  ///   guard: (via) {
+  ///     if (!via(isLoggedIn.bloom)) via.exit(emptyReason: 'UserNotAuthenticated');
+  ///   },
   /// );
   /// ```
   ///
@@ -337,8 +343,11 @@ final class ComputedStreamFunctor {
   ///     yield* stockSocket.watchTicks(symbol);
   ///   },
   ///   // Gating: only open stream when symbol is selected and network is active
-  ///   guard: (via) => (via(selectedSymbol.bloom).isNotEmpty && via(isNetworkOnline.bloom))
-  ///       .guarded('AwaitingNetworkOrValidSymbol'),
+  ///   guard: (via) {
+  ///     if (via(selectedSymbol.bloom).isEmpty || !via(isNetworkOnline.bloom)) {
+  ///       via.exit(emptyReason: 'AwaitingNetworkOrValidSymbol');
+  ///     }
+  ///   },
   ///   // Retains stream subscription for 30s across route pop/push to prevent socket tear-down
   ///   graceful: const Graceful.period(Duration(seconds: 30)),
   ///   // Keep listening through transient socket disconnects/reconnects
@@ -366,7 +375,7 @@ final class ComputedStreamFunctor {
   /// ```
   Bloom<T> call<T>(
     Stream<T> Function(BloomVia via) compute, {
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
     T Function()? initialFactory,
     T Function(Object error, [StackTrace? stackTrace])? onError,
     bool? cancelOnError,
@@ -402,8 +411,8 @@ final class ComputedStreamFunctor {
 ///    private helper methods, constructor injection, and encapsulated instance state.
 /// 3. **Dynamic Conditional Branching**: Seamlessly rewires dependency edges when branching
 ///    on runtime conditions (`if (flag) via(a) else via(b)`).
-/// 4. **Built-In Reactive Guards**: Override [guard] with [BloomGuard] to gate computation
-///    and transition to an empty state without throwing exceptions or returning nullable hacks.
+/// 4. **Built-In Reactive Guards**: Override [guard] to gate computation
+///    and transition to an empty state using `via.exit(...)` without throwing exceptions or returning nullable hacks.
 /// 5. **Lifecycle Integration**: Implement [BloomLifecycleAware] to cleanly coordinate
 ///    with external services/streams via [BloomLifecycleAware.didActivate] and [BloomLifecycleAware.didDeactivate].
 /// 6. **Direct Ergonomics**: Access computed state directly (`.data`, `.snapshot`, `.hasData`,
@@ -428,9 +437,9 @@ final class ComputedStreamFunctor {
 /// [Downstream Reads .data / .snapshot]
 ///                                    │ (Pull-Data on-demand)
 ///                                    ▼
-///                             [guard(via).isPass?]
-///                            ├── No  ──> Emits Empty(guard.reason) [compute() NOT called]
-///                            └── Yes ──> Invokes compute(via) with 1-Pass Epoch Diffing
+///                             [guard(via)]
+///                            ├── via.exit() ──> Emits Empty(emptyReason) [compute() NOT called]
+///                            └── Normal     ──> Invokes compute(via) with 1-Pass Epoch Diffing
 ///                                             │
 ///                                             ▼
 ///                                  Returns computed [T] payload
@@ -475,10 +484,9 @@ final class ComputedStreamFunctor {
 ///   final Bloom<CreditScore> creditScoreBloom;
 ///
 ///   @override
-///   BloomGuard guard(BloomVia via) {
-///     if (via.state(incomeBloom).isEmpty) return BloomGuard.block('Please enter income information first.');
-///     if (via.state(creditScoreBloom).isEmpty) return BloomGuard.block('Credit score verification is in progress.');
-///     return BloomGuard.pass;
+///   void guard(BloomVia via) {
+///     if (via.state(incomeBloom).isEmpty) via.exit(emptyReason: 'Please enter income information first.');
+///     if (via.state(creditScoreBloom).isEmpty) via.exit(emptyReason: 'Credit score verification is in progress.');
 ///   }
 ///
 ///   @override
@@ -498,13 +506,13 @@ abstract base class Computation<T> with _BloomStateMixin<T> implements BloomStat
   ///
   /// * [guard]: Optional precondition check evaluated prior to [compute].
   Computation({
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
   }) : _guard = guard {
     _bloom = _ComputationBloom.create(this);
   }
 
   late final Bloom<T> _bloom;
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
 
   /// Exposes the underlying topological [Bloom] node that powers this computation.
   @pragma('vm:prefer-inline')
@@ -512,12 +520,12 @@ abstract base class Computation<T> with _BloomStateMixin<T> implements BloomStat
 
   /// Optional precondition check evaluated prior to [compute].
   ///
-  /// Defaults to invoking `_guard` if supplied in constructor, or [BloomGuard.pass] otherwise.
-  /// Can be overridden by subclasses for custom precondition logic.
+  /// Defaults to invoking `_guard` if supplied in constructor.
+  /// Subclasses can call `via.exit(...)` to short-circuit into an empty state.
   /// Dependencies accessed inside [guard] are explicitly tracked via [via].
   ///
   /// * [via]: Explicit dependency manifest tracker for precondition checks.
-  BloomGuard guard(BloomVia via) => _guard?.call(via) ?? BloomGuard.pass;
+  void guard(BloomVia via) => _guard?.call(via);
 
   /// Performs the actual synchronous calculation.
   ///

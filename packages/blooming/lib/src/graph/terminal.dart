@@ -184,7 +184,7 @@ base class RawComputedTerminal<T> extends _RawTerminal
     T Function(BloomVia via) compute, {
     required super.onInvalidated,
     super.onUncaughtError,
-    BloomGuard Function(BloomVia via)? guard,
+    void Function(BloomVia via)? guard,
   })  : _compute = compute,
         _guard = guard;
 
@@ -192,7 +192,7 @@ base class RawComputedTerminal<T> extends _RawTerminal
   final T Function(BloomVia via) _compute;
 
   @override
-  final BloomGuard Function(BloomVia via)? _guard;
+  final void Function(BloomVia via)? _guard;
 
   @override
   void _invalidateInScope() {

@@ -34,7 +34,7 @@ part of '../framework.dart';
 ///    are swept immediately in a single pass at the end of the synchronous evaluation turn.
 /// 3. **On-Demand Asynchronous Turn Isolation**: Synchronous evaluations reuse a single [BloomVia]
 ///    instance with zero heap allocations. When an evaluation returns a [Future] or [Stream]
-///    (e.g., `computed.future`, `computed.stream`, `Effect.via`), post-`await` and post-`yield`
+///    (e.g., `computed.future`, `computed.stream`, `switched`), post-`await` and post-`yield`
 ///    `via(...)` calls remain tracked for the latest active turn while superseded turns and
 ///    deactivated scopes are isolated automatically.
 /// 4. **AI Coding Agent Ground Truth**: Explicit manifests prevent AI agents and static analysis tools
@@ -188,5 +188,45 @@ final class BloomVia {
   T tether<T extends Tether>(T tether) {
     _node._trackDependency(this, tether);
     return tether;
+  }
+
+  /// Short-circuits the current evaluation epoch and immediately transitions
+  /// this reactive derivation into an empty state with an optional [emptyReason].
+  ///
+  /// This method never returns (returns [Never]), allowing Dart's control flow
+  /// analysis to safely promote types and eliminate dead code.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final validPrice = computed((via) {
+  ///   final p = via(price.bloom);
+  ///   if (p < 0) via.exit(emptyReason: 'Price cannot be negative');
+  ///   return p;
+  /// });
+  /// ```
+  @pragma('vm:prefer-inline')
+  Never exit({Object? emptyReason}) {
+    throw _ViaShortCircuit(_EmptyBloomState<Never>(emptyReason));
+  }
+
+  /// Cooperatively short-circuits the evaluation epoch into an empty state
+  /// if this node has been deactivated or superseded by a newer asynchronous turn.
+  ///
+  /// Call this immediately after an `await` point to prevent wasteful execution
+  /// of downstream computations when the result is no longer needed.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final profile = computed.future((via) async {
+  ///   final data = await fetchHttp();
+  ///   via.exitIfInactive(emptyReason: 'DisposedWhileAwaiting');
+  ///   return parseHeavyJson(data);
+  /// });
+  /// ```
+  @pragma('vm:prefer-inline')
+  void exitIfInactive({Object? emptyReason}) {
+    if (!identical(_node._activeVia, this) || !_node._lifecycle.isActive) {
+      exit(emptyReason: emptyReason);
+    }
   }
 }

@@ -208,7 +208,9 @@ void main() {
           computeCalled = true;
           return 42;
         },
-        guard: (via) => via(isReady.bloom).guarded('AwaitingReadyState'),
+        guard: (via) {
+          if (!via(isReady.bloom)) via.exit(emptyReason: 'AwaitingReadyState');
+        },
       );
 
       int? observed;
@@ -793,7 +795,7 @@ void main() {
         final completerA = Completer<void>();
         final log = <String>[];
 
-        final dispose = effect((BloomVia via) async {
+        final dispose = effect((via) async {
           final m = via(mode.bloom);
           if (m == 'A') {
             await completerA.future;
@@ -939,7 +941,9 @@ void main() {
 
         final secretData = computed.future<String>(
           (via) => 'secret_payload',
-          guard: (via) => via(isAuthReady.bloom).guarded('NotAuthenticated'),
+          guard: (via) {
+            if (!via(isAuthReady.bloom)) via.exit(emptyReason: 'NotAuthenticated');
+          },
         );
 
         final terminal = RawBloomTerminal(secretData, onInvalidated: () {})..activate();

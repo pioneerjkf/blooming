@@ -140,7 +140,10 @@ final class BloomDebugSnapshot {
 /// print(counter.bloom.debug.targetCount);  // 0
 /// print(counter.bloom.debug.describe());   // '[_DistinctEntry<int>#counter] active: false...'
 /// ```
-extension type const BloomDebug(Bloom _target) {
+extension type const BloomDebug._(Bloom _target) {
+  /// Creates a diagnostic inspection wrapper for [target].
+  const BloomDebug(Bloom target) : _target = target;
+
   /// The developer-defined debug label assigned to this node, if any.
   String? get debugLabel => _debugLabels[_target];
 
