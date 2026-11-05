@@ -52,8 +52,8 @@ abstract interface class _DirtyListener implements _ErrorSink {
   void _invalidate();
 }
 
-/// Interface for nodes or mixins capable of tracking and synchronizing upstream source dirty states and versions.
-abstract interface class _DirtySyncable {
+/// Interface for nodes or mixins capable of tracking, resolving, and synchronizing upstream source dirty states and versions.
+abstract interface class _DirtyResolver {
   bool get _isSourceDirty;
 
   /// Pulls and synchronizes all upstream versions to this edge.

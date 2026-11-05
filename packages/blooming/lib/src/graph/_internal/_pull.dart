@@ -13,9 +13,9 @@ part of '../../framework.dart';
 /// Encapsulates the 2-Phase LPDAG Lazy-Pull invariant:
 /// * Zero computation during push-dirty phase.
 /// * Cycle detection ([LpdagCycleError]).
-/// * Dynamic upstream dirty checking via [_DirtySyncable].
+/// * Dynamic upstream dirty checking via [_DirtyResolver].
 /// * Lazy state resolution and version synchronization.
-base mixin _PullResolver<T> on _Lifecycle, _DirtySyncable, _BloomStateMixin<T> {
+base mixin _PullResolver<T> on _Lifecycle, _DirtyResolver, _BloomStateMixin<T> {
   _BloomState<T>? _state;
   _DirtyState _dirtyState = _DirtyState.clean;
   bool _isResolving = false;

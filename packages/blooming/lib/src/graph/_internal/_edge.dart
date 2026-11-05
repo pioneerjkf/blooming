@@ -41,7 +41,7 @@ final class _Edge implements _TargetEdge {
 }
 
 /// Mixin granting a [_DirtyListener] node lifecycle management for a single upstream [_Node] source.
-base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle implements _TargetEdge, _DirtyListener, _DirtySyncable {
+base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle implements _TargetEdge, _DirtyListener, _DirtyResolver {
   @override
   _TargetEdge? _prevTarget;
 
@@ -92,7 +92,7 @@ base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle implements _TargetEdge
 }
 
 /// Mixin granting a [_DirtyListener] node ownership of an upstream (Source) edge list.
-base mixin _NaryEdgeMixin<N extends _Node> on _Lifecycle implements _DirtyListener, _DirtySyncable {
+base mixin _NaryEdgeMixin<N extends _Node> on _Lifecycle implements _DirtyListener, _DirtyResolver {
   _Edge? _sourceHead;
   _Edge? _sourceTail;
 

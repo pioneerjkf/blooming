@@ -106,7 +106,7 @@ abstract base class _ManifestEffectTerminal extends _Terminal with _ScheduledTer
   @pragma('vm:prefer-inline')
   void _performScheduled() {
     if (_lifecycle.isActive) {
-      if (this case final _DirtySyncable e) {
+      if (this case final _DirtyResolver e) {
         if (!e._resolveDirty()) return; // Drop/Abort if upstream didn't actually mutate
         e._pullVersion();
       }
@@ -232,7 +232,7 @@ abstract base class _HandledManifestEffectTerminal extends _Terminal with _Sched
   @pragma('vm:prefer-inline')
   void _performScheduled() {
     if (_lifecycle.isActive) {
-      if (this case final _DirtySyncable e) {
+      if (this case final _DirtyResolver e) {
         if (!e._resolveDirty()) return; // Drop/Abort if upstream didn't actually mutate
         e._pullVersion();
       }
@@ -486,7 +486,7 @@ abstract base class _TemporalEffectTerminal extends _ManifestEffectTerminal {
     if (_lifecycle.isActive) {
       final isTrailing = _isTrailingExecution;
       _isTrailingExecution = false;
-      if (this case final _DirtySyncable e) {
+      if (this case final _DirtyResolver e) {
         final isDirty = e._resolveDirty();
         if (!isDirty && !isTrailing) return;
         e._pullVersion();

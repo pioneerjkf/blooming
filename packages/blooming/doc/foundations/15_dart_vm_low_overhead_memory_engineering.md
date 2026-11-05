@@ -118,7 +118,7 @@ In these scenarios, allocating even an `_Edge` object is redundant. Under [`_Una
 ```dart
 // packages/blooming/lib/src/graph/_internal/_edge.dart
 base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle
-    implements _TargetEdge, _DirtyListener, _DirtySyncable {
+    implements _TargetEdge, _DirtyListener, _DirtyResolver {
   @override
   _TargetEdge? _prevTarget;
 

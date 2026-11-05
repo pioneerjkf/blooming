@@ -8,7 +8,7 @@ part of '../../framework.dart';
 // Internal Relay Hierarchy
 // =============================================================================
 
-abstract base class _Relay extends _Node with _DirtyPusher implements _DirtyListener, _DirtySyncable {
+abstract base class _Relay extends _Node with _DirtyPusher implements _DirtyListener, _DirtyResolver {
   @mustCallSuper
   @override
   @pragma('vm:prefer-inline')

@@ -121,7 +121,7 @@ base mixin _ScheduledTerminalMixin on _Terminal implements _TerminalSchedulable 
   _TerminalSchedulerMixin._onTask()
         │
         ├─► 1. Verify target._lifecycle.isActive
-        ├─► 2. _DirtySyncable._resolveDirty() -> Abort if upstream didn't actually change
+        ├─► 2. _DirtyResolver._resolveDirty() -> Abort if upstream didn't actually change
         └─► 3. target._performScheduled() -> Invokes action() exactly ONCE with latest value '3'!
 ```
 
