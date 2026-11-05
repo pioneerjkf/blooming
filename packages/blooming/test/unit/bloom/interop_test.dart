@@ -74,7 +74,7 @@ void main() {
       dispose();
     });
 
-    test('works smoothly with BloomListController pipelines', () {
+    test('works smoothly with blooming.list pipelines', () {
       final a = blooming(10);
       final b = blooming(20);
 
@@ -602,7 +602,7 @@ void main() {
           ]));
     });
 
-    test('Bloom and BloomListController check physical node identity via identical', () {
+    test('Bloom and blooming.list check physical node identity via identical', () {
       final bloom1 = Bloom.constant(100);
       final bloom2 = Bloom.constant(100);
 
@@ -633,7 +633,7 @@ void main() {
       expect(identical(rs1, rs3), isFalse);
       expect(identical(writableGroup, groupView), isFalse);
       expect(identical(writableGroup, rs1), isFalse);
-      expect(() => (writableGroup.bloom as dynamic) as BloomDraftController, throwsA(isA<TypeError>()));
+      expect(() => (writableGroup.bloom as dynamic) as BloomCollectionController, throwsA(isA<TypeError>()));
     });
   });
 }

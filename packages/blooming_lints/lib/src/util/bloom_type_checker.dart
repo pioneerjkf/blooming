@@ -68,6 +68,7 @@ abstract final class BloomTypeChecker {
     'BloomController',
     'RawBloomController',
     'BloomDraftController',
+    'BloomCollectionController',
     'BloomCoupler',
     'BloomSignalController',
 
@@ -219,6 +220,7 @@ abstract final class BloomTypeChecker {
     'BloomController',
     'RawBloomController',
     'BloomDraftController',
+    'BloomCollectionController',
     'BloomCoupler',
     'BloomSignalController',
   };

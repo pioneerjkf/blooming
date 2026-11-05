@@ -54,7 +54,7 @@
 
 ### Breaking Changes & Migration Guide
 
-- **State Producer Instantiation Unification**: Concrete constructors for state controllers (`BloomController`, `RawBloomController`, `BloomSignalController`, `BloomDraftController`) are now encapsulated and private (`._()`). All state creation must use the unified hierarchical **`blooming`** functor family.
+- **State Producer Instantiation Unification**: Concrete constructors for state controllers (`BloomController`, `RawBloomController`, `BloomSignalController`, `BloomCollectionController`) are now encapsulated and private (`._()`). All state creation must use the unified hierarchical **`blooming`** functor family.
   - **Migration Guide**:
     - `BloomController(init)` → `blooming(init)`
     - `BloomController.late()` → `blooming.late<T>()`
@@ -62,9 +62,9 @@
     - `RawBloomController(init)` → `blooming.raw(init)`
     - `RawBloomController.late()` → `blooming.raw.late<T>()`
     - `BloomSignalController()` → `blooming.signal()`
-    - `BloomDraftController.list(init)` / `BloomListController(init)` → `blooming.list(init)`
-    - `BloomDraftController.map(init)` / `BloomMapController(init)` → `blooming.map(init)`
-    - `BloomDraftController.set(init)` / `BloomSetController(init)` → `blooming.set(init)`
+    - `BloomCollectionController.list(init)` → `blooming.list(init)`
+    - `BloomCollectionController.map(init)` → `blooming.map(init)`
+    - `BloomCollectionController.set(init)` → `blooming.set(init)`
 - **Coupler Independence**: `BloomCoupler` explicitly retains its standalone public constructor (`BloomCoupler(...)`) as an explicit pipeline coupler and adapter rather than a state producer.
 - **Collection Functor Privatization**: Collection functor implementation classes for `blooming.list`, `blooming.map`, and `blooming.set` are strictly internal and inaccessible from public API exports.
 

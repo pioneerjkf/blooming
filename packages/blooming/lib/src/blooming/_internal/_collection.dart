@@ -116,7 +116,8 @@ final class _MapEntry<K, V> extends _DistinctEntry<Map<K, V>> {
 // Collection Controller Implementations (List, Set, Map)
 // =============================================================================
 
-final class _BloomListControllerImpl<T> extends _BloomControllerImpl<List<T>> implements BloomDraftController<List<T>> {
+final class _BloomListControllerImpl<T> extends _BloomControllerImpl<List<T>>
+    implements BloomCollectionController<List<T>> {
   _BloomListControllerImpl(
     Iterable<T> data, {
     bool Function(List<T> previous, List<T> next)? equals,
@@ -154,7 +155,8 @@ final class _BloomListControllerImpl<T> extends _BloomControllerImpl<List<T>> im
   Bloom<List<T>> get bloom => _target;
 }
 
-final class _BloomSetControllerImpl<E> extends _BloomControllerImpl<Set<E>> implements BloomDraftController<Set<E>> {
+final class _BloomSetControllerImpl<E> extends _BloomControllerImpl<Set<E>>
+    implements BloomCollectionController<Set<E>> {
   _BloomSetControllerImpl(
     Iterable<E> data, {
     bool Function(Set<E> previous, Set<E> next)? equals,
@@ -193,7 +195,7 @@ final class _BloomSetControllerImpl<E> extends _BloomControllerImpl<Set<E>> impl
 }
 
 final class _BloomMapControllerImpl<K, V> extends _BloomControllerImpl<Map<K, V>>
-    implements BloomDraftController<Map<K, V>> {
+    implements BloomCollectionController<Map<K, V>> {
   _BloomMapControllerImpl(
     Map<K, V> data, {
     bool Function(Map<K, V> previous, Map<K, V> next)? equals,

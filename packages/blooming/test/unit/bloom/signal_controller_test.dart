@@ -305,5 +305,20 @@ void main() {
       sig.emit();
       expect(sig.bloom.debugVersion, equals(1));
     });
+
+    test('8.1 Direct class constructor BloomSignalController() instantiates active signal handle', () {
+      final sig = BloomSignalController();
+      expect(untracked(sig.bloom), equals(0));
+
+      var ticks = 0;
+      final term = RawBloomTerminal(sig.bloom, onInvalidated: () => ticks++);
+      term.activate();
+
+      sig.emit();
+      expect(ticks, equals(1));
+      expect(untracked(sig.bloom), equals(1));
+
+      term.deactivate();
+    });
   });
 }

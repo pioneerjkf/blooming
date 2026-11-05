@@ -265,9 +265,9 @@ void main() {
     });
 
     // =========================================================================
-    // 5. BloomController & BloomListController .error Native Constructors
+    // 5. BloomController & blooming.list.error Native Constructors
     // =========================================================================
-    group('5. BloomController & BloomListController .error', () {
+    group('5. BloomController & blooming.list.error', () {
       test('5.1 BloomController.error starts in error state and recovers on set', () {
         final error = FormatException('Initial format error');
         final controller = blooming.error<int>(error);
@@ -316,7 +316,7 @@ void main() {
         expect(deactivated, isTrue);
       });
 
-      test('5.3 BloomListController.error starts in error state and recovers on set', () {
+      test('5.3 blooming.list.error starts in error state and recovers on set', () {
         final controller = blooming.list.error<Bloom<int>>('GroupError');
 
         expect(controller.snapshot.hasError, isTrue);
@@ -366,10 +366,10 @@ void main() {
     });
 
     // =========================================================================
-    // 7. BloomListController Fallback & Exception Containment
+    // 7. blooming.list Fallback & Exception Containment
     // =========================================================================
-    group('7. BloomListController Fallback & Exception Containment', () {
-      test('7.1 BloomListController.late starts empty and recovers with data assignment', () {
+    group('7. blooming.list Fallback & Exception Containment', () {
+      test('7.1 blooming.list.late starts empty and recovers with data assignment', () {
         final controller = blooming.list.late<Bloom<int>>();
 
         expect(controller.snapshot.isEmpty, isTrue);
@@ -381,7 +381,7 @@ void main() {
         expect(controller.data.map((g) => untracked(g)).toList(), equals([1, 2]));
       });
 
-      test('7.2 BloomListController.setGuarded catches exception and isolates failure to error state', () {
+      test('7.2 blooming.list.setGuarded catches exception and isolates failure to error state', () {
         final controller = blooming.list<Bloom<int>>([Bloom.constant(10)]);
 
         controller.setGuarded(() {
@@ -392,7 +392,7 @@ void main() {
         expect(controller.snapshot.error, isA<FormatException>());
       });
 
-      test('7.3 BloomListController.error initializes in error state and fails fast on data access', () {
+      test('7.3 blooming.list.error initializes in error state and fails fast on data access', () {
         final controller = blooming.list.error<Bloom<int>>(StateError('Group failed'));
 
         expect(controller.snapshot.hasError, isTrue);
@@ -400,7 +400,7 @@ void main() {
         expect(() => controller.data, throwsA(isA<BloomSnapshotExtractionException>()));
       });
 
-      test('7.4 BloomListController.error recovers to valid state on subsequent data assignment', () {
+      test('7.4 blooming.list.error recovers to valid state on subsequent data assignment', () {
         final controller = blooming.list.error<Bloom<int>>('OriginalError');
 
         expect(controller.snapshot.hasError, isTrue);
@@ -413,9 +413,9 @@ void main() {
     });
 
     // =========================================================================
-    // 9. BloomListController Dynamic Aggregation & Exception Containment
+    // 9. blooming.list Dynamic Aggregation & Exception Containment
     // =========================================================================
-    group('9. BloomListController Dynamic Aggregation & Exception Containment', () {
+    group('9. blooming.list Dynamic Aggregation & Exception Containment', () {
       test('9.1 dynamic aggregation collapses data into bloom normally with fallbacks provided', () {
         final controller = blooming.list<Bloom<int>>([Bloom.constant(10), Bloom.constant(20)]);
         final converged = computed((via) {

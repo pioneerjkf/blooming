@@ -69,9 +69,21 @@ part of '../framework.dart';
 /// }
 /// ```
 ///
+/// ## Two Creation Pathways (Dual-Track Ergonomics)
+/// 1. **Declarative Top-Level Functor**: `final count = blooming(0);`
+///    - Best suited for reactive stores and local state declarations with concise syntax.
+/// 2. **Explicit Class Factory Constructor**: `final count = BloomController<int>(0);`
+///    - Best suited for typed class fields, constructor initializer lists, dependency injection,
+///      and infrastructure/bridge classes where explicit type and constructor symmetry are preferred.
+///
 /// ## Examples
 /// ```dart
-/// final counter = blooming<int>(0);
+/// // 1. Direct class constructor
+/// final counter = BloomController<int>(0);
+///
+/// // 2. Declarative functor
+/// final user = blooming.late<User>();
+///
 /// final countView = counter.bloom;
 ///
 /// print(untracked(countView)); // 0
@@ -79,8 +91,106 @@ part of '../framework.dart';
 /// print(untracked(countView)); // 10
 /// ```
 abstract base class BloomController<T> implements BloomState<T> {
-  /// Private constructor preventing direct instantiation; use [blooming] instead.
-  BloomController._();
+  /// Creates a distinct-filtered [BloomController] initialized with [data].
+  ///
+  /// Filters out duplicate consecutive value assignments using [equals]
+  /// (or identical / operator ==) to suppress redundant downstream dirty pulses.
+  ///
+  /// * [data]: The initial value to populate the node with.
+  /// * [distinct]: When `true`, suppresses dirty notifications on identical values.
+  ///   Defaults to `true`.
+  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
+  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
+  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns an active [BloomController] in the Data state ([BloomState.hasData] == true).
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final counter = BloomController<int>(0);
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory BloomController(
+    T data, {
+    bool distinct,
+    bool Function(T previous, T next)? equals,
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+    Graceful? graceful,
+  }) = _BloomControllerImpl<T>;
+
+  /// Creates a distinct-filtered [BloomController] in an uninitialized (Empty) state.
+  ///
+  /// Useful for asynchronous resources or data fetched after initialization. Reading `.data`
+  /// before setting a value throws [BloomEmptyExtractionException].
+  ///
+  /// * [reason]: Optional reason explaining why this controller is uninitialized or empty.
+  /// * [distinct]: When `true`, suppresses dirty notifications on identical values.
+  ///   Defaults to `true`.
+  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
+  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
+  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns a [BloomController] initialized in the Empty state
+  ///   ([BloomState.isEmpty] == true).
+  ///
+  /// **Throws:**
+  /// * Reading [BloomController.data] before setting a value throws
+  ///   [BloomEmptyExtractionException]. Use [BloomState.dataOrNull] or
+  ///   [BloomState.dataOrElse] for safe total inspection.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final user = BloomController<User>.late(reason: 'AwaitingAuthentication');
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory BloomController.late({
+    Object? reason,
+    bool distinct,
+    bool Function(T previous, T next)? equals,
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+    Graceful? graceful,
+  }) = _BloomControllerImpl<T>.late;
+
+  /// Creates a distinct-filtered [BloomController] initialized in an Error state.
+  ///
+  /// * [error]: The initial exception or error payload.
+  /// * [stackTrace]: Optional stack trace associated with the failure.
+  /// * [distinct]: When `true`, suppresses dirty notifications on identical values.
+  ///   Defaults to `true`.
+  /// * [equals]: Custom equality comparator used when [distinct] is `true`.
+  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
+  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns a [BloomController] initialized in the Error state
+  ///   ([BloomState.hasError] == true).
+  ///
+  /// **Throws:**
+  /// * Reading [BloomController.data] while in the Error state throws
+  ///   [BloomErrorExtractionException]. Inspect [BloomState.error] or
+  ///   use [BloomState.dataOrNull] for safe recovery.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final errorCtrl = BloomController<int>.error(Exception('Failed to load'));
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory BloomController.error(
+    Object error, {
+    StackTrace? stackTrace,
+    bool distinct,
+    bool Function(T previous, T next)? equals,
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+    Graceful? graceful,
+  }) = _BloomControllerImpl<T>.error;
 
   /// The encapsulated read-only reactive node view exposed to downstream consumers.
   ///
@@ -187,8 +297,85 @@ abstract base class BloomController<T> implements BloomState<T> {
 /// listController.markDirty(); // Explicitly notify downstream subscribers
 /// ```
 abstract base class RawBloomController<T> implements BloomController<T> {
-  /// Private constructor preventing direct instantiation; use `blooming.raw` instead.
-  RawBloomController._();
+  /// Creates an unfiltered [RawBloomController] initialized with [data].
+  ///
+  /// Bypasses equality checks entirely for high-throughput mutation sequences
+  /// or in-place mutable objects.
+  ///
+  /// * [data]: The initial value to populate the node with.
+  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
+  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns an unfiltered [RawBloomController] in the Data state
+  ///   ([BloomState.hasData] == true).
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final items = RawBloomController<List<String>>(['initial']);
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory RawBloomController(
+    T data, {
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+    Graceful? graceful,
+  }) = _RawBloomControllerImpl<T>;
+
+  /// Creates an unfiltered [RawBloomController] in an uninitialized (Empty) state.
+  ///
+  /// * [reason]: Optional reason explaining why this controller is uninitialized or empty.
+  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
+  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns an unfiltered [RawBloomController] initialized in the Empty state.
+  ///
+  /// **Throws:**
+  /// * Reading [RawBloomController.data] before setting a value throws
+  ///   [BloomEmptyExtractionException].
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final rawLate = RawBloomController<int>.late();
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory RawBloomController.late({
+    Object? reason,
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+    Graceful? graceful,
+  }) = _RawBloomControllerImpl<T>.late;
+
+  /// Creates an unfiltered [RawBloomController] initialized in an Error state.
+  ///
+  /// * [error]: The initial exception or error payload.
+  /// * [stackTrace]: Optional stack trace associated with the failure.
+  /// * [onActivated]: Callback triggered when the first downstream subscriber connects.
+  /// * [onDeactivated]: Callback triggered when all downstream subscribers disconnect.
+  /// * [graceful]: Optional [Graceful] policy delaying deactivation when subscribers drop to zero.
+  ///
+  /// **Ensures:**
+  /// * Returns an unfiltered [RawBloomController] initialized in the Error state.
+  ///
+  /// **Throws:**
+  /// * Reading [RawBloomController.data] while in the Error state throws
+  ///   [BloomErrorExtractionException]. Inspect [BloomState.error] for details.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final rawError = RawBloomController<int>.error(Exception('Failed'));
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory RawBloomController.error(
+    Object error, {
+    StackTrace? stackTrace,
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+    Graceful? graceful,
+  }) = _RawBloomControllerImpl<T>.error;
 
   /// Force-emits a dirty pulse downstream for in-place mutable collections or objects.
   ///
@@ -198,4 +385,55 @@ abstract base class RawBloomController<T> implements BloomController<T> {
   /// **Ensures:**
   /// * Synchronously marks the underlying node dirty and schedules downstream updates.
   void markDirty();
+}
+
+// =============================================================================
+// Functional State Transformation Extensions
+// =============================================================================
+
+/// Convenience functional mutation extensions for [BloomController].
+extension BloomControllerUpdateExtension<T> on BloomController<T> {
+  /// Computes and injects a new state from the current [data] payload via [updater].
+  ///
+  /// Evaluates [updater] synchronously with the current state and passes the returned payload to [set].
+  /// Propagates dirty invalidation pulses downstream if the returned payload differs from the existing payload.
+  ///
+  /// * [updater]: Synchronous pure transformation receiving the current state and returning the updated state.
+  ///
+  /// **Ensures:**
+  /// * Transitions this node to the Data state ([hasData] == true) with the result of [updater].
+  ///
+  /// **Throws:**
+  /// * Reading [data] while in the Empty or Error state throws [BloomSnapshotExtractionException].
+  ///   Use [updateGuarded] or verify [hasData] beforehand for uninitialized states.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final counter = BloomController<int>(0);
+  /// counter.update((v) => v + 1);
+  /// ```
+  @pragma('vm:prefer-inline')
+  void update(T Function(T current) updater) => set(updater(data));
+
+  /// Safely executes [updater] with the current [data] payload and injects the returned payload,
+  /// or catches thrown exceptions and transitions this node to an Error state.
+  ///
+  /// * [updater]: Synchronous closure returning a new [T] payload or throwing an error.
+  ///
+  /// **Ensures:**
+  /// * On success: Transitions to Data state with the result of [updater].
+  /// * On exception: Transitions to Error state with the caught error and stack trace.
+  ///
+  /// ## Examples
+  /// ```dart
+  /// controller.updateGuarded((v) => v + int.parse(rawText));
+  /// ```
+  @pragma('vm:prefer-inline')
+  void updateGuarded(T Function(T current) updater) {
+    try {
+      set(updater(data));
+    } catch (error, stackTrace) {
+      setError(error, stackTrace);
+    }
+  }
 }

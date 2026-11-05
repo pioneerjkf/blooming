@@ -997,7 +997,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('6.3 Outer BloomListController itself transitioning Valid -> Empty -> Error -> Valid', () {
+      test('6.3 Outer blooming.list itself transitioning Valid -> Empty -> Error -> Valid', () {
         final w1 = blooming<int>(10);
         final w2 = blooming<int>(20);
         final listController = blooming.list<Bloom<int>>([w1.bloom, w2.bloom]);

@@ -15,7 +15,7 @@
 ///
 /// 2. **Blooming Domain (`src/blooming/`)**:
 ///    The mutable state producer (CQRS Write/Origin) tier containing state producer handles
-///    ([blooming], [BloomController], [RawBloomController], [BloomDraftController], [BloomSignalController]),
+///    ([blooming], [BloomController], [RawBloomController], [BloomCollectionController], [BloomSignalController]),
 ///    discrete event triggers, and encapsulated physical entry roots (`_Entry`).
 ///
 /// 3. **Bloom Domain (`src/bloom/`)**:
@@ -69,10 +69,10 @@ part 'graph/_internal/_via.dart';
 // =============================================================================
 part 'blooming/blooming.dart';
 part 'blooming/controller.dart';
-part 'blooming/draft.dart';
+part 'blooming/collection.dart';
 part 'blooming/signal.dart';
 part 'blooming/_internal/_controller.dart';
-part 'blooming/_internal/_draft.dart';
+part 'blooming/_internal/_collection.dart';
 part 'blooming/_internal/_entry.dart';
 part 'blooming/_internal/_signal.dart';
 

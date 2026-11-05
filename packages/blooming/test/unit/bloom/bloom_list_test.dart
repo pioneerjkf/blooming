@@ -99,10 +99,10 @@ void main() {
     });
 
     // =========================================================================
-    // 3. BloomListController Tests
+    // 3. blooming.list Controller Tests
     // =========================================================================
-    group('3. BloomListController Lifecycle & Mutation', () {
-      test('3.1 Standard BloomListController initialization and set mutation', () {
+    group('3. blooming.list Lifecycle & Mutation', () {
+      test('3.1 Standard blooming.list initialization and set mutation', () {
         final bloom1 = blooming<int>(10);
         final bloom2 = blooming<int>(20);
         final controller = blooming.list<Bloom<int>>([bloom1.bloom, bloom2.bloom]);
@@ -119,7 +119,7 @@ void main() {
         expect(untracked.state(controller.data[0]).snapshot.data, equals(30));
       });
 
-      test('3.2 BloomListController.late initialization and delayed set', () {
+      test('3.2 blooming.list.late initialization and delayed set', () {
         final controller = blooming.list.late<Bloom<int>>();
 
         expect(controller.isEmpty, isTrue);
@@ -134,7 +134,7 @@ void main() {
         expect(untracked.state(controller.data[0]).snapshot.data, equals(100));
       });
 
-      test('3.3 BloomListController setGuarded, setError, and empty', () {
+      test('3.3 blooming.list setGuarded, setError, and empty', () {
         final controller = blooming.list.late<Bloom<int>>();
 
         controller.setGuarded(() => throw Exception('Calculation error'));
@@ -157,7 +157,7 @@ void main() {
         expect(controller.hasData, isFalse);
       });
 
-      test('3.4 BloomListController does not emit dirty when identical node elements are re-assigned (_nodeListEquals)',
+      test('3.4 blooming.list does not emit dirty when identical node elements are re-assigned (_nodeListEquals)',
           () {
         final a = Bloom.constant(1);
         final b = Bloom.constant(2);
@@ -191,7 +191,7 @@ void main() {
         expect(() => (group.data as dynamic).add(Bloom.constant(2)), throwsUnsupportedError);
       });
 
-      test('3.6 BloomListController handles standard data assignment and setGuarded', () {
+      test('3.6 blooming.list handles standard data assignment and setGuarded', () {
         final a = Bloom.constant(1);
         final b = Bloom.constant(2);
         final c = Bloom.constant(3);
@@ -230,7 +230,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('3.7 BloomListController.late handles set and setGuarded safely', () {
+      test('3.7 blooming.list.late handles set and setGuarded safely', () {
         final group = blooming.list.late<Bloom<int>>();
         expect(group.isEmpty, isTrue);
 
@@ -247,7 +247,7 @@ void main() {
         expect(group.data, [a]);
       });
 
-      test('3.8 BloomDraftController<List<int>> manages primitive value lists with distinct shallow equality', () {
+      test('3.8 BloomCollectionController<List<int>> manages primitive value lists with distinct shallow equality', () {
         final group = blooming.list<int>([1, 2, 3]);
         expect(group.hasData, isTrue);
         expect(group.data, [1, 2, 3]);
@@ -471,7 +471,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.3 Dynamic Re-parenting in BloomListController (Swap In, Swap Out & Mooring GC)', () {
+      test('5.3 Dynamic Re-parenting in blooming.list (Swap In, Swap Out & Mooring GC)', () {
         final g1 = blooming<String>('Item 1');
         final g2 = blooming<String>('Item 2');
         final g3 = blooming<String>('Item 3');
@@ -568,7 +568,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.6 BloomListController downstream pipeline integration via computed', () {
+      test('5.6 blooming.list downstream pipeline integration via computed', () {
         final c1 = blooming<int>(10);
         final c2 = blooming<int>(20);
         final groupController = blooming.list<Bloom<int>>([c1.bloom, c2.bloom]);
@@ -595,7 +595,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.7 BloomListController multiple heterogeneous elements creates active reactive Bloom node list', () {
+      test('5.7 blooming.list multiple heterogeneous elements creates active reactive Bloom node list', () {
         final c1 = blooming<int>(10);
         final c2 = blooming<String>('hello');
         final c3 = blooming<bool>(true);

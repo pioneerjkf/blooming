@@ -113,7 +113,7 @@ The clarity of an LPDAG depends on maintaining strict separation between topolog
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                      1. External Input Boundaries                       │
-│    BloomController<T> • BloomDraftController<C> • BloomSignalController   │
+│    BloomController<T> • BloomCollectionController<C> • BloomSignalController │
 │    Async Bridges: future.toBloom() • (() => future).toBloom()           │
 │                   stream.toBloom() • (() => stream).toBloom()           │
 └────────────────────────────────────┬────────────────────────────────────┘

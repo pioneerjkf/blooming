@@ -154,6 +154,25 @@ void main() {
       expect(() => value.data, throwsA(isA<BloomSnapshotExtractionException>()));
     });
 
+    test('update computes new state atomically from current state', () {
+      final count = BloomController<int>(10);
+      count.update((v) => v + 5);
+      expect(count.data, 15);
+
+      count.update((v) => v * 2);
+      expect(count.data, 30);
+    });
+
+    test('updateGuarded executes updater and catches thrown errors', () {
+      final text = BloomController<String>('100');
+      text.updateGuarded((v) => '${int.parse(v) + 50}');
+      expect(text.data, '150');
+
+      text.updateGuarded((v) => throw FormatException('Invalid format'));
+      expect(text.hasError, isTrue);
+      expect(text.error, isA<FormatException>());
+    });
+
     test('setError manually injects error state and stack trace', () {
       final state = blooming('initial');
 
@@ -183,6 +202,126 @@ void main() {
       count.empty();
       expect(count.isEmpty, isTrue);
       expect(count.hasData, isFalse);
+    });
+
+    group('BloomController Direct Class Factory Constructors', () {
+      test('BloomController(value) initializes valid active controller', () {
+        final ctrl = BloomController<int>(42);
+        expect(ctrl.data, 42);
+        expect(ctrl.hasData, isTrue);
+
+        ctrl.set(99);
+        expect(ctrl.data, 99);
+        expect(untracked(ctrl.bloom), 99);
+      });
+
+      test('BloomController.late() initializes uninitialized empty state', () {
+        final ctrl = BloomController<String>.late(reason: 'Deferred');
+        expect(ctrl.isEmpty, isTrue);
+        expect(ctrl.emptyReason, 'Deferred');
+        expect(() => ctrl.data, throwsA(isA<BloomSnapshotExtractionException>()));
+
+        ctrl.set('Ready');
+        expect(ctrl.hasData, isTrue);
+        expect(ctrl.data, 'Ready');
+      });
+
+      test('BloomController.error() initializes error state', () {
+        final ctrl = BloomController<double>.error(Exception('Init failure'));
+        expect(ctrl.hasError, isTrue);
+        expect(ctrl.error.toString(), contains('Init failure'));
+
+        ctrl.set(3.14);
+        expect(ctrl.hasData, isTrue);
+        expect(ctrl.data, 3.14);
+      });
+    });
+
+    group('RawBloomController Direct Class Factory Constructors', () {
+      test('RawBloomController(value) initializes unfiltered controller with markDirty', () {
+        final ctrl = RawBloomController<List<int>>([1, 2]);
+        expect(ctrl.data, [1, 2]);
+
+        ctrl.data.add(3);
+        ctrl.markDirty();
+        expect(ctrl.data, [1, 2, 3]);
+      });
+
+      test('RawBloomController.late() and .error() initialize proper states', () {
+        final lateCtrl = RawBloomController<int>.late();
+        expect(lateCtrl.isEmpty, isTrue);
+
+        final errCtrl = RawBloomController<int>.error(Exception('Raw error'));
+        expect(errCtrl.hasError, isTrue);
+      });
+    });
+
+    group('BloomCollectionController and Transactional Collections', () {
+      test('BloomCollectionController for List manages unmodifiable freezing and edit', () {
+        final listCtrl = blooming.list<String>(['a', 'b']);
+        expect(listCtrl, isA<BloomCollectionController<List<String>>>());
+        expect(listCtrl.data, ['a', 'b']);
+
+        listCtrl.edit((draft) {
+          draft.add('c');
+        });
+        expect(listCtrl.data, ['a', 'b', 'c']);
+
+        listCtrl.editGuarded((draft) {
+          throw Exception('Edit failed');
+        });
+        expect(listCtrl.hasError, isTrue);
+
+        final lateList = blooming.list.late<int>();
+        expect(lateList.isEmpty, isTrue);
+
+        final errList = blooming.list.error<int>(Exception('List error'));
+        expect(errList.hasError, isTrue);
+      });
+
+      test('BloomCollectionController for Set manages unmodifiable freezing and edit', () {
+        final setCtrl = blooming.set<int>({1, 2});
+        expect(setCtrl, isA<BloomCollectionController<Set<int>>>());
+        expect(setCtrl.data, {1, 2});
+
+        setCtrl.edit((draft) {
+          draft.add(3);
+        });
+        expect(setCtrl.data, {1, 2, 3});
+
+        setCtrl.editGuarded((draft) {
+          throw Exception('Set edit failed');
+        });
+        expect(setCtrl.hasError, isTrue);
+
+        final lateSet = blooming.set.late<String>();
+        expect(lateSet.isEmpty, isTrue);
+
+        final errSet = blooming.set.error<String>(Exception('Set error'));
+        expect(errSet.hasError, isTrue);
+      });
+
+      test('BloomCollectionController for Map manages unmodifiable freezing and edit', () {
+        final mapCtrl = blooming.map<String, int>({'x': 1});
+        expect(mapCtrl, isA<BloomCollectionController<Map<String, int>>>());
+        expect(mapCtrl.data, {'x': 1});
+
+        mapCtrl.edit((draft) {
+          draft['y'] = 2;
+        });
+        expect(mapCtrl.data, {'x': 1, 'y': 2});
+
+        mapCtrl.editGuarded((draft) {
+          throw Exception('Map edit failed');
+        });
+        expect(mapCtrl.hasError, isTrue);
+
+        final lateMap = blooming.map.late<String, int>();
+        expect(lateMap.isEmpty, isTrue);
+
+        final errMap = blooming.map.error<String, int>(Exception('Map error'));
+        expect(errMap.hasError, isTrue);
+      });
     });
   });
 }

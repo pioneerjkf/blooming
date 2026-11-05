@@ -149,7 +149,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('RawBloomTerminal on BloomListController: instantiation and activation never fire spurious invalidations',
+      test('RawBloomTerminal on blooming.list: instantiation and activation never fire spurious invalidations',
           () {
         final c1 = blooming<int>(1);
         final c2 = blooming<int>(2);
@@ -169,7 +169,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('BloomListController & downstream pipeline: construction does not fire spurious invalidations', () {
+      test('blooming.list & downstream pipeline: construction does not fire spurious invalidations', () {
         final c1 = blooming<int>(10);
         final c2 = blooming<int>(20);
         final groupCtrl = blooming.list([c1.bloom, c2.bloom]);
@@ -190,7 +190,7 @@ void main() {
         expect(invalidateCount, 1);
         expect(terminal.data, 35);
 
-        // BloomListController dynamic swap triggers exactly 1 invalidation
+        // blooming.list dynamic swap triggers exactly 1 invalidation
         final c3 = blooming<int>(100);
         groupCtrl.set([c1.bloom, c2.bloom, c3.bloom]);
         expect(invalidateCount, 2);

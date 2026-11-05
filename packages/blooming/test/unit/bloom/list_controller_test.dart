@@ -6,12 +6,12 @@ import 'package:test/test.dart';
 import 'package:blooming/blooming.dart';
 
 void main() {
-  group('BloomListController & Reactive Collection Evolution Tests', () {
+  group('BloomCollectionController<List> & Reactive Collection Evolution Tests', () {
     // =========================================================================
     // 1. Instantiation & Factory Constructors
     // =========================================================================
     group('1. Instantiation & Factory Constructors', () {
-      test('1.1 BloomListController default factory creates unmodifiable list', () {
+      test('1.1 blooming.list creates unmodifiable list', () {
         final controller = blooming.list<int>([1, 2, 3]);
 
         expect(controller.hasData, isTrue);
@@ -22,14 +22,14 @@ void main() {
         expect(() => controller.data.add(4), throwsUnsupportedError);
       });
 
-      test('1.2 BloomListController empty explicit initialization', () {
+      test('1.2 blooming.list empty explicit initialization', () {
         final controller = blooming.list<String>([]);
 
         expect(controller.hasData, isTrue);
         expect(controller.data, isEmpty);
       });
 
-      test('1.3 BloomListController.late initialization', () {
+      test('1.3 blooming.list.late initialization', () {
         final controller = blooming.list.late<int>();
 
         expect(controller.isEmpty, isTrue);
@@ -41,7 +41,7 @@ void main() {
         expect(controller.data, equals([10, 20]));
       });
 
-      test('1.4 BloomListController.error initialization', () {
+      test('1.4 blooming.list.error initialization', () {
         final controller = blooming.list.error<int>('Failed to load list');
 
         expect(controller.hasError, isTrue);
@@ -255,7 +255,7 @@ void main() {
     // 4. Downstream Pipeline & ComputedBloom Integration
     // =========================================================================
     group('4. Downstream Pipeline & ComputedBloom Integration', () {
-      test('4.1 ComputedBloom seamlessly tracks BloomListController edits', () {
+      test('4.1 ComputedBloom seamlessly tracks blooming.list edits', () {
         final todos = blooming.list<String>(['task1']);
         final count = computed((via) => via(todos.bloom).length);
         final joined = computed((via) => via(todos.bloom).join(', '));
@@ -334,7 +334,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.2 BloomListController.late propagates custom equals comparator', () {
+      test('5.2 blooming.list.late propagates custom equals comparator', () {
         final matrix = blooming.list.late<List<int>>(
           equals: deepListEquals,
         );

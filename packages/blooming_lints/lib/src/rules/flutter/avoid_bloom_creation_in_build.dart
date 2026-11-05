@@ -68,6 +68,7 @@ class AvoidBloomCreationInBuild extends DartLintRule {
     'BloomController',
     'RawBloomController',
     'BloomDraftController',
+    'BloomCollectionController',
     'BloomCoupler',
     'BloomSignal',
     'BloomSignalController',

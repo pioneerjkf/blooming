@@ -166,9 +166,9 @@ void main() {
   });
 
   // ─────────────────────────────────────────────
-  // BloomListController live node — switch (phase)
+  // blooming.list live node — switch (phase)
   // ─────────────────────────────────────────────
-  group('BloomListController switch (phase) on live node', () {
+  group('blooming.list switch (phase) on live node', () {
     test('valid group → data branch', () {
       final c = blooming.list([blooming(1).bloom, blooming(2).bloom]);
       final res = switch (c.phase) {

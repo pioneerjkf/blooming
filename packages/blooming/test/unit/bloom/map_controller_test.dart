@@ -6,12 +6,12 @@ import 'package:test/test.dart';
 import 'package:blooming/blooming.dart';
 
 void main() {
-  group('BloomMapController & Reactive Map Evolution Tests', () {
+  group('BloomCollectionController<Map> & Reactive Map Evolution Tests', () {
     // =========================================================================
     // 1. Instantiation & Factory Constructors
     // =========================================================================
     group('1. Instantiation & Factory Constructors', () {
-      test('1.1 BloomMapController default factory creates unmodifiable map', () {
+      test('1.1 blooming.map creates unmodifiable map', () {
         final controller = blooming.map<String, int>({'a': 1, 'b': 2});
 
         expect(controller.hasData, isTrue);
@@ -22,14 +22,14 @@ void main() {
         expect(() => controller.data['c'] = 3, throwsUnsupportedError);
       });
 
-      test('1.2 BloomMapController empty explicit initialization', () {
+      test('1.2 blooming.map empty explicit initialization', () {
         final controller = blooming.map<String, int>({});
 
         expect(controller.hasData, isTrue);
         expect(controller.data, isEmpty);
       });
 
-      test('1.3 BloomMapController.late initialization', () {
+      test('1.3 blooming.map.late initialization', () {
         final controller = blooming.map.late<String, int>();
 
         expect(controller.isEmpty, isTrue);
@@ -41,7 +41,7 @@ void main() {
         expect(controller.data, equals({'x': 10, 'y': 20}));
       });
 
-      test('1.4 BloomMapController.error initialization', () {
+      test('1.4 blooming.map.error initialization', () {
         final controller = blooming.map.error<String, int>('Failed to load map');
 
         expect(controller.hasError, isTrue);
@@ -254,7 +254,7 @@ void main() {
     // 4. Downstream Pipeline & ComputedBloom Integration
     // =========================================================================
     group('4. Downstream Pipeline & ComputedBloom Integration', () {
-      test('4.1 ComputedBloom seamlessly tracks BloomMapController edits', () {
+      test('4.1 ComputedBloom seamlessly tracks blooming.map edits', () {
         final store = blooming.map<String, int>({'apple': 3});
         final totalFruits = computed((via) => via(store.bloom).values.fold(0, (a, b) => a + b));
         final hasBanana = computed((via) => via(store.bloom).containsKey('banana'));
@@ -321,7 +321,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.2 BloomMapController.late propagates custom equals comparator', () {
+      test('5.2 blooming.map.late propagates custom equals comparator', () {
         final controller = blooming.map.late<String, List<int>>(
           equals: deepMapEquals,
         );

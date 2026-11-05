@@ -115,8 +115,29 @@ abstract base class BloomSignal implements Bloom<int> {
 /// Exposes a read-only [bloom] consumer view for downstream observation,
 /// completely encapsulating emission capabilities.
 abstract base class BloomSignalController implements LpdagStatus {
-  /// Private constructor preventing direct instantiation; use `blooming.signal` instead.
-  BloomSignalController._();
+  /// Creates a discrete event notification signal producer handle.
+  ///
+  /// Discrete signals emit monotonic version sequence ticks on [BloomSignalController.emit]
+  /// to trigger downstream derivations without maintaining state payload.
+  ///
+  /// * [onActivated]: Callback triggered when the signal transitions from 0 to 1
+  ///   active downstream subscriber.
+  /// * [onDeactivated]: Callback triggered when the signal drops to 0 active subscribers.
+  ///
+  /// **Ensures:**
+  /// * Returns an active [BloomSignalController].
+  ///
+  /// ## Examples
+  /// ```dart
+  /// final refreshSignal = BloomSignalController();
+  /// // or declaratively via top-level sub-functor:
+  /// final refreshSignal = blooming.signal();
+  /// ```
+  @pragma('vm:prefer-inline')
+  factory BloomSignalController({
+    void Function()? onActivated,
+    void Function()? onDeactivated,
+  }) = _BloomSignalControllerImpl;
 
   /// The encapsulated read-only [BloomSignal] view exposed to downstream consumers.
   BloomSignal get bloom;

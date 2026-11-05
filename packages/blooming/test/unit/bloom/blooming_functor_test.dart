@@ -133,9 +133,9 @@ void main() {
     // 4. Reactive List Sub-Functor (blooming.list, .late, .error)
     // =========================================================================
     group('4. List Functor: blooming.list(...)', () {
-      test('4.1 blooming.list(items) creates BloomDraftController with transactional edit', () {
+      test('4.1 blooming.list(items) creates BloomCollectionController with transactional edit', () {
         final todos = blooming.list<String>(['A', 'B']);
-        expect(todos, isA<BloomDraftController<List<String>>>());
+        expect(todos, isA<BloomCollectionController<List<String>>>());
         expect(todos.data, ['A', 'B']);
         expect(() => todos.data.add('C'), throwsUnsupportedError);
 
@@ -148,14 +148,14 @@ void main() {
 
       test('4.2 blooming.list.late() and blooming.list.error()', () {
         final lateList = blooming.list.late<int>();
-        expect(lateList, isA<BloomDraftController<List<int>>>());
+        expect(lateList, isA<BloomCollectionController<List<int>>>());
         expect(lateList.isEmpty, isTrue);
 
         lateList.set([10, 20]);
         expect(lateList.data, [10, 20]);
 
         final errorList = blooming.list.error<int>('ListLoadFailed');
-        expect(errorList, isA<BloomDraftController<List<int>>>());
+        expect(errorList, isA<BloomCollectionController<List<int>>>());
         expect(errorList.hasError, isTrue);
       });
     });
@@ -164,9 +164,9 @@ void main() {
     // 5. Reactive Set Sub-Functor (blooming.set, .late, .error)
     // =========================================================================
     group('5. Set Functor: blooming.set(...)', () {
-      test('5.1 blooming.set(items) creates BloomDraftController with transactional edit', () {
+      test('5.1 blooming.set(items) creates BloomCollectionController with transactional edit', () {
         final tags = blooming.set<String>({'alpha', 'beta'});
-        expect(tags, isA<BloomDraftController<Set<String>>>());
+        expect(tags, isA<BloomCollectionController<Set<String>>>());
         expect(tags.data, {'alpha', 'beta'});
         expect(() => tags.data.add('gamma'), throwsUnsupportedError);
 
@@ -179,14 +179,14 @@ void main() {
 
       test('5.2 blooming.set.late() and blooming.set.error()', () {
         final lateSet = blooming.set.late<String>();
-        expect(lateSet, isA<BloomDraftController<Set<String>>>());
+        expect(lateSet, isA<BloomCollectionController<Set<String>>>());
         expect(lateSet.isEmpty, isTrue);
 
         lateSet.set({'x', 'y'});
         expect(lateSet.data, {'x', 'y'});
 
         final errorSet = blooming.set.error<String>('SetLoadFailed');
-        expect(errorSet, isA<BloomDraftController<Set<String>>>());
+        expect(errorSet, isA<BloomCollectionController<Set<String>>>());
         expect(errorSet.hasError, isTrue);
       });
     });
@@ -195,9 +195,9 @@ void main() {
     // 6. Reactive Map Sub-Functor (blooming.map, .late, .error)
     // =========================================================================
     group('6. Map Functor: blooming.map(...)', () {
-      test('6.1 blooming.map(dict) creates BloomDraftController with transactional edit', () {
+      test('6.1 blooming.map(dict) creates BloomCollectionController with transactional edit', () {
         final config = blooming.map<String, int>({'timeout': 30});
-        expect(config, isA<BloomDraftController<Map<String, int>>>());
+        expect(config, isA<BloomCollectionController<Map<String, int>>>());
         expect(config.data, {'timeout': 30});
         expect(() => config.data['retries'] = 3, throwsUnsupportedError);
 
@@ -210,14 +210,14 @@ void main() {
 
       test('6.2 blooming.map.late() and blooming.map.error()', () {
         final lateMap = blooming.map.late<String, String>();
-        expect(lateMap, isA<BloomDraftController<Map<String, String>>>());
+        expect(lateMap, isA<BloomCollectionController<Map<String, String>>>());
         expect(lateMap.isEmpty, isTrue);
 
         lateMap.set({'k': 'v'});
         expect(lateMap.data, {'k': 'v'});
 
         final errorMap = blooming.map.error<String, String>('MapFailed');
-        expect(errorMap, isA<BloomDraftController<Map<String, String>>>());
+        expect(errorMap, isA<BloomCollectionController<Map<String, String>>>());
         expect(errorMap.hasError, isTrue);
       });
     });

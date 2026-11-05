@@ -6,12 +6,12 @@ import 'package:test/test.dart';
 import 'package:blooming/blooming.dart';
 
 void main() {
-  group('BloomSetController & Reactive Set Evolution Tests', () {
+  group('BloomCollectionController<Set> & Reactive Set Evolution Tests', () {
     // =========================================================================
     // 1. Instantiation & Factory Constructors
     // =========================================================================
     group('1. Instantiation & Factory Constructors', () {
-      test('1.1 BloomSetController default factory creates unmodifiable set', () {
+      test('1.1 blooming.set creates unmodifiable set', () {
         final controller = blooming.set<int>({1, 2, 3});
 
         expect(controller.hasData, isTrue);
@@ -22,14 +22,14 @@ void main() {
         expect(() => controller.data.add(4), throwsUnsupportedError);
       });
 
-      test('1.2 BloomSetController empty explicit initialization', () {
+      test('1.2 blooming.set empty explicit initialization', () {
         final controller = blooming.set<String>({});
 
         expect(controller.hasData, isTrue);
         expect(controller.data, isEmpty);
       });
 
-      test('1.3 BloomSetController.late initialization', () {
+      test('1.3 blooming.set.late initialization', () {
         final controller = blooming.set.late<int>();
 
         expect(controller.isEmpty, isTrue);
@@ -41,7 +41,7 @@ void main() {
         expect(controller.data, equals({10, 20}));
       });
 
-      test('1.4 BloomSetController.error initialization', () {
+      test('1.4 blooming.set.error initialization', () {
         final controller = blooming.set.error<int>('Failed to load set');
 
         expect(controller.hasError, isTrue);
@@ -250,7 +250,7 @@ void main() {
     // 4. Downstream Pipeline & ComputedBloom Integration
     // =========================================================================
     group('4. Downstream Pipeline & ComputedBloom Integration', () {
-      test('4.1 ComputedBloom seamlessly tracks BloomSetController edits', () {
+      test('4.1 ComputedBloom seamlessly tracks blooming.set edits', () {
         final tags = blooming.set<String>({'tag1'});
         final count = computed((via) => via(tags.bloom).length);
         final containsTag2 = computed((via) => via(tags.bloom).contains('tag2'));
@@ -312,7 +312,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.2 BloomSetController.late propagates custom equals comparator', () {
+      test('5.2 blooming.set.late propagates custom equals comparator', () {
         final controller = blooming.set.late<Set<int>>(
           equals: deepSetEquals,
         );
