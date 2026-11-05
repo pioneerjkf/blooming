@@ -149,8 +149,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('RawBloomTerminal on blooming.list: instantiation and activation never fire spurious invalidations',
-          () {
+      test('RawBloomTerminal on blooming.list: instantiation and activation never fire spurious invalidations', () {
         final c1 = blooming<int>(1);
         final c2 = blooming<int>(2);
         final group = blooming.list([c1.bloom, c2.bloom]);

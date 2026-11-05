@@ -157,8 +157,7 @@ void main() {
         expect(controller.hasData, isFalse);
       });
 
-      test('3.4 blooming.list does not emit dirty when identical node elements are re-assigned (_nodeListEquals)',
-          () {
+      test('3.4 blooming.list does not emit dirty when identical node elements are re-assigned (_nodeListEquals)', () {
         final a = Bloom.constant(1);
         final b = Bloom.constant(2);
         final group = blooming.list([a, b]);

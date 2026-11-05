@@ -1,3 +1,15 @@
+## 0.3.1
+
+- **Unified Collection Controllers (`BloomCollectionController`)**:
+  - Introduced `BloomCollectionController<E, C>` base class unifying `BloomListController<E>`, `BloomSetController<E>`, and `BloomMapController<K, V>`.
+  - Added dual-track transactional mutation APIs: `controller.batch((c) => ...)`, `update()`, and atomic bulk operations.
+  - Formalized collection proxy and draft contracts under `src/blooming/collection.dart`.
+- **Signal Enhancements**:
+  - Added `reset()` to `BloomSignal` and `SignalController` to reset tick count to zero.
+- **LPDAG Core Engine Refinement**:
+  - Renamed internal contract `_DirtySyncable` to `_DirtyResolver` in graph engine (`_UnaryEdgeMixin`, `_NaryEdgeMixin`, `_Relay`, `_PullResolver`, effect terminals) for precise semantic reflection of upstream dirty querying, resolution, and version synchronization.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.1.
+
 ## 0.3.0
 
 - **Algebraic Early-Exit Control Flow (`via.exit`)**:

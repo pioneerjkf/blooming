@@ -1,3 +1,9 @@
+## 0.3.1
+
+- **Type Checker**:
+  - Updated `BloomTypeChecker.isControllerOrCouplerType` and AST visitors to recognize `BloomCollectionController` in `avoid_bloom_creation_in_build` and `prefer_bloom_over_controller`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.1.
+
 ## 0.3.0
 
 - **Lint Rules**:

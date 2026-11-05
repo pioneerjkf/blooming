@@ -1,3 +1,8 @@
+## 0.3.1
+
+- **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.3.1`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.1.
+
 ## 0.3.0
 
 - **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.3.0`.
