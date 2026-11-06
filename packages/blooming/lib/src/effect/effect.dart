@@ -778,7 +778,7 @@ abstract interface class EffectScope {
   /// Whether this execution turn is currently active and has not been superseded or disposed.
   bool get isCurrent;
 
-  /// Registers a synchronous cleanup callback to be executed upon turn completion/superseding or deactivation.
+  /// Registers a synchronous cleanup callback to be executed upon turn superseding or deactivation.
   ///
   /// ## Multi-Registration & Locality of Reference (RAII)
   /// You can call [onCleanup] multiple times within a single effect turn.

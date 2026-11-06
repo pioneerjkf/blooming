@@ -48,7 +48,7 @@ Nodes powered by `_DeltaBloom<T>` (`switched`, `computed.future`, `computed.stre
 
 ### 2.2 Lateral Control Plane (`_deltaTerminal`)
 * **Responsibility**: Observes no payload data; purely evaluates **structural mutation deltas ($\Delta$)**: *which upstream source node must couple to the mainstream pipeline?*
-* **Topology**: Modeled as an intrusive `RawViaTerminal<Bloom<T>>` mixing in `_NaryEdgeMixin<_Node>`, `_ViaEpochMixin`, `_BloomViaEpochMixin`, and `_ViaTerminalMixin<Bloom<T>>`.
+* **Topology**: Modeled as an intrusive `RawViaTerminal<Bloom<T>>` mixing in `_NaryEdgeMixin<_Node>`, `_ViaEpochMixin<BloomVia>`, `_BloomViaEpochMixin`, and `_ViaTerminalMixin<Bloom<T>>`.
 * **Mechanics**:  
   When lateral routing conditions (e.g. `selectedTab`, `authState`) mutate, `_deltaTerminal` triggers `_onDeltaDirty()`, which flags `_needsSwitch = true`. The active branch in the mainstream data plane is then atomically rebound to the newly resolved `Bloom<T>` source.
 

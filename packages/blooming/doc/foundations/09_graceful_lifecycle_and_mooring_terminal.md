@@ -239,11 +239,11 @@ If no subscriber reconnects before expiration:
 
 ---
 
-### 4.4 Harmony with On-Demand Asynchronous `BloomVia` and `EffectVia` Turn Isolation
-When a node mixing in `_BloomViaEpochMixin` or `_EffectViaEpochMixin` (or owning a `RawViaTerminal`, such as `computed.future`, `computed.stream`, or dynamic `Effect.via` / `Effect.scoped.via`) is configured with a `Graceful` policy (`Graceful.microtask` or `Graceful.period`), its asynchronous tracking lifecycle cooperates seamlessly with the mooring window:
+### 4.4 Harmony with On-Demand Asynchronous `BloomVia` Turn Isolation
+When a node mixing in `_BloomViaEpochMixin` (or owning a `RawViaTerminal`, such as `computed.future` or `computed.stream`) is configured with a `Graceful` policy (`Graceful.microtask` or `Graceful.period`), its asynchronous tracking lifecycle cooperates seamlessly with the mooring window:
 
 1. **Active Retention During the Grace Window**: When the last consumer detaches, `_GracefulNodeMixin` intercepts `_deactivateOptimistically()` while `_graceHandle != null` (or keeps `_hasTargets == true` via `_MooringEdge`). Consequently, `_deactivate()` is **not** invoked during the grace window. Any in-flight asynchronous evaluation (`_viaScope == _ViaScope.async`) continues to track post-`await` dependencies normally; if a consumer remounts before expiration, the settled result and all dynamically discovered edges are immediately ready.
-2. **Stale Turn Isolation Upon True Expiration**: Only when the grace window expires without reconnection does `_deactivateOptimistically()` proceed to invoke `_deactivate()`. At that exact boundary, `_ViaEpochMixin._deactivate()` invokes `_refreshVia()` (rotating `_via = BloomVia._(this)` or `_via = EffectVia._(this)`) and resets `_viaScope = _ViaScope.closed`, isolating any lingering in-flight asynchronous turn so late post-`await` `via(...)` calls after dormancy cannot attach zombie edges to the deactivated node.
+2. **Stale Turn Isolation Upon True Expiration**: Only when the grace window expires without reconnection does `_deactivateOptimistically()` proceed to invoke `_deactivate()`. At that exact boundary, `_ViaEpochMixin._deactivate()` invokes `_refreshVia()` (rotating `_via = BloomVia._(this)`) and resets `_viaScope = _ViaScope.closed`, isolating any lingering in-flight asynchronous turn so late post-`await` `via(...)` calls after dormancy cannot attach zombie edges to the deactivated node.
 
 ---
 

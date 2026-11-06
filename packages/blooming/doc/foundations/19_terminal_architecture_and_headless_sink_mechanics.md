@@ -205,7 +205,7 @@ base class RawBloomTerminal<T> extends _RawTerminal
 ```dart
 // packages/blooming/lib/src/graph/terminal.dart
 base class RawViaTerminal<T> extends _RawTerminal 
-    with _NaryEdgeMixin<_Node>, _ViaEpochMixin, _BloomViaEpochMixin, _ViaTerminalMixin<T> {
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _ViaTerminalMixin<T> {
   RawViaTerminal(
     T Function(BloomVia via) evaluator, {
     required super.onInvalidated,
@@ -243,7 +243,7 @@ base class RawViaTerminal<T> extends _RawTerminal
 ```dart
 // packages/blooming/lib/src/graph/terminal.dart
 base class RawComputedTerminal<T> extends _RawTerminal
-    with _NaryEdgeMixin<_Node>, _ViaEpochMixin, _BloomViaEpochMixin, _BloomStateMixin<T>, 
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _BloomStateMixin<T>, 
          _PullResolver<T>, _ComputedPullMixin<T>
     implements BloomState<T> {
   RawComputedTerminal(
