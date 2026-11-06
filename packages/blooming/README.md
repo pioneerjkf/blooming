@@ -667,9 +667,9 @@ Effect.scoped([roomId.bloom], (scope) async {
   final socket = await WebSocket.connect('ws://example.com/rooms/${untracked(roomId.bloom)}');
   scope.onCleanup(socket.close);
 
-  // 2. In-flight cancellation guard: prevent stale overwrite across async gaps
+  // 2. In-flight race guard: prevent stale overwrite across async gaps
   final initialData = await socket.first;
-  if (scope.isCancelled) return; // Stale turn cancelled by newer roomId; safe exit
+  if (!scope.isCurrent) return; // Stale turn superseded by newer roomId; safe exit
 
   applyRoomData(initialData);
 });

@@ -333,7 +333,7 @@ final class EffectScopedFunctor {
   /// * Skips initial evaluation (0 runs upon construction/mount).
   /// * Executes [action] with an injected [EffectScope] in an untracked environment when any of [targets] mutate.
   /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
-  ///   is marked cancelled and its registered cleanup callbacks are executed in LIFO order.
+  ///   is disposed (marked no longer current) and its registered cleanup callbacks are executed in LIFO order.
   /// * If [guard] is provided and returns `false`, execution is skipped and [take] tickets are preserved.
   /// * If [take] is provided, executes at most [take] times and then automatically deactivates (Early Teardown).
   /// * If [onUncaughtError] is provided, it is invoked on uncaught exceptions.
@@ -382,7 +382,7 @@ final class EffectScopedFunctor {
   /// * Skips initial evaluation (0 runs upon construction/mount).
   /// * Executes [action] with an injected [EffectScope] in an untracked environment when [target] mutates.
   /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
-  ///   is marked cancelled and its registered cleanup callbacks are executed in LIFO order.
+  ///   is disposed (marked no longer current) and its registered cleanup callbacks are executed in LIFO order.
   /// * If [guard] is provided and returns `false`, execution is skipped and [take] tickets are preserved.
   /// * If [take] is provided, executes at most [take] times and then automatically deactivates (Early Teardown).
   /// * If [onUncaughtError] is provided, it is invoked on uncaught exceptions.
@@ -433,7 +433,7 @@ final class EffectScopedFunctor {
   /// teardowns and observe lifecycle state.
   ///
   /// Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
-  /// is marked cancelled and its registered cleanups are executed in LIFO order.
+  /// is disposed (marked no longer current) and its registered cleanups are executed in LIFO order.
   ///
   /// * Supports both synchronous and asynchronous (`async`) [action] closures: when [action] returns a
   ///   [Future], dependencies accessed via `via(node)` after `await` points are tracked for the latest
@@ -716,7 +716,7 @@ final class EffectThrottleFunctor {
 ///                       │
 ///                       ▼
 ///        ┌──────────────────────────────┐
-///        │      EffectScope Active      │ (isActive == true, isCancelled == false)
+///        │      EffectScope Current     │ (isCurrent == true)
 ///        │ (Registers Cleanups via RAII)│
 ///        └──────────────┬───────────────┘
 ///                       │
@@ -726,8 +726,8 @@ final class EffectThrottleFunctor {
 ///                       │                              │
 ///                       ▼                              ▼
 ///        ┌────────────────────────────────────────────────────────┐
-///        │                 EffectScope Disposed                   │ (isActive == false)
-///        │       (Executes Registered Cleanups in LIFO Order)     │ (isCancelled == true)
+///        │                 EffectScope Disposed                   │ (isCurrent == false)
+///        │       (Executes Registered Cleanups in LIFO Order)     │
 ///        └────────────────────────────────────────────────────────┘
 /// ```
 ///
@@ -738,10 +738,10 @@ final class EffectThrottleFunctor {
 /// 2. **Exception Safety during Setup**: If acquiring a second resource throws an exception,
 ///    previously registered cleanups for earlier resources remain intact and will be executed
 ///    when the scope is disposed.
-/// 3. **Cancellation & Zombie Protection**: Asynchronous or long-running tasks can inspect
-///    [isActive] and [isCancelled] to discard stale results if a newer mutation triggered.
+/// 3. **In-Flight Race Guard & Zombie Protection**: Asynchronous or long-running tasks can inspect
+///    [isCurrent] to discard stale results if a newer mutation triggered.
 /// 4. **Immediate Teardown on Stale Registration**: If [onCleanup] is invoked after this scope
-///    has already been cancelled, the cleanup executes immediately to prevent resource leaks.
+///    is no longer current, the cleanup executes immediately to prevent resource leaks.
 ///
 /// **Warning (Anti-Pattern Prevention):**
 /// - Do NOT retain [EffectScope] references across multiple effect execution turns.
@@ -775,14 +775,10 @@ final class EffectThrottleFunctor {
 /// });
 /// ```
 abstract interface class EffectScope {
-  /// Whether this execution turn is currently active and valid (neither cancelled nor deactivated).
-  bool get isActive;
+  /// Whether this execution turn is currently active and has not been superseded or disposed.
+  bool get isCurrent;
 
-  /// Whether this execution turn has been cancelled by a subsequent invalidation,
-  /// node deactivation, or lifecycle teardown.
-  bool get isCancelled;
-
-  /// Registers a synchronous cleanup callback to be executed upon turn cancellation or deactivation.
+  /// Registers a synchronous cleanup callback to be executed upon turn completion/superseding or deactivation.
   ///
   /// ## Multi-Registration & Locality of Reference (RAII)
   /// You can call [onCleanup] multiple times within a single effect turn.
@@ -815,10 +811,10 @@ abstract interface class EffectScope {
   /// * **Right before the next execution turn begins** (upon upstream mutation).
   /// * **When the effect is deactivated or unmounted** (upon scope exit / disposal).
   ///
-  /// * [cleanup]: The synchronous callback to execute when this turn is cancelled or deactivated.
+  /// * [cleanup]: The synchronous callback to execute when this turn is superseded or deactivated.
   ///
   /// **Ensures:**
-  /// * If this scope is already cancelled, executes [cleanup] immediately.
+  /// * If this scope is no longer current, executes [cleanup] immediately.
   /// * Otherwise, chains [cleanup] into the pending teardown pipeline.
   void onCleanup(void Function() cleanup);
 }

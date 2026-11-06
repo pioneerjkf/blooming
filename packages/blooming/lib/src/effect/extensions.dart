@@ -130,7 +130,7 @@ extension type const BloomEffectScope._(Iterable<Bloom> _targets) {
   /// * Skips initial evaluation (0 runs upon construction/mount).
   /// * Executes [action] with an [EffectScope] in an untracked environment when any of the scoped targets mutate.
   /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
-  ///   is marked cancelled and its registered cleanup callbacks are executed in LIFO order.
+  ///   is disposed (marked no longer current) and its registered cleanup callbacks are executed in LIFO order.
   /// * If [guard] is provided and returns `false`, execution is skipped and [take] tickets are preserved.
   /// * If [take] is provided, executes at most [take] times and then automatically deactivates (Early Teardown).
   /// * If [onUncaughtError] is provided, it is invoked when an uncaught exception is thrown in [action] or [guard].
@@ -362,7 +362,7 @@ extension type const UnaryBloomEffectScope._(Bloom _target) {
   /// * Skips initial evaluation (0 runs upon construction/mount).
   /// * Executes [action] with an [EffectScope] in an untracked environment when this node mutates.
   /// * Prior to subsequent evaluations or deactivation, the previous turn's [EffectScope]
-  ///   is marked cancelled and its registered cleanup callbacks are executed in LIFO order.
+  ///   is disposed (marked no longer current) and its registered cleanup callbacks are executed in LIFO order.
   /// * If [guard] is provided and returns `false`, execution is skipped and [take] tickets are preserved.
   /// * If [take] is provided, executes at most [take] times then automatically deactivates (Early Teardown).
   /// * If [onUncaughtError] is provided, it is invoked when an uncaught exception is thrown in [action] or [guard].

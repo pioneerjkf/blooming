@@ -9,7 +9,7 @@ import 'package:blooming/effect.dart';
 import 'package:blooming/blooming.dart';
 
 void main() {
-  group('EffectScope Lifecycle & Cancellation Suite', () {
+  group('EffectScope Lifecycle & Scope Currency Suite', () {
     test('1. effect.scoped executes with active scope via runner', () async {
       final counter = blooming(0);
       EffectScope? capturedScope;
@@ -27,12 +27,10 @@ void main() {
 
       expect(runCount, 1);
       expect(capturedScope, isNotNull);
-      expect(capturedScope!.isActive, isTrue);
-      expect(capturedScope!.isCancelled, isFalse);
+      expect(capturedScope!.isCurrent, isTrue);
 
       runner.stop();
-      expect(capturedScope!.isActive, isFalse);
-      expect(capturedScope!.isCancelled, isTrue);
+      expect(capturedScope!.isCurrent, isFalse);
     });
 
     test('2. Invariant 1: onCleanup is called before subsequent turn begins', () async {
@@ -47,8 +45,7 @@ void main() {
 
         scope.onCleanup(() {
           log.add('cleanup: $current');
-          expect(scope.isActive, isFalse);
-          expect(scope.isCancelled, isTrue);
+          expect(scope.isCurrent, isFalse);
         });
       }).start();
 
@@ -57,16 +54,15 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(log, ['run: b']);
-      expect(scopes.first.isActive, isTrue);
+      expect(scopes.first.isCurrent, isTrue);
 
       // Second trigger: should clean up previous before running new
       query.set('c');
       await Future<void>.delayed(Duration.zero);
 
       expect(log, ['run: b', 'cleanup: b', 'run: c']);
-      expect(scopes[0].isActive, isFalse);
-      expect(scopes[0].isCancelled, isTrue);
-      expect(scopes[1].isActive, isTrue);
+      expect(scopes[0].isCurrent, isFalse);
+      expect(scopes[1].isCurrent, isTrue);
 
       runner.stop();
     });
@@ -87,14 +83,13 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(cleanedUp, isFalse);
-      expect(currentScope!.isActive, isTrue);
+      expect(currentScope!.isCurrent, isTrue);
 
       // Deactivate effect
       runner.stop();
 
       expect(cleanedUp, isTrue);
-      expect(currentScope!.isActive, isFalse);
-      expect(currentScope!.isCancelled, isTrue);
+      expect(currentScope!.isCurrent, isFalse);
     });
 
     test('4. Multi-target effect.scoped with tuple', () async {
@@ -209,7 +204,7 @@ void main() {
       ]);
     });
 
-    test('7. Registering onCleanup on an already cancelled scope executes immediately', () {
+    test('7. Registering onCleanup on a scope that is no longer current executes immediately', () {
       final counter = blooming(0);
       EffectScope? storedScope;
 
@@ -221,7 +216,7 @@ void main() {
       // Wait for execution
       Future<void>.delayed(Duration.zero).then((_) {
         runner.stop();
-        expect(storedScope!.isCancelled, isTrue);
+        expect(storedScope!.isCurrent, isFalse);
 
         var called = false;
         storedScope!.onCleanup(() {
@@ -303,7 +298,7 @@ void main() {
         // Simulate async I/O
         await Future<void>.delayed(Duration(milliseconds: delayMs));
 
-        if (scope.isActive) {
+        if (scope.isCurrent) {
           receivedResults.add(currentQuery);
         }
       }).start();
@@ -320,12 +315,12 @@ void main() {
       // Wait for all async tasks to settle
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
-      // 'first' must have been aborted by scope.isActive check; only 'second' survived!
+      // 'first' must have been aborted by scope.isCurrent check; only 'second' survived!
       expect(receivedResults, ['second']);
       runner.stop();
     });
 
-    test('11. Cleanup errors after cancellation or disposal are routed to onUncaughtError', () async {
+    test('11. Cleanup errors after turn disposal or superseding are routed to onUncaughtError', () async {
       final counter = blooming(0);
       EffectScope? capturedScope;
       final errors = <Object>[];
@@ -351,7 +346,7 @@ void main() {
       expect(errors.length, 1);
       expect(errors.first, isA<StateError>());
 
-      // Calling onCleanup after cancellation also catches and forwards to onUncaughtError
+      // Calling onCleanup when scope is no longer current also catches and forwards to onUncaughtError
       capturedScope!.onCleanup(() {
         throw StateError('Late cleanup error');
       });

@@ -13,20 +13,16 @@ final class _EffectScopeImpl implements EffectScope {
   _EffectScopeImpl(this._terminal);
 
   final _Terminal _terminal;
-  bool _isCancelled = false;
+  bool _isCurrent = true;
   void Function()? _cleanup;
 
   @override
   @pragma('vm:prefer-inline')
-  bool get isActive => !_isCancelled;
-
-  @override
-  @pragma('vm:prefer-inline')
-  bool get isCancelled => _isCancelled;
+  bool get isCurrent => _isCurrent;
 
   @override
   void onCleanup(void Function() cleanup) {
-    if (_isCancelled) {
+    if (!_isCurrent) {
       try {
         cleanup();
       } catch (error, stackTrace) {
@@ -56,8 +52,8 @@ final class _EffectScopeImpl implements EffectScope {
 
   @pragma('vm:prefer-inline')
   void _dispose() {
-    if (_isCancelled) return;
-    _isCancelled = true;
+    if (!_isCurrent) return;
+    _isCurrent = false;
     final cleanup = _cleanup;
     _cleanup = null;
     if (cleanup != null) {

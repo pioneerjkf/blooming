@@ -53,7 +53,7 @@ Every side-effect in Bloom is represented as a declarative blueprint extending `
 2. **Manifest N-ary (`Effect(...)`, `targets.effect(...)`, `(a, b).effect(...)`)**:  
    Bound to an explicit collection or Dart 3 Record tuple of targets (`Bloom` nodes).
 3. **Scoped Manifest (`Effect.scoped`, `Effect.scoped.unary`)**:  
-   Provides an [`EffectScope`](../../lib/src/effect/effect.dart) for cleanups (`onCleanup`), execution turn status flags (`isActive`, `isCancelled`), and RAII lifecycle teardowns.
+   Provides an [`EffectScope`](../../lib/src/effect/effect.dart) for cleanups (`onCleanup`), execution turn status (`isCurrent`), and RAII lifecycle teardowns.
 4. **Dynamic Discovery (`Effect.via`, `Effect.scoped.via`)**:  
    Explicit dependency discovery via `EffectVia` with 1-pass monotonic epoch sweeping.
 5. **Rate-Limited Sinks (`Effect.debounce`, `Effect.throttle`)**:  
@@ -187,7 +187,7 @@ final roomManager = roomIdBloom.effect.scoped((scope) {
 // packages/blooming/lib/src/effect/_internal/_base.dart
 @override
 void onCleanup(void Function() cleanup) {
-  if (_isCancelled) {
+  if (!_isCurrent) {
     try {
       cleanup();
     } catch (error, stackTrace) {
