@@ -593,7 +593,7 @@ abstract final class BloomTypeChecker {
   }) {
     if (node == null) return false;
 
-    // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfStale(...)`
+    // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfStale(...)`, `via.exitIfInactive(...)`
     if (node is MethodInvocation) {
       final methodName = node.methodName.name;
       final isMatchingMethod = methodName == 'of' ||
@@ -601,7 +601,9 @@ abstract final class BloomTypeChecker {
           methodName == 'state' ||
           methodName == 'tether' ||
           (includeControlFlow &&
-              (methodName == 'exit' || methodName == 'exitIfStale'));
+              (methodName == 'exit' ||
+                  methodName == 'exitIfStale' ||
+                  methodName == 'exitIfInactive'));
       if (isMatchingMethod) {
         final target = node.target;
         if (target != null) {

@@ -1,3 +1,10 @@
+## 0.3.2
+
+- **Control Flow Lint Alignment**:
+  - Updated `avoid_escaping_via` and `avoid_untracked_bloom_read` rules to support `via.exitIfStale` alongside deprecated `via.exitIfInactive`.
+  - Aligned AST type checking with `_ViaScope.async` and `via.exitIfStale`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.2.
+
 ## 0.3.1
 
 - **Type Checker**:
@@ -19,7 +26,7 @@
 - **Lint Rules**: Added `avoid_async_in_computed` prohibiting passing asynchronous closures (`async`/`async*`) or `Future`/`Stream` return types to synchronous `computed()`, directing users to `computed.future()` and `computed.stream()`.
 - **Quick Fixes**: Added `ConvertToComputedAsyncFix` for `avoid_async_in_computed` to automatically convert synchronous `computed(...)` into `computed.future(...)` or `computed.stream(...)`.
 - **Lint Rules**: Refined `avoid_async_in_managed` to prohibit `Future`/`Stream` return types in `create`/`update` while preserving synchronous resources implementing `Stream` (such as `ReceivePort` and `Socket`), and permitting synchronous teardown callbacks returning `Future<void>` in `dispose`.
-- **Lint Rules**: Aligned `avoid_escaping_via` with on-demand asynchronous `BloomVia` tracking (`_ViaScope.async`), permitting post-`await` `via()` calls directly inside owning reactive closures while continuing to flag out-of-band `Timer`, `Future.then`, event callbacks, and nested async helper functions.
+- **Lint Rules**: Aligned `avoid_escaping_via` with on-demand asynchronous `BloomVia` tracking (`_ViaTrack.async`), permitting post-`await` `via()` calls directly inside owning reactive closures while continuing to flag out-of-band `Timer`, `Future.then`, event callbacks, and nested async helper functions.
 - **Type Checker**: Strengthened `BloomTypeChecker` with strict `dart:async` library origin validation for `Future`, `FutureOr`, and `Timer` symbols, preventing false-positive diagnostics on user-defined symbols.
 - **Dependencies**: Added `meta` (^1.18.0) dependency for explicit testing annotations.
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.2.5.

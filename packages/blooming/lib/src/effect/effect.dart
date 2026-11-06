@@ -778,6 +778,14 @@ abstract interface class EffectScope {
   /// Whether this execution turn is currently active and has not been superseded or disposed.
   bool get isCurrent;
 
+  /// Deprecated alias for [isCurrent].
+  @Deprecated('Use isCurrent instead. Deprecated in 0.3.2.')
+  bool get isActive;
+
+  /// Deprecated alias for `!isCurrent`.
+  @Deprecated('Use !isCurrent instead. Deprecated in 0.3.2.')
+  bool get isCancelled;
+
   /// Registers a synchronous cleanup callback to be executed upon turn superseding or deactivation.
   ///
   /// ## Multi-Registration & Locality of Reference (RAII)

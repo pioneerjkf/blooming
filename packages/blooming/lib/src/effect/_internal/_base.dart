@@ -21,6 +21,14 @@ final class _EffectScopeImpl implements EffectScope {
   bool get isCurrent => _isCurrent;
 
   @override
+  @pragma('vm:prefer-inline')
+  bool get isActive => _isCurrent;
+
+  @override
+  @pragma('vm:prefer-inline')
+  bool get isCancelled => !_isCurrent;
+
+  @override
   void onCleanup(void Function() cleanup) {
     if (!_isCurrent) {
       try {

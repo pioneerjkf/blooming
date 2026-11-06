@@ -28,9 +28,17 @@ void main() {
       expect(runCount, 1);
       expect(capturedScope, isNotNull);
       expect(capturedScope!.isCurrent, isTrue);
+      // ignore: deprecated_member_use_from_same_package
+      expect(capturedScope!.isActive, isTrue);
+      // ignore: deprecated_member_use_from_same_package
+      expect(capturedScope!.isCancelled, isFalse);
 
       runner.stop();
       expect(capturedScope!.isCurrent, isFalse);
+      // ignore: deprecated_member_use_from_same_package
+      expect(capturedScope!.isActive, isFalse);
+      // ignore: deprecated_member_use_from_same_package
+      expect(capturedScope!.isCancelled, isTrue);
     });
 
     test('2. Invariant 1: onCleanup is called before subsequent turn begins', () async {

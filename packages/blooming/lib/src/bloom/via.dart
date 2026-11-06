@@ -252,9 +252,13 @@ final class BloomVia {
   /// ```
   @pragma('vm:prefer-inline')
   void exitIfStale({Object? emptyReason}) {
-    if (!identical(_node._via, this) ||
-        _node._viaScope == _ViaScope.closed) {
+    if (!identical(_node._via, this) || _node._viaScope == _ViaScope.closed) {
       exit(emptyReason: emptyReason);
     }
   }
+
+  /// Deprecated alias for [exitIfStale].
+  @Deprecated('Use exitIfStale instead. Deprecated in 0.3.2.')
+  @pragma('vm:prefer-inline')
+  void exitIfInactive({Object? emptyReason}) => exitIfStale(emptyReason: emptyReason);
 }

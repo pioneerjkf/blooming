@@ -172,7 +172,13 @@ base class RawViaTerminal<T> extends _RawTerminal
 /// totalTerminal.deactivate();
 /// ```
 base class RawComputedTerminal<T> extends _RawTerminal
-    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _ComputedPullMixin<T>
+    with
+        _NaryEdgeMixin<_Node>,
+        _ViaEpochMixin<BloomVia>,
+        _BloomViaEpochMixin,
+        _BloomStateMixin<T>,
+        _PullResolver<T>,
+        _ComputedPullMixin<T>
     implements BloomState<T> {
   /// Creates a [RawComputedTerminal] with the given compute callback and invalidation listener.
   ///

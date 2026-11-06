@@ -15,4 +15,3 @@ base mixin _BloomViaEpochMixin on _ViaEpochMixin<BloomVia> {
     _via = BloomVia._(this);
   }
 }
-

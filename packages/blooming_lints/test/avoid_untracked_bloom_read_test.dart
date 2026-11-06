@@ -457,8 +457,7 @@ void testExitData() {
       expect(visitor.untrackedNodes.length, equals(1));
     });
 
-    test('detects untracked read inside via.exitIfStale(emptyReason: ...)',
-        () {
+    test('detects untracked read inside via.exitIfStale(emptyReason: ...)', () {
       final unit = parseString(content: '''
 void testExitIfStale() {
   final result = computed.future((via) async {

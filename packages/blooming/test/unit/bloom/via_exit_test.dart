@@ -241,6 +241,44 @@ void main() {
         expect(postAwaitExecuted, isTrue);
         expect(untracked(node), 42);
       });
+
+      test('3.5 deprecated exitIfInactive delegates to exitIfStale', () async {
+        final query = blooming('first');
+        final completerFirst = Completer<void>();
+        final executionLog = <String>[];
+
+        final futureBloom = computed.future<String>((via) async {
+          final q = via(query.bloom);
+          if (q == 'first') {
+            await completerFirst.future;
+          } else {
+            await Future<void>.delayed(Duration.zero);
+          }
+          // ignore: deprecated_member_use_from_same_package
+          via.exitIfInactive(emptyReason: 'StaleQuery');
+          executionLog.add('finish:$q');
+          return 'Result for $q';
+        });
+
+        final terminal = RawBloomTerminal<String>(
+          futureBloom,
+          onInvalidated: () {},
+        );
+        terminal.activate();
+
+        expect(terminal.dataOrNull, isNull);
+
+        query.set('second');
+        await Future<void>.delayed(Duration.zero);
+
+        completerFirst.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(executionLog, isNot(contains('finish:first')));
+        expect(terminal.data, 'Result for second');
+
+        terminal.deactivate();
+      });
     });
 
     // =========================================================================

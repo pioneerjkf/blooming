@@ -1,3 +1,16 @@
+## 0.3.2
+
+- **Graph Engine & Tracking Optimization (`_ViaEpochMixin<V>`)**:
+  - Decoupled `_BloomViaEpochMixin` and `_EffectViaEpochMixin` into independent sibling mixins sharing common dynamic epoch-sweeping mechanics via generic `_ViaEpochMixin<V>`, unifying tracker fields into a single `_via` instance without downcasting or heap overhead.
+  - Renamed tracking mode to `_ViaScope` (`closed`, `sync`, `async`) and decoupled result processing via `_switchViaScope`.
+- **Dormant Asynchronous Evaluation Resilience (`exitIfStale`)**:
+  - Replaced `BloomVia.exitIfInactive` with `BloomVia.exitIfStale` to prevent premature short-circuiting during on-demand asynchronous evaluations on dormant nodes.
+  - Retained `BloomVia.exitIfInactive` as a `@Deprecated` alias for backward compatibility.
+- **EffectScope Scope Currency API (`EffectScope.isCurrent`)**:
+  - Introduced `EffectScope.isCurrent` getter to provide a single, unambiguous check for turn currency across asynchronous gaps.
+  - Retained `EffectScope.isActive` and `EffectScope.isCancelled` as `@Deprecated` aliases for backward compatibility.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.2.
+
 ## 0.3.1
 
 - **Unified Collection Controllers (`BloomCollectionController`)**:
@@ -27,11 +40,10 @@
 ## 0.2.5
 
 - **On-Demand Asynchronous Tracking & Turn Isolation**:
-  - Enabled post-`await` and post-`yield` dependency tracking via `BloomVia` (for `computed.future`, `computed.stream`) and `EffectVia` (for `Effect.via`, `Effect.scoped.via`) through `_ViaScope` (`closed`, `sync`, `async`) and `_switchViaScope`.
+  - Enabled post-`await` and post-`yield` dependency tracking via `BloomVia` (for `computed.future`, `computed.stream`) and `EffectVia` (for `Effect.via`, `Effect.scoped.via`) through `_ViaTrack` (`closed`, `sync`, `async`) and `_resultViaTrack`.
   - Enforced strict turn isolation by rotating tracker instances (`BloomVia` / `EffectVia`) on demand when a new epoch begins or the node deactivates while an asynchronous turn is in flight, preventing stale turns from mutating the active dependency graph.
   - Propagated post-`await` / post-`yield` `_ViaShortCircuit` exceptions in `_DeLorean`, `_PragueVltava`, `_ViaEffectTerminal`, and `_HandledViaEffectTerminal`.
   - Unified `BloomVia` into a single concrete `final class` and merged dependency-tracking dispatch to eliminate polymorphic call overhead on the synchronous hot path.
-  - Decoupled `_BloomViaEpochMixin` and `_EffectViaEpochMixin` into independent sibling mixins sharing common dynamic epoch-sweeping mechanics via generic `_ViaEpochMixin<V>`, unifying tracker fields into a single `_via` instance without downcasting or heap bloat.
 - **Native `FutureOr<T>` Support in `computed.future`**:
   - Accepted `FutureOr<T> Function(BloomVia via) compute` in `computed.future`, enabling 0ms synchronous instant resolution (Fast-Path) when returning synchronous values (e.g. cache hits) without microtask latency.
   - Refined `Future` instance validation and dynamic subtype unwrapping, ensuring untyped or dynamic futures resolve safely through `_FutureBloomBridge`.

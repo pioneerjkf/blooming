@@ -14,4 +14,3 @@ base mixin _EffectViaEpochMixin on _ViaEpochMixin<EffectVia> {
     _via = EffectVia._(this);
   }
 }
-
