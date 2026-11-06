@@ -306,7 +306,7 @@ final class _EffectGroupTerminal extends _Terminal with _NaryEdgeMixin<_Node> {
 
 /// Internal terminal executing dynamic [EffectVia] tracking effects with `_Scheduler` batching.
 base class _ViaEffectTerminal extends _Terminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _EffectViaEpochMixin, _ScheduledTerminalMixin {
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<EffectVia>, _EffectViaEpochMixin, _ScheduledTerminalMixin {
   _ViaEffectTerminal(
     FutureOr<void> Function(EffectVia via) action, {
     bool Function(EffectVia via)? guard,
@@ -332,9 +332,10 @@ base class _ViaEffectTerminal extends _Terminal
     var succeeded = true;
     try {
       if (_guard case final guard?) {
-        if (!guard(_effectVia)) return;
+        if (!guard(_via)) return;
       }
-      final result = _resultViaTrack(_action(_effectVia));
+      final result = _action(_via);
+      _switchViaScope(result);
       if (result is Future) {
         result.then(
           (_) {},
@@ -372,7 +373,7 @@ base class _ViaEffectTerminal extends _Terminal
 
 /// Internal terminal executing dynamic [EffectVia] tracking handled effects providing [EffectScope].
 base class _HandledViaEffectTerminal extends _Terminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _EffectViaEpochMixin, _ScheduledTerminalMixin {
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<EffectVia>, _EffectViaEpochMixin, _ScheduledTerminalMixin {
   _HandledViaEffectTerminal(
     FutureOr<void> Function(EffectVia via, EffectScope scope) action, {
     bool Function(EffectVia via)? guard,
@@ -407,13 +408,14 @@ base class _HandledViaEffectTerminal extends _Terminal
     var succeeded = true;
     try {
       if (_guard case final guard?) {
-        if (!guard(_effectVia)) return;
+        if (!guard(_via)) return;
       }
       _currentScope?._dispose();
       final scope = _EffectScopeImpl(this);
       _currentScope = scope;
 
-      final result = _resultViaTrack(_action(_effectVia, scope));
+      final result = _action(_via, scope);
+      _switchViaScope(result);
       if (result is Future) {
         result.then(
           (_) {},

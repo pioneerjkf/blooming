@@ -29,7 +29,7 @@ void setup() {
       }));
 
       expect(viaCalls.length, equals(2));
-      // Both pre-await and post-await via() calls in the owning closure are tracked via _ViaTrack.async
+      // Both pre-await and post-await via() calls in the owning closure are tracked via _ViaScope.async
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isFalse);
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
     });

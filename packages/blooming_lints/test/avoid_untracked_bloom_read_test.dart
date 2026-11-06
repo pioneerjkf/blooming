@@ -457,13 +457,13 @@ void testExitData() {
       expect(visitor.untrackedNodes.length, equals(1));
     });
 
-    test('detects untracked read inside via.exitIfInactive(emptyReason: ...)',
+    test('detects untracked read inside via.exitIfStale(emptyReason: ...)',
         () {
       final unit = parseString(content: '''
-void testExitIfInactive() {
+void testExitIfStale() {
   final result = computed.future((via) async {
     await fetch();
-    via.exitIfInactive(emptyReason: untracked(reasonBloom));
+    via.exitIfStale(emptyReason: untracked(reasonBloom));
     return 42;
   });
 }

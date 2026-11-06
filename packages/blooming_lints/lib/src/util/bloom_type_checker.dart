@@ -575,7 +575,7 @@ abstract final class BloomTypeChecker {
     return false;
   }
 
-  /// Returns `true` if the invocation represents a call to `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, `via.exit(...)`, `via.exitIfInactive(...)`, or `via.of(context)` / `via.maybeOf(context)`.
+  /// Returns `true` if the invocation represents a call to `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, `via.exit(...)`, `via.exitIfStale(...)`, or `via.of(context)` / `via.maybeOf(context)`.
   static bool isBloomViaInvocation(AstNode? node) =>
       _isBloomViaInvocationInternal(node, includeControlFlow: true);
 
@@ -583,7 +583,7 @@ abstract final class BloomTypeChecker {
   /// `via(bloom)`, `via.state(bloom)`, `via.tether(effect)`, or `via.of(context)` / `via.maybeOf(context)`.
   ///
   /// Unlike [isBloomViaInvocation], this explicitly excludes control-flow termination methods
-  /// such as `via.exit(...)` and `via.exitIfInactive(...)`, which do not register reactive dependencies.
+  /// such as `via.exit(...)` and `via.exitIfStale(...)`, which do not register reactive dependencies.
   static bool isBloomViaTrackingInvocation(AstNode? node) =>
       _isBloomViaInvocationInternal(node, includeControlFlow: false);
 
@@ -593,7 +593,7 @@ abstract final class BloomTypeChecker {
   }) {
     if (node == null) return false;
 
-    // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfInactive(...)`
+    // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfStale(...)`
     if (node is MethodInvocation) {
       final methodName = node.methodName.name;
       final isMatchingMethod = methodName == 'of' ||
@@ -601,7 +601,7 @@ abstract final class BloomTypeChecker {
           methodName == 'state' ||
           methodName == 'tether' ||
           (includeControlFlow &&
-              (methodName == 'exit' || methodName == 'exitIfInactive'));
+              (methodName == 'exit' || methodName == 'exitIfStale'));
       if (isMatchingMethod) {
         final target = node.target;
         if (target != null) {

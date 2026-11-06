@@ -27,10 +27,11 @@
 ## 0.2.5
 
 - **On-Demand Asynchronous Tracking & Turn Isolation**:
-  - Enabled post-`await` and post-`yield` dependency tracking via `BloomVia` (for `computed.future`, `computed.stream`) and `EffectVia` (for `Effect.via`, `Effect.scoped.via`) through `_ViaTrack` (`closed`, `sync`, `async`) and `_resultViaTrack`.
+  - Enabled post-`await` and post-`yield` dependency tracking via `BloomVia` (for `computed.future`, `computed.stream`) and `EffectVia` (for `Effect.via`, `Effect.scoped.via`) through `_ViaScope` (`closed`, `sync`, `async`) and `_switchViaScope`.
   - Enforced strict turn isolation by rotating tracker instances (`BloomVia` / `EffectVia`) on demand when a new epoch begins or the node deactivates while an asynchronous turn is in flight, preventing stale turns from mutating the active dependency graph.
   - Propagated post-`await` / post-`yield` `_ViaShortCircuit` exceptions in `_DeLorean`, `_PragueVltava`, `_ViaEffectTerminal`, and `_HandledViaEffectTerminal`.
   - Unified `BloomVia` into a single concrete `final class` and merged dependency-tracking dispatch to eliminate polymorphic call overhead on the synchronous hot path.
+  - Decoupled `_BloomViaEpochMixin` and `_EffectViaEpochMixin` into independent sibling mixins sharing common dynamic epoch-sweeping mechanics via generic `_ViaEpochMixin<V>`, unifying tracker fields into a single `_via` instance without downcasting or heap bloat.
 - **Native `FutureOr<T>` Support in `computed.future`**:
   - Accepted `FutureOr<T> Function(BloomVia via) compute` in `computed.future`, enabling 0ms synchronous instant resolution (Fast-Path) when returning synchronous values (e.g. cache hits) without microtask latency.
   - Refined `Future` instance validation and dynamic subtype unwrapping, ensuring untyped or dynamic futures resolve safely through `_FutureBloomBridge`.

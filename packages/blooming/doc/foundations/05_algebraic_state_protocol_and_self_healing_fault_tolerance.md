@@ -128,7 +128,8 @@ _BloomState<T> _pull() {
   var succeeded = true;
   try {
     _computation.guard(_via);
-    final result = _resultViaTrack(_computation.compute(_via));
+    final result = _computation.compute(_via);
+    _switchViaScope(result);
     final current = _state;
     if (current case final _ValidBloomState<T> s) {
       s.update(result);

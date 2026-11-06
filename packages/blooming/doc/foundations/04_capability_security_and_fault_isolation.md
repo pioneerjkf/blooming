@@ -188,7 +188,8 @@ _BloomState<T> _pull() {
   var succeeded = true;
   try {
     _computation.guard(_via);
-    final result = _resultViaTrack(_computation.compute(_via));
+    final result = _computation.compute(_via);
+    _switchViaScope(result);
     final current = _state;
     if (current case final _ValidBloomState<T> s) {
       s.update(result);
@@ -343,7 +344,7 @@ In frameworks relying on global active-observer stacks:
 ### 5.2 Architectural Guarantees of `BloomVia`
 
 * **Compile-Time Traceability & Final Concrete Type**: `BloomVia` is a `final class` with a private constructor, ensuring dependencies are declared explicitly through the injected `via(...)` handle with zero polymorphic dispatch overhead.
-* **Epoch-Scoped & Turn-Isolated Confinement**: Synchronous evaluation passes close tracking immediately upon return (`_ViaTrack.closed`), blocking escaped closures. Asynchronous evaluations (`Future`/`Stream`) track post-`await` and post-`yield` `via(...)` calls strictly for the latest active turn (`identical(_via, via)`), isolating superseded turns and deactivated scopes automatically.
+* **Epoch-Scoped & Turn-Isolated Confinement**: Synchronous evaluation passes close tracking immediately upon return (`_ViaScope.closed`), blocking escaped closures. Asynchronous evaluations (`Future`/`Stream`) track post-`await` and post-`yield` `via(...)` calls strictly for the latest active turn (`identical(_via, via)`), isolating superseded turns and deactivated scopes automatically.
 * **Automatic Short-Circuit Gating**: Calling `via(source)` evaluates upstream state. If the target is non-data, `via` throws `_ViaShortCircuit` immediately, terminating downstream execution before arithmetic errors or null-pointer crashes occur.
 
 ---

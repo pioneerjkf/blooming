@@ -16,7 +16,7 @@ part of '../framework.dart';
 final class EffectVia {
   EffectVia._(this._node);
 
-  final _BloomViaEpochMixin _node;
+  final _EffectViaEpochMixin _node;
 
   /// Scoped watch function that tracks [bloom] as an upstream dependency
   /// and returns its underlying valid data payload of type [T].

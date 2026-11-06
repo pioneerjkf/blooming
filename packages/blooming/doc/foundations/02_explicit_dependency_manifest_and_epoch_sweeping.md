@@ -19,7 +19,7 @@ However, in large-scale production applications and high-throughput Flutter envi
 3. **Memory Leaks and Ghost Computations from Stale Dependencies**:
    In conditional branches (`condition ? a : b`), when conditions flip, nodes from previously active branches (`b`) remain bound as listeners unless expensive differential reconciliation is performed, leading to zombie subscriptions and ghost recomputations.
 
-The Bloom Framework resolves these challenges using an **Explicit Dependency Manifest ([`BloomVia`](../../lib/src/bloom/via.dart))** and a **1-Pass Epoch Sweeping** algorithm ([`_BloomViaEpochMixin`](../../lib/src/graph/_internal/_via.dart#L55)).
+The Bloom Framework resolves these challenges using an **Explicit Dependency Manifest ([`BloomVia`](../../lib/src/bloom/via.dart))** and a **1-Pass Epoch Sweeping** algorithm ([`_ViaEpochMixin`](../../lib/src/graph/_internal/_via.dart)).
 
 ---
 
@@ -107,7 +107,7 @@ Traditional reactive frameworks allocate previous and next dependency collection
 
 ### 3.2 1-Pass Monotonic Epoch Sweeping in Bloom
 
-Bloom implements dependency tracking via [`_BloomViaEpochMixin`](../../lib/src/graph/_internal/_via.dart#L55) on an intrusive doubly linked list of [`_Edge`](../../lib/src/graph/_internal/_edge.dart#L17) structures (`_sourceHead`, `_sourceTail`, `_prevSource`, `_nextSource`). By tracking a monotonically incrementing integer field (`_epoch`) per node and a timestamp (`_seenEpoch`) on each edge, Bloom eliminates set allocations and performs pruning in **zero heap allocations and $O(\text{edges})$ linear time**.
+Bloom implements dependency tracking via [`_ViaEpochMixin`](../../lib/src/graph/_internal/_via.dart) on an intrusive doubly linked list of [`_Edge`](../../lib/src/graph/_internal/_edge.dart#L17) structures (`_sourceHead`, `_sourceTail`, `_prevSource`, `_nextSource`). By tracking a monotonically incrementing integer field (`_epoch`) per node and a timestamp (`_seenEpoch`) on each edge, Bloom eliminates set allocations and performs pruning in **zero heap allocations and $O(\text{edges})$ linear time**.
 
 Furthermore, Bloom incorporates an **$O(1)$ Sequential Cursor Fast-Path Optimization** for the 99% common case where dependency access order remains stable.
 
@@ -252,34 +252,34 @@ Because [`BloomVia`](../../lib/src/bloom/via.dart) is passed as an explicit lexi
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│            On-Demand _ViaTrack State Machine & Stale Turn Isolation             │
+│             On-Demand _ViaScope State Machine & Stale Turn Isolation            │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
 │  [1. Synchronous Evaluation (computed / managed / switched / sync Effect.via)]  │
-│      _beginEpoch() ──► _viaTrack = _ViaTrack.sync (reuses identical _via: 0 B)  │
-│      _endEpoch()   ──► _viaTrack = _ViaTrack.closed & _sweepObsoleteEdges()     │
-│      • Any leaked/escaped Future(() => via(x)) sees _ViaTrack.closed -> Ignored │
+│      _beginEpoch() ──► _viaScope = _ViaScope.sync (reuses identical _via: 0 B)   │
+│      _endEpoch()   ──► _viaScope = _ViaScope.closed & _sweepObsoleteEdges()      │
+│      • Any leaked/escaped Future(() => via(x)) sees _ViaScope.closed -> Ignored │
 │                                                                                 │
 │  [2. Asynchronous Evaluation (computed.future / computed.stream / async Effect)]│
-│      _beginEpoch() ──► If prior _viaTrack == async: rotates tracker (_refreshVia)│
-│      _resultViaTrack(result) ──► result is Future/Stream -> _ViaTrack.async     │
-│      _endEpoch()   ──► Keeps _ViaTrack.async & runs _sweepObsoleteEdges() NOW   │
-│      • Post-await / post-yield via(x) on latest turn: identical(_activeVia, via)│
-│      • Post-await via(x) on superseded turn: !identical(_activeVia, via)->Ignore│
+│      _beginEpoch() ──► If prior _viaScope == async: rotates tracker (_refreshVia)│
+│      _switchViaScope(result) ──► result is Future/Stream -> _ViaScope.async      │
+│      _endEpoch()   ──► Keeps _ViaScope.async & runs _sweepObsoleteEdges() NOW    │
+│      • Post-await / post-yield via(x) on latest turn: identical(_via, via)       │
+│      • Post-await via(x) on superseded turn: !identical(_via, via)->Ignore       │
 │      • _deactivate() while awaiting: rotates tracker & sets closed -> Ignored   │
 │                                                                                 │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Key Mechanics of [`_ViaTrack`](../../lib/src/graph/_internal/_via.dart):
-1. **Zero-Allocation Synchronous Invariant (`_ViaTrack.sync` -> `_ViaTrack.closed`)**:
-   Synchronous evaluations never allocate new tracker instances. `_beginEpoch()` sets `_viaTrack = _ViaTrack.sync` and reuses the node's single tracker instance (`_via` or `_effectVia`). Upon synchronous return, `_endEpoch()` transitions `_viaTrack` to `_ViaTrack.closed`, blocking any illegally escaped dependency registrations (`Future(() => via(other))`) with zero heap allocations.
+#### Key Mechanics of [`_ViaScope`](../../lib/src/graph/_internal/_via.dart):
+1. **Zero-Allocation Synchronous Invariant (`_ViaScope.sync` -> `_ViaScope.closed`)**:
+   Synchronous evaluations never allocate new tracker instances. `_beginEpoch()` sets `_viaScope = _ViaScope.sync` and reuses the node's single tracker instance (`_via`). Upon synchronous return, `_endEpoch()` transitions `_viaScope` to `_ViaScope.closed`, blocking any illegally escaped dependency registrations (`Future(() => via(other))`) with zero heap allocations.
    > [!WARNING]
-   > While **dependency registration** is silently ignored after an epoch closes, control-flow methods ([`BloomVia.exit`](../../lib/src/bloom/via.dart) and [`BloomVia.exitIfInactive`](../../lib/src/bloom/via.dart) when inactive) and evaluating empty/error nodes via `via(...)` unconditionally throw the internal short-circuit sentinel (`_ViaShortCircuit`). If invoked outside the framework's evaluation scope (e.g., from an escaped timer callback or UI event), no framework resolver is present to trap the sentinel, resulting in an unhandled `Error`.
-2. **On-Demand Asynchronous Detection (`_resultViaTrack`)**:
-   When the evaluated closure returns a `Future` or `Stream`, `_resultViaTrack` transitions `_viaTrack` to `_ViaTrack.async`, keeping dependency registration open across sequential `await`, `yield`, and `yield*` boundaries for that active tracker instance. Late-discovered edges immediately resolve the upstream node (`source._resolve()`) and synchronize `edge._pulledVersion = source._version`.
+   > While **dependency registration** is silently ignored after an epoch closes, control-flow methods ([`BloomVia.exit`](../../lib/src/bloom/via.dart) and [`BloomVia.exitIfStale`](../../lib/src/bloom/via.dart) when stale) and evaluating empty/error nodes via `via(...)` unconditionally throw the internal short-circuit sentinel (`_ViaShortCircuit`). If invoked outside the framework's evaluation scope (e.g., from an escaped timer callback or UI event), no framework resolver is present to trap the sentinel, resulting in an unhandled `Error`.
+2. **On-Demand Asynchronous Detection (`_switchViaScope`)**:
+   When the evaluated closure returns a `Future` or `Stream`, `_switchViaScope(result)` transitions `_viaScope` to `_ViaScope.async`, keeping dependency registration open across sequential `await`, `yield`, and `yield*` boundaries for that active tracker instance. Late-discovered edges immediately resolve the upstream node (`source._resolve()`) and synchronize `edge._pulledVersion = source._version`.
 3. **Stale Turn & Deactivation Quarantine**:
-   If an upstream dependency mutates while an asynchronous evaluation is still awaiting, the next `_beginEpoch()` detects `_viaTrack == _ViaTrack.async` and allocates a fresh tracker instance via `_refreshVia()` (`BloomVia._(this)` or `EffectVia._(this)`). When the superseded turn eventually resumes from `await` and invokes its captured old `via`, `_trackDependency` checks `identical(_activeVia, via)`, sees `false`, and ignores the registration. Similarly, if the node deactivates (`_deactivate()`) mid-flight, the tracker is rotated and `_viaTrack` is set to `_ViaTrack.closed`.
+   If an upstream dependency mutates while an asynchronous evaluation is still awaiting, the next `_beginEpoch()` detects `_viaScope == _ViaScope.async` and allocates a fresh tracker instance via `_refreshVia()` (`BloomVia._(this)` or `EffectVia._(this)`). When the superseded turn eventually resumes from `await` and invokes its captured old `via`, `_trackDependency` checks `identical(_via, via)`, sees `false`, and ignores the registration. Similarly, if the node deactivates (`_deactivate()`) mid-flight, the tracker is rotated and `_viaScope` is set to `_ViaScope.closed`.
 4. **Immediate `_sweepObsoleteEdges` Livelock Prevention**:
    Crucially, `_endEpoch()` executes `_sweepObsoleteEdges` **immediately when the `Future` or `Stream` is returned**, rather than deferring the sweep until the `Future` completes. Deferring edge pruning until async completion would leave obsolete high-frequency upstream edges from a previous branch attached while the new branch is awaiting—causing the obsolete branch to repeatedly invalidate and restart the node in an infinite livelock (starvation) before the new `Future` can ever settle.
 5. **Asynchronous `_ViaShortCircuit` Forwarding**:
@@ -366,7 +366,7 @@ The Bloom Framework guards against this at compile time via `package:blooming_li
 5. **Short-Circuit Clean Sweeping**:  
    When a short-circuit sentinel ([`_ViaShortCircuit`](../../lib/src/graph/_internal/_via.dart)) is thrown, `succeeded: true` ensures that previously active edges for dead branches are swept immediately while preserving upstream error/empty diagnostics.
 6. **On-Demand Asynchronous Turn Isolation**:  
-   Synchronous evaluations reuse a single tracker instance (`BloomVia` or `EffectVia`) with zero heap allocations (`_ViaTrack.sync` -> `_ViaTrack.closed`), whereas `Future`/`Stream`-returning evaluations keep tracking open for the latest turn (`_ViaTrack.async`) and isolate superseded turns on `_beginEpoch` or `_deactivate`.
+   Synchronous evaluations reuse a single tracker instance (`BloomVia` or `EffectVia`) with zero heap allocations (`_ViaScope.sync` -> `_ViaScope.closed`), whereas `Future`/`Stream`-returning evaluations keep tracking open for the latest turn (`_ViaScope.async`) and isolate superseded turns on `_beginEpoch` or `_deactivate`.
 
 ---
 

@@ -7,7 +7,7 @@ part of '../../framework.dart';
 // ignore_for_file: must_call_super
 
 abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
-    with _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
+    with _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
     implements Bloom<T> {
   _ManagedBloom({
     void Function(BloomVia via)? guard,
@@ -49,7 +49,8 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
       final currentState = _state;
       if (currentState != null && currentState.hasData && _updateResource != null) {
         final current = currentState.data;
-        final next = _resultViaTrack(_updateResource.call(_via, current));
+        final next = _updateResource.call(_via, current);
+        _switchViaScope(next);
         _version++;
         if (!identical(current, next)) {
           try {
@@ -66,7 +67,8 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
         }
       } else {
         _disposeCurrent();
-        final res = _resultViaTrack(_createResource.call(_via));
+        final res = _createResource.call(_via);
+        _switchViaScope(res);
         _version++;
         return _state = _ValidBloomState(res);
       }

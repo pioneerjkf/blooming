@@ -48,7 +48,7 @@ Nodes powered by `_DeltaBloom<T>` (`switched`, `computed.future`, `computed.stre
 
 ### 2.2 Lateral Control Plane (`_deltaTerminal`)
 * **Responsibility**: Observes no payload data; purely evaluates **structural mutation deltas ($\Delta$)**: *which upstream source node must couple to the mainstream pipeline?*
-* **Topology**: Modeled as an intrusive `RawViaTerminal<Bloom<T>>` mixing in `_NaryEdgeMixin<_Node>`, `_BloomViaEpochMixin`, and `_ViaTerminalMixin<Bloom<T>>`.
+* **Topology**: Modeled as an intrusive `RawViaTerminal<Bloom<T>>` mixing in `_NaryEdgeMixin<_Node>`, `_ViaEpochMixin`, `_BloomViaEpochMixin`, and `_ViaTerminalMixin<Bloom<T>>`.
 * **Mechanics**:  
   When lateral routing conditions (e.g. `selectedTab`, `authState`) mutate, `_deltaTerminal` triggers `_onDeltaDirty()`, which flags `_needsSwitch = true`. The active branch in the mainstream data plane is then atomically rebound to the newly resolved `Bloom<T>` source.
 
@@ -320,7 +320,7 @@ void _deactivate() {
 * **Zero Retention**: Both planes release their upstream connections completely. Upstream subgraphs enter true cold dormancy, stopping timers, closing stream subscriptions, and becoming immediately eligible for garbage collection.
 
 ### 5.4 Control Plane 1-Pass Monotonic Epoch Sweeping
-Inside `_deltaTerminal` (`RawViaTerminal`), dynamic dependencies observed across conditional branches are maintained via `_BloomViaEpochMixin`:
+Inside `_deltaTerminal` (`RawViaTerminal`), dynamic dependencies observed across conditional branches are maintained via `_ViaEpochMixin`:
 ```dart
 // packages/blooming/lib/src/graph/_internal/_via.dart
 void _sweepObsoleteEdges(int currentEpoch, {required bool commitVersions}) {
@@ -519,7 +519,7 @@ Where `switched` provides **declarative routing** conditioned on reactive state,
 | **Data/Control Plane Decoupling** | Payload stream ($V$) and routing vector ($\Delta$) execute on independent, orthogonal DAG planes. | [`_DeltaBloom`](../../lib/src/bloom/_internal/_delta.dart), [`RawViaTerminal`](../../lib/src/graph/terminal.dart) | [`switched_test.dart` (test 1)](../../test/unit/bloom/switched_test.dart) |
 | **Atomic Intrusive Pointer Swap** | Old source detached and new source attached via $O(1)$ zero-allocation pointer update. | [`_CoupledUnaryRelay._didUpdateSource`](../../lib/src/graph/_internal/_relay.dart) | [`coupler_test.dart` (1.1, 1.2)](../../test/unit/bloom/coupler_test.dart) |
 | **Short-Circuit Fault Propagation** | Upstream empty/error states inside selector trapped via `_ViaShortCircuit` and coupled safely. | [`_DeltaBloom._performSwitchGuarded`](../../lib/src/bloom/_internal/_delta.dart) | [`switched_test.dart`](../../test/unit/bloom/switched_test.dart) |
-| **1-Pass Monotonic Epoch Sweeping** | Obsolete control-plane edges detached and retained edge versions committed in a single $O(N)$ pass. | [`_BloomViaEpochMixin._sweepObsoleteEdges`](../../lib/src/graph/_internal/_via.dart) | [`switched_test.dart` (test 2)](../../test/unit/bloom/switched_test.dart) |
+| **1-Pass Monotonic Epoch Sweeping** | Obsolete control-plane edges detached and retained edge versions committed in a single $O(N)$ pass. | [`_ViaEpochMixin._sweepObsoleteEdges`](../../lib/src/graph/_internal/_via.dart) | [`switched_test.dart` (test 2)](../../test/unit/bloom/switched_test.dart) |
 | **Dual-Plane Inactive Cold Dormancy** | Both data-plane and control-plane edges severed upon zero downstream subscribers. | [`_DeltaBloom._deactivate`](../../lib/src/bloom/_internal/_delta.dart) | [`coupler_test.dart` (3.3)](../../test/unit/bloom/coupler_test.dart) |
 | **Eager Preemptive Microtask Switch** | Active eager nodes queue microtask via `_Scheduler` and broadcast via `_PushScope.queueOrigin`. | [`_EagerDeltaBloom`](../../lib/src/bloom/_internal/_delta.dart) | [`async_computed_test.dart`](../../test/unit/bloom/async_computed_test.dart) |
 | **Imperative Relay Socket Continuity** | Upstream sources hot-swapped without disrupting downstream subscriptions or unmounting widgets. | [`BloomCoupler`](../../lib/src/bloom/coupler.dart), [`_CoupledBloom`](../../lib/src/bloom/_internal/_coupler.dart) | [`coupler_test.dart` (1.1, 4.1)](../../test/unit/bloom/coupler_test.dart) |

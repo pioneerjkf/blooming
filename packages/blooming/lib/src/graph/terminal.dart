@@ -101,7 +101,7 @@ abstract interface class RawTerminal implements LpdagStatus {
 /// terminal.deactivate();
 /// ```
 base class RawViaTerminal<T> extends _RawTerminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ViaTerminalMixin<T> {
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _ViaTerminalMixin<T> {
   /// Creates a synchronous [RawViaTerminal] with the given evaluator and invalidation listener.
   ///
   /// * [evaluator]: The computation closure receiving an injected [BloomVia] dependency tracker.
@@ -172,7 +172,7 @@ base class RawViaTerminal<T> extends _RawTerminal
 /// totalTerminal.deactivate();
 /// ```
 base class RawComputedTerminal<T> extends _RawTerminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _ComputedPullMixin<T>
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _ComputedPullMixin<T>
     implements BloomState<T> {
   /// Creates a [RawComputedTerminal] with the given compute callback and invalidation listener.
   ///

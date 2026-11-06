@@ -11,13 +11,13 @@ part of '../../../blooming_lints.dart';
 /// `BloomVia` or `EffectVia` (`via(node)`) is bound to the evaluation turn of its owning reactive scope
 /// (`computed`, `computed.future`, `computed.stream`, `Effect.via`, `BloomWidget`, etc.).
 /// While direct `async` / `async*` reactive closures support post-`await` and post-`yield`
-/// tracking within the same turn via on-demand asynchronous tracking (`_ViaTrack.async`),
+/// tracking within the same turn via on-demand asynchronous tracking (`_ViaScope.async`),
 /// escaping `via(...)` into out-of-band timers (`Timer.run`, `Timer.periodic`, `scheduleMicrotask`,
 /// `Future.delayed`, `future.then`), UI event callbacks (`onPressed`), or unawaited nested
 /// `async` helper functions causes:
 /// 1. **Dropped Dependencies**: Out-of-band callbacks execute after the evaluation epoch has closed.
 /// 2. **Temporal Inconsistency & Race Conditions**: Uncoordinated out-of-band reads bypass turn isolation.
-/// 3. **Unhandled Short-Circuit Sentinels**: Invoking `via.exit()` or `via.exitIfInactive()` (or
+/// 3. **Unhandled Short-Circuit Sentinels**: Invoking `via.exit()` or `via.exitIfStale()` (or
 ///    evaluating empty/error nodes via `via(...)`) throws an internal short-circuit sentinel (`_ViaShortCircuit`).
 ///    Outside the framework's evaluation scope, there is no resolver to trap this sentinel, causing an uncaught `Error`.
 ///
@@ -46,7 +46,7 @@ part of '../../../blooming_lints.dart';
 /// final userProfile = computed.future((via) async {
 ///   final id = via(userIdBloom);
 ///   final profile = await http.get('/user/$id');
-///   final token = via(authTokenBloom); // [Supported] Tracked & turn-isolated by _ViaTrack.async
+///   final token = via(authTokenBloom); // [Supported] Tracked & turn-isolated by _ViaScope.async
 ///   return filter(profile, token);
 /// });
 ///
@@ -124,7 +124,7 @@ class AvoidEscapingVia extends DartLintRule {
 
       // 3. Check if inside an asynchronous function body, after an await expression.
       // Direct reactive closures that declare `via` (e.g., `(via) async { ... }`) are tracked
-      // by `_resultViaTrack` (`_ViaTrack.async`), whereas nested helper functions/closures
+      // by `_switchViaScope` (`_ViaScope.async`), whereas nested helper functions/closures
       // that do not declare `via` escape the synchronous turn if they suspend at `await`.
       if (current is FunctionBody) {
         final parent = current.parent;

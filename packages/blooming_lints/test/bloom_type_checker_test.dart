@@ -396,7 +396,7 @@ void testVia(BloomVia via, dynamic context) {
   via.of(context);
   via.maybeOf(context);
   via.exit(emptyReason: 'done');
-  via.exitIfInactive(emptyReason: 'stale');
+  via.exitIfStale(emptyReason: 'stale');
 }
 ''').unit;
 
@@ -420,8 +420,8 @@ void testVia(BloomVia via, dynamic context) {
           invocations.firstWhere((n) => n.toSource() == 'via.maybeOf(context)');
       final exitCall = invocations
           .firstWhere((n) => n.toSource() == "via.exit(emptyReason: 'done')");
-      final exitIfInactiveCall = invocations.firstWhere(
-          (n) => n.toSource() == "via.exitIfInactive(emptyReason: 'stale')");
+      final exitIfStaleCall = invocations.firstWhere(
+          (n) => n.toSource() == "via.exitIfStale(emptyReason: 'stale')");
 
       // All are recognized as general BloomVia invocations
       expect(BloomTypeChecker.isBloomViaInvocation(callVia), isTrue);
@@ -430,7 +430,7 @@ void testVia(BloomVia via, dynamic context) {
       expect(BloomTypeChecker.isBloomViaInvocation(ofCall), isTrue);
       expect(BloomTypeChecker.isBloomViaInvocation(maybeOfCall), isTrue);
       expect(BloomTypeChecker.isBloomViaInvocation(exitCall), isTrue);
-      expect(BloomTypeChecker.isBloomViaInvocation(exitIfInactiveCall), isTrue);
+      expect(BloomTypeChecker.isBloomViaInvocation(exitIfStaleCall), isTrue);
 
       // Only dependency-tracking calls are recognized by isBloomViaTrackingInvocation
       expect(BloomTypeChecker.isBloomViaTrackingInvocation(callVia), isTrue);
@@ -440,9 +440,9 @@ void testVia(BloomVia via, dynamic context) {
       expect(
           BloomTypeChecker.isBloomViaTrackingInvocation(maybeOfCall), isTrue);
 
-      // exit and exitIfInactive are control flow and do NOT register dependencies
+      // exit and exitIfStale are control flow and do NOT register dependencies
       expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitCall), isFalse);
-      expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitIfInactiveCall),
+      expect(BloomTypeChecker.isBloomViaTrackingInvocation(exitIfStaleCall),
           isFalse);
     });
   });

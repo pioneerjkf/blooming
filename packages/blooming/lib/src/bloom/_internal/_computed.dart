@@ -10,7 +10,7 @@ part of '../../framework.dart';
 
 /// Abstract base class for reactive computed nodes that track dependencies via [_BloomViaEpochMixin].
 abstract base class _ComputedBloomBase<T> extends _NaryRelay<_Node>
-    with _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
+    with _ViaEpochMixin<BloomVia>, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
     implements Bloom<T> {}
 
 /// Dynamic dependency tracking and compute execution mixin via [BloomVia].
@@ -36,7 +36,8 @@ base mixin _ComputedPullMixin<T> on _PullResolver<T>, _BloomViaEpochMixin {
     var succeeded = true;
     try {
       _guard?.call(_via);
-      final result = _resultViaTrack(_compute(_via));
+      final result = _compute(_via);
+      _switchViaScope(result);
       final current = _state;
       if (current case final _ValidBloomState<T> s) {
         s.update(result);
@@ -101,7 +102,8 @@ base class _ComputationBloom<T> extends _ComputedBloomBase<T> {
     var succeeded = true;
     try {
       _computation.guard(_via);
-      final result = _resultViaTrack(_computation.compute(_via));
+      final result = _computation.compute(_via);
+      _switchViaScope(result);
       final current = _state;
       if (current case final _ValidBloomState<T> s) {
         s.update(result);
@@ -181,7 +183,8 @@ final class _FutureComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
   @override
   Bloom<T> _evaluateDelta(BloomVia via) {
     _guard?.call(via);
-    final result = _deltaTerminal._resultViaTrack(_compute(via));
+    final result = _compute(via);
+    _deltaTerminal._switchViaScope(result);
     if (result is! Future) {
       // Synchronous Fast-Path: Immediately couple to a constant node in 0ms!
       return Bloom.constant(result);
@@ -229,7 +232,8 @@ final class _StreamComputedBloom<T> extends _EagerDeltaBloom<T> implements Bloom
   @override
   Bloom<T> _evaluateDelta(BloomVia via) {
     _guard?.call(via);
-    final stream = _deltaTerminal._resultViaTrack(_computeStream(via));
+    final stream = _computeStream(via);
+    _deltaTerminal._switchViaScope(stream);
     return _StreamBloomBridge.create<T>(
       stream,
       initialFactory: _initialFactory,

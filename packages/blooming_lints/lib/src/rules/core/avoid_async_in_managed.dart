@@ -49,7 +49,7 @@ part of '../../../blooming_lints.dart';
 ///
 /// // Approach 3: Asynchronous querying in computed.future
 /// final clientData = computed.future((via) async {
-///   final targetUrl = via(urlBloom); // Tracked and isolated by _ViaTrack.async
+///   final targetUrl = via(urlBloom); // Tracked and isolated by _ViaScope.async
 ///   final c = HttpClient();
 ///   return await c.fetch(targetUrl);
 /// });

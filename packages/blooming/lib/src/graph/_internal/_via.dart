@@ -18,8 +18,8 @@ final class _ViaShortCircuit implements Error {
   StackTrace? get stackTrace => null;
 }
 
-/// Tracking mode for a [_BloomViaEpochMixin] evaluation epoch.
-enum _ViaTrack {
+/// Tracking scope for a [_ViaEpochMixin] evaluation epoch.
+enum _ViaScope {
   /// Synchronous evaluation finished; late or escaped `via` calls are ignored.
   closed,
 
@@ -29,35 +29,33 @@ enum _ViaTrack {
   /// Active asynchronous evaluation (returned a [Future] or [Stream]).
   ///
   /// Post-`await` / post-`yield` `via` calls for the latest `_via` instance remain tracked,
-  /// and the next `_beginEpoch` allocates a fresh [BloomVia] to invalidate stale turns.
+  /// and the next `_beginEpoch` allocates a fresh [BloomVia] or [EffectVia] to invalidate stale turns.
   async;
 }
 
-/// Mixin that provides dynamic epoch-based explicit dependency tracking and 1-pass pruning
+/// Core mixin that provides dynamic epoch-based explicit dependency tracking and 1-pass pruning
 /// for n-ary nodes and terminals via [BloomVia] or [EffectVia].
-base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
+base mixin _ViaEpochMixin<V extends Object> on _NaryEdgeMixin<_Node> {
   int _epoch = 0;
   _Edge? _cursor;
-  _ViaTrack _viaTrack = _ViaTrack.closed;
 
-  /// Active tracker instance ([BloomVia] or [EffectVia]).
-  late Object _activeVia = _initVia();
+  _ViaScope _viaScope = _ViaScope.closed;
 
-  /// [BloomVia] instance passed into compute and build callbacks.
-  late BloomVia _via = _activeVia as BloomVia;
+  /// Current tracker instance ([BloomVia] or [EffectVia]).
+  late V _via = _initVia();
 
-  Object _initVia() => BloomVia._(this);
+  /// Allocates the initial tracker instance for this node.
+  V _initVia();
 
-  void _refreshVia() {
-    _activeVia = _via = BloomVia._(this);
-  }
+  /// Rotates the tracker instance to isolate superseded asynchronous turns.
+  void _refreshVia();
 
   @mustCallSuper
   @override
   void _deactivate() {
-    if (_viaTrack == _ViaTrack.async) {
+    if (_viaScope == _ViaScope.async) {
       _refreshVia();
-      _viaTrack = _ViaTrack.closed;
+      _viaScope = _ViaScope.closed;
     }
     super._deactivate();
   }
@@ -65,10 +63,10 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
   /// Prepares dependency tracking for a new evaluation cycle, returning the new monotonic epoch.
   @pragma('vm:prefer-inline')
   int _beginEpoch() {
-    if (_viaTrack == _ViaTrack.async) {
+    if (_viaScope == _ViaScope.async) {
       _refreshVia();
     }
-    _viaTrack = _ViaTrack.sync;
+    _viaScope = _ViaScope.sync;
     _cursor = _sourceHead;
     return ++_epoch;
   }
@@ -88,28 +86,27 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
   @pragma('vm:prefer-inline')
   void _endEpoch(int currentEpoch, {required bool succeeded, required bool commitVersions}) {
     _cursor = null;
-    if (!succeeded || _viaTrack != _ViaTrack.async) {
-      _viaTrack = _ViaTrack.closed;
+    if (!succeeded || _viaScope != _ViaScope.async) {
+      _viaScope = _ViaScope.closed;
     }
     if (succeeded) {
       _sweepObsoleteEdges(currentEpoch, commitVersions: commitVersions);
     }
   }
 
-  /// Transitions [_viaTrack] to [_ViaTrack.async] when the callback returns a [Future] or [Stream].
+  /// Transitions [_viaScope] to [_ViaScope.async] when [result] is a [Future] or [Stream].
   @pragma('vm:prefer-inline')
-  R _resultViaTrack<R>(R result) {
+  void _switchViaScope(Object? result) {
     if (result is Future || result is Stream) {
-      _viaTrack = _ViaTrack.async;
+      _viaScope = _ViaScope.async;
     }
-    return result;
   }
 
   /// Records [source] as an upstream dependency for the current evaluation epoch
-  /// when [via] is the active tracker for this node.
+  /// when [via] is the current tracker for this node.
   @pragma('vm:prefer-inline')
   void _trackDependency(Object via, _Node source) {
-    if (_viaTrack == _ViaTrack.closed || !identical(_activeVia, via)) return;
+    if (_viaScope == _ViaScope.closed || !identical(_via, via)) return;
 
     // 1. Fast-path: Check expected cursor position (O(1) sequential match).
     final cursor = _cursor;
@@ -145,7 +142,7 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
           : (cursor != null ? _addSourceEdgeBefore(source, cursor) : _addSourceEdge(source));
       edge._seenEpoch = currentEpoch;
     }
-    if (_viaTrack == _ViaTrack.async) {
+    if (_viaScope == _ViaScope.async) {
       source._resolve();
       edge._pulledVersion = source._version;
     }
@@ -174,20 +171,5 @@ base mixin _BloomViaEpochMixin on _NaryEdgeMixin<_Node> {
       }
       curr = next;
     }
-  }
-}
-
-/// Mixin for [Effect] terminals that binds dependency tracking to [EffectVia]
-/// instead of [BloomVia].
-base mixin _EffectViaEpochMixin on _BloomViaEpochMixin {
-  /// [EffectVia] instance passed into effect callbacks and guards.
-  late EffectVia _effectVia = _activeVia as EffectVia;
-
-  @override
-  Object _initVia() => EffectVia._(this);
-
-  @override
-  void _refreshVia() {
-    _activeVia = _effectVia = EffectVia._(this);
   }
 }

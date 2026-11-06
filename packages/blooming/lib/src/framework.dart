@@ -103,6 +103,7 @@ part 'bloom/_internal/_snapshot.dart';
 part 'bloom/_internal/_state.dart';
 part 'bloom/_internal/_switched.dart';
 part 'bloom/_internal/_untracked.dart';
+part 'bloom/_internal/_via.dart';
 
 // =============================================================================
 // 4. [Effect Domain] (Side-Effects & Temporal Limiters)
@@ -114,6 +115,7 @@ part 'effect/via.dart';
 part 'effect/_internal/_base.dart';
 part 'effect/_internal/_effect.dart';
 part 'effect/_internal/_runner.dart';
+part 'effect/_internal/_via.dart';
 
 // =============================================================================
 // 5. [Reflector Domain] (DevTools & Diagnostics Inspection)

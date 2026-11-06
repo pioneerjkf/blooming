@@ -47,7 +47,7 @@ part of '../framework.dart';
 ///   callbacks outside the evaluation closure. While dependency tracking registrations
 ///   ([BloomVia.call], [state], [tether]) are silently ignored after a synchronous
 ///   evaluation completes or from a superseded asynchronous turn, control-flow methods
-///   ([exit] and [exitIfInactive] when inactive) and evaluating empty or error nodes
+///   ([exit] and [exitIfStale] when stale) and evaluating empty or error nodes
 ///   throw an internal short-circuit sentinel. If invoked outside the framework's evaluation
 ///   scope, no resolver is present to trap this sentinel, causing an uncaught [Error].
 ///
@@ -225,20 +225,20 @@ final class BloomVia {
     throw _ViaShortCircuit(_EmptyBloomState<Never>(emptyReason));
   }
 
-  /// Cooperatively short-circuits the evaluation epoch into an empty state
-  /// if this node has been deactivated or superseded by a newer asynchronous turn.
+  /// Short-circuits the current asynchronous evaluation into an empty state
+  /// if this turn has become stale (superseded by a subsequent mutation, deactivated mid-flight, or closed).
   ///
   /// Call this immediately after an `await` point to prevent wasteful execution
   /// of downstream computations when the result is no longer needed.
   ///
   /// This method must strictly be invoked within an asynchronous derivation closure
   /// (e.g., `computed.future`, `computed.stream`) managed by the framework. If the turn has
-  /// been deactivated or superseded, it delegates to [exit], throwing an internal short-circuit
+  /// become stale, it delegates to [exit], throwing an internal short-circuit
   /// sentinel that is trapped and handled by the asynchronous derivation bridge.
   ///
   /// **Escaped Call Behavior:**
-  /// Calling [exitIfInactive] on an escaped or stored [BloomVia] instance outside the evaluation
-  /// closure evaluates as inactive (stale or closed tracker), delegating to [exit] and throwing
+  /// Calling [exitIfStale] on an escaped or stored [BloomVia] instance outside the evaluation
+  /// closure evaluates as stale (closed tracker), delegating to [exit] and throwing
   /// the internal sentinel. Because no framework resolver is present outside the evaluation
   /// scope, this will result in an uncaught [Error].
   ///
@@ -246,13 +246,14 @@ final class BloomVia {
   /// ```dart
   /// final profile = computed.future((via) async {
   ///   final data = await fetchHttp();
-  ///   via.exitIfInactive(emptyReason: 'DisposedWhileAwaiting');
+  ///   via.exitIfStale(emptyReason: 'StaleWhileAwaiting');
   ///   return parseHeavyJson(data);
   /// });
   /// ```
   @pragma('vm:prefer-inline')
-  void exitIfInactive({Object? emptyReason}) {
-    if (!identical(_node._activeVia, this) || !_node._lifecycle.isActive) {
+  void exitIfStale({Object? emptyReason}) {
+    if (!identical(_node._via, this) ||
+        _node._viaScope == _ViaScope.closed) {
       exit(emptyReason: emptyReason);
     }
   }

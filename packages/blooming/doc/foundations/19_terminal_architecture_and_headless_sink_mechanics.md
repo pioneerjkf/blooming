@@ -205,7 +205,7 @@ base class RawBloomTerminal<T> extends _RawTerminal
 ```dart
 // packages/blooming/lib/src/graph/terminal.dart
 base class RawViaTerminal<T> extends _RawTerminal 
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _ViaTerminalMixin<T> {
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin, _BloomViaEpochMixin, _ViaTerminalMixin<T> {
   RawViaTerminal(
     T Function(BloomVia via) evaluator, {
     required super.onInvalidated,
@@ -243,7 +243,7 @@ base class RawViaTerminal<T> extends _RawTerminal
 ```dart
 // packages/blooming/lib/src/graph/terminal.dart
 base class RawComputedTerminal<T> extends _RawTerminal
-    with _NaryEdgeMixin<_Node>, _BloomViaEpochMixin, _BloomStateMixin<T>, 
+    with _NaryEdgeMixin<_Node>, _ViaEpochMixin, _BloomViaEpochMixin, _BloomStateMixin<T>, 
          _PullResolver<T>, _ComputedPullMixin<T>
     implements BloomState<T> {
   RawComputedTerminal(
@@ -565,6 +565,6 @@ terminal.debugForceInvalidate();
 | **I** | **Strict Sink Boundary** | Out-degree of any terminal is strictly 0: $d_{\text{out}}(\text{Terminal}) = 0$. Terminals cannot serve as sources for other reactive nodes. | Engine static type architecture ([`RawTerminal`](../../lib/src/graph/terminal.dart) does not implement [`Bloom`](../../lib/src/bloom/bloom.dart)). |
 | **II** | **Dormancy Awakening** | Upstream dormant subtrees ($0$) transition to active ($1$) if and only if an active terminal or subscriber attaches. | Verified via `_lifecycle.isActive` assertions and stream listener attachment tests. |
 | **III** | **Zero-Copy SSOT** | `RawBloomTerminal<T>` maintains zero shadow state: `_read() => _source._read()`. Direct field dereference on `.data`. | Confirmed via heap allocation tests and identical object identity checks. |
-| **IV** | **1-Pass Monotonic Sweep** | `RawViaTerminal` and `RawComputedTerminal` sweep unused dependency edges in exactly 1 pass with zero intermediate heap allocations. | Verified via `_BloomViaEpochMixin` edge sweep pointer unlinking. |
+| **IV** | **1-Pass Monotonic Sweep** | `RawViaTerminal` and `RawComputedTerminal` sweep unused dependency edges in exactly 1 pass with zero intermediate heap allocations. | Verified via `_ViaEpochMixin` edge sweep pointer unlinking. |
 | **V** | **Synchronous Invalidation Batching** | Multiple synchronous mutations within a push wave or `batch()` trigger at most 1 `onInvalidated` dispatch per terminal. | Enforced by `_isPushQueued` check in `_PushScope.queueTerminal`. |
 | **VI** | **Deterministic Teardown** | `terminal.deactivate()` synchronously unlinks target edges and immediately propagates deactivation upstream if subscriber counts hit 0. | Verified via `managed` disposal hooks and unregister assertions. |

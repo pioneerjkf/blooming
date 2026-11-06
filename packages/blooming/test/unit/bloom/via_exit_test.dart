@@ -9,7 +9,7 @@ import 'package:blooming/effect.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('BloomVia.exit & BloomVia.exitIfInactive Suite', () {
+  group('BloomVia.exit & BloomVia.exitIfStale Suite', () {
     // =========================================================================
     // 1. BloomVia.exit() in synchronous computed & guards
     // =========================================================================
@@ -124,16 +124,16 @@ void main() {
     });
 
     // =========================================================================
-    // 3. BloomVia.exitIfInactive in asynchronous computed.future
+    // 3. BloomVia.exitIfStale in asynchronous computed.future
     // =========================================================================
-    group('3. via.exitIfInactive in async computed.future', () {
-      test('3.1 exitIfInactive does nothing while turn is still active', () async {
+    group('3. via.exitIfStale in async computed.future', () {
+      test('3.1 exitIfStale does nothing while turn is still current', () async {
         final source = blooming(10);
 
         final futureBloom = computed.future<int>((via) async {
           final val = via(source.bloom);
           await Future<void>.delayed(const Duration(milliseconds: 10));
-          via.exitIfInactive(emptyReason: 'TurnSuperseded');
+          via.exitIfStale(emptyReason: 'TurnSuperseded');
           return val * 2;
         });
 
@@ -147,7 +147,7 @@ void main() {
         terminal.deactivate();
       });
 
-      test('3.2 exitIfInactive aborts stale turn when newer turn was triggered mid-await', () async {
+      test('3.2 exitIfStale aborts stale turn when newer turn was triggered mid-await', () async {
         final query = blooming('first');
         final completerFirst = Completer<void>();
         final executionLog = <String>[];
@@ -160,7 +160,7 @@ void main() {
           } else {
             await Future<void>.delayed(Duration.zero);
           }
-          via.exitIfInactive(emptyReason: 'StaleQuery');
+          via.exitIfStale(emptyReason: 'StaleQuery');
           executionLog.add('finish:$q');
           return 'Result for $q';
         });
@@ -183,20 +183,20 @@ void main() {
         completerFirst.complete();
         await Future<void>.delayed(Duration.zero);
 
-        // 'finish:first' should NOT have executed because via.exitIfInactive short-circuited it
+        // 'finish:first' should NOT have executed because via.exitIfStale short-circuited it
         expect(executionLog, isNot(contains('finish:first')));
         expect(terminal.data, 'Result for second');
 
         terminal.deactivate();
       });
 
-      test('3.3 exitIfInactive aborts in-flight execution when node is deactivated during await', () async {
+      test('3.3 exitIfStale aborts in-flight execution when node is deactivated during await', () async {
         final completer = Completer<void>();
         var postAwaitExecuted = false;
 
         final node = computed.future<String>((via) async {
           await completer.future;
-          via.exitIfInactive(emptyReason: 'DormantTurn');
+          via.exitIfStale(emptyReason: 'DormantTurn');
           postAwaitExecuted = true;
           return 'Result';
         });
@@ -215,8 +215,31 @@ void main() {
         completer.complete();
         await Future<void>.delayed(Duration.zero);
 
-        // postAwaitExecuted must be false because exitIfInactive short-circuited it
+        // postAwaitExecuted must be false because exitIfStale short-circuited it
         expect(postAwaitExecuted, isFalse);
+      });
+
+      test('3.4 exitIfStale does not abort dormant node in-flight execution when awaiting without listeners', () async {
+        final completer = Completer<int>();
+        var postAwaitExecuted = false;
+
+        final node = computed.future<int>((via) async {
+          final res = await completer.future;
+          via.exitIfStale(emptyReason: 'ShouldNotExit');
+          postAwaitExecuted = true;
+          return res * 2;
+        });
+
+        // Trigger on-demand pull while node is dormant (no active listeners)
+        expect(untracked.state(node).dataOrNull, isNull);
+        expect(postAwaitExecuted, isFalse);
+
+        completer.complete(21);
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(postAwaitExecuted, isTrue);
+        expect(untracked(node), 42);
       });
     });
 
@@ -362,9 +385,9 @@ void main() {
     });
 
     // =========================================================================
-    // 5. Escaped BloomVia exit & exitIfInactive Behavior
+    // 5. Escaped BloomVia exit & exitIfStale Behavior
     // =========================================================================
-    group('5. Escaped BloomVia exit & exitIfInactive behavior', () {
+    group('5. Escaped BloomVia exit & exitIfStale behavior', () {
       test('5.1 escaped via.exit() throws unhandled Error outside evaluation scope', () {
         BloomVia? escapedVia;
         final node = computed<int>((via) {
@@ -382,20 +405,20 @@ void main() {
         );
       });
 
-      test('5.2 escaped via.exitIfInactive() delegates to exit() and throws Error when inactive', () {
+      test('5.2 escaped via.exitIfStale() delegates to exit() and throws Error when closed', () {
         BloomVia? escapedVia;
         final node = computed<int>((via) {
           escapedVia = via;
           return 100;
         });
 
-        // Evaluate once; node is dormant/inactive
+        // Evaluate once; epoch closes
         expect(untracked(node), 100);
         expect(escapedVia, isNotNull);
 
-        // Inactive scope causes exitIfInactive() to call exit(), throwing Error
+        // Closed epoch causes exitIfStale() to call exit(), throwing Error
         expect(
-          () => escapedVia!.exitIfInactive(emptyReason: 'EscapedExitIfInactive'),
+          () => escapedVia!.exitIfStale(emptyReason: 'EscapedExitIfStale'),
           throwsA(isA<Error>()),
         );
       });

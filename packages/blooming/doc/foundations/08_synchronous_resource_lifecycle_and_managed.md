@@ -93,7 +93,7 @@ The lifecycle management engine is implemented in [`_ManagedBloom<T>`](../../lib
 ```dart
 // packages/blooming/lib/src/bloom/_internal/_managed.dart
 abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
-    with _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
+    with _ViaEpochMixin, _BloomViaEpochMixin, _BloomStateMixin<T>, _PullResolver<T>, _PullRelay<T>
     implements Bloom<T> { ... }
 ```
 
