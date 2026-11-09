@@ -29,7 +29,20 @@ int _countTargets(_Node target) {
   return count;
 }
 
-int _countSources(_Node target) {
+int _countSources(Object target) {
+  if (target case final Effect effect) {
+    return _countSources(effect._terminal);
+  }
+  if (target is EffectRunner) {
+    return 1;
+  }
+  if (target case final _DeltaBloom delta) {
+    var count = 0;
+    for (var curr = delta._deltaTerminal._sourceHead; curr != null; curr = curr._nextSource) {
+      count++;
+    }
+    return count + 1;
+  }
   if (target case final _NaryEdgeMixin nary) {
     var count = 0;
     for (var curr = nary._sourceHead; curr != null; curr = curr._nextSource) {

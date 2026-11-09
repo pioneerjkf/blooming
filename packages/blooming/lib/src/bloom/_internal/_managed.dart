@@ -119,9 +119,20 @@ abstract base class _ManagedBloom<T> extends _NaryRelay<_Node>
   @override
   void _activate() {
     super._activate();
+    // Dormant Read Recovery:
+    // When this node is read while dormant/inactive (via untracked or by an inactive downstream
+    // derivation like computed), [_resolve] avoids allocating resources and caches an [_EmptyBloomState].
+    //
+    // Upon subsequent activation, we must reconcile that dormant state:
+    // 1. Clear the cached empty state so the real resource can be allocated on demand.
+    // 2. Mark this node dirty to force re-evaluation.
+    // 3. Increment [_version] so downstream derivations (which cached Empty and recorded this
+    //    node's dormant version in their edge [_pulledVersion]) detect [_isSourceDirty] via
+    //    [_isNewerThan] during [_PullResolver._activate] and invalidate their stale Empty state.
     if (_state != null && !_state!.hasData) {
       _state = null;
       _dirtyState = _DirtyState.dirty;
+      _version++;
     }
   }
 

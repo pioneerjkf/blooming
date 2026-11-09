@@ -201,11 +201,12 @@ base class RawComputedTerminal<T> extends _RawTerminal
   final void Function(BloomVia via)? _guard;
 
   @override
-  void _invalidateInScope() {
+  @pragma('vm:prefer-inline')
+  void _invalidate() {
     if (_dirtyState == _DirtyState.clean) {
       _dirtyState = _DirtyState.check;
     }
-    super._invalidateInScope();
+    super._invalidate();
   }
 
   /// Manually marks this terminal as dirty without resolving immediately,

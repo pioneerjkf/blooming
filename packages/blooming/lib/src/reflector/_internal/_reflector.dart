@@ -58,7 +58,9 @@ String _classifyNodeKind(Object node) {
 
 List<LpdagReflector> _collectReflectorSources(Object target) {
   final list = <LpdagReflector>[];
-  if (target case final _DeltaBloom delta) {
+  if (target case final Effect effect) {
+    return _collectReflectorSources(effect._terminal);
+  } else if (target case final _DeltaBloom delta) {
     for (var curr = delta._deltaTerminal._sourceHead; curr != null; curr = curr._nextSource) {
       if (curr._source case final LpdagStatus lpdag) {
         if (lpdag.debugReflector case final r?) list.add(r);
@@ -165,12 +167,7 @@ class _LpdagReflectorImpl implements LpdagReflector {
   }
 
   @override
-  int get sourceCount {
-    if (_targetNode case final _Node node) {
-      return _countSources(node);
-    }
-    return 0;
-  }
+  int get sourceCount => _countSources(_targetNode);
 
   @override
   List<LpdagReflector> get sources => _collectReflectorSources(_targetNode);
@@ -229,26 +226,29 @@ class _BloomReflectorImpl extends _LpdagReflectorImpl implements BloomReflector 
 
   final Bloom _bloom;
 
-  @override
-  BloomState<dynamic> get state => untracked.state(_bloom);
+  _BloomState? get _safeState => _safeReadBloomState(_bloom);
 
   @override
-  bool get hasData => state.hasData;
+  BloomState<dynamic> get state => _safeState ?? const _EmptyBloomState<dynamic>('pending');
 
   @override
-  bool get hasError => state.hasError;
+  bool get hasData => _safeState?.hasData ?? false;
 
   @override
-  bool get isEmpty => state.isEmpty;
+  bool get hasError => _safeState?.hasError ?? false;
 
   @override
-  Object? get data => state.hasData ? state.data : null;
+  bool get isEmpty => _safeState?.isEmpty ?? true;
 
   @override
-  Object? get error => state.hasError ? state.error : null;
+  Object? get data => _safeState is _ValidBloomState ? (_safeState as _ValidBloomState).data : null;
 
   @override
-  Object? get emptyReason => state.isEmpty ? state.emptyReason : null;
+  Object? get error => _safeState is _ErrorBloomState ? (_safeState as _ErrorBloomState).error : null;
+
+  @override
+  Object? get emptyReason =>
+      _safeState != null ? (_safeState!.isEmpty ? _safeState!.emptyReason : null) : 'pending';
 
   @override
   BloomDebugSnapshot get snapshot => _createDebugSnapshot(_bloom);

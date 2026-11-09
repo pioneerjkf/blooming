@@ -152,8 +152,11 @@ abstract base class _GatedRelayBloom<T> extends _StaticUnaryRelay<Bloom<T>>
   @pragma('vm:prefer-inline')
   void _emitTrailing() {
     _hasTrailingPending = false;
-    _dirtyState = _DirtyState.dirty;
-    _PushScope.queueOrigin(this);
+    // Suppress trailing emission if upstream has not actually mutated (false alarm)
+    if (_resolveDirty()) {
+      _dirtyState = _DirtyState.dirty;
+      _PushScope.queueOrigin(this);
+    }
   }
 
   @mustCallSuper
