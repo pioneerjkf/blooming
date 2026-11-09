@@ -247,8 +247,7 @@ class _BloomReflectorImpl extends _LpdagReflectorImpl implements BloomReflector 
   Object? get error => _safeState is _ErrorBloomState ? (_safeState as _ErrorBloomState).error : null;
 
   @override
-  Object? get emptyReason =>
-      _safeState != null ? (_safeState!.isEmpty ? _safeState!.emptyReason : null) : 'pending';
+  Object? get emptyReason => _safeState != null ? (_safeState!.isEmpty ? _safeState!.emptyReason : null) : 'pending';
 
   @override
   BloomDebugSnapshot get snapshot => _createDebugSnapshot(_bloom);

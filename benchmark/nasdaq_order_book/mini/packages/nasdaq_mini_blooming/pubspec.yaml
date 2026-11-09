@@ -10,8 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  blooming: ^0.3.2
-  blooming_flutter: ^0.3.2
+  blooming: ^0.3.3
+  blooming_flutter: ^0.3.3
 
 dev_dependencies:
   flutter_test:
@@ -19,7 +19,7 @@ dev_dependencies:
   flutter_driver:
     sdk: flutter
   flutter_lints: ^6.0.0
-  blooming_lints: ^0.3.2
+  blooming_lints: ^0.3.3
   custom_lint: ^0.8.1
 
 flutter:

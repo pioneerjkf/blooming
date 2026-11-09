@@ -37,7 +37,8 @@ void main() {
       final derived = computed((via) {
         computeCount++;
         return via(counter.bloom) * 2;
-      })..withDebugLabel('LazyDerived');
+      })
+        ..withDebugLabel('LazyDerived');
 
       final reflector = derived.debugReflector as BloomReflector;
 
@@ -61,7 +62,8 @@ void main() {
       final derived = computed((via) {
         computeCount++;
         return via(counter.bloom) * 2;
-      })..withDebugLabel('Derived');
+      })
+        ..withDebugLabel('Derived');
 
       final terminal = RawBloomTerminal(derived, onInvalidated: () {})..activate();
       expect(untracked(derived), 20);

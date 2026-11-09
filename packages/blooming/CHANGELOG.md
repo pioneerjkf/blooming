@@ -1,3 +1,16 @@
+## 0.3.3
+
+- **Batch Read-Your-Own-Writes (`RawComputedTerminal`)**:
+  - Transitioned `RawComputedTerminal` dirty state to `_DirtyState.check` immediately during Phase 1 (`_invalidate`) rather than delaying until Phase 2 (`_invalidateInScope`), preserving immediate Read-Your-Own-Writes (RYOW) within `batch()` and cross-terminal consistency.
+- **Managed Dormant Cache Invalidation (`_ManagedBloom`)**:
+  - Incremented `_version` upon `_ManagedBloom` activation to ensure downstream nodes invalidate stale `_EmptyBloomState` cached while dormant and pull active resources immediately.
+- **Gated Relay False-Alarm Suppression (`_GatedRelayBloom`)**:
+  - Suppressed trailing dirty pulse emission to downstream terminals when resolving upstream false-alarm pulses in `Bloom.debounced`, `Bloom.throttled`, and `Bloom.coalesced`.
+- **Reflector Observer Effect Elimination & Effect Dependencies (`BloomReflector`)**:
+  - Eliminated observer effects in `_BloomReflectorImpl` by inspecting node states non-intrusively via `_safeReadBloomState` without triggering lazy computations on uncomputed nodes or recomputations on dirty nodes.
+  - Delegated `Effect` source collection and source counts to its internal terminal to expose upstream dependencies in DevTools/Reflector.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.3.
+
 ## 0.3.2
 
 - **Graph Engine & Tracking Optimization (`_ViaEpochMixin<V>`)**:
