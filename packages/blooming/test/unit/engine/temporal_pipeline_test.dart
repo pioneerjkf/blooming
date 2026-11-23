@@ -307,6 +307,42 @@ void main() {
 
         terminal.deactivate();
       });
+
+      test('5.2 ThrottledBloom deactivating synchronously in leading onInvalidated does not leak timer or suppress restart', () async {
+        final source = blooming(0);
+        final throttled = source.bloom.throttled(
+          const Duration(milliseconds: 50),
+          leading: true,
+          trailing: true,
+        );
+
+        final observed = <int>[];
+        late RawBloomTerminal<int> terminal;
+        terminal = RawBloomTerminal(throttled, onInvalidated: () {
+          final v = terminal.data;
+          observed.add(v);
+          if (v == 1) {
+            terminal.deactivate();
+          }
+        });
+        terminal.activate();
+        expect(terminal.data, 0);
+
+        // 1. Leading edge triggers onInvalidated and deactivates terminal synchronously
+        source.data = 1;
+        expect(observed, [1]);
+
+        // 2. Reactivate immediately within 50ms window; leading edge must NOT be suppressed
+        terminal.activate();
+        source.data = 2;
+        expect(observed, [1, 2]);
+
+        // 3. Ensure no leaked trailing timer fires
+        await Future<void>.delayed(const Duration(milliseconds: 70));
+        expect(observed, [1, 2]);
+
+        terminal.deactivate();
+      });
     });
   });
 }

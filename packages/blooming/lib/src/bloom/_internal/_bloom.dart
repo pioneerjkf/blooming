@@ -184,7 +184,6 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
   });
 
   bool _isCoalesceScheduled = false;
-  bool _isLeadingCooldown = false;
 
   @override
   @pragma('vm:prefer-inline')
@@ -193,12 +192,9 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
       return;
     }
 
-    if (leading && !_isLeadingCooldown) {
-      _isLeadingCooldown = true;
-      if (!_isCoalesceScheduled) {
-        _isCoalesceScheduled = true;
-        _Scheduler.instance._scheduleCoalesced(this);
-      }
+    if (leading && !_isCoalesceScheduled) {
+      _isCoalesceScheduled = true;
+      _Scheduler.instance._scheduleCoalesced(this);
       super._invalidate();
       return;
     }
@@ -216,7 +212,6 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
   @override
   void _performCoalesce() {
     _isCoalesceScheduled = false;
-    _isLeadingCooldown = false;
     if (!_lifecycle.isActive) return;
 
     if (_hasTrailingPending && trailing) {
@@ -231,7 +226,6 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
       _Scheduler.instance._cancelCoalesced(this);
       _isCoalesceScheduled = false;
     }
-    _isLeadingCooldown = false;
     super._deactivate();
   }
 
@@ -243,7 +237,6 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
       _Scheduler.instance._cancelCoalesced(this);
       _isCoalesceScheduled = false;
     }
-    _isLeadingCooldown = false;
   }
 }
 
@@ -305,8 +298,6 @@ final class _DebouncedBloom<T> extends _TemporalRelayBloom<T> {
     super.trailing = true,
   });
 
-  bool _isLeadingCooldown = false;
-
   @override
   @pragma('vm:prefer-inline')
   void _invalidate() {
@@ -314,9 +305,7 @@ final class _DebouncedBloom<T> extends _TemporalRelayBloom<T> {
       return;
     }
 
-    if (leading && !_isLeadingCooldown) {
-      _isLeadingCooldown = true;
-      _cancelTimer();
+    if (leading && _timer == null) {
       _timer = Timer(duration, _onTimerExpired);
       super._invalidate();
       return;
@@ -335,26 +324,11 @@ final class _DebouncedBloom<T> extends _TemporalRelayBloom<T> {
 
   void _onTimerExpired() {
     _timer = null;
-    _isLeadingCooldown = false;
     if (!_lifecycle.isActive) return;
 
     if (_hasTrailingPending && trailing) {
       _emitTrailing();
     }
-  }
-
-  @mustCallSuper
-  @override
-  void _deactivate() {
-    _isLeadingCooldown = false;
-    super._deactivate();
-  }
-
-  @mustCallSuper
-  @override
-  void _debugInvalidateSelf() {
-    _isLeadingCooldown = false;
-    super._debugInvalidateSelf();
   }
 }
 
@@ -376,6 +350,7 @@ final class _ThrottledBloom<T> extends _TemporalRelayBloom<T> {
     if (_timer == null) {
       if (leading) {
         super._invalidate();
+        if (!_lifecycle.isActive) return;
       } else if (trailing) {
         // Intentional Suppression: Keep _dirtyState == clean during throttle cooldown
         _hasTrailingPending = true;
@@ -393,6 +368,7 @@ final class _ThrottledBloom<T> extends _TemporalRelayBloom<T> {
 
     if (_hasTrailingPending && trailing) {
       _emitTrailing();
+      if (!_lifecycle.isActive) return;
       _timer = Timer(duration, _onTimerExpired);
     }
   }
