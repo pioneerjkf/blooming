@@ -4,6 +4,19 @@
 
 part of '../../../../framework.dart';
 
+Duration _scaledDuration(
+  Duration? baseDuration,
+  double distance,
+  double range, {
+  Duration fallback = const Duration(milliseconds: 300),
+}) {
+  if (baseDuration == null) return fallback;
+  if (range > 0 && range.isFinite) {
+    return baseDuration * (distance / range);
+  }
+  return range == 0.0 ? Duration.zero : baseDuration;
+}
+
 const Tolerance _kFlingTolerance =
     Tolerance(velocity: double.infinity, distance: 0.01);
 final SpringDescription _kFlingSpringDescription =
@@ -235,49 +248,27 @@ abstract base class _DormantAnimationControlDelegate
 
   @override
   TickerFuture animateTo(double target,
-      {Duration? duration, Curve curve = Curves.linear}) {
-    final clampedTarget = clampDouble(target, lowerBound, upperBound);
-    final range = upperBound - lowerBound;
-    final effectiveDuration = duration ??
-        (_duration != null
-            ? (range.isFinite
-                ? _duration! * ((clampedTarget - _value).abs() / range)
-                : _duration!)
-            : const Duration(milliseconds: 300));
-    final sim = _CurvedInterpolationSimulation(
-      begin: _value,
-      end: clampedTarget,
-      duration: effectiveDuration,
-      curve: curve,
-    );
-    _stageMotion(
-      _StagedMotion(
-        mode: _StagedMotionMode.animateTo,
-        targetFromValue: _value,
-        targetValue: clampedTarget,
-        targetDuration: effectiveDuration,
-        targetCurve: curve,
-        simulation: sim,
-        elapsedDuration: Duration.zero,
-        wasReversePhase: false,
-      ),
-      notifyStatus: AnimationStatus.forward,
-    );
-    return TickerFuture.complete();
-  }
+      {Duration? duration, Curve curve = Curves.linear}) =>
+      _stageDirectedMotion(target, duration: duration, curve: curve, isBack: false);
 
   @override
   TickerFuture animateBack(double target,
-      {Duration? duration, Curve curve = Curves.linear}) {
+      {Duration? duration, Curve curve = Curves.linear}) =>
+      _stageDirectedMotion(target, duration: duration, curve: curve, isBack: true);
+
+  TickerFuture _stageDirectedMotion(
+    double target, {
+    Duration? duration,
+    required Curve curve,
+    required bool isBack,
+  }) {
     final clampedTarget = clampDouble(target, lowerBound, upperBound);
-    final range = upperBound - lowerBound;
     final effectiveDuration = duration ??
-        ((_reverseDuration ?? _duration) != null
-            ? (range.isFinite
-                ? (_reverseDuration ?? _duration)! *
-                    ((_value - clampedTarget).abs() / range)
-                : (_reverseDuration ?? _duration)!)
-            : const Duration(milliseconds: 300));
+        _scaledDuration(
+          isBack ? (_reverseDuration ?? _duration) : _duration,
+          (clampedTarget - _value).abs(),
+          upperBound - lowerBound,
+        );
     final sim = _CurvedInterpolationSimulation(
       begin: _value,
       end: clampedTarget,
@@ -286,16 +277,16 @@ abstract base class _DormantAnimationControlDelegate
     );
     _stageMotion(
       _StagedMotion(
-        mode: _StagedMotionMode.animateBack,
+        mode: isBack ? _StagedMotionMode.animateBack : _StagedMotionMode.animateTo,
         targetFromValue: _value,
         targetValue: clampedTarget,
         targetDuration: effectiveDuration,
         targetCurve: curve,
         simulation: sim,
         elapsedDuration: Duration.zero,
-        wasReversePhase: true,
+        wasReversePhase: isBack,
       ),
-      notifyStatus: AnimationStatus.reverse,
+      notifyStatus: isBack ? AnimationStatus.reverse : AnimationStatus.forward,
     );
     return TickerFuture.complete();
   }
@@ -421,11 +412,17 @@ abstract base class _DormantAnimationControlDelegate
       case _StagedMotionMode.forward:
         if (engine.value < upperBound) {
           engine.forward();
+        } else {
+          _stagedMotion = const _StagedMotion.idle();
+          onNotifyStatusListeners(AnimationStatus.completed);
         }
         break;
       case _StagedMotionMode.reverse:
         if (engine.value > lowerBound) {
           engine.reverse();
+        } else {
+          _stagedMotion = const _StagedMotion.idle();
+          onNotifyStatusListeners(AnimationStatus.dismissed);
         }
         break;
       case _StagedMotionMode.repeat:
@@ -447,25 +444,32 @@ abstract base class _DormantAnimationControlDelegate
             min,
             duration: tripDuration,
           )
-              .then((_) {
-            if (activeDelegate != null) {
-              if (activeDelegate.isDisposed ||
-                  activeDelegate.lastDispatchedMotion != expectedMotion) {
-                return;
+              .then<void>(
+            (_) {
+              if (activeDelegate != null) {
+                if (activeDelegate.isDisposed ||
+                    activeDelegate.lastDispatchedMotion != expectedMotion) {
+                  return;
+                }
+                if (tripDuration != null) {
+                  activeDelegate._accumulateBaseElapsed(tripDuration);
+                }
               }
-              if (tripDuration != null) {
-                activeDelegate._accumulateBaseElapsed(tripDuration);
+              if (_stagedMotion.mode == _StagedMotionMode.repeat) {
+                engine.repeat(
+                  min: _stagedMotion.repeatMin,
+                  max: _stagedMotion.repeatMax,
+                  reverse: _stagedMotion.repeatReverse,
+                  period: _stagedMotion.repeatPeriod,
+                );
               }
-            }
-            if (_stagedMotion.mode == _StagedMotionMode.repeat) {
-              engine.repeat(
-                min: _stagedMotion.repeatMin,
-                max: _stagedMotion.repeatMax,
-                reverse: _stagedMotion.repeatReverse,
-                period: _stagedMotion.repeatPeriod,
-              );
-            }
-          });
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              if (error is! TickerCanceled) {
+                Error.throwWithStackTrace(error, stackTrace);
+              }
+            },
+          );
         } else {
           engine.repeat(
             min: _stagedMotion.repeatMin,
@@ -476,76 +480,18 @@ abstract base class _DormantAnimationControlDelegate
         }
         break;
       case _StagedMotionMode.animateTo:
-        if (_stagedMotion.targetValue != null &&
-            (engine.value - _stagedMotion.targetValue!).abs() > 0.0001) {
-          final range = upperBound - lowerBound;
-          final effectiveDuration = _stagedMotion.targetDuration ??
-              (_duration != null
-                  ? (range.isFinite
-                      ? _duration! *
-                          ((_stagedMotion.targetValue! - engine.value).abs() /
-                              range)
-                      : _duration!)
-                  : const Duration(milliseconds: 300));
-          final sim = _stagedMotion.simulation ??
-              _CurvedInterpolationSimulation(
-                begin: _stagedMotion.targetFromValue ?? engine.value,
-                end: _stagedMotion.targetValue!,
-                duration: effectiveDuration,
-                curve: _stagedMotion.targetCurve,
-              );
-          final elapsed = _stagedMotion.elapsedDuration;
-          if (elapsed != null && elapsed > Duration.zero) {
-            final offsetSeconds =
-                elapsed.inMicroseconds / Duration.microsecondsPerSecond;
-            if (sim.isDone(offsetSeconds)) {
-              final targetValue = _stagedMotion.targetValue ?? upperBound;
-              _stagedMotion = const _StagedMotion.idle();
-              engine.value = targetValue;
-              onNotifyStatusListeners(AnimationStatus.completed);
-            } else {
-              engine.animateWith(_TimeOffsetSimulation(sim, offsetSeconds));
-            }
-          } else {
-            engine.animateWith(sim);
-          }
-        }
+        _resumeDirectedMotion(
+          engine,
+          onNotifyStatusListeners: onNotifyStatusListeners,
+          isBack: false,
+        );
         break;
       case _StagedMotionMode.animateBack:
-        if (_stagedMotion.targetValue != null &&
-            (engine.value - _stagedMotion.targetValue!).abs() > 0.0001) {
-          final range = upperBound - lowerBound;
-          final effectiveDuration = _stagedMotion.targetDuration ??
-              ((_reverseDuration ?? _duration) != null
-                  ? (range.isFinite
-                      ? (_reverseDuration ?? _duration)! *
-                          ((engine.value - _stagedMotion.targetValue!).abs() /
-                              range)
-                      : (_reverseDuration ?? _duration)!)
-                  : const Duration(milliseconds: 300));
-          final sim = _stagedMotion.simulation ??
-              _CurvedInterpolationSimulation(
-                begin: _stagedMotion.targetFromValue ?? engine.value,
-                end: _stagedMotion.targetValue!,
-                duration: effectiveDuration,
-                curve: _stagedMotion.targetCurve,
-              );
-          final elapsed = _stagedMotion.elapsedDuration;
-          if (elapsed != null && elapsed > Duration.zero) {
-            final offsetSeconds =
-                elapsed.inMicroseconds / Duration.microsecondsPerSecond;
-            if (sim.isDone(offsetSeconds)) {
-              final targetValue = _stagedMotion.targetValue ?? lowerBound;
-              _stagedMotion = const _StagedMotion.idle();
-              engine.value = targetValue;
-              onNotifyStatusListeners(AnimationStatus.dismissed);
-            } else {
-              engine.animateBackWith(_TimeOffsetSimulation(sim, offsetSeconds));
-            }
-          } else {
-            engine.animateBackWith(sim);
-          }
-        }
+        _resumeDirectedMotion(
+          engine,
+          onNotifyStatusListeners: onNotifyStatusListeners,
+          isBack: true,
+        );
         break;
       case _StagedMotionMode.fling:
         if (_stagedMotion.simulation != null) {
@@ -624,6 +570,55 @@ abstract base class _DormantAnimationControlDelegate
         break;
       case _StagedMotionMode.idle:
         break;
+    }
+  }
+
+  void _resumeDirectedMotion(
+    AnimationController engine, {
+    required void Function(AnimationStatus) onNotifyStatusListeners,
+    required bool isBack,
+  }) {
+    final target = _stagedMotion.targetValue;
+    if (target == null) return;
+
+    final doneStatus =
+        isBack ? AnimationStatus.dismissed : AnimationStatus.completed;
+    if ((engine.value - target).abs() <= 0.0001) {
+      _stagedMotion = const _StagedMotion.idle();
+      engine.value = target;
+      onNotifyStatusListeners(doneStatus);
+      return;
+    }
+
+    final effectiveDuration = _stagedMotion.targetDuration ??
+        _scaledDuration(
+          isBack ? (_reverseDuration ?? _duration) : _duration,
+          (target - engine.value).abs(),
+          upperBound - lowerBound,
+        );
+    final sim = _stagedMotion.simulation ??
+        _CurvedInterpolationSimulation(
+          begin: _stagedMotion.targetFromValue ?? engine.value,
+          end: target,
+          duration: effectiveDuration,
+          curve: _stagedMotion.targetCurve,
+        );
+    final elapsed = _stagedMotion.elapsedDuration;
+    if (elapsed != null && elapsed > Duration.zero) {
+      final offsetSeconds =
+          elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+      if (sim.isDone(offsetSeconds)) {
+        _stagedMotion = const _StagedMotion.idle();
+        engine.value = target;
+        onNotifyStatusListeners(doneStatus);
+      } else {
+        final offsetSim = _TimeOffsetSimulation(sim, offsetSeconds);
+        isBack
+            ? engine.animateBackWith(offsetSim)
+            : engine.animateWith(offsetSim);
+      }
+    } else {
+      isBack ? engine.animateBackWith(sim) : engine.animateWith(sim);
     }
   }
 }
@@ -1058,13 +1053,12 @@ base class _CatchUpDormantControlDelegate
       case _StagedMotionMode.animateTo:
         final rawTarget = _stagedMotion.targetValue ?? upperBound;
         final target = clampDouble(rawTarget, lowerBound, upperBound);
-        final range = upperBound - lowerBound;
         final effectiveDuration = _stagedMotion.targetDuration ??
-            (_duration != null
-                ? (range.isFinite
-                    ? _duration! * ((target - _value).abs() / range)
-                    : _duration!)
-                : const Duration(milliseconds: 300));
+            _scaledDuration(
+              _duration,
+              (target - _value).abs(),
+              upperBound - lowerBound,
+            );
         final sim = _stagedMotion.simulation ??
             _CurvedInterpolationSimulation(
               begin: _stagedMotion.targetFromValue ?? _value,
@@ -1093,12 +1087,11 @@ base class _CatchUpDormantControlDelegate
         final rawTarget = _stagedMotion.targetValue ?? lowerBound;
         final target = clampDouble(rawTarget, lowerBound, upperBound);
         final effectiveDuration = _stagedMotion.targetDuration ??
-            ((_reverseDuration ?? _duration) != null
-                ? (range.isFinite
-                    ? (_reverseDuration ?? _duration)! *
-                        ((_value - target).abs() / range)
-                    : (_reverseDuration ?? _duration)!)
-                : const Duration(milliseconds: 300));
+            _scaledDuration(
+              _reverseDuration ?? _duration,
+              (_value - target).abs(),
+              upperBound - lowerBound,
+            );
         final sim = _stagedMotion.simulation ??
             _CurvedInterpolationSimulation(
               begin: _stagedMotion.targetFromValue ?? _value,
@@ -1248,8 +1241,9 @@ base class _ActiveAnimationControlDelegate
     if (_engine.lastElapsedDuration != null) {
       _lastKnownEngineElapsed = _engine.lastElapsedDuration!;
     }
-    _checkRepeatCompletion();
-    _notifyListeners();
+    if (!_checkRepeatCompletion()) {
+      _notifyListeners();
+    }
   }
 
   void _handleStatusChanged(AnimationStatus status) {
@@ -1261,7 +1255,7 @@ base class _ActiveAnimationControlDelegate
     _baseElapsedDuration += elapsed;
   }
 
-  void _checkRepeatCompletion() {
+  bool _checkRepeatCompletion() {
     if (_lastMotion.mode == _StagedMotionMode.repeat &&
         _lastMotion.repeatCount != null) {
       final period = _lastMotion.repeatPeriod ?? _engine.duration;
@@ -1273,7 +1267,7 @@ base class _ActiveAnimationControlDelegate
         final totalElapsedMicros =
             _baseElapsedDuration.inMicroseconds + engineElapsed.inMicroseconds;
 
-        if (totalElapsedMicros >= totalBudgetMicros) {
+        if (!_engine.isAnimating || totalElapsedMicros >= totalBudgetMicros) {
           final min = _lastMotion.repeatMin ?? _engine.lowerBound;
           final max = _lastMotion.repeatMax ?? _engine.upperBound;
           final repeatReverse = _lastMotion.repeatReverse;
@@ -1292,11 +1286,14 @@ base class _ActiveAnimationControlDelegate
           if (_engine.isAnimating) {
             _engine.stop();
           }
+          final didValueChange = _engine.value != finalVal;
           _engine.value = finalVal;
           _notifyStatusListeners(finalStatus);
+          return didValueChange;
         }
       }
     }
+    return false;
   }
 
   _StagedMotion get stagedMotion {
@@ -1448,52 +1445,30 @@ base class _ActiveAnimationControlDelegate
 
   @override
   TickerFuture animateTo(double target,
-      {Duration? duration, Curve curve = Curves.linear}) {
-    _baseElapsedDuration = Duration.zero;
-    _overrideStatus = null;
-    final clampedTarget =
-        clampDouble(target, _engine.lowerBound, _engine.upperBound);
-    final range = _engine.upperBound - _engine.lowerBound;
-    final effectiveDuration = duration ??
-        (_engine.duration != null
-            ? (range.isFinite
-                ? _engine.duration! *
-                    ((clampedTarget - _engine.value).abs() / range)
-                : _engine.duration!)
-            : const Duration(milliseconds: 300));
-    final sim = _CurvedInterpolationSimulation(
-      begin: _engine.value,
-      end: clampedTarget,
-      duration: effectiveDuration,
-      curve: curve,
-    );
-    _lastMotion = _StagedMotion(
-      mode: _StagedMotionMode.animateTo,
-      targetFromValue: _engine.value,
-      targetValue: clampedTarget,
-      targetDuration: effectiveDuration,
-      targetCurve: curve,
-      simulation: sim,
-      wasReversePhase: false,
-    );
-    return _engine.animateWith(sim);
-  }
+      {Duration? duration, Curve curve = Curves.linear}) =>
+      _dispatchDirectedMotion(target, duration: duration, curve: curve, isBack: false);
 
   @override
   TickerFuture animateBack(double target,
-      {Duration? duration, Curve curve = Curves.linear}) {
+      {Duration? duration, Curve curve = Curves.linear}) =>
+      _dispatchDirectedMotion(target, duration: duration, curve: curve, isBack: true);
+
+  TickerFuture _dispatchDirectedMotion(
+    double target, {
+    Duration? duration,
+    required Curve curve,
+    required bool isBack,
+  }) {
     _baseElapsedDuration = Duration.zero;
     _overrideStatus = null;
     final clampedTarget =
         clampDouble(target, _engine.lowerBound, _engine.upperBound);
-    final range = _engine.upperBound - _engine.lowerBound;
     final effectiveDuration = duration ??
-        ((_engine.reverseDuration ?? _engine.duration) != null
-            ? (range.isFinite
-                ? (_engine.reverseDuration ?? _engine.duration)! *
-                    ((_engine.value - clampedTarget).abs() / range)
-                : (_engine.reverseDuration ?? _engine.duration)!)
-            : const Duration(milliseconds: 300));
+        _scaledDuration(
+          isBack ? (_engine.reverseDuration ?? _engine.duration) : _engine.duration,
+          (clampedTarget - _engine.value).abs(),
+          _engine.upperBound - _engine.lowerBound,
+        );
     final sim = _CurvedInterpolationSimulation(
       begin: _engine.value,
       end: clampedTarget,
@@ -1501,15 +1476,15 @@ base class _ActiveAnimationControlDelegate
       curve: curve,
     );
     _lastMotion = _StagedMotion(
-      mode: _StagedMotionMode.animateBack,
+      mode: isBack ? _StagedMotionMode.animateBack : _StagedMotionMode.animateTo,
       targetFromValue: _engine.value,
       targetValue: clampedTarget,
       targetDuration: effectiveDuration,
       targetCurve: curve,
       simulation: sim,
-      wasReversePhase: true,
+      wasReversePhase: isBack,
     );
-    return _engine.animateBackWith(sim);
+    return isBack ? _engine.animateBackWith(sim) : _engine.animateWith(sim);
   }
 
   @override

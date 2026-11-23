@@ -1252,5 +1252,97 @@ void main() {
         },
       );
     });
+
+    testWidgets(
+      'animateTo / animateBack with lowerBound == upperBound does not throw UnsupportedError (NaN)',
+      (WidgetTester tester) async {
+        final controller = DurableAnimationController(
+          lowerBound: 1.0,
+          upperBound: 1.0,
+          value: 1.0,
+          duration: const Duration(milliseconds: 300),
+        );
+
+        // Dormant animateTo / animateBack
+        expect(() => controller.animateTo(1.0), returnsNormally);
+        expect(() => controller.animateBack(1.0), returnsNormally);
+
+        // Active animateTo / animateBack
+        await tester.pumpWidget(
+          MaterialApp(
+            home: composed.vsync((context, via, vsync) {
+              controller.wake(vsync);
+              return const SizedBox.shrink();
+            }),
+          ),
+        );
+        expect(() => controller.animateTo(1.0), returnsNormally);
+        expect(() => controller.animateBack(1.0), returnsNormally);
+        controller.hibernate();
+      },
+    );
+
+    testWidgets(
+      'dormant staged animateTo/forward at target snaps and emits completed status on wake',
+      (WidgetTester tester) async {
+        final controller = DurableAnimationController(
+          value: 1.0,
+          duration: const Duration(milliseconds: 300),
+        );
+        final statuses = <AnimationStatus>[];
+        controller.view.addStatusListener(statuses.add);
+
+        controller.forward();
+        expect(controller.status, AnimationStatus.forward);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: composed.vsync((context, via, vsync) {
+              controller.wake(vsync);
+              return const SizedBox.shrink();
+            }),
+          ),
+        );
+        await tester.pump();
+
+        expect(controller.isAnimating, isFalse);
+        expect(statuses.last, AnimationStatus.completed);
+        controller.hibernate();
+      },
+    );
+
+    testWidgets(
+      'active repeat(count: N) notifies value listeners once on final completion tick',
+      (WidgetTester tester) async {
+        late DurableAnimationController controller;
+        var tickCount = 0;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: composed.vsync((context, via, vsync) {
+              controller = DurableAnimationController(
+                duration: const Duration(milliseconds: 100),
+              )..wake(vsync);
+              return const SizedBox.shrink();
+            }),
+          ),
+        );
+
+        controller.view.addListener(() {
+          if (controller.value == 1.0) {
+            tickCount++;
+          }
+        });
+
+        controller.repeat(count: 1, period: const Duration(milliseconds: 100));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(controller.value, 1.0);
+        expect(controller.status, AnimationStatus.completed);
+        expect(tickCount, 1);
+        controller.hibernate();
+      },
+    );
   });
 }
