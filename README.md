@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/blooming_ecosystem_banner_neutral.svg" alt="Blooming Ecosystem — Reactive state engine for Dart and Flutter" width="100%" />
+  <img src="assets/xmas/blooming_ecosystem_banner_xmas_santa_postcard.svg" alt="Blooming Ecosystem — Reactive state engine for Dart and Flutter" width="100%" />
 </p>
 
 # Blooming

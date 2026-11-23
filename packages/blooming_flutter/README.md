@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pioneerjkf/blooming/main/packages/blooming_flutter/assets/blooming_flutter_banner_extended_neutral.svg" alt=".blooming_flutter — Fine-Grained Reactive UI Engine for Flutter" width="100%" />
+  <img src="https://raw.githubusercontent.com/pioneerjkf/blooming/main/packages/blooming_flutter/assets/xmas/blooming_flutter_banner_extended_xmas_red_classic.svg" alt=".blooming_flutter — Fine-Grained Reactive UI Engine for Flutter" width="100%" />
 </p>
 
 <h1 align="center">Blooming Flutter</h1>

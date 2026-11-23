@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pioneerjkf/blooming/main/packages/blooming/assets/blooming_core_banner_neutral.svg" alt=".bloom — 2-Phase LPDAG Reactive State Engine" width="100%" />
+  <img src="https://raw.githubusercontent.com/pioneerjkf/blooming/main/packages/blooming/assets/xmas/blooming_core_banner_xmas_sia_snowman.svg" alt=".bloom — 2-Phase LPDAG Reactive State Engine" width="100%" />
 </p>
 
 <h1 align="center">Blooming</h1>
