@@ -564,5 +564,50 @@ void main() {
       expect(untracked(dataBloom), 'Updated');
       expect(untracked(pendingBloom), isFalse);
     });
+
+    test('11.3 pending facet sees pendingVersion changes after deactivate/reactivate when _pendingVersion catches up to _version', () async {
+      final query = blooming('v1');
+      Completer<String>? activeCompleter;
+
+      final rawFuture = computed.future((via) {
+        via(query.bloom);
+        final c = Completer<String>();
+        activeCompleter = c;
+        return c.future;
+      });
+
+      final (:data, :pending) = rawFuture.retainedTuple();
+      final tData = RawBloomTerminal(data, onInvalidated: () {});
+      final tPending = RawBloomTerminal(pending, onInvalidated: () {});
+      tData.activate();
+      tPending.activate();
+
+      // Advance retained _version to 1 (_pendingVersion = 0)
+      activeCompleter!.complete('R1');
+      await Future<void>.delayed(Duration.zero);
+      expect(tData.data, 'R1');
+      expect(tPending.data, isFalse);
+
+      // Deactivate pending while data keeps retained active
+      tPending.deactivate();
+
+      // Mutate query and resolve data while pending is inactive so _pendingVersion advances to 1 (== _version)
+      query.data = 'v2';
+      await Future<void>.delayed(Duration.zero);
+      expect(tData.data, 'R1');
+
+      // Reactivate pending: _pendingVersion (1) == _version (1), so without _pullVersion() in _deactivate()
+      // _isSourceDirty would evaluate 1 != 1 -> false and return stale false.
+      tPending.activate();
+      expect(tPending.data, isTrue);
+
+      activeCompleter!.complete('R2');
+      await Future<void>.delayed(Duration.zero);
+      expect(tData.data, 'R2');
+      expect(tPending.data, isFalse);
+
+      tData.deactivate();
+      tPending.deactivate();
+    });
   });
 }

@@ -66,7 +66,7 @@ base mixin _UnaryEdgeMixin<N extends _Node> on _Lifecycle implements _TargetEdge
   @mustCallSuper
   @override
   void _deactivate() {
-    _pulledVersion = _source._version;
+    _pullVersion();
     super._deactivate();
     _source._detachTargetEdgeOptimistically(this);
   }
