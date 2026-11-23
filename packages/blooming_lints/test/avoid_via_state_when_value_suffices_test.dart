@@ -27,11 +27,13 @@ class _ViaStateDataVisitor extends RecursiveAstVisitor<void> {
 void main() {
   group('AvoidViaStateWhenValueSuffices AST detection', () {
     test('detects via.state(x).data inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final total = computed((via) => via.state(price).data * 2);
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _ViaStateDataVisitor();
       unit.accept(visitor);
@@ -39,11 +41,13 @@ void test() {
     });
 
     test('permits direct via(x) inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final total = computed((via) => via(price) * 2);
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _ViaStateDataVisitor();
       unit.accept(visitor);
@@ -51,14 +55,16 @@ void test() {
     });
 
     test('permits other BloomState property reads on via.state(x)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final total = computed((via) {
     final state = via.state(price);
     return state.hasData ? 1 : 0;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _ViaStateDataVisitor();
       unit.accept(visitor);

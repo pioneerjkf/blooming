@@ -36,53 +36,30 @@ part of '../../../blooming_lints.dart';
 ///   late final stockBloom = stockStream.toBloom(initialData: 0.0);
 /// }
 /// ```
-class AvoidBridgingInBuild extends DartLintRule {
-  AvoidBridgingInBuild() : super(code: _code);
+class AvoidBridgingInBuild extends AnalysisRule {
+  AvoidBridgingInBuild()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_bridging_in_build',
-    problemMessage:
-        'Avoid calling reactive bridging methods or adapters (\'{0}\') inside build methods or reactive scopes.',
+  static const code = LintCode(
+    'avoid_bridging_in_build',
+    'Avoid calling reactive bridging methods or adapters (\'{0}\') inside build methods or reactive scopes.',
     correctionMessage:
         'Cache the bridged reactive node in a `late final` field on the Widget or outside the evaluation scope to avoid allocations.',
-    errorSeverity: DiagnosticSeverity.WARNING,
+    severity: DiagnosticSeverity.WARNING,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    // 1. Check bridging method invocations
-    context.registry.addMethodInvocation((node) {
-      final methodName = node.methodName.name;
-      if (BloomTypeChecker.isReactiveBridgingMethod(methodName)) {
-        if (isInsideBuildOrReactiveScope(node)) {
-          reporter.atNode(node, _code, arguments: [methodName]);
-        }
-      }
-    });
-
-    // 2. Check property adapter accesses
-    context.registry.addPropertyAccess((node) {
-      final propName = node.propertyName.name;
-      if (BloomTypeChecker.isReactiveBridgingProperty(propName)) {
-        if (isInsideBuildOrReactiveScope(node)) {
-          reporter.atNode(node, _code, arguments: [propName]);
-        }
-      }
-    });
-
-    // 3. Check prefixed property adapter accesses
-    context.registry.addPrefixedIdentifier((node) {
-      final propName = node.identifier.name;
-      if (BloomTypeChecker.isReactiveBridgingProperty(propName)) {
-        if (isInsideBuildOrReactiveScope(node)) {
-          reporter.atNode(node, _code, arguments: [propName]);
-        }
-      }
-    });
+    final visitor = _AvoidBridgingInBuildVisitor(this);
+    registry.addMethodInvocation(this, visitor);
+    registry.addPropertyAccess(this, visitor);
+    registry.addPrefixedIdentifier(this, visitor);
   }
 
   /// Checks if the AST [node] is located within a Flutter `build()` method or a reactive derivation scope.
@@ -90,5 +67,40 @@ class AvoidBridgingInBuild extends DartLintRule {
     if (FlutterAstUtils.isInsideBuildMethod(node)) return true;
     if (BloomTypeChecker.isInsideBloomViaScope(node)) return true;
     return false;
+  }
+}
+
+class _AvoidBridgingInBuildVisitor extends SimpleAstVisitor<void> {
+  _AvoidBridgingInBuildVisitor(this.rule);
+  final AvoidBridgingInBuild rule;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final methodName = node.methodName.name;
+    if (BloomTypeChecker.isReactiveBridgingMethod(methodName)) {
+      if (AvoidBridgingInBuild.isInsideBuildOrReactiveScope(node)) {
+        rule.reportAtNode(node, arguments: [methodName]);
+      }
+    }
+  }
+
+  @override
+  void visitPropertyAccess(PropertyAccess node) {
+    final propName = node.propertyName.name;
+    if (BloomTypeChecker.isReactiveBridgingProperty(propName)) {
+      if (AvoidBridgingInBuild.isInsideBuildOrReactiveScope(node)) {
+        rule.reportAtNode(node, arguments: [propName]);
+      }
+    }
+  }
+
+  @override
+  void visitPrefixedIdentifier(PrefixedIdentifier node) {
+    final propName = node.identifier.name;
+    if (BloomTypeChecker.isReactiveBridgingProperty(propName)) {
+      if (AvoidBridgingInBuild.isInsideBuildOrReactiveScope(node)) {
+        rule.reportAtNode(node, arguments: [propName]);
+      }
+    }
   }
 }

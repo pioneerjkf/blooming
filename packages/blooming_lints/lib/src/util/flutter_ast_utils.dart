@@ -6,6 +6,12 @@ part of '../../blooming_lints.dart';
 
 /// General-purpose AST utility helpers for analyzing Flutter framework patterns.
 abstract final class FlutterAstUtils {
+  /// Returns the declared members of [clazz] if its body is a [BlockClassBody].
+  static List<ClassMember> classMembers(ClassDeclaration clazz) {
+    final body = clazz.body;
+    return body is BlockClassBody ? body.members : const [];
+  }
+
   /// Returns `true` if the [method] represents a Flutter widget build method
   /// (e.g. `Widget build(BuildContext context)`).
   static bool isWidgetBuildMethod(MethodDeclaration method) {
@@ -15,7 +21,7 @@ abstract final class FlutterAstUtils {
     final parameters = method.parameters?.parameters;
     if (parameters != null && parameters.isNotEmpty) {
       for (final param in parameters) {
-        if (param is SimpleFormalParameter) {
+        if (param is RegularFormalParameter) {
           final typeStr = param.type?.toSource();
           if (typeStr == 'BuildContext' || typeStr == 'BuildContext?') {
             return true;
@@ -106,8 +112,8 @@ abstract final class FlutterAstUtils {
 
     while (current != null) {
       // 1. Event callback parameter (e.g. onPressed: () => ...)
-      if (current is NamedExpression) {
-        final paramName = current.name.label.name;
+      if (current is NamedArgument) {
+        final paramName = current.name.lexeme;
         if (BloomTypeChecker.isEventCallbackParameter(paramName)) {
           return true;
         }

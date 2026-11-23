@@ -54,50 +54,38 @@ part of '../../../blooming_lints.dart';
 ///   return await c.fetch(targetUrl);
 /// });
 /// ```
-class AvoidAsyncInManaged extends DartLintRule {
-  AvoidAsyncInManaged() : super(code: _code);
+class AvoidAsyncInManaged extends AnalysisRule {
+  AvoidAsyncInManaged()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_async_in_managed',
-    problemMessage:
-        'Avoid passing asynchronous closures or Future/Stream types to managed().',
+  static const code = LintCode(
+    'avoid_async_in_managed',
+    'Avoid passing asynchronous closures or Future/Stream types to managed().',
     correctionMessage:
         'Use synchronous closures for managed resource lifecycles, or use computed.future/computed.stream for async queries.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    void checkArgumentList(ArgumentList argumentList) {
-      for (final expr in findAsyncClosures(argumentList)) {
-        reporter.atNode(expr, _code);
-      }
-    }
-
-    context.registry.addFunctionExpressionInvocation((node) {
-      if (BloomTypeChecker.resolveFunctorName(node) == 'ManagedFunctor') {
-        checkArgumentList(node.argumentList);
-      }
-    });
-
-    context.registry.addMethodInvocation((node) {
-      if (BloomTypeChecker.resolveFunctorName(node) == 'ManagedFunctor') {
-        checkArgumentList(node.argumentList);
-      }
-    });
+    final visitor = _AvoidAsyncInManagedVisitor(this);
+    registry.addFunctionExpressionInvocation(this, visitor);
+    registry.addMethodInvocation(this, visitor);
   }
 
   /// Returns all asynchronous create/update/dispose [Expression]s in the given [argumentList].
   static List<Expression> findAsyncClosures(ArgumentList argumentList) {
     final asyncClosures = <Expression>[];
     for (final arg in argumentList.arguments) {
-      if (arg is NamedExpression) {
-        final paramName = arg.name.label.name;
-        final expr = arg.expression;
+      if (arg is NamedArgument) {
+        final paramName = arg.name.lexeme;
+        final expr = arg.argumentExpression;
 
         // 1. For create and update, prohibit async closures AND functions returning Future or exact Stream.
         // Synchronous resources implementing Stream (e.g. ReceivePort, Socket) are permitted.
@@ -126,5 +114,30 @@ class AvoidAsyncInManaged extends DartLintRule {
   static bool isAsyncClosureInManaged(MethodInvocation node) {
     if (node.methodName.name != 'managed') return false;
     return findAsyncClosures(node.argumentList).isNotEmpty;
+  }
+}
+
+class _AvoidAsyncInManagedVisitor extends SimpleAstVisitor<void> {
+  _AvoidAsyncInManagedVisitor(this.rule);
+  final AvoidAsyncInManaged rule;
+
+  void _checkArgumentList(ArgumentList argumentList) {
+    for (final expr in AvoidAsyncInManaged.findAsyncClosures(argumentList)) {
+      rule.reportAtNode(expr);
+    }
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (BloomTypeChecker.resolveFunctorName(node) == 'ManagedFunctor') {
+      _checkArgumentList(node.argumentList);
+    }
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (BloomTypeChecker.resolveFunctorName(node) == 'ManagedFunctor') {
+      _checkArgumentList(node.argumentList);
+    }
   }
 }

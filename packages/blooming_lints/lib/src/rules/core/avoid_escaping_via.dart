@@ -60,39 +60,29 @@ part of '../../../blooming_lints.dart';
 ///   }
 /// }
 /// ```
-class AvoidEscapingVia extends DartLintRule {
-  AvoidEscapingVia() : super(code: _code);
+class AvoidEscapingVia extends AnalysisRule {
+  AvoidEscapingVia()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_escaping_via',
-    problemMessage:
-        'Avoid escaping via() into event callbacks, async timer/Future callbacks, or nested async functions across await.',
+  static const code = LintCode(
+    'avoid_escaping_via',
+    'Avoid escaping via() into event callbacks, async timer/Future callbacks, or nested async functions across await.',
     correctionMessage:
         'Call via(node) directly within the owning reactive scope, or use untracked(node) inside deferred event/timer callbacks.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    context.registry.addMethodInvocation((node) {
-      if (!BloomTypeChecker.isBloomViaInvocation(node)) return;
-
-      if (isEscapingViaInvocation(node)) {
-        reporter.atNode(node, _code);
-      }
-    });
-
-    context.registry.addFunctionExpressionInvocation((node) {
-      if (!BloomTypeChecker.isBloomViaInvocation(node)) return;
-
-      if (isEscapingViaInvocation(node)) {
-        reporter.atNode(node, _code);
-      }
-    });
+    final visitor = _AvoidEscapingViaVisitor(this);
+    registry.addMethodInvocation(this, visitor);
+    registry.addFunctionExpressionInvocation(this, visitor);
   }
 
   /// Checks if [node] is called inside an async timer/dispatcher, deferred inside an event handler,
@@ -102,8 +92,8 @@ class AvoidEscapingVia extends DartLintRule {
 
     while (current != null) {
       // 1. Check if inside event handler parameter (e.g. onPressed, onTap)
-      if (current is NamedExpression) {
-        final paramName = current.name.label.name;
+      if (current is NamedArgument) {
+        final paramName = current.name.lexeme;
         if (BloomTypeChecker.isEventCallbackParameter(paramName)) {
           return true;
         }
@@ -128,9 +118,11 @@ class AvoidEscapingVia extends DartLintRule {
       // that do not declare `via` escape the synchronous turn if they suspend at `await`.
       if (current is FunctionBody) {
         final parent = current.parent;
-        final isOwningViaClosure = parent is FunctionExpression &&
-            (parent.parameters?.parameters
-                    .any(BloomTypeChecker.isBloomViaParameter) ??
+        final isOwningViaClosure =
+            parent is FunctionExpression &&
+            (parent.parameters?.parameters.any(
+                  BloomTypeChecker.isBloomViaParameter,
+                ) ??
                 false);
 
         if (current.isAsynchronous && !isOwningViaClosure) {
@@ -163,11 +155,13 @@ class AvoidEscapingVia extends DartLintRule {
     final nodeOffset = node.offset;
     var foundPrecedingAwait = false;
 
-    body.visitChildren(_AwaitFinder((awaitNode) {
-      if (awaitNode.offset < nodeOffset) {
-        foundPrecedingAwait = true;
-      }
-    }));
+    body.visitChildren(
+      _AwaitFinder((awaitNode) {
+        if (awaitNode.offset < nodeOffset) {
+          foundPrecedingAwait = true;
+        }
+      }),
+    );
 
     return foundPrecedingAwait;
   }
@@ -192,5 +186,28 @@ class _AwaitFinder extends RecursiveAstVisitor<void> {
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
     // Do not recurse into nested local function declarations.
+  }
+}
+
+class _AvoidEscapingViaVisitor extends SimpleAstVisitor<void> {
+  _AvoidEscapingViaVisitor(this.rule);
+  final AvoidEscapingVia rule;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (!BloomTypeChecker.isBloomViaInvocation(node)) return;
+
+    if (AvoidEscapingVia.isEscapingViaInvocation(node)) {
+      rule.reportAtNode(node);
+    }
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (!BloomTypeChecker.isBloomViaInvocation(node)) return;
+
+    if (AvoidEscapingVia.isEscapingViaInvocation(node)) {
+      rule.reportAtNode(node);
+    }
   }
 }

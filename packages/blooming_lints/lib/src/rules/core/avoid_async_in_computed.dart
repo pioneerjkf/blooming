@@ -37,48 +37,29 @@ part of '../../../blooming_lints.dart';
 ///   return await apiService.fetchPermissions(user.id);
 /// });
 /// ```
-class AvoidAsyncInComputed extends DartLintRule {
-  AvoidAsyncInComputed() : super(code: _code);
+class AvoidAsyncInComputed extends AnalysisRule {
+  AvoidAsyncInComputed()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_async_in_computed',
-    problemMessage:
-        'Avoid passing asynchronous closures or Future/Stream return types to synchronous computed().',
+  static const code = LintCode(
+    'avoid_async_in_computed',
+    'Avoid passing asynchronous closures or Future/Stream return types to synchronous computed().',
     correctionMessage:
         'Use computed.future() for Future derivations or computed.stream() for Stream derivations.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   @override
-  List<Fix> getFixes() => [ConvertToComputedAsyncFix()];
+  LintCode get diagnosticCode => code;
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    void checkArgumentList(ArgumentList argumentList) {
-      final positional =
-          argumentList.arguments.where((arg) => arg is! NamedExpression);
-      if (positional.isEmpty) return;
-      final computeArg = positional.first;
-      if (isAsyncComputation(computeArg)) {
-        reporter.atNode(computeArg, _code);
-      }
-    }
-
-    context.registry.addFunctionExpressionInvocation((node) {
-      if (BloomTypeChecker.resolveFunctorName(node) == 'ComputedFunctor') {
-        checkArgumentList(node.argumentList);
-      }
-    });
-
-    context.registry.addMethodInvocation((node) {
-      if (BloomTypeChecker.resolveFunctorName(node) == 'ComputedFunctor') {
-        checkArgumentList(node.argumentList);
-      }
-    });
+    final visitor = _AvoidAsyncInComputedVisitor(this);
+    registry.addFunctionExpressionInvocation(this, visitor);
+    registry.addMethodInvocation(this, visitor);
   }
 
   /// Returns `true` if [expr] is an asynchronous closure or returns a Future/Stream.
@@ -91,9 +72,40 @@ class AvoidAsyncInComputed extends DartLintRule {
   static bool isAsyncClosureInComputed(InvocationExpression node) {
     final name = BloomTypeChecker.resolveFunctorName(node);
     if (name != 'ComputedFunctor') return false;
-    final positional =
-        node.argumentList.arguments.where((arg) => arg is! NamedExpression);
+    final positional = node.argumentList.arguments
+        .where((arg) => arg is! NamedArgument)
+        .map((arg) => arg.argumentExpression);
     if (positional.isEmpty) return false;
     return isAsyncComputation(positional.first);
+  }
+}
+
+class _AvoidAsyncInComputedVisitor extends SimpleAstVisitor<void> {
+  _AvoidAsyncInComputedVisitor(this.rule);
+  final AvoidAsyncInComputed rule;
+
+  void _checkArgumentList(ArgumentList argumentList) {
+    final positional = argumentList.arguments
+        .where((arg) => arg is! NamedArgument)
+        .map((arg) => arg.argumentExpression);
+    if (positional.isEmpty) return;
+    final computeArg = positional.first;
+    if (AvoidAsyncInComputed.isAsyncComputation(computeArg)) {
+      rule.reportAtNode(computeArg);
+    }
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (BloomTypeChecker.resolveFunctorName(node) == 'ComputedFunctor') {
+      _checkArgumentList(node.argumentList);
+    }
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (BloomTypeChecker.resolveFunctorName(node) == 'ComputedFunctor') {
+      _checkArgumentList(node.argumentList);
+    }
   }
 }

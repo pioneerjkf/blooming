@@ -41,9 +41,10 @@ class _BridgingInvocationFinder extends RecursiveAstVisitor<void> {
 void main() {
   group('AvoidBridgingInBuild AST detection', () {
     test(
-        'detects toBloom, toBloomBy, toListenable inside Flutter Widget build() method',
-        () {
-      final unit = parseString(content: '''
+      'detects toBloom, toBloomBy, toListenable inside Flutter Widget build() method',
+      () {
+        final unit = parseString(
+          content: '''
 class BadWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = controller.toBloom();
@@ -52,42 +53,55 @@ class BadWidget extends StatelessWidget {
     return Container();
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      final finder = _BridgingInvocationFinder();
-      unit.accept(finder);
+        final finder = _BridgingInvocationFinder();
+        unit.accept(finder);
 
-      expect(finder.methodCalls.length,
-          equals(3)); // toBloom, toListenable, toBloomBy
+        expect(
+          finder.methodCalls.length,
+          equals(3),
+        ); // toBloom, toListenable, toBloomBy
 
-      for (final call in finder.methodCalls) {
-        expect(AvoidBridgingInBuild.isInsideBuildOrReactiveScope(call), isTrue);
-      }
-    });
+        for (final call in finder.methodCalls) {
+          expect(
+            AvoidBridgingInBuild.isInsideBuildOrReactiveScope(call),
+            isTrue,
+          );
+        }
+      },
+    );
 
     test('detects toBloom inside computed derivation scope', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void main() {
   final comp = computed((via) {
     final a = notifier.toBloom();
     return 10;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final finder = _BridgingInvocationFinder();
       unit.accept(finder);
 
       expect(finder.methodCalls.length, equals(1));
       expect(
-          AvoidBridgingInBuild.isInsideBuildOrReactiveScope(
-              finder.methodCalls.first),
-          isTrue);
+        AvoidBridgingInBuild.isInsideBuildOrReactiveScope(
+          finder.methodCalls.first,
+        ),
+        isTrue,
+      );
     });
 
-    test('ignores bridging inside non-build methods or lifecycle initializers',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'ignores bridging inside non-build methods or lifecycle initializers',
+      () {
+        final unit = parseString(
+          content: '''
 class GoodWidget extends StatelessWidget {
   late final a = controller.toBloom();
   late final b = notifier.toListenable();
@@ -100,16 +114,20 @@ class GoodWidget extends StatelessWidget {
     return Container();
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      final finder = _BridgingInvocationFinder();
-      unit.accept(finder);
+        final finder = _BridgingInvocationFinder();
+        unit.accept(finder);
 
-      expect(finder.methodCalls.length, equals(3));
-      for (final call in finder.methodCalls) {
-        expect(
-            AvoidBridgingInBuild.isInsideBuildOrReactiveScope(call), isFalse);
-      }
-    });
+        expect(finder.methodCalls.length, equals(3));
+        for (final call in finder.methodCalls) {
+          expect(
+            AvoidBridgingInBuild.isInsideBuildOrReactiveScope(call),
+            isFalse,
+          );
+        }
+      },
+    );
   });
 }

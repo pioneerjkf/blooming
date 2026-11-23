@@ -30,55 +30,29 @@ part of '../../../blooming_lints.dart';
 ///   return via(aBloom) + via(bBloom); // [Recommended] Explicit dynamic dependencies tracked
 /// });
 /// ```
-class AvoidUnnecessaryViaScope extends DartLintRule {
-  AvoidUnnecessaryViaScope() : super(code: _code);
+class AvoidUnnecessaryViaScope extends AnalysisRule {
+  AvoidUnnecessaryViaScope()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_unnecessary_via_scope',
-    problemMessage:
-        'The reactive closure declares \'via\' but never tracks any upstream dependencies.',
+  static const code = LintCode(
+    'avoid_unnecessary_via_scope',
+    'The reactive closure declares \'via\' but never tracks any upstream dependencies.',
     correctionMessage:
         'Call via(bloom) to track dependencies, or replace this reactive node with a standard final variable.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    severity: DiagnosticSeverity.INFO,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    void checkArguments(ArgumentList argumentList) {
-      final args = argumentList.arguments;
-      if (args.isEmpty) return;
-
-      final firstArg = args.first;
-      if (firstArg is FunctionExpression) {
-        if (isUnnecessaryViaClosure(firstArg)) {
-          reporter.atNode(firstArg, _code);
-        }
-      }
-    }
-
-    context.registry.addFunctionExpressionInvocation((node) {
-      final name = BloomTypeChecker.resolveFunctorName(node);
-      if (name == 'ComputedFunctor' ||
-          name == 'SwitchedFunctor' ||
-          name == 'ComputedStreamFunctor' ||
-          name == 'ComputedFutureFunctor') {
-        checkArguments(node.argumentList);
-      }
-    });
-
-    context.registry.addMethodInvocation((node) {
-      final name = BloomTypeChecker.resolveFunctorName(node);
-      if (name == 'ComputedFunctor' ||
-          name == 'SwitchedFunctor' ||
-          name == 'ComputedStreamFunctor' ||
-          name == 'ComputedFutureFunctor') {
-        checkArguments(node.argumentList);
-      }
-    });
+    final visitor = _AvoidUnnecessaryViaScopeVisitor(this);
+    registry.addFunctionExpressionInvocation(this, visitor);
+    registry.addMethodInvocation(this, visitor);
   }
 
   /// Returns `true` if [closure] accepts a `via` parameter but never calls `via(...)` or references `via`.
@@ -98,13 +72,54 @@ class AvoidUnnecessaryViaScope extends DartLintRule {
     final viaName = viaParam.name?.lexeme ?? 'via';
     var usesVia = false;
 
-    closure.body.visitChildren(_IdentifierVisitor((name) {
-      if (name == viaName) {
-        usesVia = true;
-      }
-    }));
+    closure.body.visitChildren(
+      _IdentifierVisitor((name) {
+        if (name == viaName) {
+          usesVia = true;
+        }
+      }),
+    );
 
     return !usesVia;
+  }
+}
+
+class _AvoidUnnecessaryViaScopeVisitor extends SimpleAstVisitor<void> {
+  _AvoidUnnecessaryViaScopeVisitor(this.rule);
+  final AvoidUnnecessaryViaScope rule;
+
+  void _checkArguments(ArgumentList argumentList) {
+    final args = argumentList.arguments;
+    if (args.isEmpty) return;
+
+    final firstArg = args.first;
+    if (firstArg is FunctionExpression) {
+      if (AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(firstArg)) {
+        rule.reportAtNode(firstArg);
+      }
+    }
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    final name = BloomTypeChecker.resolveFunctorName(node);
+    if (name == 'ComputedFunctor' ||
+        name == 'SwitchedFunctor' ||
+        name == 'ComputedStreamFunctor' ||
+        name == 'ComputedFutureFunctor') {
+      _checkArguments(node.argumentList);
+    }
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final name = BloomTypeChecker.resolveFunctorName(node);
+    if (name == 'ComputedFunctor' ||
+        name == 'SwitchedFunctor' ||
+        name == 'ComputedStreamFunctor' ||
+        name == 'ComputedFutureFunctor') {
+      _checkArguments(node.argumentList);
+    }
   }
 }
 

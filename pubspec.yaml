@@ -13,7 +13,6 @@ workspace:
   - packages/blooming_flutter_test
 
 dev_dependencies:
-  custom_lint: ^0.8.1
   blooming_lints:
     path: packages/blooming_lints
   lints: ^6.0.0

@@ -16,15 +16,19 @@ concurrency:
 
 jobs:
   verify:
-    name: Analyze & Test
+    name: Analyze & Test (${{ matrix.channel }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, beta]
 
     steps:
       - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.47.6'
+          channel: ${{ matrix.channel }}
           cache: true
 
       - name: Install workspace dependencies

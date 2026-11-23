@@ -11,7 +11,8 @@ import 'package:blooming_lints/blooming_lints.dart';
 void main() {
   group('DeactivateEffectRunner AST detection', () {
     test('detects undeactivated EffectRunner field in State class', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class _MyWidgetState extends State<MyWidget> {
   EffectRunner? _runner;
 
@@ -26,7 +27,8 @@ class _MyWidgetState extends State<MyWidget> {
     super.dispose();
   }
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));
@@ -38,7 +40,8 @@ class _MyWidgetState extends State<MyWidget> {
     });
 
     test('permits properly deactivated EffectRunner in dispose()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class _MyWidgetState extends State<MyWidget> {
   EffectRunner? _runner;
 
@@ -54,7 +57,8 @@ class _MyWidgetState extends State<MyWidget> {
     super.dispose();
   }
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));
@@ -65,7 +69,8 @@ class _MyWidgetState extends State<MyWidget> {
     });
 
     test('permits properly stopped EffectRunner in dispose()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class _MyWidgetState extends State<MyWidget> {
   EffectRunner? _runner;
 
@@ -81,7 +86,8 @@ class _MyWidgetState extends State<MyWidget> {
     super.dispose();
   }
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));
@@ -92,7 +98,8 @@ class _MyWidgetState extends State<MyWidget> {
     });
 
     test('also permits .cancel() invocation for backward compatibility', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class _MyWidgetState extends State<MyWidget> {
   EffectRunner? _runner;
 
@@ -108,7 +115,8 @@ class _MyWidgetState extends State<MyWidget> {
     super.dispose();
   }
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));

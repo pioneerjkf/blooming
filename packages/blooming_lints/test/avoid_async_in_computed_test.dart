@@ -11,74 +11,94 @@ import 'package:test/test.dart';
 void main() {
   group('AvoidAsyncInComputed AST detection', () {
     test('detects async closure passed to computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final bad = computed((via) async {
     return 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? computedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('computed', (node) => computedCall = node));
+        _MethodInvocationVisitor('computed', (node) => computedCall = node),
+      );
 
       expect(computedCall, isNotNull);
       expect(
-          AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!), isTrue);
+        AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!),
+        isTrue,
+      );
     });
 
     test('detects async* generator passed to computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final bad = computed((via) async* {
     yield 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? computedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('computed', (node) => computedCall = node));
+        _MethodInvocationVisitor('computed', (node) => computedCall = node),
+      );
 
       expect(computedCall, isNotNull);
       expect(
-          AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!), isTrue);
+        AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!),
+        isTrue,
+      );
     });
 
     test('detects closure when guard is placed before compute argument', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final bad = computed(
     guard: (via) {},
     (via) async => 42,
   );
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? computedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('computed', (node) => computedCall = node));
+        _MethodInvocationVisitor('computed', (node) => computedCall = node),
+      );
 
       expect(computedCall, isNotNull);
       expect(
-          AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!), isTrue);
+        AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!),
+        isTrue,
+      );
     });
 
     test('permits synchronous closure in computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final good = computed((via) => 42);
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? computedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('computed', (node) => computedCall = node));
+        _MethodInvocationVisitor('computed', (node) => computedCall = node),
+      );
 
       expect(computedCall, isNotNull);
-      expect(AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!),
-          isFalse);
+      expect(
+        AvoidAsyncInComputed.isAsyncClosureInComputed(computedCall!),
+        isFalse,
+      );
     });
   });
 }

@@ -22,34 +22,30 @@ part of '../../../blooming_lints.dart';
 /// ```dart
 /// final total = computed((via) => via(priceBloom) * via(quantityBloom));
 /// ```
-class AvoidViaStateWhenValueSuffices extends DartLintRule {
-  AvoidViaStateWhenValueSuffices() : super(code: _code);
+class AvoidViaStateWhenValueSuffices extends AnalysisRule {
+  AvoidViaStateWhenValueSuffices()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_via_state_when_value_suffices',
-    problemMessage:
-        'Use via(x) directly instead of via.state(x).data when only the value is needed.',
+  static const code = LintCode(
+    'avoid_via_state_when_value_suffices',
+    'Use via(x) directly instead of via.state(x).data when only the value is needed.',
     correctionMessage:
         'Replace \'via.state(x).data\' with \'via(x)\' for zero-allocation and concise derivation.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    severity: DiagnosticSeverity.INFO,
   );
 
   @override
-  List<Fix> getFixes() => [ReplaceViaStateDataFix()];
+  LintCode get diagnosticCode => code;
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    context.registry.addPropertyAccess((node) {
-      if (node.propertyName.name != 'data') return;
-      final target = node.target;
-      if (target is MethodInvocation && isViaStateInvocation(target)) {
-        reporter.atNode(node, _code);
-      }
-    });
+    registry.addPropertyAccess(
+      this,
+      _AvoidViaStateWhenValueSufficesVisitor(this),
+    );
   }
 
   /// Returns `true` if the method invocation [node] represents a `via.state(...)` call.
@@ -57,5 +53,20 @@ class AvoidViaStateWhenValueSuffices extends DartLintRule {
     if (node.methodName.name != 'state') return false;
     final target = node.target;
     return target != null && BloomTypeChecker.isBloomViaTarget(target);
+  }
+}
+
+class _AvoidViaStateWhenValueSufficesVisitor extends SimpleAstVisitor<void> {
+  _AvoidViaStateWhenValueSufficesVisitor(this.rule);
+  final AvoidViaStateWhenValueSuffices rule;
+
+  @override
+  void visitPropertyAccess(PropertyAccess node) {
+    if (node.propertyName.name != 'data') return;
+    final target = node.target;
+    if (target is MethodInvocation &&
+        AvoidViaStateWhenValueSuffices.isViaStateInvocation(target)) {
+      rule.reportAtNode(node);
+    }
   }
 }

@@ -8,15 +8,24 @@
 /// `BloomVia` scopes, proper controller lifecycle disposal, and rebuild isolation.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:analysis_server_plugin/edit/dart/correction_producer.dart';
+import 'package:analysis_server_plugin/edit/dart/dart_fix_kind_priority.dart';
+import 'package:analysis_server_plugin/edit/range_factory.dart';
+import 'package:analysis_server_plugin/plugin.dart';
+import 'package:analysis_server_plugin/registry.dart';
+import 'package:analyzer/analysis_rule/analysis_rule.dart';
+import 'package:analyzer/analysis_rule/rule_context.dart';
+import 'package:analyzer/analysis_rule/rule_visitor_registry.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:analyzer/error/error.dart' hide LintCode;
-import 'package:analyzer/error/listener.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity, LintCode;
+import 'package:analyzer_plugin/utilities/change_builder/change_builder_core.dart';
+import 'package:analyzer_plugin/utilities/fixes/fixes.dart';
 import 'package:meta/meta.dart';
 
 // Util parts
@@ -48,29 +57,59 @@ part 'src/fixes/replace_via_state_data_fix.dart';
 part 'src/fixes/replace_stateless_with_bloom_widget_fix.dart';
 part 'src/fixes/convert_to_computed_async_fix.dart';
 
-/// Entrypoint for the `blooming_lints` custom_lint analyzer plugin.
-PluginBase createPlugin() => _BloomingLinter();
+/// Top-level plugin instance discovered by the Dart Analysis Server.
+final plugin = BloomingPlugin();
 
-class _BloomingLinter extends PluginBase {
+/// All analysis rules provided by `blooming_lints`.
+List<AbstractAnalysisRule> createBloomingRules() => [
+  // Core Reactive Invariant Rules (Pure Dart)
+  AvoidAsyncInComputed(),
+  AvoidAsyncInManaged(),
+  AvoidCatchingViaShortCircuit(),
+  AvoidEscapingVia(),
+  AvoidStateWritesInPipeline(),
+  AvoidUnnecessaryViaScope(),
+  AvoidUntrackedBloomRead(),
+  AvoidViaStateWhenValueSuffices(),
+
+  // Flutter Integration Rules (UI & Lifecycle Guards)
+  AvoidBridgingInBuild(),
+  AvoidEscapingScopedController(),
+  AvoidBloomCreationInBuild(),
+  DeactivateEffectRunner(),
+  PreferComposedChild(),
+  PreferBloomOverController(),
+  PreferBloomWidget(),
+];
+
+/// Official `analysis_server_plugin` entrypoint for `blooming_lints`.
+class BloomingPlugin extends Plugin {
   @override
-  List<LintRule> getLintRules(CustomLintConfigs configs) => [
-        // Core Reactive Invariant Rules (Pure Dart)
-        AvoidAsyncInComputed(),
-        AvoidAsyncInManaged(),
-        AvoidCatchingViaShortCircuit(),
-        AvoidEscapingVia(),
-        AvoidStateWritesInPipeline(),
-        AvoidUnnecessaryViaScope(),
-        AvoidUntrackedBloomRead(),
-        AvoidViaStateWhenValueSuffices(),
+  String get name => 'blooming_lints';
 
-        // Flutter Integration Rules (UI & Lifecycle Guards)
-        AvoidBridgingInBuild(),
-        AvoidEscapingScopedController(),
-        AvoidBloomCreationInBuild(),
-        DeactivateEffectRunner(),
-        PreferComposedChild(),
-        PreferBloomOverController(),
-        PreferBloomWidget(),
-      ];
+  @override
+  FutureOr<void> register(PluginRegistry registry) {
+    for (final rule in createBloomingRules()) {
+      registry.registerWarningRule(rule);
+    }
+
+    registry
+      ..registerFixForRule(
+        AvoidAsyncInComputed.code,
+        ConvertToComputedAsyncFix.new,
+      )
+      ..registerFixForRule(AvoidUntrackedBloomRead.code, WrapWithViaFix.new)
+      ..registerFixForRule(
+        AvoidUntrackedBloomRead.untrackedCode,
+        WrapWithViaFix.new,
+      )
+      ..registerFixForRule(
+        AvoidViaStateWhenValueSuffices.code,
+        ReplaceViaStateDataFix.new,
+      )
+      ..registerFixForRule(
+        PreferBloomWidget.code,
+        ReplaceStatelessWithBloomWidgetFix.new,
+      );
+  }
 }

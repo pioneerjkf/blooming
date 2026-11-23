@@ -7,33 +7,52 @@
 part of '../../blooming_lints.dart';
 
 /// A quick fix that simplifies `via.state(x).data` to `via(x)`.
-class ReplaceViaStateDataFix extends DartFix {
-  @override
-  void run(
-    CustomLintResolver resolver,
-    ChangeReporter reporter,
-    CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) {
-    context.registry.addPropertyAccess((node) {
-      if (!node.sourceRange.intersects(analysisError.sourceRange)) return;
-      if (node.propertyName.name != 'data') return;
+class ReplaceViaStateDataFix extends ResolvedCorrectionProducer {
+  ReplaceViaStateDataFix({required super.context});
 
-      final target = node.target;
-      if (target is MethodInvocation && target.methodName.name == 'state') {
-        final args = target.argumentList.arguments;
-        if (args.isNotEmpty) {
-          final argSource = args.first.toSource();
-          final changeBuilder = reporter.createChangeBuilder(
-            message: 'Simplify to via($argSource)',
-            priority: 50,
-          );
-          changeBuilder.addDartFileEdit((builder) {
-            builder.addSimpleReplacement(node.sourceRange, 'via($argSource)');
-          });
-        }
-      }
+  static const _fixKind = FixKind(
+    'blooming_lints.fix.replaceViaStateData',
+    DartFixKindPriority.standard,
+    'Simplify to via({0})',
+  );
+
+  String? _argSource;
+
+  @override
+  CorrectionApplicability get applicability =>
+      CorrectionApplicability.singleLocation;
+
+  @override
+  FixKind get fixKind => _fixKind;
+
+  @override
+  List<String>? get fixArguments => _argSource == null ? null : [_argSource!];
+
+  @override
+  Future<void> compute(ChangeBuilder builder) async {
+    final propertyAccess = node is PropertyAccess
+        ? node as PropertyAccess
+        : node.thisOrAncestorOfType<PropertyAccess>();
+    if (propertyAccess == null || propertyAccess.propertyName.name != 'data') {
+      return;
+    }
+
+    final target = propertyAccess.target;
+    if (target is! MethodInvocation || target.methodName.name != 'state') {
+      return;
+    }
+
+    final args = target.argumentList.arguments;
+    if (args.isEmpty) return;
+
+    final argSource = args.first.toSource();
+    _argSource = argSource;
+
+    await builder.addDartFileEdit(file, (builder) {
+      builder.addSimpleReplacement(
+        range.node(propertyAccess),
+        'via($argSource)',
+      );
     });
   }
 }

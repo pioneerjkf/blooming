@@ -11,9 +11,10 @@ import 'package:test/test.dart';
 void main() {
   group('PreferComposedChild', () {
     test(
-        'detects heavy static subtree (2+ static widgets) inside composed closure',
-        () {
-      final unit = parseString(content: '''
+      'detects heavy static subtree (2+ static widgets) inside composed closure',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Row(children: [
     Text('\${via(countBloom)}'),
@@ -21,46 +22,58 @@ void main() {
     const Text('Favorite'),
   ]));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'detects const list literal containing static widgets inside composed closure',
-        () {
-      final unit = parseString(content: '''
+      'detects const list literal containing static widgets inside composed closure',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Row(children: const [
     Icon(Icons.star),
     Icon(Icons.star_border),
   ]));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'returns false for trivial spacers and single label (SizedBox, single Text)',
-        () {
-      final unit = parseString(content: '''
+      'returns false for trivial spacers and single label (SizedBox, single Text)',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Row(children: [
     const Text('Switch: '),
@@ -69,118 +82,152 @@ void main() {
     const SizedBox(height: 12),
   ]));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-    });
+          isFalse,
+        );
+      },
+    );
 
-    test('strict mode detects single const widget in high-frequency animation',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'strict mode detects single const widget in high-frequency animation',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Row(children: [
     Text('\${via(countBloom)}'),
     const Icon(Icons.star),
   ]));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      // In standard mode, single icon is allowed
-      expect(
+        expect(composedClosure, isNotNull);
+        // In standard mode, single icon is allowed
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-      // In high-frequency mode, single icon triggers strict isolation
-      expect(
-          PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body,
-              isHighFrequency: true),
-          isTrue);
-    });
+          isFalse,
+        );
+        // In high-frequency mode, single icon triggers strict isolation
+        expect(
+          PreferComposedChild.containsHeavyStaticWidget(
+            composedClosure!.body,
+            isHighFrequency: true,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'automatically detects observe as high-frequency source and enforces threshold 1',
-        () {
-      final unit = parseString(content: '''
+      'automatically detects observe as high-frequency source and enforces threshold 1',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Row(children: [
     Text('\${via(ctrl.observe())}'),
     const Icon(Icons.star),
   ]));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      // Automatically detected as high-frequency source, so strict isolation is enforced (threshold 1)
-      expect(
+        expect(composedClosure, isNotNull);
+        // Automatically detected as high-frequency source, so strict isolation is enforced (threshold 1)
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'returns false when no const widgets or static trees exist inside composed closure',
-        () {
-      final unit = parseString(content: '''
+      'returns false when no const widgets or static trees exist inside composed closure',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Text('\${via(countBloom)}'));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-    });
+          isFalse,
+        );
+      },
+    );
 
     test(
-        'returns false for non-widget const value types like EdgeInsets and TextStyle',
-        () {
-      final unit = parseString(content: '''
+      'returns false for non-widget const value types like EdgeInsets and TextStyle',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Padding(
     padding: const EdgeInsets.all(16),
     child: Text('\${via(countBloom)}', style: const TextStyle(fontSize: 14)),
   ));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-    });
+          isFalse,
+        );
+      },
+    );
 
     test(
-        'allows mutually exclusive switch expression branches returning single const widgets (view router)',
-        () {
-      final unit = parseString(content: '''
+      'allows mutually exclusive switch expression branches returning single const widgets (view router)',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) {
     final isMounted = via(isMountedBloom);
@@ -195,45 +242,57 @@ void main() {
     };
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-    });
+          isFalse,
+        );
+      },
+    );
 
     test(
-        'allows ternary conditional expression with single const widgets on each branch',
-        () {
-      final unit = parseString(content: '''
+      'allows ternary conditional expression with single const widgets on each branch',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => via(flagBloom)
       ? const StageA()
       : const StageB());
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-    });
+          isFalse,
+        );
+      },
+    );
 
     test(
-        'detects heavy subtree when a branch inside switch expression contains multiple const widgets',
-        () {
-      final unit = parseString(content: '''
+      'detects heavy subtree when a branch inside switch expression contains multiple const widgets',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => switch (via(tabBloom)) {
     0 => const StageA(),
@@ -243,23 +302,29 @@ void main() {
     ]),
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'detects heavy subtree when early return branch contains multiple const widgets',
-        () {
-      final unit = parseString(content: '''
+      'detects heavy subtree when early return branch contains multiple const widgets',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) {
     if (via(flagBloom)) {
@@ -271,23 +336,29 @@ void main() {
     return const StageA();
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isTrue);
-    });
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'allows dynamic interactive buttons with const icons and labels (ElevatedButton.icon, IconButton)',
-        () {
-      final unit = parseString(content: '''
+      'allows dynamic interactive buttons with const icons and labels (ElevatedButton.icon, IconButton)',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => Row(children: [
     ElevatedButton.icon(
@@ -305,21 +376,27 @@ void main() {
     ),
   ]));
 }
-''').unit;
+''',
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
+        expect(composedClosure, isNotNull);
+        expect(
           PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
-    });
+          isFalse,
+        );
+      },
+    );
 
     test('allows dynamic interactive buttons with const Text child', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void main() {
   composed((via) => Row(children: [
     ElevatedButton(
@@ -332,17 +409,21 @@ void main() {
     ),
   ]));
 }
-''').unit;
+''',
+      ).unit;
 
       FunctionExpression? composedClosure;
-      unit.visitChildren(_FunctionExpressionVisitor((func) {
-        composedClosure = func;
-      }));
+      unit.visitChildren(
+        _FunctionExpressionVisitor((func) {
+          composedClosure = func;
+        }),
+      );
 
       expect(composedClosure, isNotNull);
       expect(
-          PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-          isFalse);
+        PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
+        isFalse,
+      );
     });
   });
 }

@@ -27,16 +27,16 @@ part of '../../../blooming_lints.dart';
 ///   final Bloom<int> counter; // [Recommended] Clean read-only reactive interface
 /// }
 /// ```
-class PreferBloomOverController extends DartLintRule {
-  PreferBloomOverController() : super(code: _code);
+class PreferBloomOverController extends AnalysisRule {
+  PreferBloomOverController()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'prefer_bloom_over_controller',
-    problemMessage:
-        'Prefer accepting read-only Bloom<T> instead of mutable BloomController<T> in widget parameters.',
+  static const code = LintCode(
+    'prefer_bloom_over_controller',
+    'Prefer accepting read-only Bloom<T> instead of mutable BloomController<T> in widget parameters.',
     correctionMessage:
         'Pass controller.bloom or declare the widget parameter as Bloom<T> to preserve Producer/Consumer encapsulation.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    severity: DiagnosticSeverity.INFO,
   );
 
   static const _targetControllerTypes = {
@@ -49,26 +49,14 @@ class PreferBloomOverController extends DartLintRule {
   };
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    context.registry.addClassDeclaration((node) {
-      if (!_isWidgetClass(node)) return;
+  LintCode get diagnosticCode => code;
 
-      for (final member in node.members) {
-        if (member is ConstructorDeclaration) {
-          for (final param in member.parameters.parameters) {
-            final typeStr = getParameterTypeString(param, node);
-            if (typeStr != null &&
-                _targetControllerTypes.any((t) => typeStr.startsWith(t))) {
-              reporter.atNode(param, _code);
-            }
-          }
-        }
-      }
-    });
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    registry.addClassDeclaration(this, _PreferBloomOverControllerVisitor(this));
   }
 
   static bool _isWidgetClass(ClassDeclaration node) {
@@ -84,19 +72,19 @@ class PreferBloomOverController extends DartLintRule {
 
   /// Returns the static or declared type string of [param] within the given [clazz].
   static String? getParameterTypeString(
-      FormalParameter param, ClassDeclaration clazz) {
-    final actualParam =
-        param is DefaultFormalParameter ? param.parameter : param;
-    if (actualParam is SimpleFormalParameter) {
-      return actualParam.type?.toSource();
+    FormalParameter param,
+    ClassDeclaration clazz,
+  ) {
+    if (param is RegularFormalParameter) {
+      return param.type?.toSource();
     }
-    if (actualParam is FieldFormalParameter) {
-      final explicitType = actualParam.type?.toSource();
+    if (param is FieldFormalParameter) {
+      final explicitType = param.type?.toSource();
       if (explicitType != null) return explicitType;
 
       // Look up matching field declaration in class
-      final paramName = actualParam.name.lexeme;
-      for (final member in clazz.members) {
+      final paramName = param.name.lexeme;
+      for (final member in FlutterAstUtils.classMembers(clazz)) {
         if (member is FieldDeclaration) {
           for (final variable in member.fields.variables) {
             if (variable.name.lexeme == paramName) {
@@ -107,5 +95,32 @@ class PreferBloomOverController extends DartLintRule {
       }
     }
     return null;
+  }
+}
+
+class _PreferBloomOverControllerVisitor extends SimpleAstVisitor<void> {
+  _PreferBloomOverControllerVisitor(this.rule);
+  final PreferBloomOverController rule;
+
+  @override
+  void visitClassDeclaration(ClassDeclaration node) {
+    if (!PreferBloomOverController._isWidgetClass(node)) return;
+
+    for (final member in FlutterAstUtils.classMembers(node)) {
+      if (member is ConstructorDeclaration) {
+        for (final param in member.parameters.parameters) {
+          final typeStr = PreferBloomOverController.getParameterTypeString(
+            param,
+            node,
+          );
+          if (typeStr != null &&
+              PreferBloomOverController._targetControllerTypes.any(
+                (t) => typeStr.startsWith(t),
+              )) {
+            rule.reportAtNode(param);
+          }
+        }
+      }
+    }
   }
 }

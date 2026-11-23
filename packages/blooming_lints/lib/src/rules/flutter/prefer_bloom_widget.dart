@@ -63,41 +63,27 @@ part of '../../../blooming_lints.dart';
 ///   }
 /// }
 /// ```
-class PreferBloomWidget extends DartLintRule {
-  PreferBloomWidget() : super(code: _code);
+class PreferBloomWidget extends AnalysisRule {
+  PreferBloomWidget()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'prefer_bloom_widget',
-    problemMessage:
-        'A StatelessWidget that immediately returns a composed functor creates redundant Element allocations. Extend BloomWidget directly.',
+  static const code = LintCode(
+    'prefer_bloom_widget',
+    'A StatelessWidget that immediately returns a composed functor creates redundant Element allocations. Extend BloomWidget directly.',
     correctionMessage:
         'Replace StatelessWidget with BloomWidget (or BloomAnimatedWidget) to eliminate double-Element overhead.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    severity: DiagnosticSeverity.INFO,
   );
 
   @override
-  List<Fix> getFixes() => [ReplaceStatelessWithBloomWidgetFix()];
+  LintCode get diagnosticCode => code;
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    context.registry.addClassDeclaration((node) {
-      final extendsClause = node.extendsClause;
-      if (extendsClause == null) return;
-      if (extendsClause.superclass.name.lexeme != 'StatelessWidget') return;
-
-      for (final member in node.members) {
-        if (member is MethodDeclaration && member.name.lexeme == 'build') {
-          final returnedExpr = getSoleReturnedExpression(member);
-          if (returnedExpr != null && isSoleComposedInvocation(returnedExpr)) {
-            reporter.atNode(extendsClause.superclass, _code);
-          }
-        }
-      }
-    });
+    registry.addClassDeclaration(this, _PreferBloomWidgetVisitor(this));
   }
 
   /// Returns the sole returned expression if the method body consists strictly of a single return or expression body.
@@ -139,5 +125,29 @@ class PreferBloomWidget extends DartLintRule {
       return target is SimpleIdentifier && target.name == 'composed';
     }
     return false;
+  }
+}
+
+class _PreferBloomWidgetVisitor extends SimpleAstVisitor<void> {
+  _PreferBloomWidgetVisitor(this.rule);
+  final PreferBloomWidget rule;
+
+  @override
+  void visitClassDeclaration(ClassDeclaration node) {
+    final extendsClause = node.extendsClause;
+    if (extendsClause == null) return;
+    if (extendsClause.superclass.name.lexeme != 'StatelessWidget') return;
+
+    for (final member in FlutterAstUtils.classMembers(node)) {
+      if (member is MethodDeclaration && member.name.lexeme == 'build') {
+        final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+          member,
+        );
+        if (returnedExpr != null &&
+            PreferBloomWidget.isSoleComposedInvocation(returnedExpr)) {
+          rule.reportAtNode(extendsClause.superclass);
+        }
+      }
+    }
   }
 }

@@ -11,8 +11,11 @@ void main() {
 
   group('corpus integrity', () {
     test('case corpus is not empty', () {
-      expect(files, isNotEmpty,
-          reason: 'No case files in ${lintCasesDir.path}');
+      expect(
+        files,
+        isNotEmpty,
+        reason: 'No case files in ${lintCasesDir.path}',
+      );
     });
 
     test('every expect_lint lives inside a #case region', () {
@@ -85,13 +88,10 @@ void main() {
       });
 
       for (final lintCase in file.cases) {
-        test(
-          lintCase.id,
-          () async {
-            final diff = diffCase(lintCase, await analyzeCaseFile(file));
-            if (diff != null) fail(diff);
-          },
-        );
+        test(lintCase.id, () async {
+          final diff = diffCase(lintCase, await analyzeCaseFile(file));
+          if (diff != null) fail(diff);
+        });
       }
     });
   }

@@ -42,40 +42,36 @@ part of '../../../blooming_lints.dart';
 ///   }
 /// }
 /// ```
-class DeactivateEffectRunner extends DartLintRule {
-  DeactivateEffectRunner() : super(code: _code);
+class DeactivateEffectRunner extends AnalysisRule {
+  DeactivateEffectRunner()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'deactivate_effect_runner',
-    problemMessage:
-        'The EffectRunner \'{0}\' must be stopped in State.dispose() to prevent memory leaks.',
+  static const code = LintCode(
+    'deactivate_effect_runner',
+    'The EffectRunner \'{0}\' must be stopped in State.dispose() to prevent memory leaks.',
     correctionMessage:
         'Call \'{0}?.stop();\' inside the dispose() method of this State class.',
-    errorSeverity: DiagnosticSeverity.WARNING,
+    severity: DiagnosticSeverity.WARNING,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    context.registry.addClassDeclaration((node) {
-      if (!FlutterAstUtils.isStateClass(node)) return;
+  LintCode get diagnosticCode => code;
 
-      final uncancelledRunners = findUncancelledRunners(node);
-      for (final entry in uncancelledRunners) {
-        reporter.atNode(entry.node, _code, arguments: [entry.name]);
-      }
-    });
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    registry.addClassDeclaration(this, _DeactivateEffectRunnerVisitor(this));
   }
 
   /// Returns a list of field variable declarations holding an `EffectRunner` that are not deactivated in `dispose()`.
   static List<({String name, VariableDeclaration node})> findUncancelledRunners(
-      ClassDeclaration clazz) {
+    ClassDeclaration clazz,
+  ) {
     final runnerFields = <String, VariableDeclaration>{};
 
-    for (final member in clazz.members) {
+    for (final member in FlutterAstUtils.classMembers(clazz)) {
       if (member is FieldDeclaration) {
         final typeStr = member.fields.type?.toSource() ?? '';
         final isRunner = typeStr.startsWith('EffectRunner');
@@ -92,7 +88,7 @@ class DeactivateEffectRunner extends DartLintRule {
 
     // Find dispose() method
     MethodDeclaration? disposeMethod;
-    for (final member in clazz.members) {
+    for (final member in FlutterAstUtils.classMembers(clazz)) {
       if (member is MethodDeclaration && member.name.lexeme == 'dispose') {
         disposeMethod = member;
         break;
@@ -102,9 +98,11 @@ class DeactivateEffectRunner extends DartLintRule {
     // Collect all deactivated field names in dispose
     final deactivatedFields = <String>{};
     if (disposeMethod != null) {
-      disposeMethod.visitChildren(_DeactivateInvocationVisitor((targetName) {
-        deactivatedFields.add(targetName);
-      }));
+      disposeMethod.visitChildren(
+        _DeactivateInvocationVisitor((targetName) {
+          deactivatedFields.add(targetName);
+        }),
+      );
     }
 
     final uncancelled = <({String name, VariableDeclaration node})>[];
@@ -115,6 +113,23 @@ class DeactivateEffectRunner extends DartLintRule {
     }
 
     return uncancelled;
+  }
+}
+
+class _DeactivateEffectRunnerVisitor extends SimpleAstVisitor<void> {
+  _DeactivateEffectRunnerVisitor(this.rule);
+  final DeactivateEffectRunner rule;
+
+  @override
+  void visitClassDeclaration(ClassDeclaration node) {
+    if (!FlutterAstUtils.isStateClass(node)) return;
+
+    final uncancelledRunners = DeactivateEffectRunner.findUncancelledRunners(
+      node,
+    );
+    for (final entry in uncancelledRunners) {
+      rule.reportAtNode(entry.node, arguments: [entry.name]);
+    }
   }
 }
 

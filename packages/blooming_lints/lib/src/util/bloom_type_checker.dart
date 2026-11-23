@@ -295,9 +295,7 @@ abstract final class BloomTypeChecker {
   };
 
   /// Verified member methods that evaluate and read reactive node payload on `BloomState`.
-  static const _pipelineReadMethods = {
-    'dataOrElse',
-  };
+  static const _pipelineReadMethods = {'dataOrElse'};
 
   /// Returns `true` if the given property [name] represents a reactive payload extraction getter.
   static bool isPipelineReadProperty(String? name) {
@@ -336,9 +334,7 @@ abstract final class BloomTypeChecker {
   };
 
   /// Verified member properties whose setters write state or modify topology.
-  static const _pipelineWriteProperties = {
-    'data',
-  };
+  static const _pipelineWriteProperties = {'data'};
 
   /// Returns `true` if the given method [name] represents a state-writing or topology-modifying method.
   static bool isPipelineWriteMethod(String? name) {
@@ -389,8 +385,9 @@ abstract final class BloomTypeChecker {
   static bool isBloomPipelineInvocation(AstNode node) {
     if (node is FunctionExpressionInvocation) {
       final function = node.function;
-      final funcName =
-          function is SimpleIdentifier ? function.name : function.toSource();
+      final funcName = function is SimpleIdentifier
+          ? function.name
+          : function.toSource();
       if (funcName == 'composed' ||
           funcName == 'computed' ||
           funcName == 'switched' ||
@@ -563,7 +560,7 @@ abstract final class BloomTypeChecker {
     final name = param.name?.lexeme;
     if (name == 'via') return true;
 
-    if (param is SimpleFormalParameter) {
+    if (param is RegularFormalParameter) {
       final typeStr = param.type?.toSource();
       if (typeStr == 'BloomVia' ||
           typeStr == 'BloomVia?' ||
@@ -596,7 +593,8 @@ abstract final class BloomTypeChecker {
     // 1. Check for `via.of(...)`, `via.maybeOf(...)`, `via.state(...)`, `via.tether(...)`, `via.exit(...)`, `via.exitIfStale(...)`, `via.exitIfInactive(...)`
     if (node is MethodInvocation) {
       final methodName = node.methodName.name;
-      final isMatchingMethod = methodName == 'of' ||
+      final isMatchingMethod =
+          methodName == 'of' ||
           methodName == 'maybeOf' ||
           methodName == 'state' ||
           methodName == 'tether' ||
@@ -767,7 +765,8 @@ abstract final class BloomTypeChecker {
   /// Checks if the parameter name corresponds to an event callback (e.g. onPressed, onTap).
   static bool isEventCallbackParameter(String name) {
     return name.startsWith(
-            'on') || // onPressed, onTap, onChanged, onSubmitted, etc.
+          'on',
+        ) || // onPressed, onTap, onChanged, onSubmitted, etc.
         name == 'listener' ||
         name == 'callback' ||
         name == 'action';
@@ -930,9 +929,11 @@ abstract final class BloomTypeChecker {
           return true;
         }
         if (targetType is InterfaceType) {
-          return targetType.allSupertypes.any((t) =>
-              t.element.name == 'Future' &&
-              _isDartAsyncLibrary(t.element.library));
+          return targetType.allSupertypes.any(
+            (t) =>
+                t.element.name == 'Future' &&
+                _isDartAsyncLibrary(t.element.library),
+          );
         }
         return false;
       }
@@ -1006,8 +1007,4 @@ abstract final class BloomTypeChecker {
 }
 
 /// The asynchronous nature of a computation expression or return type.
-enum AsyncComputationKind {
-  none,
-  future,
-  stream,
-}
+enum AsyncComputationKind { none, future, stream }

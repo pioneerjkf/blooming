@@ -10,9 +10,9 @@ import 'package:blooming_lints/blooming_lints.dart';
 
 void main() {
   group('AvoidEscapingVia AST detection', () {
-    test('permits via() called after await in owning async reactive closure',
-        () {
-      final unit = parseString(content: '''
+    test('permits via() called after await in owning async reactive closure', () {
+      final unit = parseString(
+        content: '''
 void setup() {
   final userProfile = computed.future((via) async {
     final id = via(userId);
@@ -21,12 +21,15 @@ void setup() {
     return filter(profile, token);
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final viaCalls = <MethodInvocation>[];
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCalls.add(node);
-      }));
+      unit.visitChildren(
+        _SimpleInvocationVisitor('via', (node) {
+          viaCalls.add(node);
+        }),
+      );
 
       expect(viaCalls.length, equals(2));
       // Both pre-await and post-await via() calls in the owning closure are tracked via _ViaScope.async
@@ -34,9 +37,11 @@ void setup() {
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
     });
 
-    test('detects via() called after await inside nested async helper function',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'detects via() called after await inside nested async helper function',
+      () {
+        final unit = parseString(
+          content: '''
 void setup() {
   final task = computed((via) {
     Future<void> nestedAsync() async {
@@ -47,20 +52,25 @@ void setup() {
     return via(counter);
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      final viaCalls = <MethodInvocation>[];
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCalls.add(node);
-      }));
+        final viaCalls = <MethodInvocation>[];
+        unit.visitChildren(
+          _SimpleInvocationVisitor('via', (node) {
+            viaCalls.add(node);
+          }),
+        );
 
-      expect(viaCalls.length, equals(2));
-      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isTrue);
-      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
-    });
+        expect(viaCalls.length, equals(2));
+        expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isTrue);
+        expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
+      },
+    );
 
     test('detects via() inside event callback parameter', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context, BloomVia via) {
     return ElevatedButton(
@@ -69,19 +79,23 @@ class MyWidget extends StatelessWidget {
     );
   }
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? viaCall;
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCall = node;
-      }));
+      unit.visitChildren(
+        _SimpleInvocationVisitor('via', (node) {
+          viaCall = node;
+        }),
+      );
 
       expect(viaCall, isNotNull);
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isTrue);
     });
 
     test('detects via() inside async timer/dispatcher callback', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final task = computed((via) {
     scheduleMicrotask(() {
@@ -90,19 +104,23 @@ void setup() {
     return 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? viaCall;
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCall = node;
-      }));
+      unit.visitChildren(
+        _SimpleInvocationVisitor('via', (node) {
+          viaCall = node;
+        }),
+      );
 
       expect(viaCall, isNotNull);
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isTrue);
     });
 
     test('detects via() inside Timer constructor callback', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final task = computed((via) {
     Timer(Duration.zero, () {
@@ -111,39 +129,48 @@ void setup() {
     return 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? viaCall;
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCall = node;
-      }));
+      unit.visitChildren(
+        _SimpleInvocationVisitor('via', (node) {
+          viaCall = node;
+        }),
+      );
 
       expect(viaCall, isNotNull);
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isTrue);
     });
 
     test('permits standard synchronous via() calls inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final sum = computed((via) {
     return via(a) + via(b);
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final viaCalls = <MethodInvocation>[];
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCalls.add(node);
-      }));
+      unit.visitChildren(
+        _SimpleInvocationVisitor('via', (node) {
+          viaCalls.add(node);
+        }),
+      );
 
       expect(viaCalls.length, equals(2));
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isFalse);
       expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isFalse);
     });
 
-    test('does not treat await inside nested local function as preceding await',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'does not treat await inside nested local function as preceding await',
+      () {
+        final unit = parseString(
+          content: '''
 void setup() {
   final result = computed.future((via) async {
     void nestedHelper() async {
@@ -153,16 +180,20 @@ void setup() {
     return count * 2;
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      MethodInvocation? viaCall;
-      unit.visitChildren(_SimpleInvocationVisitor('via', (node) {
-        viaCall = node;
-      }));
+        MethodInvocation? viaCall;
+        unit.visitChildren(
+          _SimpleInvocationVisitor('via', (node) {
+            viaCall = node;
+          }),
+        );
 
-      expect(viaCall, isNotNull);
-      expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isFalse);
-    });
+        expect(viaCall, isNotNull);
+        expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isFalse);
+      },
+    );
   });
 }
 

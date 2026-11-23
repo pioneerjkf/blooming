@@ -21,29 +21,38 @@ class _MethodInvocationCollector extends RecursiveAstVisitor<void> {
 void main() {
   group('AvoidStateWritesInPipeline AST detection', () {
     test('detects synchronous state write directly in build()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class BadWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     controller.set(100);
     return Container();
   }
 }
-''').unit;
+''',
+      ).unit;
 
       final collector = _MethodInvocationCollector();
       unit.accept(collector);
 
-      final setCall =
-          collector.invocations.firstWhere((i) => i.methodName.name == 'set');
+      final setCall = collector.invocations.firstWhere(
+        (i) => i.methodName.name == 'set',
+      );
       expect(
-          AvoidStateWritesInPipeline.isInsidePipelineMethod(setCall), isTrue);
-      expect(AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(setCall),
-          isFalse);
+        AvoidStateWritesInPipeline.isInsidePipelineMethod(setCall),
+        isTrue,
+      );
+      expect(
+        AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(setCall),
+        isFalse,
+      );
     });
 
-    test('permits state writes inside UI callback closures (e.g. onPressed)',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'permits state writes inside UI callback closures (e.g. onPressed)',
+      () {
+        final unit = parseString(
+          content: '''
 class GoodWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
@@ -54,67 +63,93 @@ class GoodWidget extends StatelessWidget {
     );
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      final collector = _MethodInvocationCollector();
-      unit.accept(collector);
+        final collector = _MethodInvocationCollector();
+        unit.accept(collector);
 
-      final setCall =
-          collector.invocations.firstWhere((i) => i.methodName.name == 'set');
-      expect(
-          AvoidStateWritesInPipeline.isInsidePipelineMethod(setCall), isTrue);
-      expect(AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(setCall),
-          isTrue);
-    });
+        final setCall = collector.invocations.firstWhere(
+          (i) => i.methodName.name == 'set',
+        );
+        expect(
+          AvoidStateWritesInPipeline.isInsidePipelineMethod(setCall),
+          isTrue,
+        );
+        expect(
+          AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(setCall),
+          isTrue,
+        );
+      },
+    );
 
-    test('detects synchronous state write directly inside computed() closure',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'detects synchronous state write directly inside computed() closure',
+      () {
+        final unit = parseString(
+          content: '''
 void showcase() {
   final badDerivation = computed((via) {
     controller.set(100);
     return via(count.bloom) + 1;
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      final collector = _MethodInvocationCollector();
-      unit.accept(collector);
+        final collector = _MethodInvocationCollector();
+        unit.accept(collector);
 
-      final setCall =
-          collector.invocations.firstWhere((i) => i.methodName.name == 'set');
-      expect(
-          AvoidStateWritesInPipeline.isInsidePipelineMethod(setCall), isTrue);
-      expect(AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(setCall),
-          isFalse);
-    });
+        final setCall = collector.invocations.firstWhere(
+          (i) => i.methodName.name == 'set',
+        );
+        expect(
+          AvoidStateWritesInPipeline.isInsidePipelineMethod(setCall),
+          isTrue,
+        );
+        expect(
+          AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(setCall),
+          isFalse,
+        );
+      },
+    );
 
-    test('detects synchronous property setter assignment directly in build()',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'detects synchronous property setter assignment directly in build()',
+      () {
+        final unit = parseString(
+          content: '''
 class BadWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     controller.data = 100;
     return Container();
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      AssignmentExpression? assignment;
-      unit.visitChildren(_AssignmentCollector((node) => assignment = node));
+        AssignmentExpression? assignment;
+        unit.visitChildren(_AssignmentCollector((node) => assignment = node));
 
-      expect(assignment, isNotNull);
-      expect(AvoidStateWritesInPipeline.isInsidePipelineMethod(assignment!),
-          isTrue);
-      expect(
+        expect(assignment, isNotNull);
+        expect(
+          AvoidStateWritesInPipeline.isInsidePipelineMethod(assignment!),
+          isTrue,
+        );
+        expect(
           AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(
-              assignment!),
-          isFalse);
-    });
+            assignment!,
+          ),
+          isFalse,
+        );
+      },
+    );
 
-    test('does not permit state writes inside arbitrary .run() invocations',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'does not permit state writes inside arbitrary .run() invocations',
+      () {
+        final unit = parseString(
+          content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     customRunner.run(() {
@@ -123,20 +158,25 @@ class MyWidget extends StatelessWidget {
     return Container();
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      AssignmentExpression? assignment;
-      unit.visitChildren(_AssignmentCollector((node) => assignment = node));
+        AssignmentExpression? assignment;
+        unit.visitChildren(_AssignmentCollector((node) => assignment = node));
 
-      expect(assignment, isNotNull);
-      expect(
+        expect(assignment, isNotNull);
+        expect(
           AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(
-              assignment!),
-          isFalse);
-    });
+            assignment!,
+          ),
+          isFalse,
+        );
+      },
+    );
 
     test('permits state writes inside Timer.run() invocations', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Timer.run(() {
@@ -145,21 +185,24 @@ class MyWidget extends StatelessWidget {
     return Container();
   }
 }
-''').unit;
+''',
+      ).unit;
 
       AssignmentExpression? assignment;
       unit.visitChildren(_AssignmentCollector((node) => assignment = node));
 
       expect(assignment, isNotNull);
       expect(
-          AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(
-              assignment!),
-          isTrue);
+        AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(assignment!),
+        isTrue,
+      );
     });
 
-    test('permits state writes inside prefixed async.Timer.run() invocations',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'permits state writes inside prefixed async.Timer.run() invocations',
+      () {
+        final unit = parseString(
+          content: '''
 class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     async.Timer.run(() {
@@ -168,17 +211,21 @@ class MyWidget extends StatelessWidget {
     return Container();
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      AssignmentExpression? assignment;
-      unit.visitChildren(_AssignmentCollector((node) => assignment = node));
+        AssignmentExpression? assignment;
+        unit.visitChildren(_AssignmentCollector((node) => assignment = node));
 
-      expect(assignment, isNotNull);
-      expect(
+        expect(assignment, isNotNull);
+        expect(
           AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(
-              assignment!),
-          isTrue);
-    });
+            assignment!,
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }
 

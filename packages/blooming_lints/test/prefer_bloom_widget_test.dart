@@ -10,33 +10,44 @@ import 'package:test/test.dart';
 
 void main() {
   group('PreferBloomWidget AST detection', () {
-    test('detects 1:1 StatelessWidget returning composed via expression body',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'detects 1:1 StatelessWidget returning composed via expression body',
+      () {
+        final unit = parseString(
+          content: '''
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key});
 
   @override
   Widget build(BuildContext context) => composed((context, via) => Text('hi'));
 }
-''').unit;
+''',
+        ).unit;
 
-      ClassDeclaration? clazz;
-      unit.visitChildren(_ClassVisitor((node) => clazz = node));
+        ClassDeclaration? clazz;
+        unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
-      expect(clazz, isNotNull);
-      final buildMethod = clazz!.members.whereType<MethodDeclaration>().first;
-      final returnedExpr =
-          PreferBloomWidget.getSoleReturnedExpression(buildMethod);
+        expect(clazz, isNotNull);
+        final buildMethod = FlutterAstUtils.classMembers(
+          clazz!,
+        ).whereType<MethodDeclaration>().first;
+        final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+          buildMethod,
+        );
 
-      expect(returnedExpr, isNotNull);
-      expect(PreferBloomWidget.isSoleComposedInvocation(returnedExpr!), isTrue);
-    });
+        expect(returnedExpr, isNotNull);
+        expect(
+          PreferBloomWidget.isSoleComposedInvocation(returnedExpr!),
+          isTrue,
+        );
+      },
+    );
 
     test(
-        'detects 1:1 StatelessWidget returning composed via single return statement block',
-        () {
-      final unit = parseString(content: '''
+      'detects 1:1 StatelessWidget returning composed via single return statement block',
+      () {
+        final unit = parseString(
+          content: '''
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key});
 
@@ -48,22 +59,31 @@ class MyWidget extends StatelessWidget {
     });
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      ClassDeclaration? clazz;
-      unit.visitChildren(_ClassVisitor((node) => clazz = node));
+        ClassDeclaration? clazz;
+        unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
-      expect(clazz, isNotNull);
-      final buildMethod = clazz!.members.whereType<MethodDeclaration>().first;
-      final returnedExpr =
-          PreferBloomWidget.getSoleReturnedExpression(buildMethod);
+        expect(clazz, isNotNull);
+        final buildMethod = FlutterAstUtils.classMembers(
+          clazz!,
+        ).whereType<MethodDeclaration>().first;
+        final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+          buildMethod,
+        );
 
-      expect(returnedExpr, isNotNull);
-      expect(PreferBloomWidget.isSoleComposedInvocation(returnedExpr!), isTrue);
-    });
+        expect(returnedExpr, isNotNull);
+        expect(
+          PreferBloomWidget.isSoleComposedInvocation(returnedExpr!),
+          isTrue,
+        );
+      },
+    );
 
     test('detects 1:1 StatelessWidget returning composed.animate', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class RadarView extends StatelessWidget {
   const RadarView({super.key, required this.controller});
   final DurableAnimationController controller;
@@ -76,24 +96,29 @@ class RadarView extends StatelessWidget {
     );
   }
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
       expect(clazz, isNotNull);
-      final buildMethod = clazz!.members.whereType<MethodDeclaration>().first;
-      final returnedExpr =
-          PreferBloomWidget.getSoleReturnedExpression(buildMethod);
+      final buildMethod = FlutterAstUtils.classMembers(
+        clazz!,
+      ).whereType<MethodDeclaration>().first;
+      final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+        buildMethod,
+      );
 
       expect(returnedExpr, isNotNull);
       expect(PreferBloomWidget.isSoleComposedInvocation(returnedExpr!), isTrue);
     });
 
     test(
-        'permits StatelessWidget that has fixed layout with local leaf composed (does NOT flag)',
-        () {
-      final unit = parseString(content: '''
+      'permits StatelessWidget that has fixed layout with local leaf composed (does NOT flag)',
+      () {
+        final unit = parseString(
+          content: '''
 class DashboardView extends StatelessWidget {
   const DashboardView({super.key});
 
@@ -107,24 +132,32 @@ class DashboardView extends StatelessWidget {
     );
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      ClassDeclaration? clazz;
-      unit.visitChildren(_ClassVisitor((node) => clazz = node));
+        ClassDeclaration? clazz;
+        unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
-      expect(clazz, isNotNull);
-      final buildMethod = clazz!.members.whereType<MethodDeclaration>().first;
-      final returnedExpr =
-          PreferBloomWidget.getSoleReturnedExpression(buildMethod);
+        expect(clazz, isNotNull);
+        final buildMethod = FlutterAstUtils.classMembers(
+          clazz!,
+        ).whereType<MethodDeclaration>().first;
+        final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+          buildMethod,
+        );
 
-      expect(returnedExpr, isNotNull);
-      // Column is NOT a sole composed invocation!
-      expect(
-          PreferBloomWidget.isSoleComposedInvocation(returnedExpr!), isFalse);
-    });
+        expect(returnedExpr, isNotNull);
+        // Column is NOT a sole composed invocation!
+        expect(
+          PreferBloomWidget.isSoleComposedInvocation(returnedExpr!),
+          isFalse,
+        );
+      },
+    );
 
     test('permits StatelessWidget with multiple statements before return', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key});
 
@@ -134,15 +167,19 @@ class MyWidget extends StatelessWidget {
     return composed((context, via) => Text('hi'));
   }
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
       expect(clazz, isNotNull);
-      final buildMethod = clazz!.members.whereType<MethodDeclaration>().first;
-      final returnedExpr =
-          PreferBloomWidget.getSoleReturnedExpression(buildMethod);
+      final buildMethod = FlutterAstUtils.classMembers(
+        clazz!,
+      ).whereType<MethodDeclaration>().first;
+      final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+        buildMethod,
+      );
 
       // Has 2 statements, so getSoleReturnedExpression must return null!
       expect(returnedExpr, isNull);

@@ -52,17 +52,31 @@ part of '../../../blooming_lints.dart';
 ///   }
 /// }
 /// ```
-class AvoidBloomCreationInBuild extends DartLintRule {
-  AvoidBloomCreationInBuild() : super(code: _code);
+class AvoidBloomCreationInBuild extends AnalysisRule {
+  AvoidBloomCreationInBuild()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_bloom_creation_in_build',
-    problemMessage:
-        'Avoid instantiating Bloom controllers, signals, or reactive pipelines inside Flutter build() methods.',
+  static const code = LintCode(
+    'avoid_bloom_creation_in_build',
+    'Avoid instantiating Bloom controllers, signals, or reactive pipelines inside Flutter build() methods.',
     correctionMessage:
         'Move controller and pipeline instantiation to State.initState, top-level/static declarations, or DI scopes.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
+
+  @override
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    final visitor = _AvoidBloomCreationInBuildVisitor(this);
+    registry.addInstanceCreationExpression(this, visitor);
+    registry.addMethodInvocation(this, visitor);
+    registry.addFunctionExpressionInvocation(this, visitor);
+  }
 
   static const _controllerAndTerminalConstructors = {
     'BloomController',
@@ -84,54 +98,14 @@ class AvoidBloomCreationInBuild extends DartLintRule {
     'effect',
   };
 
-  @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
-  ) {
-    // 1. Detect forbidden constructor invocations inside build()
-    context.registry.addInstanceCreationExpression((node) {
-      if (!isForbiddenCreation(node)) return;
-
-      if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
-      if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
-        return;
-      }
-
-      reporter.atNode(node, _code);
-    });
-
-    // 2. Detect forbidden functor calls inside build() (e.g. computed, switched, managed, BloomController)
-    context.registry.addMethodInvocation((node) {
-      if (!isForbiddenMethodInvocation(node)) return;
-
-      if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
-      if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
-        return;
-      }
-
-      reporter.atNode(node, _code);
-    });
-
-    // 3. Detect forbidden functor calls as FunctionExpressionInvocation (e.g. blooming(), computed(), switched(), managed())
-    context.registry.addFunctionExpressionInvocation((node) {
-      if (!isForbiddenFunctionExpressionInvocation(node)) return;
-      if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
-      if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
-        return;
-      }
-
-      reporter.atNode(node, _code);
-    });
-  }
-
   /// Returns `true` if [node] calls a forbidden pipeline functor via FunctionExpressionInvocation.
   static bool isForbiddenFunctionExpressionInvocation(
-      FunctionExpressionInvocation node) {
+    FunctionExpressionInvocation node,
+  ) {
     final function = node.function;
-    final name =
-        function is SimpleIdentifier ? function.name : function.toSource();
+    final name = function is SimpleIdentifier
+        ? function.name
+        : function.toSource();
     return _forbiddenPipelineFunctors.contains(name) ||
         _controllerAndTerminalConstructors.contains(name) ||
         name.startsWith('blooming.') ||
@@ -163,5 +137,47 @@ class AvoidBloomCreationInBuild extends DartLintRule {
       }
     }
     return false;
+  }
+}
+
+class _AvoidBloomCreationInBuildVisitor extends SimpleAstVisitor<void> {
+  _AvoidBloomCreationInBuildVisitor(this.rule);
+  final AvoidBloomCreationInBuild rule;
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) {
+    if (!AvoidBloomCreationInBuild.isForbiddenCreation(node)) return;
+    if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
+    if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
+      return;
+    }
+
+    rule.reportAtNode(node);
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (!AvoidBloomCreationInBuild.isForbiddenMethodInvocation(node)) return;
+    if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
+    if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
+      return;
+    }
+
+    rule.reportAtNode(node);
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (!AvoidBloomCreationInBuild.isForbiddenFunctionExpressionInvocation(
+      node,
+    )) {
+      return;
+    }
+    if (!FlutterAstUtils.isInsideBuildMethod(node)) return;
+    if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
+      return;
+    }
+
+    rule.reportAtNode(node);
   }
 }

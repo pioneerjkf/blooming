@@ -30,46 +30,29 @@ part of '../../../blooming_lints.dart';
 ///   );
 /// }
 /// ```
-class AvoidStateWritesInPipeline extends DartLintRule {
-  AvoidStateWritesInPipeline() : super(code: _code);
+class AvoidStateWritesInPipeline extends AnalysisRule {
+  AvoidStateWritesInPipeline()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_state_writes_in_pipeline',
-    problemMessage:
-        'Avoid writing state or modifying graph topology directly inside reactive pipeline evaluation or build scopes.',
+  static const code = LintCode(
+    'avoid_state_writes_in_pipeline',
+    'Avoid writing state or modifying graph topology directly inside reactive pipeline evaluation or build scopes.',
     correctionMessage:
         'Perform state writes inside event handlers (e.g. onPressed), async dispatchers, or lifecycle hooks.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    // 1. Direct registry hook for state write method invocations (controller.set, coupler.couple, etc.)
-    context.registry.addMethodInvocation((node) {
-      if (BloomTypeChecker.isPipelineWriteMethod(node.methodName.name)) {
-        if (!isFromBloomPackageOrTarget(node)) return;
-        if (!isInsidePipelineMethod(node)) return;
-        if (isInsideEventOrDeferredClosure(node)) return;
-
-        reporter.atNode(node, _code);
-      }
-    });
-
-    // 2. Direct registry hook for property setter assignments (bloom.data = ..., controller.data = ...)
-    context.registry.addAssignmentExpression((node) {
-      final propName = _extractPropertyName(node.leftHandSide);
-      if (BloomTypeChecker.isPipelineWriteProperty(propName)) {
-        if (!isAssignmentToBloomProperty(node)) return;
-        if (!isInsidePipelineMethod(node)) return;
-        if (isInsideEventOrDeferredClosure(node)) return;
-
-        reporter.atNode(node, _code);
-      }
-    });
+    final visitor = _AvoidStateWritesInPipelineVisitor(this);
+    registry.addMethodInvocation(this, visitor);
+    registry.addAssignmentExpression(this, visitor);
   }
 
   static String? _extractPropertyName(Expression leftHandSide) {
@@ -131,5 +114,39 @@ class AvoidStateWritesInPipeline extends DartLintRule {
       return true;
     }
     return false;
+  }
+}
+
+class _AvoidStateWritesInPipelineVisitor extends SimpleAstVisitor<void> {
+  _AvoidStateWritesInPipelineVisitor(this.rule);
+  final AvoidStateWritesInPipeline rule;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (BloomTypeChecker.isPipelineWriteMethod(node.methodName.name)) {
+      if (!AvoidStateWritesInPipeline.isFromBloomPackageOrTarget(node)) return;
+      if (!AvoidStateWritesInPipeline.isInsidePipelineMethod(node)) return;
+      if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
+        return;
+      }
+
+      rule.reportAtNode(node);
+    }
+  }
+
+  @override
+  void visitAssignmentExpression(AssignmentExpression node) {
+    final propName = AvoidStateWritesInPipeline._extractPropertyName(
+      node.leftHandSide,
+    );
+    if (BloomTypeChecker.isPipelineWriteProperty(propName)) {
+      if (!AvoidStateWritesInPipeline.isAssignmentToBloomProperty(node)) return;
+      if (!AvoidStateWritesInPipeline.isInsidePipelineMethod(node)) return;
+      if (AvoidStateWritesInPipeline.isInsideEventOrDeferredClosure(node)) {
+        return;
+      }
+
+      rule.reportAtNode(node);
+    }
   }
 }

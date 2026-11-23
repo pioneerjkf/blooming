@@ -53,78 +53,33 @@ part of '../../../blooming_lints.dart';
 ///   final controller = DurableAnimationController(duration: const Duration(seconds: 1));
 /// }
 /// ```
-class AvoidEscapingScopedController extends DartLintRule {
-  AvoidEscapingScopedController() : super(code: _code);
+class AvoidEscapingScopedController extends AnalysisRule {
+  AvoidEscapingScopedController()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_escaping_scoped_controller',
-    problemMessage:
-        'Avoid escaping ScopedAnimationController or its view outside the widget builder scope.',
+  static const code = LintCode(
+    'avoid_escaping_scoped_controller',
+    'Avoid escaping ScopedAnimationController or its view outside the widget builder scope.',
     correctionMessage:
         'Use ScopedAnimationController and its view strictly within the mounted widget builder, or hold DurableAnimationController in your state/store instead.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    // 1. Detect field declarations of type ScopedAnimationController
-    context.registry.addFieldDeclaration((node) {
-      if (isScopedControllerType(node.fields.type)) {
-        reporter.atNode(node, _code);
-      }
-    });
-
-    // 2. Detect top-level variable declarations of type ScopedAnimationController
-    context.registry.addTopLevelVariableDeclaration((node) {
-      if (isScopedControllerType(node.variables.type)) {
-        reporter.atNode(node, _code);
-      }
-    });
-
-    // 3. Detect method/function declarations with return type ScopedAnimationController
-    context.registry.addMethodDeclaration((node) {
-      if (isScopedControllerType(node.returnType)) {
-        reporter.atNode(node.returnType ?? node, _code);
-      }
-    });
-
-    context.registry.addFunctionDeclaration((node) {
-      if (isScopedControllerType(node.returnType)) {
-        reporter.atNode(node.returnType ?? node, _code);
-      }
-    });
-
-    // 4. Detect assignments escaping ScopedAnimationController or ctrl.view / ctrl.drive(...)
-    context.registry.addAssignmentExpression((node) {
-      if (!isScopedControllerOrViewExpr(node.rightHandSide)) return;
-
-      if (isEscapingTarget(node.leftHandSide, node)) {
-        reporter.atNode(node, _code);
-      }
-    });
-
-    // 5. Detect adding ScopedAnimationController or ctrl.view to outer collections
-    context.registry.addMethodInvocation((node) {
-      final name = node.methodName.name;
-      if (name == 'add' ||
-          name == 'addAll' ||
-          name == 'insert' ||
-          name == 'insertAll') {
-        for (final arg in node.argumentList.arguments) {
-          final actualArg = arg is NamedExpression ? arg.expression : arg;
-          if (isScopedControllerOrViewExpr(actualArg)) {
-            final target = node.target;
-            if (target == null || isEscapingTarget(target, node)) {
-              reporter.atNode(arg, _code);
-            }
-          }
-        }
-      }
-    });
+    final visitor = _AvoidEscapingScopedControllerVisitor(this);
+    registry.addFieldDeclaration(this, visitor);
+    registry.addTopLevelVariableDeclaration(this, visitor);
+    registry.addMethodDeclaration(this, visitor);
+    registry.addFunctionDeclaration(this, visitor);
+    registry.addAssignmentExpression(this, visitor);
+    registry.addMethodInvocation(this, visitor);
   }
 
   /// Checks if [type] represents `ScopedAnimationController`.
@@ -251,10 +206,8 @@ class AvoidEscapingScopedController extends DartLintRule {
         final params = current.parameters?.parameters;
         if (params != null) {
           for (final p in params) {
-            final actual = p is DefaultFormalParameter ? p.parameter : p;
-            if (actual is SimpleFormalParameter &&
-                actual.name?.lexeme == name) {
-              final typeStr = actual.type?.toSource();
+            if (p is RegularFormalParameter && p.name?.lexeme == name) {
+              final typeStr = p.type?.toSource();
               if (typeStr != null &&
                   typeStr.contains('ScopedAnimationController')) {
                 return true;
@@ -310,11 +263,13 @@ class AvoidEscapingScopedController extends DartLintRule {
     FunctionExpression closure,
   ) {
     var found = false;
-    closure.body.visitChildren(_VariableDeclarationFinder(
-      variableName,
-      targetElement,
-      () => found = true,
-    ));
+    closure.body.visitChildren(
+      _VariableDeclarationFinder(
+        variableName,
+        targetElement,
+        () => found = true,
+      ),
+    );
     return found;
   }
 }
@@ -344,5 +299,80 @@ class _VariableDeclarationFinder extends RecursiveAstVisitor<void> {
   @override
   void visitFunctionExpression(FunctionExpression node) {
     // Nested closures do not declare variables in the outer builder scope
+  }
+}
+
+class _AvoidEscapingScopedControllerVisitor extends SimpleAstVisitor<void> {
+  _AvoidEscapingScopedControllerVisitor(this.rule);
+  final AvoidEscapingScopedController rule;
+
+  @override
+  void visitFieldDeclaration(FieldDeclaration node) {
+    if (AvoidEscapingScopedController.isScopedControllerType(
+      node.fields.type,
+    )) {
+      rule.reportAtNode(node);
+    }
+  }
+
+  @override
+  void visitTopLevelVariableDeclaration(TopLevelVariableDeclaration node) {
+    if (AvoidEscapingScopedController.isScopedControllerType(
+      node.variables.type,
+    )) {
+      rule.reportAtNode(node);
+    }
+  }
+
+  @override
+  void visitMethodDeclaration(MethodDeclaration node) {
+    if (AvoidEscapingScopedController.isScopedControllerType(node.returnType)) {
+      rule.reportAtNode(node.returnType ?? node);
+    }
+  }
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    if (AvoidEscapingScopedController.isScopedControllerType(node.returnType)) {
+      rule.reportAtNode(node.returnType ?? node);
+    }
+  }
+
+  @override
+  void visitAssignmentExpression(AssignmentExpression node) {
+    if (!AvoidEscapingScopedController.isScopedControllerOrViewExpr(
+      node.rightHandSide,
+    )) {
+      return;
+    }
+
+    if (AvoidEscapingScopedController.isEscapingTarget(
+      node.leftHandSide,
+      node,
+    )) {
+      rule.reportAtNode(node);
+    }
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final name = node.methodName.name;
+    if (name == 'add' ||
+        name == 'addAll' ||
+        name == 'insert' ||
+        name == 'insertAll') {
+      for (final arg in node.argumentList.arguments) {
+        final actualArg = arg.argumentExpression;
+        if (AvoidEscapingScopedController.isScopedControllerOrViewExpr(
+          actualArg,
+        )) {
+          final target = node.target;
+          if (target == null ||
+              AvoidEscapingScopedController.isEscapingTarget(target, node)) {
+            rule.reportAtNode(arg);
+          }
+        }
+      }
+    }
   }
 }

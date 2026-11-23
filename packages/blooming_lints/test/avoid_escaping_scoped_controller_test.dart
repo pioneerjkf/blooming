@@ -11,12 +11,14 @@ import 'package:blooming_lints/blooming_lints.dart';
 void main() {
   group('AvoidEscapingScopedController AST detection', () {
     test('detects field declaration of type ScopedAnimationController', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyStore {
   ScopedAnimationController? controller;
   DurableAnimationController safeCtrl;
 }
-''').unit;
+''',
+      ).unit;
 
       final fields = <FieldDeclaration>[];
       unit.visitChildren(_FieldFinder((node) => fields.add(node)));
@@ -24,18 +26,23 @@ class MyStore {
       expect(fields.length, equals(2));
       // First is ScopedAnimationController -> forbidden!
       expect(
-          AvoidEscapingScopedController.isScopedControllerType(
-              fields[0].fields.type),
-          isTrue);
+        AvoidEscapingScopedController.isScopedControllerType(
+          fields[0].fields.type,
+        ),
+        isTrue,
+      );
       // Second is DurableAnimationController -> safe!
       expect(
-          AvoidEscapingScopedController.isScopedControllerType(
-              fields[1].fields.type),
-          isFalse);
+        AvoidEscapingScopedController.isScopedControllerType(
+          fields[1].fields.type,
+        ),
+        isFalse,
+      );
     });
 
     test('detects escaping ctrl.view assignment to outer variable', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   Animation<double>? leaked;
   controller.animate((via, ctrl) {
@@ -43,7 +50,8 @@ void test() {
     return Container();
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final assignments = <AssignmentExpression>[];
       unit.visitChildren(_AssignmentFinder((node) => assignments.add(node)));
@@ -51,17 +59,23 @@ void test() {
       expect(assignments.length, equals(1));
       final assign = assignments[0];
       expect(
-          AvoidEscapingScopedController.isScopedControllerOrViewExpr(
-              assign.rightHandSide),
-          isTrue);
+        AvoidEscapingScopedController.isScopedControllerOrViewExpr(
+          assign.rightHandSide,
+        ),
+        isTrue,
+      );
       expect(
-          AvoidEscapingScopedController.isEscapingTarget(
-              assign.leftHandSide, assign),
-          isTrue);
+        AvoidEscapingScopedController.isEscapingTarget(
+          assign.leftHandSide,
+          assign,
+        ),
+        isTrue,
+      );
     });
 
     test('permits local variable assignment inside builder', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   controller.animate((via, ctrl) {
     final localView = ctrl.view;
@@ -70,7 +84,8 @@ void test() {
     return Container();
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final assignments = <AssignmentExpression>[];
       unit.visitChildren(_AssignmentFinder((node) => assignments.add(node)));
@@ -79,52 +94,67 @@ void test() {
       final assign = assignments[0];
       // Target 'another' is declared inside the builder closure, so it does not escape!
       expect(
-          AvoidEscapingScopedController.isEscapingTarget(
-              assign.leftHandSide, assign),
-          isFalse);
+        AvoidEscapingScopedController.isEscapingTarget(
+          assign.leftHandSide,
+          assign,
+        ),
+        isFalse,
+      );
     });
 
     test('detects adding ctrl.view to an outer list', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final outerList = <dynamic>[];
   controller.animate((via, ctrl) {
     outerList.add(ctrl.view);
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final invocations = <MethodInvocation>[];
       unit.visitChildren(_InvocationFinder((node) => invocations.add(node)));
 
       final addCall = invocations.firstWhere((i) => i.methodName.name == 'add');
-      final arg = addCall.argumentList.arguments[0];
-      expect(AvoidEscapingScopedController.isScopedControllerOrViewExpr(arg),
-          isTrue);
+      final arg = addCall.argumentList.arguments[0].argumentExpression;
       expect(
-          AvoidEscapingScopedController.isEscapingTarget(
-              addCall.target!, addCall),
-          isTrue);
+        AvoidEscapingScopedController.isScopedControllerOrViewExpr(arg),
+        isTrue,
+      );
+      expect(
+        AvoidEscapingScopedController.isEscapingTarget(
+          addCall.target!,
+          addCall,
+        ),
+        isTrue,
+      );
     });
 
     test('permits adding ctrl.view to a list declared inside builder', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   controller.animate((via, ctrl) {
     final localList = <dynamic>[];
     localList.add(ctrl.view);
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final invocations = <MethodInvocation>[];
       unit.visitChildren(_InvocationFinder((node) => invocations.add(node)));
 
       final addCall = invocations.firstWhere((i) => i.methodName.name == 'add');
       expect(
-          AvoidEscapingScopedController.isEscapingTarget(
-              addCall.target!, addCall),
-          isFalse);
+        AvoidEscapingScopedController.isEscapingTarget(
+          addCall.target!,
+          addCall,
+        ),
+        isFalse,
+      );
     });
   });
 }

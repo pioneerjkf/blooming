@@ -71,14 +71,16 @@ class _UntrackedPayloadVisitor extends RecursiveAstVisitor<void> {
 void main() {
   group('AvoidUntrackedBloomRead AST detection', () {
     test('detects untracked .data inside computed((via) => ...) closure', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final doubled = computed((via) {
     final raw = counter.data; // [Anti-Pattern] Untracked direct read!
     return raw * 2;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -87,14 +89,16 @@ void testComputed() {
     });
 
     test('permits tracked via(counter) inside computed((via) => ...)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final doubled = computed((via) {
     final tracked = via(counter); // [Recommended] Valid explicit manifest
     return tracked * 2;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -103,9 +107,10 @@ void testComputed() {
     });
 
     test(
-        'detects untracked .data, .snapshot, .hasData inside BloomWidget.build',
-        () {
-      final unit = parseString(content: '''
+      'detects untracked .data, .snapshot, .hasData inside BloomWidget.build',
+      () {
+        final unit = parseString(
+          content: '''
 class MyBloomWidget extends BloomWidget {
   final Bloom<int> countBloom;
   MyBloomWidget(this.countBloom);
@@ -118,16 +123,19 @@ class MyBloomWidget extends BloomWidget {
     return Text('\$a');
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
 
-      expect(visitor.untrackedNodes.length, equals(3));
-    });
+        expect(visitor.untrackedNodes.length, equals(3));
+      },
+    );
 
     test('permits via(countBloom) inside BloomWidget.build', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyBloomWidget extends BloomWidget {
   final Bloom<int> countBloom;
   MyBloomWidget(this.countBloom);
@@ -138,7 +146,8 @@ class MyBloomWidget extends BloomWidget {
     return Text('\$a');
   }
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -147,45 +156,53 @@ class MyBloomWidget extends BloomWidget {
     });
 
     test(
-        'detects untracked .data in composed((via) => ...) micro-rebuild functor',
-        () {
-      final unit = parseString(content: '''
+      'detects untracked .data in composed((via) => ...) micro-rebuild functor',
+      () {
+        final unit = parseString(
+          content: '''
 Widget testComposed() {
   return composed((via) => Text('\${counter.data}')); // [Anti-Pattern] Untracked
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
 
-      expect(visitor.untrackedNodes.length, equals(1));
-    });
+        expect(visitor.untrackedNodes.length, equals(1));
+      },
+    );
 
     test(
-        'detects untracked .data in switched((via) => ...) dynamic branch functor',
-        () {
-      final unit = parseString(content: '''
+      'detects untracked .data in switched((via) => ...) dynamic branch functor',
+      () {
+        final unit = parseString(
+          content: '''
 void testSwitched() {
   final s = switched((via) {
     return via(isDark) ? darkBloom.data : lightBloom.data; // [Anti-Pattern] 2 untracked reads
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
 
-      expect(visitor.untrackedNodes.length, equals(2));
-    });
+        expect(visitor.untrackedNodes.length, equals(2));
+      },
+    );
 
     test('detects untracked .data in Effect.via((EffectVia via) => ...)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testEffect() {
   Effect.via((EffectVia via) {
     print(counter.data); // [Anti-Pattern] Untracked
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -194,13 +211,15 @@ void testEffect() {
     });
 
     test('detects untracked .data in Effect.via((via) => ...)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testEffectInferred() {
   Effect.via((via) {
     print(counter.data); // [Anti-Pattern] Untracked
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -209,7 +228,8 @@ void testEffectInferred() {
     });
 
     test('permits .data inside event handlers within BloomWidget.build', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class SafeEventWidget extends BloomWidget {
   final Bloom<int> countBloom;
   SafeEventWidget(this.countBloom);
@@ -226,7 +246,8 @@ class SafeEventWidget extends BloomWidget {
     );
   }
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -235,7 +256,8 @@ class SafeEventWidget extends BloomWidget {
     });
 
     test('permits via(node) inside inline builder with via parameter', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class SampleWidget extends StatelessWidget {
   final Bloom<int> count;
   SampleWidget(this.count);
@@ -247,7 +269,8 @@ class SampleWidget extends StatelessWidget {
     );
   }
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -255,9 +278,11 @@ class SampleWidget extends StatelessWidget {
       expect(visitor.untrackedNodes.length, equals(0));
     });
 
-    test('detects untracked context.bloomOf<T>().data inside BloomWidget.build',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'detects untracked context.bloomOf<T>().data inside BloomWidget.build',
+      () {
+        final unit = parseString(
+          content: '''
 class MyBloomWidget extends BloomWidget {
   @override
   Widget build(BuildContext context, BloomVia via) {
@@ -265,17 +290,21 @@ class MyBloomWidget extends BloomWidget {
     return Text('\$store');
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
 
-      expect(visitor.untrackedNodes.length, equals(1));
-    });
+        expect(visitor.untrackedNodes.length, equals(1));
+      },
+    );
 
-    test('permits tracked via.of<T>(context).data inside BloomWidget.build',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'permits tracked via.of<T>(context).data inside BloomWidget.build',
+      () {
+        final unit = parseString(
+          content: '''
 class MyBloomWidget extends BloomWidget {
   @override
   Widget build(BuildContext context, BloomVia via) {
@@ -284,15 +313,18 @@ class MyBloomWidget extends BloomWidget {
     return Text('\$store \$optional');
   }
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
 
-      expect(visitor.untrackedNodes.length, equals(0));
-    });
+        expect(visitor.untrackedNodes.length, equals(0));
+      },
+    );
     test('detects untracked(...) and untracked.state(...) inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final result = computed((via) {
     final a = untracked(countBloom);
@@ -300,7 +332,8 @@ void testComputed() {
     return a;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -309,14 +342,16 @@ void testComputed() {
     });
 
     test('detects untracked .data on BloomController inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final result = computed((via) {
     final val = countController.data;
     return val * 2;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -325,14 +360,16 @@ void testComputed() {
     });
 
     test('detects manual cast to BloomState inside BloomVia scope', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final result = computed((via) {
     final state = countBloom as BloomState<int>;
     return state.data;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -342,14 +379,16 @@ void testComputed() {
     });
 
     test('detects untracked(...) inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final result = computed((via) {
     final a = untracked(countBloom);
     return a * 2;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -358,14 +397,16 @@ void testComputed() {
     });
 
     test('detects untracked.state(...) inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testComputed() {
   final result = computed((via) {
     final state = untracked.state(countBloom);
     return state.data;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -374,7 +415,8 @@ void testComputed() {
     });
 
     test('permits untracked(...) inside event handlers in BloomWidget', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyWidget extends BloomWidget {
   final Bloom<int> countBloom;
   MyWidget(this.countBloom);
@@ -390,7 +432,8 @@ class MyWidget extends BloomWidget {
     );
   }
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -399,9 +442,10 @@ class MyWidget extends BloomWidget {
     });
 
     test(
-        'safely terminates on cyclic and self-referential variable aliases without stack overflow',
-        () {
-      final unit = parseString(content: '''
+      'safely terminates on cyclic and self-referential variable aliases without stack overflow',
+      () {
+        final unit = parseString(
+          content: '''
 void testFunc() {
   final doubled = computed((via) {
     // Direct self-reference
@@ -414,15 +458,18 @@ void testFunc() {
     return xBloom + aBloom;
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      expect(() => unit.accept(visitor), returnsNormally);
-      expect(visitor.untrackedNodes.length, greaterThanOrEqualTo(1));
-    });
+        final visitor = _UntrackedPayloadVisitor();
+        expect(() => unit.accept(visitor), returnsNormally);
+        expect(visitor.untrackedNodes.length, greaterThanOrEqualTo(1));
+      },
+    );
 
     test('detects untracked read inside via.exit(emptyReason: ...)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testExit() {
   final result = computed((via) {
     if (shouldExit) {
@@ -431,7 +478,8 @@ void testExit() {
     return 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -440,7 +488,8 @@ void testExit() {
     });
 
     test('detects .data read inside via.exit(emptyReason: ...)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testExitData() {
   final result = computed((via) {
     if (shouldExit) {
@@ -449,7 +498,8 @@ void testExitData() {
     return 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -458,7 +508,8 @@ void testExitData() {
     });
 
     test('detects untracked read inside via.exitIfStale(emptyReason: ...)', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void testExitIfStale() {
   final result = computed.future((via) async {
     await fetch();
@@ -466,7 +517,8 @@ void testExitIfStale() {
     return 42;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _UntrackedPayloadVisitor();
       unit.accept(visitor);
@@ -474,9 +526,11 @@ void testExitIfStale() {
       expect(visitor.untrackedNodes.length, equals(1));
     });
 
-    test('permits tracked via(reasonBloom) or constant string inside via.exit',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'permits tracked via(reasonBloom) or constant string inside via.exit',
+      () {
+        final unit = parseString(
+          content: '''
 void testSafeExit() {
   final result = computed((via) {
     if (shouldExit) {
@@ -488,12 +542,14 @@ void testSafeExit() {
     return 42;
   });
 }
-''').unit;
+''',
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
 
-      expect(visitor.untrackedNodes.length, equals(0));
-    });
+        expect(visitor.untrackedNodes.length, equals(0));
+      },
+    );
   });
 }

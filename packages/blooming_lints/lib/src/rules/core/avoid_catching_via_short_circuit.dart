@@ -36,16 +36,16 @@ part of '../../../blooming_lints.dart';
 ///   }
 /// });
 /// ```
-class AvoidCatchingViaShortCircuit extends DartLintRule {
-  AvoidCatchingViaShortCircuit() : super(code: _code);
+class AvoidCatchingViaShortCircuit extends AnalysisRule {
+  AvoidCatchingViaShortCircuit()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_catching_via_short_circuit',
-    problemMessage:
-        'Avoid catching broad exceptions around via() calls inside reactive scopes.',
+  static const code = LintCode(
+    'avoid_catching_via_short_circuit',
+    'Avoid catching broad exceptions around via() calls inside reactive scopes.',
     correctionMessage:
         'Move via() calls outside the try block or catch only specific domain exceptions to allow Bloom\'s short-circuit sentinel to propagate.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
   static const broadExceptionTypes = {
@@ -56,31 +56,14 @@ class AvoidCatchingViaShortCircuit extends DartLintRule {
   };
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    context.registry.addTryStatement((node) {
-      if (!BloomTypeChecker.isInsideBloomViaScope(node)) return;
-      if (AvoidUntrackedBloomRead.isInsideDeferredEventOrAsyncCallback(node)) {
-        return;
-      }
-
-      // Check if node.body contains any via() or via.state() invocation
-      final finder = _ViaInvocationFinder();
-      node.body.accept(finder);
-      if (!finder.hasViaInvocation) return;
-
-      for (final catchClause in node.catchClauses) {
-        if (isCatchClauseRethrowing(catchClause)) continue;
-
-        final typeName = catchClause.exceptionType?.toSource();
-        if (typeName == null || broadExceptionTypes.contains(typeName)) {
-          reporter.atNode(catchClause, _code);
-        }
-      }
-    });
+    registry.addTryStatement(this, _AvoidCatchingViaShortCircuitVisitor(this));
   }
 
   /// Returns `true` if the given catch [clause] rethrows its exception.
@@ -93,6 +76,36 @@ class AvoidCatchingViaShortCircuit extends DartLintRule {
       }
     }
     return false;
+  }
+}
+
+class _AvoidCatchingViaShortCircuitVisitor extends SimpleAstVisitor<void> {
+  _AvoidCatchingViaShortCircuitVisitor(this.rule);
+  final AvoidCatchingViaShortCircuit rule;
+
+  @override
+  void visitTryStatement(TryStatement node) {
+    if (!BloomTypeChecker.isInsideBloomViaScope(node)) return;
+    if (AvoidUntrackedBloomRead.isInsideDeferredEventOrAsyncCallback(node)) {
+      return;
+    }
+
+    // Check if node.body contains any via() or via.state() invocation
+    final finder = _ViaInvocationFinder();
+    node.body.accept(finder);
+    if (!finder.hasViaInvocation) return;
+
+    for (final catchClause in node.catchClauses) {
+      if (AvoidCatchingViaShortCircuit.isCatchClauseRethrowing(catchClause)) {
+        continue;
+      }
+
+      final typeName = catchClause.exceptionType?.toSource();
+      if (typeName == null ||
+          AvoidCatchingViaShortCircuit.broadExceptionTypes.contains(typeName)) {
+        rule.reportAtNode(catchClause);
+      }
+    }
   }
 }
 

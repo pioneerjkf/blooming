@@ -11,37 +11,45 @@ import 'package:blooming_lints/blooming_lints.dart';
 void main() {
   group('AvoidUnnecessaryViaScope AST detection', () {
     test('detects unused via parameter in computed()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final constant = computed((via) {
     return 10 + 20;
   });
 }
-''').unit;
+''',
+      ).unit;
 
       FunctionExpression? closure;
       unit.visitChildren(_FunctionExpressionVisitor((node) => closure = node));
 
       expect(closure, isNotNull);
       expect(
-          AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(closure!), isTrue);
+        AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(closure!),
+        isTrue,
+      );
     });
 
     test('permits active via usage in computed()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final sum = computed((via) {
     return via(a) + via(b);
   });
 }
-''').unit;
+''',
+      ).unit;
 
       FunctionExpression? closure;
       unit.visitChildren(_FunctionExpressionVisitor((node) => closure = node));
 
       expect(closure, isNotNull);
       expect(
-          AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(closure!), isFalse);
+        AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(closure!),
+        isFalse,
+      );
     });
   });
 }

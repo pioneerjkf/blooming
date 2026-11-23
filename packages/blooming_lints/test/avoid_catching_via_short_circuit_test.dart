@@ -19,11 +19,13 @@ class _CatchClauseVisitor extends RecursiveAstVisitor<void> {
       if (finder.hasViaInvocation) {
         for (final catchClause in node.catchClauses) {
           if (!AvoidCatchingViaShortCircuit.isCatchClauseRethrowing(
-              catchClause)) {
+            catchClause,
+          )) {
             final typeName = catchClause.exceptionType?.toSource();
             if (typeName == null ||
-                AvoidCatchingViaShortCircuit.broadExceptionTypes
-                    .contains(typeName)) {
+                AvoidCatchingViaShortCircuit.broadExceptionTypes.contains(
+                  typeName,
+                )) {
               caughtNodes.add(catchClause);
             }
           }
@@ -59,7 +61,8 @@ class _ViaInvocationFinder extends RecursiveAstVisitor<void> {
 void main() {
   group('AvoidCatchingViaShortCircuit AST detection', () {
     test('detects broad catch around via() call inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final d = computed((via) {
     try {
@@ -69,7 +72,8 @@ void test() {
     }
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _CatchClauseVisitor();
       unit.accept(visitor);
@@ -77,7 +81,8 @@ void test() {
     });
 
     test('detects on Object catch around via() call inside computed', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final d = computed((via) {
     try {
@@ -87,7 +92,8 @@ void test() {
     }
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _CatchClauseVisitor();
       unit.accept(visitor);
@@ -95,7 +101,8 @@ void test() {
     });
 
     test('permits rethrow inside catch clause', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final d = computed((via) {
     try {
@@ -106,7 +113,8 @@ void test() {
     }
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _CatchClauseVisitor();
       unit.accept(visitor);
@@ -114,7 +122,8 @@ void test() {
     });
 
     test('permits specific domain exception catch', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void test() {
   final d = computed((via) {
     try {
@@ -124,7 +133,8 @@ void test() {
     }
   });
 }
-''').unit;
+''',
+      ).unit;
 
       final visitor = _CatchClauseVisitor();
       unit.accept(visitor);

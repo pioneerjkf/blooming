@@ -7,101 +7,114 @@
 part of '../../blooming_lints.dart';
 
 /// A quick fix that wraps direct, untracked reactive reads with `via()` or `via.state()`.
-class WrapWithViaFix extends DartFix {
+class WrapWithViaFix extends ResolvedCorrectionProducer {
+  WrapWithViaFix({required super.context});
+
+  static const _fixKind = FixKind(
+    'blooming_lints.fix.wrapWithVia',
+    DartFixKindPriority.standard,
+    '{0}',
+  );
+
+  String? _message;
+
   @override
-  void run(
-    CustomLintResolver resolver,
-    ChangeReporter reporter,
-    CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) {
-    context.registry.addPropertyAccess((node) {
-      if (!node.sourceRange.intersects(analysisError.sourceRange)) return;
-      _handleProperty(reporter, node.target, node.propertyName.name, node);
-    });
+  CorrectionApplicability get applicability =>
+      CorrectionApplicability.singleLocation;
 
-    context.registry.addPrefixedIdentifier((node) {
-      if (!node.sourceRange.intersects(analysisError.sourceRange)) return;
-      _handleProperty(reporter, node.prefix, node.identifier.name, node);
-    });
+  @override
+  FixKind get fixKind => _fixKind;
 
-    context.registry.addFunctionExpressionInvocation((node) {
-      if (!node.sourceRange.intersects(analysisError.sourceRange)) return;
-      if (BloomTypeChecker.isBloomUntrackedInvocation(node)) {
-        final args = node.argumentList.arguments;
-        if (args.isNotEmpty) {
-          final targetSource = args.first.toSource();
-          final changeBuilder = reporter.createChangeBuilder(
-            message: 'Replace untracked(...) with via(...)',
-            priority: 50,
+  @override
+  List<String>? get fixArguments => _message == null ? null : [_message!];
+
+  @override
+  Future<void> compute(ChangeBuilder builder) async {
+    final current = node;
+
+    if (current is PropertyAccess) {
+      await _handleProperty(
+        builder,
+        current.target,
+        current.propertyName.name,
+        current,
+      );
+      return;
+    }
+    if (current is PrefixedIdentifier) {
+      await _handleProperty(
+        builder,
+        current.prefix,
+        current.identifier.name,
+        current,
+      );
+      return;
+    }
+    if (current is FunctionExpressionInvocation &&
+        BloomTypeChecker.isBloomUntrackedInvocation(current)) {
+      final args = current.argumentList.arguments;
+      if (args.isNotEmpty) {
+        final targetSource = args.first.toSource();
+        _message = 'Replace untracked(...) with via(...)';
+        await builder.addDartFileEdit(file, (builder) {
+          builder.addSimpleReplacement(
+            range.node(current),
+            'via($targetSource)',
           );
-          changeBuilder.addDartFileEdit((builder) {
-            builder.addSimpleReplacement(
-                node.sourceRange, 'via($targetSource)');
-          });
-        }
+        });
       }
-    });
-
-    context.registry.addMethodInvocation((node) {
-      if (!node.sourceRange.intersects(analysisError.sourceRange)) return;
-      if (BloomTypeChecker.isBloomUntrackedInvocation(node)) {
-        final args = node.argumentList.arguments;
-        if (args.isNotEmpty) {
-          final targetSource = args.first.toSource();
-          final isState = node.methodName.name == 'state';
-          final replacement =
-              isState ? 'via.state($targetSource)' : 'via($targetSource)';
-          final changeBuilder = reporter.createChangeBuilder(
-            message: isState
-                ? 'Replace untracked.state(...) with via.state(...)'
-                : 'Replace untracked(...) with via(...)',
-            priority: 50,
-          );
-          changeBuilder.addDartFileEdit((builder) {
-            builder.addSimpleReplacement(node.sourceRange, replacement);
-          });
-        }
+      return;
+    }
+    if (current is MethodInvocation &&
+        BloomTypeChecker.isBloomUntrackedInvocation(current)) {
+      final args = current.argumentList.arguments;
+      if (args.isNotEmpty) {
+        final targetSource = args.first.toSource();
+        final isState = current.methodName.name == 'state';
+        final replacement = isState
+            ? 'via.state($targetSource)'
+            : 'via($targetSource)';
+        _message = isState
+            ? 'Replace untracked.state(...) with via.state(...)'
+            : 'Replace untracked(...) with via(...)';
+        await builder.addDartFileEdit(file, (builder) {
+          builder.addSimpleReplacement(range.node(current), replacement);
+        });
       }
-    });
+    }
   }
 
-  void _handleProperty(
-    ChangeReporter reporter,
+  Future<void> _handleProperty(
+    ChangeBuilder builder,
     Expression? target,
     String propName,
     Expression fullNode,
-  ) {
+  ) async {
     if (target == null) return;
 
     final targetType = target.staticType;
-    final isController =
-        BloomTypeChecker.isControllerOrCouplerType(targetType?.element?.name);
+    final isController = BloomTypeChecker.isControllerOrCouplerType(
+      targetType?.element?.name,
+    );
 
     if (propName == 'data') {
-      final changeBuilder = reporter.createChangeBuilder(
-        message: 'Wrap with via(...)',
-        priority: 50,
-      );
-      changeBuilder.addDartFileEdit((builder) {
+      _message = 'Wrap with via(...)';
+      await builder.addDartFileEdit(file, (builder) {
         final targetSource = target.toSource();
-        final replacement =
-            isController ? 'via($targetSource.bloom)' : 'via($targetSource)';
-        builder.addSimpleReplacement(fullNode.sourceRange, replacement);
+        final replacement = isController
+            ? 'via($targetSource.bloom)'
+            : 'via($targetSource)';
+        builder.addSimpleReplacement(range.node(fullNode), replacement);
       });
     } else if (BloomTypeChecker.isPipelineReadProperty(propName)) {
-      final changeBuilder = reporter.createChangeBuilder(
-        message: 'Wrap target with via.state(...)',
-        priority: 50,
-      );
-      changeBuilder.addDartFileEdit((builder) {
+      _message = 'Wrap target with via.state(...)';
+      await builder.addDartFileEdit(file, (builder) {
         final targetSource = target.toSource();
         final viaTarget = isController
             ? 'via.state($targetSource.bloom)'
             : 'via.state($targetSource)';
         final replacement = '$viaTarget.$propName';
-        builder.addSimpleReplacement(fullNode.sourceRange, replacement);
+        builder.addSimpleReplacement(range.node(fullNode), replacement);
       });
     }
   }

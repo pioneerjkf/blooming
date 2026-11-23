@@ -11,7 +11,8 @@ import 'package:blooming_lints/blooming_lints.dart';
 void main() {
   group('AvoidAsyncInManaged AST detection', () {
     test('detects async create closure in managed()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final res = managed(
     create: (via) async {
@@ -20,18 +21,21 @@ void setup() {
     dispose: (r) => r.dispose(),
   );
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? managedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('managed', (node) => managedCall = node));
+        _MethodInvocationVisitor('managed', (node) => managedCall = node),
+      );
 
       expect(managedCall, isNotNull);
       expect(AvoidAsyncInManaged.isAsyncClosureInManaged(managedCall!), isTrue);
     });
 
     test('detects async update closure in managed()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final res = managed(
     create: (via) => Resource(),
@@ -41,18 +45,21 @@ void setup() {
     dispose: (r) => r.dispose(),
   );
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? managedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('managed', (node) => managedCall = node));
+        _MethodInvocationVisitor('managed', (node) => managedCall = node),
+      );
 
       expect(managedCall, isNotNull);
       expect(AvoidAsyncInManaged.isAsyncClosureInManaged(managedCall!), isTrue);
     });
 
     test('detects async dispose closure in managed()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final res = managed(
     create: (via) => Resource(),
@@ -61,33 +68,40 @@ void setup() {
     },
   );
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? managedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('managed', (node) => managedCall = node));
+        _MethodInvocationVisitor('managed', (node) => managedCall = node),
+      );
 
       expect(managedCall, isNotNull);
       expect(AvoidAsyncInManaged.isAsyncClosureInManaged(managedCall!), isTrue);
     });
 
     test('permits synchronous closures in managed()', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 void setup() {
   final res = managed(
     create: (via) => Resource(),
     dispose: (r) => r.dispose(),
   );
 }
-''').unit;
+''',
+      ).unit;
 
       MethodInvocation? managedCall;
       unit.visitChildren(
-          _MethodInvocationVisitor('managed', (node) => managedCall = node));
+        _MethodInvocationVisitor('managed', (node) => managedCall = node),
+      );
 
       expect(managedCall, isNotNull);
       expect(
-          AvoidAsyncInManaged.isAsyncClosureInManaged(managedCall!), isFalse);
+        AvoidAsyncInManaged.isAsyncClosureInManaged(managedCall!),
+        isFalse,
+      );
     });
   });
 }

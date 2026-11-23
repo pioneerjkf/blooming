@@ -42,107 +42,50 @@ part of '../../../blooming_lints.dart';
 ///   }
 /// }
 /// ```
-class AvoidUntrackedBloomRead extends DartLintRule {
-  AvoidUntrackedBloomRead() : super(code: _code);
+class AvoidUntrackedBloomRead extends MultiAnalysisRule {
+  AvoidUntrackedBloomRead()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'avoid_untracked_bloom_read',
-    problemMessage:
-        'Avoid reading reactive payload directly (\'{0}\') inside BloomVia/EffectVia scopes without calling via().',
+  static const code = LintCode(
+    'avoid_untracked_bloom_read',
+    'Avoid reading reactive payload directly (\'{0}\') inside BloomVia/EffectVia scopes without calling via().',
     correctionMessage:
         'Wrap the reactive node with via(node) or via.state(node) to establish dynamic dependency tracking.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    severity: DiagnosticSeverity.ERROR,
   );
 
-  static const _castCode = LintCode(
-    name: 'avoid_untracked_bloom_read',
-    problemMessage:
-        'Avoid casting Bloom node to BloomState inside BloomVia/EffectVia scopes to bypass reactive tracking.',
+  static const castCode = LintCode(
+    'avoid_untracked_bloom_read',
+    'Avoid casting Bloom node to BloomState inside BloomVia/EffectVia scopes to bypass reactive tracking.',
     correctionMessage:
         'Use via(node) or via.state(node) instead of manual casting to establish dynamic dependency tracking.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    uniqueName: 'LintCode.avoid_untracked_bloom_read.cast',
+    severity: DiagnosticSeverity.ERROR,
   );
 
-  static const _untrackedCode = LintCode(
-    name: 'avoid_untracked_bloom_read',
-    problemMessage:
-        'Avoid calling untracked(...) inside BloomVia/EffectVia scopes without establishing dependency tracking.',
+  static const untrackedCode = LintCode(
+    'avoid_untracked_bloom_read',
+    'Avoid calling untracked(...) inside BloomVia/EffectVia scopes without establishing dependency tracking.',
     correctionMessage:
         'Use via(node) or via.state(node) instead of untracked(...) to establish dynamic dependency tracking.',
-    errorSeverity: DiagnosticSeverity.ERROR,
+    uniqueName: 'LintCode.avoid_untracked_bloom_read.untracked',
+    severity: DiagnosticSeverity.ERROR,
   );
 
   @override
-  List<Fix> getFixes() => [WrapWithViaFix()];
+  List<LintCode> get diagnosticCodes => [code, castCode, untrackedCode];
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    // 1. PropertyAccess (e.g. this.counter.data, this.controller.snapshot)
-    context.registry.addPropertyAccess((node) {
-      final propName = node.propertyName.name;
-      if (BloomTypeChecker.isPipelineReadProperty(propName)) {
-        if (BloomTypeChecker.isTrackableBloomTarget(node.target)) {
-          if (isUntrackedInBloomViaScope(node)) {
-            reporter.atNode(node, _code, arguments: [propName]);
-          }
-        }
-      }
-    });
-
-    // 2. PrefixedIdentifier (e.g. counter.data, controller.snapshot)
-    context.registry.addPrefixedIdentifier((node) {
-      final propName = node.identifier.name;
-      if (BloomTypeChecker.isPipelineReadProperty(propName)) {
-        if (BloomTypeChecker.isTrackableBloomTarget(node.prefix)) {
-          if (isUntrackedInBloomViaScope(node)) {
-            reporter.atNode(node, _code, arguments: [propName]);
-          }
-        }
-      }
-    });
-
-    // 3. MethodInvocation (e.g. counter.dataOrElse(...), untracked.state(...))
-    context.registry.addMethodInvocation((node) {
-      final methodName = node.methodName.name;
-      if (BloomTypeChecker.isPipelineReadMethod(methodName)) {
-        if (BloomTypeChecker.isTrackableBloomTarget(node.target)) {
-          if (isUntrackedInBloomViaScope(node)) {
-            reporter.atNode(node, _code, arguments: [methodName]);
-          }
-        }
-      } else if (BloomTypeChecker.isBloomUntrackedInvocation(node)) {
-        if (isUntrackedInBloomViaScope(node)) {
-          reporter.atNode(node, _untrackedCode);
-        }
-      }
-    });
-
-    // 4. FunctionExpressionInvocation (e.g. untracked(node))
-    context.registry.addFunctionExpressionInvocation((node) {
-      if (BloomTypeChecker.isBloomUntrackedInvocation(node)) {
-        if (isUntrackedInBloomViaScope(node)) {
-          reporter.atNode(node, _untrackedCode);
-        }
-      }
-    });
-
-    // 5. AsExpression (e.g. count as BloomState)
-    context.registry.addAsExpression((node) {
-      if (isUntrackedInBloomViaScope(node)) {
-        final targetType = node.type.type;
-        if (targetType != null &&
-            BloomTypeChecker.isBloomStateClass(targetType)) {
-          final exprType = node.expression.unParenthesized.staticType;
-          if (exprType != null && BloomTypeChecker.isBloomClass(exprType)) {
-            reporter.atNode(node, _castCode);
-          }
-        }
-      }
-    });
+    final visitor = _AvoidUntrackedBloomReadVisitor(this);
+    registry.addPropertyAccess(this, visitor);
+    registry.addPrefixedIdentifier(this, visitor);
+    registry.addMethodInvocation(this, visitor);
+    registry.addFunctionExpressionInvocation(this, visitor);
+    registry.addAsExpression(this, visitor);
   }
 
   /// Checks if the AST [node] is inside an active `BloomVia` scope and NOT deferred inside an event handler or via() call.
@@ -158,8 +101,8 @@ class AvoidUntrackedBloomRead extends DartLintRule {
     AstNode? current = node.parent;
     while (current != null) {
       // 1. If inside an event callback parameter (e.g. onPressed: () => ..., onTap: () => ...)
-      if (current is NamedExpression) {
-        final paramName = current.name.label.name;
+      if (current is NamedArgument) {
+        final paramName = current.name.lexeme;
         if (BloomTypeChecker.isEventCallbackParameter(paramName)) {
           return true;
         }
@@ -281,25 +224,29 @@ class AvoidUntrackedBloomRead extends DartLintRule {
 
     bool isTracked = false;
     if (element != null) {
-      body.accept(_VariableFinder(element, (decl) {
-        if (!isTracked &&
-            decl.initializer != null &&
-            _isExpressionTrackedByVia(decl.initializer, aliasHops)) {
-          isTracked = true;
-        }
-      }));
+      body.accept(
+        _VariableFinder(element, (decl) {
+          if (!isTracked &&
+              decl.initializer != null &&
+              _isExpressionTrackedByVia(decl.initializer, aliasHops)) {
+            isTracked = true;
+          }
+        }),
+      );
     } else {
       final targetName = expr.name;
       final exprOffset = expr.offset;
-      body.accept(_UnresolvedVariableFinder(targetName, (decl) {
-        // Enforce lexical order for unresolved symbols: declaration must precede usage
-        if (!isTracked &&
-            decl.offset < exprOffset &&
-            decl.initializer != null &&
-            _isExpressionTrackedByVia(decl.initializer, aliasHops)) {
-          isTracked = true;
-        }
-      }));
+      body.accept(
+        _UnresolvedVariableFinder(targetName, (decl) {
+          // Enforce lexical order for unresolved symbols: declaration must precede usage
+          if (!isTracked &&
+              decl.offset < exprOffset &&
+              decl.initializer != null &&
+              _isExpressionTrackedByVia(decl.initializer, aliasHops)) {
+            isTracked = true;
+          }
+        }),
+      );
     }
     return isTracked;
   }
@@ -350,5 +297,94 @@ class _UnresolvedVariableFinder extends RecursiveAstVisitor<void> {
       onFound(node);
     }
     super.visitVariableDeclaration(node);
+  }
+}
+
+class _AvoidUntrackedBloomReadVisitor extends SimpleAstVisitor<void> {
+  _AvoidUntrackedBloomReadVisitor(this.rule);
+  final AvoidUntrackedBloomRead rule;
+
+  @override
+  void visitPropertyAccess(PropertyAccess node) {
+    final propName = node.propertyName.name;
+    if (BloomTypeChecker.isPipelineReadProperty(propName)) {
+      if (BloomTypeChecker.isTrackableBloomTarget(node.target)) {
+        if (AvoidUntrackedBloomRead.isUntrackedInBloomViaScope(node)) {
+          rule.reportAtNode(
+            node,
+            diagnosticCode: AvoidUntrackedBloomRead.code,
+            arguments: [propName],
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  void visitPrefixedIdentifier(PrefixedIdentifier node) {
+    final propName = node.identifier.name;
+    if (BloomTypeChecker.isPipelineReadProperty(propName)) {
+      if (BloomTypeChecker.isTrackableBloomTarget(node.prefix)) {
+        if (AvoidUntrackedBloomRead.isUntrackedInBloomViaScope(node)) {
+          rule.reportAtNode(
+            node,
+            diagnosticCode: AvoidUntrackedBloomRead.code,
+            arguments: [propName],
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final methodName = node.methodName.name;
+    if (BloomTypeChecker.isPipelineReadMethod(methodName)) {
+      if (BloomTypeChecker.isTrackableBloomTarget(node.target)) {
+        if (AvoidUntrackedBloomRead.isUntrackedInBloomViaScope(node)) {
+          rule.reportAtNode(
+            node,
+            diagnosticCode: AvoidUntrackedBloomRead.code,
+            arguments: [methodName],
+          );
+        }
+      }
+    } else if (BloomTypeChecker.isBloomUntrackedInvocation(node)) {
+      if (AvoidUntrackedBloomRead.isUntrackedInBloomViaScope(node)) {
+        rule.reportAtNode(
+          node,
+          diagnosticCode: AvoidUntrackedBloomRead.untrackedCode,
+        );
+      }
+    }
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (BloomTypeChecker.isBloomUntrackedInvocation(node)) {
+      if (AvoidUntrackedBloomRead.isUntrackedInBloomViaScope(node)) {
+        rule.reportAtNode(
+          node,
+          diagnosticCode: AvoidUntrackedBloomRead.untrackedCode,
+        );
+      }
+    }
+  }
+
+  @override
+  void visitAsExpression(AsExpression node) {
+    if (AvoidUntrackedBloomRead.isUntrackedInBloomViaScope(node)) {
+      final targetType = node.type.type;
+      if (targetType != null &&
+          BloomTypeChecker.isBloomStateClass(targetType)) {
+        final exprType = node.expression.unParenthesized.staticType;
+        if (exprType != null && BloomTypeChecker.isBloomClass(exprType)) {
+          rule.reportAtNode(
+            node,
+            diagnosticCode: AvoidUntrackedBloomRead.castCode,
+          );
+        }
+      }
+    }
   }
 }

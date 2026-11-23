@@ -8,7 +8,34 @@ part of '../../blooming_lints.dart';
 
 /// A quick fix that converts a synchronous `computed(...)` invocation with an asynchronous
 /// computation into `computed.future(...)` or `computed.stream(...)`.
-class ConvertToComputedAsyncFix extends DartFix {
+class ConvertToComputedAsyncFix extends ResolvedCorrectionProducer {
+  ConvertToComputedAsyncFix({required super.context});
+
+  static const _fixKind = FixKind(
+    'blooming_lints.fix.convertToComputedAsync',
+    DartFixKindPriority.standard,
+    '{0}',
+  );
+
+  ({
+    AstNode targetNode,
+    Expression computeArg,
+    String replacement,
+    String message,
+  })?
+  _resolved;
+
+  @override
+  CorrectionApplicability get applicability =>
+      CorrectionApplicability.singleLocation;
+
+  @override
+  FixKind get fixKind => _fixKind;
+
+  @override
+  List<String>? get fixArguments =>
+      _resolved == null ? null : [_resolved!.message];
+
   /// Resolves the AST target node and its replacement string for [node], or `null` if not convertible.
   @visibleForTesting
   static ({
@@ -16,13 +43,15 @@ class ConvertToComputedAsyncFix extends DartFix {
     Expression computeArg,
     String replacement,
     String message,
-  })? computeReplacement(InvocationExpression node) {
+  })?
+  computeReplacement(InvocationExpression node) {
     if (BloomTypeChecker.resolveFunctorName(node) != 'ComputedFunctor') {
       return null;
     }
 
-    final positional =
-        node.argumentList.arguments.where((arg) => arg is! NamedExpression);
+    final positional = node.argumentList.arguments
+        .where((arg) => arg is! NamedArgument)
+        .map((arg) => arg.argumentExpression);
     if (positional.isEmpty) return null;
     final computeArg = positional.first;
 
@@ -31,8 +60,9 @@ class ConvertToComputedAsyncFix extends DartFix {
 
     final isStream = kind == AsyncComputationKind.stream;
     final suffix = isStream ? '.stream' : '.future';
-    final message =
-        isStream ? 'Convert to computed.stream' : 'Convert to computed.future';
+    final message = isStream
+        ? 'Convert to computed.stream'
+        : 'Convert to computed.future';
 
     AstNode? targetNode;
     String? replacement;
@@ -69,36 +99,19 @@ class ConvertToComputedAsyncFix extends DartFix {
   }
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    ChangeReporter reporter,
-    CustomLintContext context,
-    AnalysisError analysisError,
-    List<AnalysisError> others,
-  ) {
-    void handleInvocation(InvocationExpression node) {
-      if (!node.sourceRange.intersects(analysisError.sourceRange)) return;
+  Future<void> compute(ChangeBuilder builder) async {
+    final invocation = node.thisOrAncestorOfType<InvocationExpression>();
+    if (invocation == null) return;
 
-      final resolved = computeReplacement(node);
-      if (resolved == null) return;
-      if (!resolved.computeArg.sourceRange
-          .intersects(analysisError.sourceRange)) {
-        return;
-      }
+    final resolved = computeReplacement(invocation);
+    if (resolved == null) return;
+    _resolved = resolved;
 
-      final changeBuilder = reporter.createChangeBuilder(
-        message: resolved.message,
-        priority: 50,
+    await builder.addDartFileEdit(file, (builder) {
+      builder.addSimpleReplacement(
+        range.node(resolved.targetNode),
+        resolved.replacement,
       );
-      changeBuilder.addDartFileEdit((builder) {
-        builder.addSimpleReplacement(
-          resolved.targetNode.sourceRange,
-          resolved.replacement,
-        );
-      });
-    }
-
-    context.registry.addMethodInvocation(handleInvocation);
-    context.registry.addFunctionExpressionInvocation(handleInvocation);
+    });
   }
 }

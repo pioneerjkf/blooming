@@ -29,20 +29,23 @@ library;
 
 import 'dart:io';
 
+import 'package:analyzer/analysis_rule/rule_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:package_config/package_config.dart';
-import 'package:path/path.dart' as p;
+import 'package:analyzer/error/listener.dart';
+import 'package:analyzer/src/analysis_rule/rule_context.dart';
+import 'package:analyzer/src/lint/linter_visitor.dart';
 import 'package:blooming_lints/blooming_lints.dart';
+import 'package:path/path.dart' as p;
 
 /// Root of the `blooming_lints` example package.
 final Directory exampleDir = () {
   final direct = Directory(p.normalize(p.absolute('example')));
   if (direct.existsSync()) return direct;
-  final nested =
-      Directory(p.normalize(p.absolute('packages/blooming_lints/example')));
+  final nested = Directory(
+    p.normalize(p.absolute('packages/blooming_lints/example')),
+  );
   if (nested.existsSync()) return nested;
   return direct;
 }();
@@ -57,16 +60,11 @@ final Directory lintCasesDir = Directory(p.join(exampleDir.path, 'lint_cases'));
 final List<Directory> corpusRoots = [showcaseDir, lintCasesDir];
 
 /// Every rule exactly as registered by the plugin entrypoint.
-///
-/// `CustomLintConfigs.parse(null, ...)` is the public way to obtain an empty
-/// configuration (the `empty` constant itself is `@internal`).
-final List<DartLintRule> registeredRules = createPlugin()
-    .getLintRules(CustomLintConfigs.parse(null, PackageConfig.empty))
-    .cast<DartLintRule>();
+final List<AbstractAnalysisRule> registeredRules = createBloomingRules();
 
 /// Names of every registered rule.
 final Set<String> registeredRuleNames = {
-  for (final rule in registeredRules) rule.code.name,
+  for (final rule in registeredRules) rule.name,
 };
 
 final _caseMarker = RegExp(r'^\s*//\s*#case\s+(\S+)');
@@ -183,8 +181,10 @@ Future<LintFileReport> _analyze(String path) async {
   final collection = _collection ??= AnalysisContextCollection(
     includedPaths: [for (final root in corpusRoots) root.path],
   );
-  final result =
-      await collection.contextFor(path).currentSession.getResolvedUnit(path);
+  final result = await collection
+      .contextFor(path)
+      .currentSession
+      .getResolvedUnit(path);
   if (result is! ResolvedUnitResult) {
     return LintFileReport(['Failed to resolve: ${result.runtimeType}'], {});
   }
@@ -193,18 +193,42 @@ Future<LintFileReport> _analyze(String path) async {
     for (final d in result.diagnostics)
       if (d.severity == Severity.error)
         'L${result.lineInfo.getLocation(d.offset).lineNumber}: '
-            '${d.diagnosticCode.name} - ${d.message}',
+            '${d.diagnosticCode.lowerCaseName} - ${d.message}',
   ];
 
-  final hits = <LintHit>{};
+  final listener = RecordingDiagnosticListener();
+  final reporter = DiagnosticReporter(
+    listener,
+    result.libraryElement.firstFragment.source,
+  );
+  final contextUnit = RuleContextUnit(
+    file: result.file,
+    content: result.content,
+    diagnosticReporter: reporter,
+    unit: result.unit,
+  );
+  final ruleContext = RuleContextWithResolvedResults(
+    [contextUnit],
+    contextUnit,
+    result.typeProvider,
+    result.typeSystem,
+    null,
+  )..currentUnit = contextUnit;
+
+  final registry = RuleVisitorRegistryImpl(enableTiming: false);
   for (final rule in registeredRules) {
-    for (final d in await rule.testRun(result)) {
-      hits.add((
-        rule: d.diagnosticCode.name,
-        line: result.lineInfo.getLocation(d.offset).lineNumber,
-      ));
-    }
+    rule.reporter = reporter;
+    rule.registerNodeProcessors(registry, ruleContext);
   }
+  result.unit.accept(AnalysisRuleVisitor(registry));
+
+  final hits = <LintHit>{
+    for (final d in listener.diagnostics)
+      (
+        rule: d.diagnosticCode.lowerCaseName,
+        line: result.lineInfo.getLocation(d.offset).lineNumber,
+      ),
+  };
   return LintFileReport(compileErrors, hits);
 }
 

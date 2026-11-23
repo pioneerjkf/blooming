@@ -75,39 +75,42 @@ part of '../../../blooming_lints.dart';
 /// Avoid wrapping trivial static widgets (like single icons, simple containers) into separate
 /// `StatelessWidget` classes unless they have complex internal state or independent lifecycles.
 /// Use inline `const` or `composed.child` directly instead.
-class PreferComposedChild extends DartLintRule {
-  PreferComposedChild() : super(code: _code);
+class PreferComposedChild extends MultiAnalysisRule {
+  PreferComposedChild()
+    : super(name: code.lowerCaseName, description: code.problemMessage);
 
-  static const _code = LintCode(
-    name: 'prefer_composed_child',
-    problemMessage:
-        'Consider isolating non-reactive static subtrees from composed.',
+  static const code = LintCode(
+    'prefer_composed_child',
+    'Consider isolating non-reactive static subtrees from composed.',
     correctionMessage:
         'To minimize rebuild overhead, pass static subtrees via composed.child / composed.children, '
         'or narrow composed scope to dynamic leaf widgets (Surgical Rebuild). '
         'Avoid extracting trivial static widgets into separate StatelessWidget classes when const inline or .child caching suffices.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    severity: DiagnosticSeverity.INFO,
   );
 
-  static const _highFrequencyCode = LintCode(
-    name: 'prefer_composed_child',
-    problemMessage:
-        'High-frequency frame animation closure (\'{0}\') contains static widget subtrees.',
+  static const highFrequencyCode = LintCode(
+    'prefer_composed_child',
+    'High-frequency frame animation closure (\'{0}\') contains static widget subtrees.',
     correctionMessage:
         'Pass static subtrees or background tracks via {0}.child or {0}.children to preserve a clean single layout tree without 60/120fps rebuild overhead. '
         'Avoid extracting trivial static widgets into separate StatelessWidget classes when const inline or .child caching suffices.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    uniqueName: 'LintCode.prefer_composed_child.high_frequency',
+    severity: DiagnosticSeverity.INFO,
   );
 
-  static const _layoutCode = LintCode(
-    name: 'prefer_composed_child',
-    problemMessage:
-        'Static layout container (\'{0}\') inside composed closure is unnecessarily re-evaluated on reactive state changes.',
+  static const layoutCode = LintCode(
+    'prefer_composed_child',
+    'Static layout container (\'{0}\') inside composed closure is unnecessarily re-evaluated on reactive state changes.',
     correctionMessage:
         'Narrow composed scope by keeping the {0} outside and wrapping only dynamic leaf widgets (Surgical Rebuild), '
         'or pass static sibling subtrees via composed.child / composed.children.',
-    errorSeverity: DiagnosticSeverity.INFO,
+    uniqueName: 'LintCode.prefer_composed_child.layout',
+    severity: DiagnosticSeverity.INFO,
   );
+
+  @override
+  List<LintCode> get diagnosticCodes => [code, highFrequencyCode, layoutCode];
 
   static const _multiChildLayoutWidgets = {
     'Column',
@@ -140,8 +143,8 @@ class PreferComposedChild extends DartLintRule {
         final args = expr.argumentList.arguments;
         Expression? childExpr;
         for (final arg in args) {
-          if (arg is NamedExpression && arg.name.label.name == 'child') {
-            childExpr = arg.expression.unParenthesized;
+          if (arg is NamedArgument && arg.name.lexeme == 'child') {
+            childExpr = arg.argumentExpression.unParenthesized;
             break;
           }
         }
@@ -154,78 +157,13 @@ class PreferComposedChild extends DartLintRule {
   }
 
   @override
-  void run(
-    CustomLintResolver resolver,
-    DiagnosticReporter reporter,
-    CustomLintContext context,
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
   ) {
-    void checkInvocation(
-      AstNode node,
-      ArgumentList argumentList,
-      String functorName,
-    ) {
-      final args = argumentList.arguments;
-      if (args.isEmpty) return;
-
-      // Extract builder closure
-      FunctionExpression? builderFunc;
-      for (final arg in args) {
-        if (arg is FunctionExpression) {
-          builderFunc = arg;
-          break;
-        }
-      }
-
-      if (builderFunc == null) return;
-
-      final visitor = _SubtreeComplexityVisitor();
-      builderFunc.body.visitChildren(visitor);
-
-      final isHighFrequency = functorName.contains('Drive') ||
-          functorName.contains('Animate') ||
-          visitor.hasHighFrequencySource;
-
-      // High-frequency frame animation requires strict isolation (threshold 1).
-      // Standard reactive event cascades allow trivial spacers and single labels (threshold 2).
-      final threshold = isHighFrequency ? 1 : 2;
-
-      if (visitor.complexityScore >= threshold) {
-        if (isHighFrequency) {
-          var functorLabel = 'composed';
-          if (functorName.contains('Animate')) {
-            functorLabel = 'composed.animate';
-          } else if (functorName.contains('Drive')) {
-            functorLabel = 'composed.drive';
-          }
-          reporter.atNode(node, _highFrequencyCode, arguments: [functorLabel]);
-        } else {
-          final layoutTypeName = _getReturnedLayoutTypeName(builderFunc.body);
-          if (layoutTypeName != null) {
-            reporter.atNode(node, _layoutCode, arguments: [layoutTypeName]);
-          } else {
-            reporter.atNode(node, _code);
-          }
-        }
-      }
-    }
-
-    context.registry.addFunctionExpressionInvocation((node) {
-      final name = BloomTypeChecker.resolveFunctorName(node);
-      if (name != null &&
-          name.startsWith('Composed') &&
-          !name.contains('Child')) {
-        checkInvocation(node, node.argumentList, name);
-      }
-    });
-
-    context.registry.addMethodInvocation((node) {
-      final name = BloomTypeChecker.resolveFunctorName(node);
-      if (name != null &&
-          name.startsWith('Composed') &&
-          !name.contains('Child')) {
-        checkInvocation(node, node.argumentList, name);
-      }
-    });
+    final visitor = _PreferComposedChildVisitor(this);
+    registry.addFunctionExpressionInvocation(this, visitor);
+    registry.addMethodInvocation(this, visitor);
   }
 
   /// Calculates the static widget subtree complexity score inside [body].
@@ -236,8 +174,10 @@ class PreferComposedChild extends DartLintRule {
   }
 
   /// Checks if the [body] contains static `const` widget instances or lists that could be cached via `composed.child` or `composed.children`.
-  static bool containsHeavyStaticWidget(FunctionBody body,
-      {bool isHighFrequency = false}) {
+  static bool containsHeavyStaticWidget(
+    FunctionBody body, {
+    bool isHighFrequency = false,
+  }) {
     final visitor = _SubtreeComplexityVisitor();
     body.visitChildren(visitor);
     final effectiveHighFreq = isHighFrequency || visitor.hasHighFrequencySource;
@@ -291,8 +231,8 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
     }
 
     final parent = node.parent;
-    if (parent is NamedExpression) {
-      final paramName = parent.name.label.name;
+    if (parent is NamedArgument) {
+      final paramName = parent.name.lexeme;
       // Property slots other than 'child' and 'body' (e.g. icon, label, leading, trailing, prefixIcon)
       // cannot be extracted as standalone cached subtrees.
       if (paramName != 'child' && paramName != 'body') {
@@ -389,8 +329,10 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
 
     hasHighFrequencySource |=
         thenVisitor.hasHighFrequencySource | elseVisitor.hasHighFrequencySource;
-    complexityScore +=
-        math.max(thenVisitor.complexityScore, elseVisitor.complexityScore);
+    complexityScore += math.max(
+      thenVisitor.complexityScore,
+      elseVisitor.complexityScore,
+    );
   }
 
   @override
@@ -399,8 +341,9 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
 
     var maxCaseScore = 0;
     for (final c in node.cases) {
-      final caseVisitor =
-          _SubtreeComplexityVisitor._withContext(_inConstContext);
+      final caseVisitor = _SubtreeComplexityVisitor._withContext(
+        _inConstContext,
+      );
       c.expression.accept(caseVisitor);
       c.guardedPattern.accept(caseVisitor);
       hasHighFrequencySource |= caseVisitor.hasHighFrequencySource;
@@ -501,19 +444,23 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
       if (stmt is IfStatement) {
         stmt.expression.accept(this);
 
-        final thenVisitor =
-            _SubtreeComplexityVisitor._withContext(_inConstContext);
+        final thenVisitor = _SubtreeComplexityVisitor._withContext(
+          _inConstContext,
+        );
         _visitStatementOrBlock(stmt.thenStatement, thenVisitor);
         hasHighFrequencySource |= thenVisitor.hasHighFrequencySource;
 
         if (stmt.elseStatement != null) {
-          final elseVisitor =
-              _SubtreeComplexityVisitor._withContext(_inConstContext);
+          final elseVisitor = _SubtreeComplexityVisitor._withContext(
+            _inConstContext,
+          );
           _visitStatementOrBlock(stmt.elseStatement!, elseVisitor);
           hasHighFrequencySource |= elseVisitor.hasHighFrequencySource;
 
           complexityScore += math.max(
-              thenVisitor.complexityScore, elseVisitor.complexityScore);
+            thenVisitor.complexityScore,
+            elseVisitor.complexityScore,
+          );
 
           if (_alwaysTerminates(stmt.thenStatement) &&
               _alwaysTerminates(stmt.elseStatement!)) {
@@ -523,13 +470,16 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
           // If without else
           if (_alwaysTerminates(stmt.thenStatement)) {
             // Guard clause / Early exit pattern
-            final remainingVisitor =
-                _SubtreeComplexityVisitor._withContext(_inConstContext);
+            final remainingVisitor = _SubtreeComplexityVisitor._withContext(
+              _inConstContext,
+            );
             remainingVisitor._visitStatements(statements.sublist(i + 1));
             hasHighFrequencySource |= remainingVisitor.hasHighFrequencySource;
 
             complexityScore += math.max(
-                thenVisitor.complexityScore, remainingVisitor.complexityScore);
+              thenVisitor.complexityScore,
+              remainingVisitor.complexityScore,
+            );
             return;
           } else {
             complexityScore += thenVisitor.complexityScore;
@@ -541,8 +491,9 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
         var allTerminate = true;
 
         for (final member in stmt.members) {
-          final memberVisitor =
-              _SubtreeComplexityVisitor._withContext(_inConstContext);
+          final memberVisitor = _SubtreeComplexityVisitor._withContext(
+            _inConstContext,
+          );
           memberVisitor._visitStatements(member.statements);
           hasHighFrequencySource |= memberVisitor.hasHighFrequencySource;
 
@@ -556,11 +507,13 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
 
         complexityScore += maxMemberScore;
 
-        final hasDefault = stmt.members.any((m) =>
-            m is SwitchDefault ||
-            (m is SwitchPatternCase &&
-                m.guardedPattern.pattern is WildcardPattern &&
-                m.guardedPattern.whenClause == null));
+        final hasDefault = stmt.members.any(
+          (m) =>
+              m is SwitchDefault ||
+              (m is SwitchPatternCase &&
+                  m.guardedPattern.pattern is WildcardPattern &&
+                  m.guardedPattern.whenClause == null),
+        );
         if (allTerminate && hasDefault) {
           return;
         }
@@ -574,7 +527,9 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
   }
 
   static void _visitStatementOrBlock(
-      Statement stmt, _SubtreeComplexityVisitor visitor) {
+    Statement stmt,
+    _SubtreeComplexityVisitor visitor,
+  ) {
     if (stmt is Block) {
       visitor._visitStatements(stmt.statements);
     } else {
@@ -605,5 +560,88 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
       if (_alwaysTerminates(s)) return true;
     }
     return false;
+  }
+}
+
+class _PreferComposedChildVisitor extends SimpleAstVisitor<void> {
+  _PreferComposedChildVisitor(this.rule);
+  final PreferComposedChild rule;
+
+  void _checkInvocation(
+    AstNode node,
+    ArgumentList argumentList,
+    String functorName,
+  ) {
+    final args = argumentList.arguments;
+    if (args.isEmpty) return;
+
+    FunctionExpression? builderFunc;
+    for (final arg in args) {
+      if (arg is FunctionExpression) {
+        builderFunc = arg;
+        break;
+      }
+    }
+
+    if (builderFunc == null) return;
+
+    final visitor = _SubtreeComplexityVisitor();
+    builderFunc.body.visitChildren(visitor);
+
+    final isHighFrequency =
+        functorName.contains('Drive') ||
+        functorName.contains('Animate') ||
+        visitor.hasHighFrequencySource;
+
+    final threshold = isHighFrequency ? 1 : 2;
+
+    if (visitor.complexityScore >= threshold) {
+      if (isHighFrequency) {
+        var functorLabel = 'composed';
+        if (functorName.contains('Animate')) {
+          functorLabel = 'composed.animate';
+        } else if (functorName.contains('Drive')) {
+          functorLabel = 'composed.drive';
+        }
+        rule.reportAtNode(
+          node,
+          diagnosticCode: PreferComposedChild.highFrequencyCode,
+          arguments: [functorLabel],
+        );
+      } else {
+        final layoutTypeName = PreferComposedChild._getReturnedLayoutTypeName(
+          builderFunc.body,
+        );
+        if (layoutTypeName != null) {
+          rule.reportAtNode(
+            node,
+            diagnosticCode: PreferComposedChild.layoutCode,
+            arguments: [layoutTypeName],
+          );
+        } else {
+          rule.reportAtNode(node, diagnosticCode: PreferComposedChild.code);
+        }
+      }
+    }
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    final name = BloomTypeChecker.resolveFunctorName(node);
+    if (name != null &&
+        name.startsWith('Composed') &&
+        !name.contains('Child')) {
+      _checkInvocation(node, node.argumentList, name);
+    }
+  }
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final name = BloomTypeChecker.resolveFunctorName(node);
+    if (name != null &&
+        name.startsWith('Composed') &&
+        !name.contains('Child')) {
+      _checkInvocation(node, node.argumentList, name);
+    }
   }
 }

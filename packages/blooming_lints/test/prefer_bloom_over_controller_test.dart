@@ -10,9 +10,11 @@ import 'package:blooming_lints/blooming_lints.dart';
 
 void main() {
   group('PreferBloomOverController AST detection', () {
-    test('detects BloomController parameter in StatelessWidget constructor',
-        () {
-      final unit = parseString(content: '''
+    test(
+      'detects BloomController parameter in StatelessWidget constructor',
+      () {
+        final unit = parseString(
+          content: '''
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key, required this.controller});
   final BloomController<int> controller;
@@ -20,22 +22,28 @@ class MyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container();
 }
-''').unit;
+''',
+        ).unit;
 
-      ClassDeclaration? clazz;
-      unit.visitChildren(_ClassVisitor((node) => clazz = node));
+        ClassDeclaration? clazz;
+        unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
-      expect(clazz, isNotNull);
-      final constructor =
-          clazz!.members.whereType<ConstructorDeclaration>().first;
-      final param = constructor.parameters.parameters.last;
-      final typeStr =
-          PreferBloomOverController.getParameterTypeString(param, clazz!);
-      expect(typeStr, startsWith('BloomController'));
-    });
+        expect(clazz, isNotNull);
+        final constructor = FlutterAstUtils.classMembers(
+          clazz!,
+        ).whereType<ConstructorDeclaration>().first;
+        final param = constructor.parameters.parameters.last;
+        final typeStr = PreferBloomOverController.getParameterTypeString(
+          param,
+          clazz!,
+        );
+        expect(typeStr, startsWith('BloomController'));
+      },
+    );
 
     test('permits read-only Bloom<T> parameter in StatelessWidget', () {
-      final unit = parseString(content: '''
+      final unit = parseString(
+        content: '''
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key, required this.count});
   final Bloom<int> count;
@@ -43,17 +51,21 @@ class MyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container();
 }
-''').unit;
+''',
+      ).unit;
 
       ClassDeclaration? clazz;
       unit.visitChildren(_ClassVisitor((node) => clazz = node));
 
       expect(clazz, isNotNull);
-      final constructor =
-          clazz!.members.whereType<ConstructorDeclaration>().first;
+      final constructor = FlutterAstUtils.classMembers(
+        clazz!,
+      ).whereType<ConstructorDeclaration>().first;
       final param = constructor.parameters.parameters.last;
-      final typeStr =
-          PreferBloomOverController.getParameterTypeString(param, clazz!);
+      final typeStr = PreferBloomOverController.getParameterTypeString(
+        param,
+        clazz!,
+      );
       expect(typeStr, startsWith('Bloom<int>'));
     });
   });
