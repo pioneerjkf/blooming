@@ -565,7 +565,9 @@ void main() {
       expect(untracked(pendingBloom), isFalse);
     });
 
-    test('11.3 pending facet sees pendingVersion changes after deactivate/reactivate when _pendingVersion catches up to _version', () async {
+    test(
+        '11.3 pending facet sees pendingVersion changes after deactivate/reactivate when _pendingVersion catches up to _version',
+        () async {
       final query = blooming('v1');
       Completer<String>? activeCompleter;
 

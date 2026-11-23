@@ -119,9 +119,11 @@ void test() {
       expect(visitor.caughtNodes.length, equals(0));
     });
 
-    test('permits via.state() and nested computed((via) => via(x)) inside try', () {
-      final unit = parseString(
-        content: '''
+    test(
+      'permits via.state() and nested computed((via) => via(x)) inside try',
+      () {
+        final unit = parseString(
+          content: '''
 void test() {
   final d = computed((via) {
     try {
@@ -134,11 +136,12 @@ void test() {
   });
 }
 ''',
-      ).unit;
+        ).unit;
 
-      final visitor = _CatchClauseVisitor();
-      unit.accept(visitor);
-      expect(visitor.caughtNodes.length, equals(0));
-    });
+        final visitor = _CatchClauseVisitor();
+        unit.accept(visitor);
+        expect(visitor.caughtNodes.length, equals(0));
+      },
+    );
   });
 }

@@ -308,7 +308,9 @@ void main() {
         terminal.deactivate();
       });
 
-      test('5.2 ThrottledBloom deactivating synchronously in leading onInvalidated does not leak timer or suppress restart', () async {
+      test(
+          '5.2 ThrottledBloom deactivating synchronously in leading onInvalidated does not leak timer or suppress restart',
+          () async {
         final source = blooming(0);
         final throttled = source.bloom.throttled(
           const Duration(milliseconds: 50),

@@ -572,9 +572,11 @@ void test() {
       },
     );
 
-    test('treats pure assignment LHS (controller.data = 10) as write, not read', () {
-      final unit = parseString(
-        content: '''
+    test(
+      'treats pure assignment LHS (controller.data = 10) as write, not read',
+      () {
+        final unit = parseString(
+          content: '''
 void test() {
   final res = computed((via) {
     controller.data = 10;
@@ -583,18 +585,21 @@ void test() {
   });
 }
 ''',
-      ).unit;
+        ).unit;
 
-      final targets = <PrefixedIdentifier>[];
-      unit.visitChildren(_PrefixedIdentifierCollector(targets.add));
-      expect(targets, hasLength(2));
-      expect(AvoidUntrackedBloomRead.isPureWriteLhs(targets[0]), isTrue);
-      expect(AvoidUntrackedBloomRead.isPureWriteLhs(targets[1]), isFalse);
-    });
+        final targets = <PrefixedIdentifier>[];
+        unit.visitChildren(_PrefixedIdentifierCollector(targets.add));
+        expect(targets, hasLength(2));
+        expect(AvoidUntrackedBloomRead.isPureWriteLhs(targets[0]), isTrue);
+        expect(AvoidUntrackedBloomRead.isPureWriteLhs(targets[1]), isFalse);
+      },
+    );
 
-    test('flags synchronous untracked() inside event parameter outside closure', () {
-      final unit = parseString(
-        content: '''
+    test(
+      'flags synchronous untracked() inside event parameter outside closure',
+      () {
+        final unit = parseString(
+          content: '''
 class MyWidget extends BloomWidget {
   @override
   Widget build(BuildContext context, BloomVia via) {
@@ -605,12 +610,13 @@ class MyWidget extends BloomWidget {
   }
 }
 ''',
-      ).unit;
+        ).unit;
 
-      final visitor = _UntrackedPayloadVisitor();
-      unit.accept(visitor);
-      expect(visitor.untrackedNodes.length, equals(1));
-    });
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
+        expect(visitor.untrackedNodes.length, equals(1));
+      },
+    );
   });
 }
 

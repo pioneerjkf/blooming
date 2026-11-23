@@ -248,13 +248,15 @@ abstract base class _DormantAnimationControlDelegate
 
   @override
   TickerFuture animateTo(double target,
-      {Duration? duration, Curve curve = Curves.linear}) =>
-      _stageDirectedMotion(target, duration: duration, curve: curve, isBack: false);
+          {Duration? duration, Curve curve = Curves.linear}) =>
+      _stageDirectedMotion(target,
+          duration: duration, curve: curve, isBack: false);
 
   @override
   TickerFuture animateBack(double target,
-      {Duration? duration, Curve curve = Curves.linear}) =>
-      _stageDirectedMotion(target, duration: duration, curve: curve, isBack: true);
+          {Duration? duration, Curve curve = Curves.linear}) =>
+      _stageDirectedMotion(target,
+          duration: duration, curve: curve, isBack: true);
 
   TickerFuture _stageDirectedMotion(
     double target, {
@@ -277,7 +279,9 @@ abstract base class _DormantAnimationControlDelegate
     );
     _stageMotion(
       _StagedMotion(
-        mode: isBack ? _StagedMotionMode.animateBack : _StagedMotionMode.animateTo,
+        mode: isBack
+            ? _StagedMotionMode.animateBack
+            : _StagedMotionMode.animateTo,
         targetFromValue: _value,
         targetValue: clampedTarget,
         targetDuration: effectiveDuration,
@@ -1445,13 +1449,15 @@ base class _ActiveAnimationControlDelegate
 
   @override
   TickerFuture animateTo(double target,
-      {Duration? duration, Curve curve = Curves.linear}) =>
-      _dispatchDirectedMotion(target, duration: duration, curve: curve, isBack: false);
+          {Duration? duration, Curve curve = Curves.linear}) =>
+      _dispatchDirectedMotion(target,
+          duration: duration, curve: curve, isBack: false);
 
   @override
   TickerFuture animateBack(double target,
-      {Duration? duration, Curve curve = Curves.linear}) =>
-      _dispatchDirectedMotion(target, duration: duration, curve: curve, isBack: true);
+          {Duration? duration, Curve curve = Curves.linear}) =>
+      _dispatchDirectedMotion(target,
+          duration: duration, curve: curve, isBack: true);
 
   TickerFuture _dispatchDirectedMotion(
     double target, {
@@ -1465,7 +1471,9 @@ base class _ActiveAnimationControlDelegate
         clampDouble(target, _engine.lowerBound, _engine.upperBound);
     final effectiveDuration = duration ??
         _scaledDuration(
-          isBack ? (_engine.reverseDuration ?? _engine.duration) : _engine.duration,
+          isBack
+              ? (_engine.reverseDuration ?? _engine.duration)
+              : _engine.duration,
           (clampedTarget - _engine.value).abs(),
           _engine.upperBound - _engine.lowerBound,
         );
@@ -1476,7 +1484,8 @@ base class _ActiveAnimationControlDelegate
       curve: curve,
     );
     _lastMotion = _StagedMotion(
-      mode: isBack ? _StagedMotionMode.animateBack : _StagedMotionMode.animateTo,
+      mode:
+          isBack ? _StagedMotionMode.animateBack : _StagedMotionMode.animateTo,
       targetFromValue: _engine.value,
       targetValue: clampedTarget,
       targetDuration: effectiveDuration,

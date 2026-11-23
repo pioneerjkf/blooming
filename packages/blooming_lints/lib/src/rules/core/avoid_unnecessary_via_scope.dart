@@ -149,7 +149,8 @@ class _IdentifierVisitor extends RecursiveAstVisitor<void> {
       final parent = node.parent;
       final isNonReference =
           (parent is PropertyAccess && identical(parent.propertyName, node)) ||
-          (parent is PrefixedIdentifier && identical(parent.identifier, node)) ||
+          (parent is PrefixedIdentifier &&
+              identical(parent.identifier, node)) ||
           (parent is NamedArgument && identical(parent.name, node)) ||
           (parent is MethodInvocation &&
               parent.target != null &&

@@ -52,37 +52,41 @@ void setup() {
       );
     });
 
-    test('detects unnecessary via when body only has property/named/shadowed via', () {
-      for (final body in [
-        'otherObj.via',
-        'helper(via: 1)',
-        'items.map((via) => via + 1).toList()',
-      ]) {
-        final unit = parseString(
-          content: '''
+    test(
+      'detects unnecessary via when body only has property/named/shadowed via',
+      () {
+        for (final body in [
+          'otherObj.via',
+          'helper(via: 1)',
+          'items.map((via) => via + 1).toList()',
+        ]) {
+          final unit = parseString(
+            content:
+                '''
 void test() {
   final res = computed((via) => $body);
 }
 ''',
-        ).unit;
+          ).unit;
 
-        FunctionExpression? outerClosure;
-        unit.visitChildren(
-          _FunctionExpressionVisitor((node) {
-            if (outerClosure == null &&
-                node.parameters?.parameters.isNotEmpty == true) {
-              outerClosure = node;
-            }
-          }),
-        );
+          FunctionExpression? outerClosure;
+          unit.visitChildren(
+            _FunctionExpressionVisitor((node) {
+              if (outerClosure == null &&
+                  node.parameters?.parameters.isNotEmpty == true) {
+                outerClosure = node;
+              }
+            }),
+          );
 
-        expect(outerClosure, isNotNull);
-        expect(
-          AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(outerClosure!),
-          isTrue,
-        );
-      }
-    });
+          expect(outerClosure, isNotNull);
+          expect(
+            AvoidUnnecessaryViaScope.isUnnecessaryViaClosure(outerClosure!),
+            isTrue,
+          );
+        }
+      },
+    );
   });
 }
 

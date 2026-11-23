@@ -212,9 +212,7 @@ void setup() {
         ).unit;
 
         final viaCalls = <MethodInvocation>[];
-        unit.visitChildren(
-          _SimpleInvocationVisitor('via', viaCalls.add),
-        );
+        unit.visitChildren(_SimpleInvocationVisitor('via', viaCalls.add));
 
         expect(viaCalls, hasLength(2));
         expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isFalse);
@@ -239,9 +237,7 @@ void setup() {
         ).unit;
 
         final viaCalls = <MethodInvocation>[];
-        unit.visitChildren(
-          _SimpleInvocationVisitor('via', viaCalls.add),
-        );
+        unit.visitChildren(_SimpleInvocationVisitor('via', viaCalls.add));
 
         expect(viaCalls, hasLength(3));
         for (final call in viaCalls) {

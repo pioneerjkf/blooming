@@ -385,9 +385,7 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
     }
 
     final wasInConstContext = _inConstContext;
-    if (!wasInConstContext &&
-        node.isConst &&
-        _isSingleLeafConstSubtree(node)) {
+    if (!wasInConstContext && node.isConst && _isSingleLeafConstSubtree(node)) {
       final baseTypeName = node.constructorName.type.name.lexeme;
       if (!_isNonIsolatablePropertyLeaf(node, baseTypeName)) {
         final hasChild = _findChildWidget(node) != null;

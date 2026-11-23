@@ -105,12 +105,14 @@ class ConvertToComputedAsyncFix extends ResolvedCorrectionProducer {
       Expression computeArg,
       String replacement,
       String message,
-    })? resolved;
+    })?
+    resolved;
     var candidate = node.thisOrAncestorOfType<InvocationExpression>();
     while (candidate != null) {
       resolved = computeReplacement(candidate);
       if (resolved != null) break;
-      candidate = candidate.parent?.thisOrAncestorOfType<InvocationExpression>();
+      candidate = candidate.parent
+          ?.thisOrAncestorOfType<InvocationExpression>();
     }
     if (resolved == null) return;
     _resolved = resolved;

@@ -426,34 +426,37 @@ void main() {
       );
     });
 
-    test('scores a single-leaf const wrapper chain as 1 unit (no double-counting)', () {
-      final unit = parseString(
-        content: '''
+    test(
+      'scores a single-leaf const wrapper chain as 1 unit (no double-counting)',
+      () {
+        final unit = parseString(
+          content: '''
 void main() {
   composed((via) => via(isLoading)
       ? const Center(child: CircularProgressIndicator())
       : Text('\${via(label)}'));
 }
 ''',
-      ).unit;
+        ).unit;
 
-      FunctionExpression? composedClosure;
-      unit.visitChildren(
-        _FunctionExpressionVisitor((func) {
-          composedClosure = func;
-        }),
-      );
+        FunctionExpression? composedClosure;
+        unit.visitChildren(
+          _FunctionExpressionVisitor((func) {
+            composedClosure = func;
+          }),
+        );
 
-      expect(composedClosure, isNotNull);
-      expect(
-        PreferComposedChild.calculateComplexity(composedClosure!.body),
-        equals(1),
-      );
-      expect(
-        PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
-        isFalse,
-      );
-    });
+        expect(composedClosure, isNotNull);
+        expect(
+          PreferComposedChild.calculateComplexity(composedClosure!.body),
+          equals(1),
+        );
+        expect(
+          PreferComposedChild.containsHeavyStaticWidget(composedClosure!.body),
+          isFalse,
+        );
+      },
+    );
   });
 }
 

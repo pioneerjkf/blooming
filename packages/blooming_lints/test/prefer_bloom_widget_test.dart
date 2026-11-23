@@ -185,13 +185,16 @@ class MyWidget extends StatelessWidget {
       expect(returnedExpr, isNull);
     });
 
-    test('does not treat composed.child or composed.drive as sole 1:1 BloomWidget invocation', () {
-      for (final exprSource in [
-        'composed.child((context, via, child) => child, child: const SizedBox())',
-        'composed.drive(anim, (context, via, value) => const SizedBox())',
-      ]) {
-        final unit = parseString(
-          content: '''
+    test(
+      'does not treat composed.child or composed.drive as sole 1:1 BloomWidget invocation',
+      () {
+        for (final exprSource in [
+          'composed.child((context, via, child) => child, child: const SizedBox())',
+          'composed.drive(anim, (context, via, value) => const SizedBox())',
+        ]) {
+          final unit = parseString(
+            content:
+                '''
 class MyWidget extends StatelessWidget {
   const MyWidget({super.key});
 
@@ -199,24 +202,25 @@ class MyWidget extends StatelessWidget {
   Widget build(BuildContext context) => $exprSource;
 }
 ''',
-        ).unit;
+          ).unit;
 
-        ClassDeclaration? clazz;
-        unit.visitChildren(_ClassVisitor((node) => clazz = node));
-        final buildMethod = FlutterAstUtils.classMembers(
-          clazz!,
-        ).whereType<MethodDeclaration>().first;
-        final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
-          buildMethod,
-        );
+          ClassDeclaration? clazz;
+          unit.visitChildren(_ClassVisitor((node) => clazz = node));
+          final buildMethod = FlutterAstUtils.classMembers(
+            clazz!,
+          ).whereType<MethodDeclaration>().first;
+          final returnedExpr = PreferBloomWidget.getSoleReturnedExpression(
+            buildMethod,
+          );
 
-        expect(returnedExpr, isNotNull);
-        expect(
-          PreferBloomWidget.isSoleComposedInvocation(returnedExpr!),
-          isFalse,
-        );
-      }
-    });
+          expect(returnedExpr, isNotNull);
+          expect(
+            PreferBloomWidget.isSoleComposedInvocation(returnedExpr!),
+            isFalse,
+          );
+        }
+      },
+    );
   });
 }
 
