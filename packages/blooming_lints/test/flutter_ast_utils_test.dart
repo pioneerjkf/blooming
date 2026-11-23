@@ -145,6 +145,34 @@ class MyWidget extends StatelessWidget {
           isTrue,
         );
       });
+
+      test('treats synchronous expression in onPressed argument as non-deferred', () {
+        final unit = parseString(
+          content: '''
+class MyWidget extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: wrap(syncWrite()),
+      child: Text('Click'),
+    );
+  }
+}
+''',
+        ).unit;
+
+        MethodInvocation? syncWrite;
+        unit.accept(
+          _TestInvocationCollector((node) {
+            if (node.methodName.name == 'syncWrite') syncWrite = node;
+          }),
+        );
+
+        expect(syncWrite, isNotNull);
+        expect(
+          FlutterAstUtils.isInsideEventOrDeferredClosure(syncWrite!),
+          isFalse,
+        );
+      });
     },
   );
 }

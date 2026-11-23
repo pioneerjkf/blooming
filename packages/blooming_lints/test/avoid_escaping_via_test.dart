@@ -194,6 +194,33 @@ void setup() {
         expect(AvoidEscapingVia.isEscapingViaInvocation(viaCall!), isFalse);
       },
     );
+
+    test(
+      'permits synchronous via() in Future.delayed duration argument while flagging callback body',
+      () {
+        final unit = parseString(
+          content: '''
+void setup() {
+  final result = computed.future((via) async {
+    return Future.delayed(
+      Duration(milliseconds: via(delayBloom)),
+      () => via(valueBloom),
+    );
+  });
+}
+''',
+        ).unit;
+
+        final viaCalls = <MethodInvocation>[];
+        unit.visitChildren(
+          _SimpleInvocationVisitor('via', viaCalls.add),
+        );
+
+        expect(viaCalls, hasLength(2));
+        expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[0]), isFalse);
+        expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isTrue);
+      },
+    );
   });
 }
 

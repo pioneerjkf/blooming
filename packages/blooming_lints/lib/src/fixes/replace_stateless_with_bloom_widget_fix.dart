@@ -57,67 +57,72 @@ class ReplaceStatelessWithBloomWidgetFix extends ResolvedCorrectionProducer {
     final isAnimate =
         returnedExpr is MethodInvocation &&
         returnedExpr.methodName.name == 'animate';
+    // BloomAnimatedWidget requires forwarding `super.controller` and removing
+    // duplicate controller fields; skip auto-fix for `composed.animate`.
+    if (isAnimate) return;
+
     final isVsync =
         returnedExpr is MethodInvocation &&
         returnedExpr.methodName.name == 'vsync';
 
-    final replacementSuperclass = isAnimate
-        ? 'BloomAnimatedWidget'
-        : isVsync
-        ? 'BloomVsyncWidget'
-        : 'BloomWidget';
+    FunctionExpression? closure;
+    if (returnedExpr is FunctionExpressionInvocation) {
+      final args = returnedExpr.argumentList.arguments;
+      if (args.isNotEmpty && args.first is FunctionExpression) {
+        closure = args.first as FunctionExpression;
+      }
+    } else if (returnedExpr is MethodInvocation) {
+      final args = returnedExpr.argumentList.arguments;
+      for (final arg in args) {
+        if (arg is FunctionExpression) {
+          closure = arg;
+          break;
+        }
+      }
+    }
+    if (closure == null) return;
+
+    final closureParams = closure.parameters?.parameters;
+    if (closureParams == null || closureParams.length < 2) return;
+    if (isVsync && closureParams.length < 3) return;
+
+    final contextName = closureParams[0].name?.lexeme ?? 'context';
+    final viaName = closureParams[1].name?.lexeme ?? 'via';
+    final vsyncName = isVsync
+        ? (closureParams[2].name?.lexeme ?? 'vsync')
+        : null;
+
+    final replacementSuperclass = isVsync ? 'BloomVsyncWidget' : 'BloomWidget';
     _replacementSuperclass = replacementSuperclass;
 
     await builder.addDartFileEdit(file, (builder) {
-      // 1. Replace superclass: StatelessWidget -> BloomWidget / BloomAnimatedWidget
+      // 1. Replace superclass: StatelessWidget -> BloomWidget / BloomVsyncWidget
       builder.addSimpleReplacement(
         range.node(extendsClause.superclass),
         replacementSuperclass,
       );
 
-      // 2. Adjust build parameters: (BuildContext context) -> (BuildContext context, BloomVia via)
+      // 2. Align build parameters with the closure's parameter names so the
+      // unwrapped body references valid identifiers without AST renaming.
       final params = buildMethod!.parameters;
       if (params != null && params.parameters.isNotEmpty) {
-        final firstParam = params.parameters.first;
-        final extraParam = isAnimate
-            ? ', BloomVia via, ScopedAnimationController anim'
-            : isVsync
-            ? ', BloomVia via, TickerProvider vsync'
-            : ', BloomVia via';
-        builder.addInsertion(firstParam.end, (editBuilder) {
-          editBuilder.write(extraParam);
-        });
+        final newParams = isVsync
+            ? '(BuildContext $contextName, BloomVia $viaName, TickerProvider $vsyncName)'
+            : '(BuildContext $contextName, BloomVia $viaName)';
+        builder.addSimpleReplacement(range.node(params), newParams);
       }
 
-      // 3. Unwrap composed(...)
-      FunctionExpression? closure;
-      if (returnedExpr is FunctionExpressionInvocation) {
-        final args = returnedExpr.argumentList.arguments;
-        if (args.isNotEmpty && args.first is FunctionExpression) {
-          closure = args.first as FunctionExpression;
-        }
-      } else if (returnedExpr is MethodInvocation) {
-        final args = returnedExpr.argumentList.arguments;
-        for (final arg in args) {
-          if (arg is FunctionExpression) {
-            closure = arg;
-            break;
-          }
-        }
-      }
-
-      if (closure != null) {
-        final closureBody = closure.body;
-        if (closureBody is ExpressionFunctionBody) {
-          final innerExpr = closureBody.expression.toSource();
-          builder.addSimpleReplacement(range.node(returnedExpr), innerExpr);
-        } else if (closureBody is BlockFunctionBody) {
-          final innerBlockSource = closureBody.block.toSource();
-          builder.addSimpleReplacement(
-            range.node(buildMethod.body),
-            innerBlockSource,
-          );
-        }
+      // 3. Unwrap composed(...) / composed.vsync(...)
+      final closureBody = closure!.body;
+      if (closureBody is ExpressionFunctionBody) {
+        final innerExpr = closureBody.expression.toSource();
+        builder.addSimpleReplacement(range.node(returnedExpr), innerExpr);
+      } else if (closureBody is BlockFunctionBody) {
+        final innerBlockSource = closureBody.block.toSource();
+        builder.addSimpleReplacement(
+          range.node(buildMethod.body),
+          innerBlockSource,
+        );
       }
     });
   }

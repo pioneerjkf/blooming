@@ -98,10 +98,14 @@ class AvoidBloomCreationInBuild extends AnalysisRule {
     'effect',
   };
 
+  static bool _isAllowedOrBloomElement(Element? element) =>
+      element == null || BloomTypeChecker.isFromBloomPackage(element);
+
   /// Returns `true` if [node] calls a forbidden pipeline functor via FunctionExpressionInvocation.
   static bool isForbiddenFunctionExpressionInvocation(
     FunctionExpressionInvocation node,
   ) {
+    if (!_isAllowedOrBloomElement(node.element)) return false;
     final function = node.function;
     final name = function is SimpleIdentifier
         ? function.name
@@ -114,12 +118,14 @@ class AvoidBloomCreationInBuild extends AnalysisRule {
 
   /// Returns `true` if [node] creates a forbidden controller, coupler, signal, or terminal.
   static bool isForbiddenCreation(InstanceCreationExpression node) {
+    if (!_isAllowedOrBloomElement(node.constructorName.element)) return false;
     final typeName = node.constructorName.type.name.lexeme;
     return _controllerAndTerminalConstructors.contains(typeName);
   }
 
   /// Returns `true` if [node] calls a forbidden pipeline functor or factory constructor inside build.
   static bool isForbiddenMethodInvocation(MethodInvocation node) {
+    if (!_isAllowedOrBloomElement(node.methodName.element)) return false;
     final name = node.methodName.name;
     if (_forbiddenPipelineFunctors.contains(name) ||
         _controllerAndTerminalConstructors.contains(name)) {

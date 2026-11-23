@@ -13,9 +13,10 @@ class ReplaceViaStateDataFix extends ResolvedCorrectionProducer {
   static const _fixKind = FixKind(
     'blooming_lints.fix.replaceViaStateData',
     DartFixKindPriority.standard,
-    'Simplify to via({0})',
+    'Simplify to {0}({1})',
   );
 
+  String? _viaName;
   String? _argSource;
 
   @override
@@ -26,7 +27,8 @@ class ReplaceViaStateDataFix extends ResolvedCorrectionProducer {
   FixKind get fixKind => _fixKind;
 
   @override
-  List<String>? get fixArguments => _argSource == null ? null : [_argSource!];
+  List<String>? get fixArguments =>
+      _viaName == null || _argSource == null ? null : [_viaName!, _argSource!];
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
@@ -42,16 +44,21 @@ class ReplaceViaStateDataFix extends ResolvedCorrectionProducer {
       return;
     }
 
+    final viaReceiver = target.target;
+    if (viaReceiver == null) return;
+
     final args = target.argumentList.arguments;
     if (args.isEmpty) return;
 
+    final viaName = viaReceiver.toSource();
     final argSource = args.first.toSource();
+    _viaName = viaName;
     _argSource = argSource;
 
     await builder.addDartFileEdit(file, (builder) {
       builder.addSimpleReplacement(
         range.node(propertyAccess),
-        'via($argSource)',
+        '$viaName($argSource)',
       );
     });
   }

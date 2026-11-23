@@ -104,38 +104,62 @@ abstract final class FlutterAstUtils {
     return false;
   }
 
-  /// Checks if the [node] is deferred inside an event handler, asynchronous closure,
-  /// or frame callback (e.g. `addPostFrameCallback`, `Timer`, `Future`).
-  /// Also treats local function declarations as deferred (unless synchronously invoked).
-  static bool isInsideEventOrDeferredClosure(AstNode node) {
-    AstNode? current = node.parent;
+  /// Returns `true` if [current] is a deferred callback boundary (event argument,
+  /// async dispatcher, or timer) and [hasEnclosingClosure] is `true`.
+  static bool isDeferredBoundaryNode(
+    AstNode current, {
+    required bool hasEnclosingClosure,
+    bool includeFrameCallbacks = false,
+  }) {
+    if (!hasEnclosingClosure) return false;
 
-    while (current != null) {
-      // 1. Event callback parameter (e.g. onPressed: () => ...)
-      if (current is NamedArgument) {
-        final paramName = current.name.lexeme;
-        if (BloomTypeChecker.isEventCallbackParameter(paramName)) {
-          return true;
-        }
-      }
+    if (current is NamedArgument) {
+      return BloomTypeChecker.isEventCallbackParameter(current.name.lexeme);
+    }
 
-      // 2. Async dispatchers and frame callbacks
-      if (current is MethodInvocation) {
+    if (current is MethodInvocation) {
+      if (BloomTypeChecker.isAsyncOrTimerInvocation(current)) return true;
+      if (includeFrameCallbacks) {
         final name = current.methodName.name;
-        if (BloomTypeChecker.isAsyncOrTimerInvocation(current) ||
-            name == 'addPostFrameCallback' ||
+        if (name == 'addPostFrameCallback' ||
             name == 'scheduleFrameCallback' ||
             name == 'addPersistentFrameCallback' ||
             name == 'listen') {
           return true;
         }
       }
+    }
 
-      if (current is InstanceCreationExpression) {
-        if (BloomTypeChecker.isTimerCreation(current) ||
-            BloomTypeChecker.isFutureCreation(current)) {
-          return true;
-        }
+    if (current is InstanceCreationExpression) {
+      if (BloomTypeChecker.isTimerCreation(current)) return true;
+      if (includeFrameCallbacks && BloomTypeChecker.isFutureCreation(current)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Checks if the [node] is deferred inside an event handler, asynchronous closure,
+  /// or frame callback (e.g. `addPostFrameCallback`, `Timer`, `Future`).
+  /// Also treats local function declarations as deferred (unless synchronously invoked).
+  static bool isInsideEventOrDeferredClosure(AstNode node) {
+    AstNode? current = node.parent;
+    var hasEnclosingClosure = false;
+
+    while (current != null) {
+      if (current is FunctionExpression &&
+          current.parent is! FunctionExpressionInvocation) {
+        hasEnclosingClosure = true;
+      }
+
+      // 1-2. Event callback parameters, async dispatchers, and frame callbacks
+      if (isDeferredBoundaryNode(
+        current,
+        hasEnclosingClosure: hasEnclosingClosure,
+        includeFrameCallbacks: true,
+      )) {
+        return true;
       }
 
       // 3. Local function declarations

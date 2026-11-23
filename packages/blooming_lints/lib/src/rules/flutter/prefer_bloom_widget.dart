@@ -104,20 +104,19 @@ class PreferBloomWidget extends AnalysisRule {
     return null;
   }
 
-  /// Returns `true` if [expr] is an immediate invocation of `composed(...)`, `composed.animate(...)`, etc.
+  /// Returns `true` if [expr] is an immediate invocation of `composed(...)`,
+  /// `composed.vsync(...)`, or `composed.animate(...)`.
   static bool isSoleComposedInvocation(Expression expr) {
     if (expr is MethodInvocation) {
       // 1. Direct top-level composed(...) -> target is null, methodName is 'composed'
       if (expr.target == null && expr.methodName.name == 'composed') {
         return true;
       }
-      // 2. Chained composed.animate(...), composed.drive(...), etc.
+      // 2. Chained composed.vsync(...) / composed.animate(...)
       final target = expr.target?.unParenthesized;
       if (target is SimpleIdentifier && target.name == 'composed') {
-        return true;
-      }
-      if (target is PropertyAccess) {
-        return target.toSource().startsWith('composed.');
+        final name = expr.methodName.name;
+        return name == 'vsync' || name == 'animate';
       }
     }
     if (expr is FunctionExpressionInvocation) {

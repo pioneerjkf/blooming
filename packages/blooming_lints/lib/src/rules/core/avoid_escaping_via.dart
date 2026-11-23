@@ -89,27 +89,30 @@ class AvoidEscapingVia extends AnalysisRule {
   /// or across an `await` gap inside a nested function that does not own the `via` parameter.
   static bool isEscapingViaInvocation(AstNode node) {
     AstNode? current = node.parent;
+    var hasEnclosingClosure = false;
 
     while (current != null) {
-      // 1. Check if inside event handler parameter (e.g. onPressed, onTap)
-      if (current is NamedArgument) {
-        final paramName = current.name.lexeme;
-        if (BloomTypeChecker.isEventCallbackParameter(paramName)) {
-          return true;
+      // Stop once we reach the owning BloomVia or EffectVia closure or method declaration
+      if (current is FunctionExpression) {
+        final params = current.parameters?.parameters;
+        if (params != null &&
+            params.any(BloomTypeChecker.isBloomViaParameter)) {
+          break;
         }
+        if (current.parent is! FunctionExpressionInvocation) {
+          hasEnclosingClosure = true;
+        }
+      }
+      if (current is MethodDeclaration || current is FunctionDeclaration) {
+        break;
       }
 
-      // 2. Check if inside async dispatchers or Timer constructors
-      // (e.g. Timer.run, Timer.periodic, scheduleMicrotask, Future.delayed, future.then)
-      if (current is MethodInvocation) {
-        if (BloomTypeChecker.isAsyncOrTimerInvocation(current)) {
-          return true;
-        }
-      }
-      if (current is InstanceCreationExpression) {
-        if (BloomTypeChecker.isTimerCreation(current)) {
-          return true;
-        }
+      // 1-2. Event handler parameters and async dispatchers / Timer constructors
+      if (FlutterAstUtils.isDeferredBoundaryNode(
+        current,
+        hasEnclosingClosure: hasEnclosingClosure,
+      )) {
+        return true;
       }
 
       // 3. Check if inside an asynchronous function body, after an await expression.
@@ -130,18 +133,6 @@ class AvoidEscapingVia extends AnalysisRule {
             return true;
           }
         }
-      }
-
-      // Stop once we reach the owning BloomVia or EffectVia closure or method declaration
-      if (current is FunctionExpression) {
-        final params = current.parameters?.parameters;
-        if (params != null &&
-            params.any(BloomTypeChecker.isBloomViaParameter)) {
-          break;
-        }
-      }
-      if (current is MethodDeclaration || current is FunctionDeclaration) {
-        break;
       }
 
       current = current.parent;
