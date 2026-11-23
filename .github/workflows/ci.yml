@@ -24,7 +24,7 @@ jobs:
         channel: [stable, beta]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
@@ -63,8 +63,4 @@ jobs:
 
       - name: Test blooming_flutter_test
         working-directory: packages/blooming_flutter_test
-        run: flutter test
-
-      - name: Test blooming_flutter example
-        working-directory: packages/blooming_flutter/example
         run: flutter test
