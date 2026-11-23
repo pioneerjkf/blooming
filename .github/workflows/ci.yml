@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 매주 월요일 09:00 KST (UTC 00:00)
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Analyze & Test (${{ matrix.channel }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, beta]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ matrix.channel }}
+          cache: true
+
+      - name: Install workspace dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        if: matrix.channel == 'stable'
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze workspace
+        run: dart analyze
+
+      - name: Test blooming
+        working-directory: packages/blooming
+        run: dart test
+
+      - name: Test blooming_extensions
+        working-directory: packages/blooming_extensions
+        run: dart test
+
+      - name: Test blooming_lints
+        working-directory: packages/blooming_lints
+        run: dart test
+
+      - name: Test blooming_test
+        working-directory: packages/blooming_test
+        run: dart test
+
+      - name: Test blooming_flutter
+        working-directory: packages/blooming_flutter
+        run: flutter test
+
+      - name: Test blooming_flutter_test
+        working-directory: packages/blooming_flutter_test
+        run: flutter test
+
+      - name: Test blooming_flutter example
+        working-directory: packages/blooming_flutter/example
+        run: flutter test

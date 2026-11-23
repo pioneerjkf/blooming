@@ -11,7 +11,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.27+-02569B.svg?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.6+-0175C2.svg)](https://dart.dev)
-<!-- TODO: add CI and coverage badges once a workflow is published -->
+[![CI](https://github.com/pioneerjkf/blooming/actions/workflows/ci.yml/badge.svg)](https://github.com/pioneerjkf/blooming/actions/workflows/ci.yml)
 
 Blooming separates *telling the graph that something changed* from *recomputing nodes that depend on it*.
 A mutation only marks downstream nodes dirty. Values are computed later, on demand, in dependency
