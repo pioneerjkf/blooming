@@ -121,6 +121,19 @@ class PreferComposedChild extends MultiAnalysisRule {
     'ListView',
   };
 
+  static bool _hasReactivePropertyArgument(InstanceCreationExpression expr) {
+    for (final arg in expr.argumentList.arguments) {
+      if (arg is NamedArgument &&
+          (arg.name.lexeme == 'children' || arg.name.lexeme == 'child')) {
+        continue;
+      }
+      var foundVia = false;
+      arg.visitChildren(_ViaCallFinder(() => foundVia = true));
+      if (foundVia) return true;
+    }
+    return false;
+  }
+
   static String? _getReturnedLayoutTypeName(FunctionBody body) {
     Expression? expr;
     if (body is ExpressionFunctionBody) {
@@ -137,7 +150,7 @@ class PreferComposedChild extends MultiAnalysisRule {
       if (expr is InstanceCreationExpression) {
         final typeName = expr.constructorName.type.name.lexeme;
         if (_multiChildLayoutWidgets.contains(typeName)) {
-          return typeName;
+          return _hasReactivePropertyArgument(expr) ? null : typeName;
         }
         // Unwrap single-child structural wrappers (Center, SizedBox, Padding, DecoratedBox, Container)
         final args = expr.argumentList.arguments;
@@ -372,6 +385,19 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
     }
 
     final wasInConstContext = _inConstContext;
+    if (!wasInConstContext &&
+        node.isConst &&
+        _isSingleLeafConstSubtree(node)) {
+      final baseTypeName = node.constructorName.type.name.lexeme;
+      if (!_isNonIsolatablePropertyLeaf(node, baseTypeName)) {
+        final hasChild = _findChildWidget(node) != null;
+        if (hasChild || !_trivialLayoutWidgets.contains(baseTypeName)) {
+          complexityScore += 1;
+        }
+      }
+      return;
+    }
+
     if (node.isConst) {
       _inConstContext = true;
     }
@@ -555,11 +581,83 @@ class _SubtreeComplexityVisitor extends RecursiveAstVisitor<void> {
     return false;
   }
 
+  static Expression? _findChildWidget(InstanceCreationExpression node) {
+    for (final arg in node.argumentList.arguments) {
+      if (arg is NamedArgument && arg.name.lexeme == 'child') {
+        return arg.argumentExpression.unParenthesized;
+      }
+    }
+    return null;
+  }
+
+  /// Returns `true` when a `const` widget expression is just a single-child
+  /// wrapper chain (at most depth 3) ending in a single leaf widget with no
+  /// `children` list, so the compile-time constant is scored as 1 unit rather
+  /// than double-counted per wrapper layer.
+  static bool _isSingleLeafConstSubtree(InstanceCreationExpression root) {
+    Expression? current = root;
+    var depth = 0;
+    while (current != null && depth < 4) {
+      final ArgumentList argList;
+      if (current is InstanceCreationExpression) {
+        argList = current.argumentList;
+      } else if (current is MethodInvocation) {
+        final name = current.methodName.name;
+        if (name.isEmpty || name[0] != name[0].toUpperCase()) return false;
+        argList = current.argumentList;
+      } else {
+        return false;
+      }
+      Expression? nextChild;
+      for (final arg in argList.arguments) {
+        final expr = arg.argumentExpression.unParenthesized;
+        if (arg is NamedArgument) {
+          final name = arg.name.lexeme;
+          if (name == 'children' || name == 'slivers') return false;
+          if (name == 'child') {
+            nextChild = expr;
+            continue;
+          }
+          if (expr is InstanceCreationExpression) {
+            final type = expr.staticType;
+            if (type != null && FlutterAstUtils.isWidgetType(type)) {
+              return false;
+            }
+          }
+        } else if (expr is ListLiteral) {
+          return false;
+        }
+      }
+      if (nextChild == null) {
+        return true;
+      }
+      current = nextChild;
+      depth++;
+    }
+    return false;
+  }
+
   static bool _statementsAlwaysTerminate(List<Statement> statements) {
     for (final s in statements) {
       if (_alwaysTerminates(s)) return true;
     }
     return false;
+  }
+}
+
+class _ViaCallFinder extends RecursiveAstVisitor<void> {
+  _ViaCallFinder(this.onFound);
+  final void Function() onFound;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    final target = node.target;
+    if ((target == null && node.methodName.name == 'via') ||
+        (target is SimpleIdentifier && target.name == 'via')) {
+      onFound();
+      return;
+    }
+    super.visitMethodInvocation(node);
   }
 }
 
