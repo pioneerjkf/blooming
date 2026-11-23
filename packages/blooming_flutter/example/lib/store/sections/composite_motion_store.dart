@@ -171,6 +171,27 @@ class CompositeMotionStore {
     } else {
       if (_ctrl.value >= 1.0 && !_isPingPong.data) {
         playForward();
+      } else if (_isPingPong.data &&
+          _ctrl.status == AnimationStatus.reverse &&
+          _ctrl.value > 0.0) {
+        final targetCtrl = _ctrl;
+        _isPlaying.set(true);
+        if (!targetCtrl.isDormant) {
+          targetCtrl.reverse().then<void>(
+            (_) {
+              if (_masterCtrl.data == targetCtrl && _isPlaying.data) {
+                targetCtrl.repeat(reverse: _isPingPong.data);
+              }
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              if (error is! TickerCanceled) {
+                Error.throwWithStackTrace(error, stackTrace);
+              }
+            },
+          );
+        } else {
+          targetCtrl.reverse();
+        }
       } else {
         _ctrl.repeat(reverse: _isPingPong.data);
         _isPlaying.set(true);
