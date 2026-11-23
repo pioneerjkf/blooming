@@ -538,13 +538,12 @@ abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
   });
 
   Timer? _debounceTimer;
-  bool _isLeadingCooldown = false;
 
   @override
   void _onConfirmedInvalidation() {
-    if (leading && !_isLeadingCooldown) {
+    if (leading && _debounceTimer == null) {
       _executeAction();
-      _isLeadingCooldown = true;
+      if (!_lifecycle.isActive) return;
     } else if (trailing) {
       _hasTrailingPending = true;
     }
@@ -555,7 +554,6 @@ abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
 
   void _onDebounceTimerExpired() {
     _debounceTimer = null;
-    _isLeadingCooldown = false;
     if (!_lifecycle.isActive) return;
     if (_takeLimit != null && _remaining <= 0) return;
 
@@ -571,7 +569,6 @@ abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
   void _deactivate() {
     _debounceTimer?.cancel();
     _debounceTimer = null;
-    _isLeadingCooldown = false;
     super._deactivate();
   }
 }
@@ -640,6 +637,7 @@ abstract base class _ThrottleEffectTerminal extends _TemporalEffectTerminal {
     if (_throttleTimer == null) {
       if (leading) {
         _executeAction();
+        if (!_lifecycle.isActive) return;
       } else {
         _hasTrailingPending = true;
       }

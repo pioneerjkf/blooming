@@ -274,5 +274,42 @@ void main() {
 
       terminal.deactivate();
     });
+
+    test('10. Stopping runner inside leading action does not leak timer or suppress leading on restart', () async {
+      final source = blooming<int>(0);
+      final observed = <int>[];
+      late EffectRunner runner;
+
+      final myEffect = Effect.debounce.unary(
+        source.bloom,
+        const Duration(milliseconds: 50),
+        () {
+          observed.add(source.data);
+          if (source.data == 1) {
+            runner.stop();
+          }
+        },
+        leading: true,
+        trailing: true,
+      );
+      runner = myEffect.start();
+
+      // 1. Leading edge fires and stops runner synchronously
+      source.set(1);
+      await Future<void>.delayed(Duration.zero);
+      expect(observed, [1]);
+
+      // 2. Restart immediately within the 50ms window; leading edge must NOT be suppressed
+      runner.start();
+      source.set(2);
+      await Future<void>.delayed(Duration.zero);
+      expect(observed, [1, 2]);
+
+      // 3. Ensure no duplicate trailing execution after window expires
+      await Future<void>.delayed(const Duration(milliseconds: 70));
+      expect(observed, [1, 2]);
+
+      runner.stop();
+    });
   });
 }
