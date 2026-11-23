@@ -1,6 +1,6 @@
 name: blooming_lints
 description: "High-performance static analysis and self-healing lint rules for Bloom and Blooming Flutter."
-version: 0.4.2
+version: 0.4.3
 homepage: https://pioneerjkf.dev
 repository: https://github.com/pioneerjkf/blooming
 issue_tracker: https://github.com/pioneerjkf/blooming/issues
@@ -17,9 +17,9 @@ environment:
   sdk: ^3.10.0
 
 dependencies:
-  analysis_server_plugin: ^0.3.15
-  analyzer: ">=13.0.0 <15.0.0"
-  analyzer_plugin: ">=0.14.0 <0.15.0"
+  analysis_server_plugin: ^0.3.17
+  analyzer: ">=13.2.0 <15.0.0"
+  analyzer_plugin: ">=0.14.11 <0.15.0"
   meta: ^1.18.0
 
 dev_dependencies:
