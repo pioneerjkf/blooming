@@ -1,3 +1,11 @@
+## 0.4.1
+
+- **Graph & Temporal Fixes**:
+  - Call `_pullVersion()` in `_UnaryEdgeMixin._deactivate()` to prevent stale version state on reactivation.
+  - Guard temporal timers on deactivation and simplify leading/debounce cooldown handling in `Bloom.throttled` and `Effect.debounce`.
+- **Docs**: Aligned temporal architecture foundation snippets with cooldown unification.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.1.
+
 ## 0.4.0
 
 - **Temporal Effects False-Alarm Suppression & Batch Alignment (`Effect.debounce`, `Effect.throttle`)**:

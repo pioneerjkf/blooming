@@ -1,3 +1,9 @@
+## 0.4.1
+
+- **Test Utilities**:
+  - Handled non-void future errors in `bloomTest` and populated `subMismatch` in `isData`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.1.
+
 ## 0.4.0
 
 - **Dependencies**: Bumped `blooming` dependency constraint to `^0.4.0`.

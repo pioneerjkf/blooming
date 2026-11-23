@@ -1,3 +1,11 @@
+## 0.4.1
+
+- **Durable Animation & Motion**:
+  - Fixed durable animation edge cases and deduplicated directed motion.
+  - Resumed reverse ping-pong leg on play in `CompositeMotionStore` example.
+- **Cleanup**: Removed unused `docImport` in `async.dart`.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.1.
+
 ## 0.4.0
 
 - **Dependencies**: Bumped `blooming`, `blooming_extensions`, and `blooming_test` dependencies to `^0.4.0`.

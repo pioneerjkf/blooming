@@ -1,3 +1,11 @@
+## 0.4.1
+
+- **Lint Rules & Quick Fixes**:
+  - Fixed closure boundary, package checks, and quick fix generation.
+  - Avoided over-counting single-leaf const subtrees in `prefer_composed_child`.
+  - Unified type/scope checks and eliminated remaining resolved-type fallthroughs and deferred boundary edge cases.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.1.
+
 ## 0.4.0
 
 - **Native Analyzer Plugin Migration (`analysis_server_plugin`)**:
