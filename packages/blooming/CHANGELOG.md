@@ -1,3 +1,7 @@
+## 0.4.3
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.3.
+
 ## 0.4.2
 
 - **Assets & Docs**: Updated README banner and package logo (`screenshots/logo.png`) with the Christmas Holiday edition.
