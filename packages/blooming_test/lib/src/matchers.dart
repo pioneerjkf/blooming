@@ -260,6 +260,14 @@ final class _IsDataMatcher extends Matcher {
         expected is Matcher ? expected as Matcher : equals(expected);
     final subState = {};
     if (!matcher.matches(data, subState)) {
+      if (expected is Matcher) {
+        final subDesc = matcher
+            .describeMismatch(data, StringDescription(), subState, false)
+            .toString();
+        if (subDesc.isNotEmpty) {
+          matchState['subMismatch'] = subDesc;
+        }
+      }
       matchState['actualData'] = data;
       return false;
     }

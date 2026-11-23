@@ -131,6 +131,18 @@ void main() {
         const snap = BloomSnapshot<int>(10);
         expect(snap, isNot(isErrorState()));
       });
+
+      test('isData reports nested matcher subMismatch details', () {
+        const snap = BloomSnapshot<int>(10);
+        final matcher = isData(greaterThan(20));
+        final matchState = {};
+
+        expect(matcher.matches(snap, matchState), isFalse);
+        final desc = matcher
+            .describeMismatch(snap, StringDescription(), matchState, false)
+            .toString();
+        expect(desc, contains('is not a value greater than <20>'));
+      });
     });
   });
 }

@@ -101,10 +101,13 @@ void bloomTest<T>(
             try {
               final actResult = act?.call(instance);
               if (actResult is Future) {
-                actResult.catchError((Object error, StackTrace stackTrace) {
-                  asyncActError = error;
-                  asyncActStackTrace = stackTrace;
-                });
+                actResult.then<void>(
+                  (_) {},
+                  onError: (Object error, StackTrace stackTrace) {
+                    asyncActError = error;
+                    asyncActStackTrace = stackTrace;
+                  },
+                );
               }
               async.elapse(wait);
               async.flushMicrotasks();

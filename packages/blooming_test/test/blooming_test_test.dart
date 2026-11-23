@@ -186,5 +186,23 @@ void main() {
       errors: () => [isA<ArgumentError>()],
       expect: () => [0],
     );
+
+    Future<int> nonVoidAct(CounterStore store) async {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      if (store.count.data == 0) {
+        throw StateError('Non-void future error');
+      }
+      return 42;
+    }
+
+    bloomTest<CounterStore>(
+      '11. errors catches non-void Future<R> exceptions during act with wait',
+      build: () => CounterStore(0),
+      target: (store) => store.count.bloom,
+      act: nonVoidAct,
+      wait: const Duration(milliseconds: 50),
+      errors: () => [isA<StateError>()],
+      expect: () => [0],
+    );
   });
 }
