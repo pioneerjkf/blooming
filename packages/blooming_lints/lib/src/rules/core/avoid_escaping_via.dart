@@ -107,10 +107,11 @@ class AvoidEscapingVia extends AnalysisRule {
         break;
       }
 
-      // 1-2. Event handler parameters and async dispatchers / Timer constructors
+      // 1-2. Event handler parameters and async dispatchers / Timer / frame callbacks
       if (FlutterAstUtils.isDeferredBoundaryNode(
         current,
         hasEnclosingClosure: hasEnclosingClosure,
+        includeFrameCallbacks: true,
       )) {
         return true;
       }

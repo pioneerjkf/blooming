@@ -89,7 +89,7 @@ class AvoidEscapingScopedController extends AnalysisRule {
     if (staticType != null &&
         staticType is! DynamicType &&
         staticType is! InvalidType) {
-      if (BloomTypeChecker.isScopedAnimationController(staticType)) return true;
+      return BloomTypeChecker.isScopedAnimationController(staticType);
     }
     final source = type.toSource();
     return source.contains('ScopedAnimationController');
@@ -286,8 +286,7 @@ class _VariableDeclarationFinder extends RecursiveAstVisitor<void> {
         onFound();
         return;
       }
-    }
-    if (node.name.lexeme == name) {
+    } else if (node.name.lexeme == name) {
       onFound();
       return;
     }

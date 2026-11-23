@@ -221,6 +221,34 @@ void setup() {
         expect(AvoidEscapingVia.isEscapingViaInvocation(viaCalls[1]), isTrue);
       },
     );
+
+    test(
+      'flags via() escaping into addPostFrameCallback, Future(), and stream.listen()',
+      () {
+        final unit = parseString(
+          content: '''
+void setup() {
+  final res = computed((via) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => via(a));
+    Future(() => via(b));
+    stream.listen((_) => via(c));
+    return 1;
+  });
+}
+''',
+        ).unit;
+
+        final viaCalls = <MethodInvocation>[];
+        unit.visitChildren(
+          _SimpleInvocationVisitor('via', viaCalls.add),
+        );
+
+        expect(viaCalls, hasLength(3));
+        for (final call in viaCalls) {
+          expect(AvoidEscapingVia.isEscapingViaInvocation(call), isTrue);
+        }
+      },
+    );
   });
 }
 

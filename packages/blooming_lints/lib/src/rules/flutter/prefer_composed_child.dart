@@ -651,13 +651,20 @@ class _ViaCallFinder extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
-    final target = node.target;
-    if ((target == null && node.methodName.name == 'via') ||
-        (target is SimpleIdentifier && target.name == 'via')) {
+    if (BloomTypeChecker.isBloomViaInvocation(node)) {
       onFound();
       return;
     }
     super.visitMethodInvocation(node);
+  }
+
+  @override
+  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
+    if (BloomTypeChecker.isBloomViaInvocation(node)) {
+      onFound();
+      return;
+    }
+    super.visitFunctionExpressionInvocation(node);
   }
 }
 

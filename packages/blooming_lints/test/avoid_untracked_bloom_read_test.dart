@@ -571,5 +571,56 @@ void test() {
         expect(visitor.untrackedNodes.length, equals(1));
       },
     );
+
+    test('treats pure assignment LHS (controller.data = 10) as write, not read', () {
+      final unit = parseString(
+        content: '''
+void test() {
+  final res = computed((via) {
+    controller.data = 10;
+    controller.data += 1;
+    return via(otherBloom);
   });
+}
+''',
+      ).unit;
+
+      final targets = <PrefixedIdentifier>[];
+      unit.visitChildren(_PrefixedIdentifierCollector(targets.add));
+      expect(targets, hasLength(2));
+      expect(AvoidUntrackedBloomRead.isPureWriteLhs(targets[0]), isTrue);
+      expect(AvoidUntrackedBloomRead.isPureWriteLhs(targets[1]), isFalse);
+    });
+
+    test('flags synchronous untracked() inside event parameter outside closure', () {
+      final unit = parseString(
+        content: '''
+class MyWidget extends BloomWidget {
+  @override
+  Widget build(BuildContext context, BloomVia via) {
+    return ElevatedButton(
+      onPressed: untracked(isEnabledBloom) ? () => doWork() : null,
+      child: const Text('Go'),
+    );
+  }
+}
+''',
+      ).unit;
+
+      final visitor = _UntrackedPayloadVisitor();
+      unit.accept(visitor);
+      expect(visitor.untrackedNodes.length, equals(1));
+    });
+  });
+}
+
+class _PrefixedIdentifierCollector extends RecursiveAstVisitor<void> {
+  _PrefixedIdentifierCollector(this.onFound);
+  final void Function(PrefixedIdentifier) onFound;
+
+  @override
+  void visitPrefixedIdentifier(PrefixedIdentifier node) {
+    onFound(node);
+    super.visitPrefixedIdentifier(node);
+  }
 }

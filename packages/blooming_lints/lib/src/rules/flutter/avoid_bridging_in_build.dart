@@ -80,6 +80,10 @@ class _AvoidBridgingInBuildVisitor extends SimpleAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     final methodName = node.methodName.name;
     if (BloomTypeChecker.isReactiveBridgingMethod(methodName)) {
+      final element = node.methodName.element;
+      if (element != null && !BloomTypeChecker.isFromBloomPackage(element)) {
+        return;
+      }
       if (AvoidBridgingInBuild.isInsideBuildOrReactiveScope(node)) {
         rule.reportAtNode(node, arguments: [methodName]);
       }

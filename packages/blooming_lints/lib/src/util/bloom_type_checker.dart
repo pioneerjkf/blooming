@@ -445,7 +445,10 @@ abstract final class BloomTypeChecker {
     // 2. Bloom pipeline transformation and UI render methods
     if (_pipelineEvaluationMethods.contains(name)) {
       final target = node.realTarget;
-      if (target == null) return true;
+      if (target == null) {
+        final element = node.methodName.element;
+        return element == null || isFromBloomPackage(element);
+      }
 
       final targetType = target.staticType;
       if (targetType == null) return false;
@@ -659,10 +662,8 @@ abstract final class BloomTypeChecker {
           if (targetType != null &&
               targetType is! DynamicType &&
               targetType is! InvalidType) {
-            if (_isBloomClass(targetType, 'BloomVia') ||
-                _isBloomClass(targetType, 'EffectVia')) {
-              return true;
-            }
+            return _isBloomClass(targetType, 'BloomVia') ||
+                _isBloomClass(targetType, 'EffectVia');
           }
           if (target is SimpleIdentifier && target.name == 'via') {
             return true;
@@ -714,9 +715,7 @@ abstract final class BloomTypeChecker {
           if (targetType != null &&
               targetType is! DynamicType &&
               targetType is! InvalidType) {
-            if (_isBloomClass(targetType, 'BloomUntracked')) {
-              return true;
-            }
+            return _isBloomClass(targetType, 'BloomUntracked');
           }
           if (target is SimpleIdentifier && target.name == 'untracked') {
             return true;
@@ -738,9 +737,7 @@ abstract final class BloomTypeChecker {
       if (staticType != null &&
           staticType is! DynamicType &&
           staticType is! InvalidType) {
-        if (_isBloomClass(staticType, 'BloomUntracked')) {
-          return true;
-        }
+        return _isBloomClass(staticType, 'BloomUntracked');
       }
     }
 
@@ -764,10 +761,8 @@ abstract final class BloomTypeChecker {
     if (staticType != null &&
         staticType is! DynamicType &&
         staticType is! InvalidType) {
-      if (_isBloomClass(staticType, 'BloomVia') ||
-          _isBloomClass(staticType, 'EffectVia')) {
-        return true;
-      }
+      return _isBloomClass(staticType, 'BloomVia') ||
+          _isBloomClass(staticType, 'EffectVia');
     }
     if (unwrapped is SimpleIdentifier && unwrapped.name == 'via') {
       return true;
@@ -936,8 +931,8 @@ abstract final class BloomTypeChecker {
   static bool isAsyncOrTimerInvocation(MethodInvocation node) {
     final name = node.methodName.name;
 
-    // Top-level async dispatcher in dart:async (or unresolved Timer(...) constructor calls)
-    if (name == 'scheduleMicrotask' || name == 'Timer') {
+    // Top-level async dispatcher in dart:async (or unresolved Timer/Future constructor calls)
+    if (name == 'scheduleMicrotask' || name == 'Timer' || name == 'Future') {
       final methodElement = node.methodName.element;
       if (methodElement != null) {
         return _isDartAsyncLibrary(methodElement.library);

@@ -99,33 +99,9 @@ class AvoidUntrackedBloomRead extends MultiAnalysisRule {
   /// Checks if the [node] is deferred inside an event handler parameter (e.g. onPressed) or async timer closure.
   static bool isInsideDeferredEventOrAsyncCallback(AstNode node) {
     AstNode? current = node.parent;
+    var hasEnclosingClosure = false;
+
     while (current != null) {
-      // 1. If inside an event callback parameter (e.g. onPressed: () => ..., onTap: () => ...)
-      if (current is NamedArgument) {
-        final paramName = current.name.lexeme;
-        if (BloomTypeChecker.isEventCallbackParameter(paramName)) {
-          return true;
-        }
-      }
-
-      // 2. If inside async dispatchers (e.g. Timer.run, scheduleMicrotask) or async constructors
-      if (current is MethodInvocation) {
-        if (BloomTypeChecker.isAsyncOrTimerInvocation(current)) {
-          return true;
-        }
-      }
-      if (current is InstanceCreationExpression) {
-        if (BloomTypeChecker.isTimerCreation(current) ||
-            BloomTypeChecker.isFutureCreation(current)) {
-          return true;
-        }
-      }
-
-      // 3. If inside a terminal side-effect action or listener callback
-      if (BloomTypeChecker.isTerminalOrEffectInvocation(current)) {
-        return true;
-      }
-
       // Stop once we reach the enclosing BloomVia scope boundary
       if (current is MethodDeclaration &&
           BloomTypeChecker.isBloomWidgetBuildMethod(current)) {
@@ -137,6 +113,23 @@ class AvoidUntrackedBloomRead extends MultiAnalysisRule {
             params.any(BloomTypeChecker.isBloomViaParameter)) {
           break;
         }
+        if (current.parent is! FunctionExpressionInvocation) {
+          hasEnclosingClosure = true;
+        }
+      }
+
+      // 1-2. Event callback parameters, async dispatchers, and frame callbacks
+      if (FlutterAstUtils.isDeferredBoundaryNode(
+        current,
+        hasEnclosingClosure: hasEnclosingClosure,
+        includeFrameCallbacks: true,
+      )) {
+        return true;
+      }
+
+      // 3. If inside a terminal side-effect action or listener callback
+      if (BloomTypeChecker.isTerminalOrEffectInvocation(current)) {
+        return true;
       }
 
       current = current.parent;
@@ -248,6 +241,14 @@ class AvoidUntrackedBloomRead extends MultiAnalysisRule {
     }
     return isTracked;
   }
+
+  /// Returns `true` if [node] is the LHS of a pure `=` assignment (write, not read).
+  static bool isPureWriteLhs(Expression node) {
+    final parent = node.parent;
+    return parent is AssignmentExpression &&
+        identical(parent.leftHandSide, node) &&
+        parent.operator.lexeme == '=';
+  }
 }
 
 class _VariableFinder extends RecursiveAstVisitor<void> {
@@ -286,6 +287,7 @@ class _AvoidUntrackedBloomReadVisitor extends SimpleAstVisitor<void> {
 
   @override
   void visitPropertyAccess(PropertyAccess node) {
+    if (AvoidUntrackedBloomRead.isPureWriteLhs(node)) return;
     final propName = node.propertyName.name;
     if (BloomTypeChecker.isPipelineReadProperty(propName)) {
       if (BloomTypeChecker.isTrackableBloomTarget(node.target)) {
@@ -302,6 +304,7 @@ class _AvoidUntrackedBloomReadVisitor extends SimpleAstVisitor<void> {
 
   @override
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
+    if (AvoidUntrackedBloomRead.isPureWriteLhs(node)) return;
     final propName = node.identifier.name;
     if (BloomTypeChecker.isPipelineReadProperty(propName)) {
       if (BloomTypeChecker.isTrackableBloomTarget(node.prefix)) {
