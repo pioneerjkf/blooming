@@ -1,3 +1,7 @@
+## 0.4.5
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.5.
+
 ## 0.4.4
 
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.4.
