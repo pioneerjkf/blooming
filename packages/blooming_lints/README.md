@@ -8,7 +8,7 @@
   <a href="https://pub.dev/packages/blooming_lints"><img src="https://img.shields.io/pub/v/blooming_lints.svg?style=flat-square" alt="Pub Version" /></a>
   <a href="https://pub.dev/packages/blooming_lints/score"><img src="https://img.shields.io/pub/points/blooming_lints.svg?style=flat-square" alt="Pub Points" /></a>
   <a href="https://github.com/pioneerjkf/blooming/blob/main/packages/blooming_lints/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square" alt="License" /></a>
-  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.6+-0175C2.svg?style=flat-square&logo=dart" alt="Dart SDK" /></a>
+  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.10+-0175C2.svg?style=flat-square&logo=dart" alt="Dart SDK" /></a>
 </p>
 
 ---
@@ -53,20 +53,11 @@ Rules safeguarding Flutter widget trees, element lifecycles, and rebuild optimiz
 
 ## Installation
 
-Add `blooming_lints` and `custom_lint` to your `pubspec.yaml`:
+`blooming_lints` is built on Dart's native `analysis_server_plugin` (Dart 3.10+). Add `blooming_lints` to your `analysis_options.yaml` at the root of your package or pub workspace:
 
 ```yaml
-dev_dependencies:
-  custom_lint: ^0.8.1
-  blooming_lints: ^0.3.3
-```
-
-Enable the plugin in your `analysis_options.yaml`:
-
-```yaml
-analyzer:
-  plugins:
-    - custom_lint
+plugins:
+  blooming_lints: ^0.4.0
 ```
 
 ---

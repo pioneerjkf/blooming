@@ -1,3 +1,10 @@
+## 0.4.0
+
+- **Temporal Effects False-Alarm Suppression & Batch Alignment (`Effect.debounce`, `Effect.throttle`)**:
+  - Aligned `_TemporalEffectTerminal` with `_ScheduledTerminalMixin` microtask batching so Phase 1 (`_invalidate`) only schedules evaluation and Phase 2 (`_performScheduled`) verifies genuine upstream changes via `_resolveDirty()` before starting timers, leading cooldowns, or trailing pending flags.
+  - Eliminated false-alarm triggers and redundant trailing executions when multiple synchronous mutations coalesce in the same microtask turn.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.0.
+
 ## 0.3.3
 
 - **Batch Read-Your-Own-Writes (`RawComputedTerminal`)**:

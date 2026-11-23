@@ -1,3 +1,11 @@
+## 0.4.0
+
+- **Native Analyzer Plugin Migration (`analysis_server_plugin`)**:
+  - Migrated all 15 lint rules and 4 quick fixes from `custom_lint_builder` to Dart's native `analysis_server_plugin` (`^0.3.15`) and `analyzer` (`>=13.0.0 <15.0.0`), eliminating background `custom_lint` daemon overhead.
+  - Raised minimum Dart SDK constraint to `^3.10.0`.
+  - Updated `example/` and `test/harness/` to run directly against the native `AnalysisContextCollection` & `LinterVisitor` pipeline.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.0.
+
 ## 0.3.3
 
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.3.3.
