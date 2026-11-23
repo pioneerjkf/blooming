@@ -131,19 +131,15 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
   });
 
   bool _isCoalesceScheduled = false;
-  bool _isLeadingCooldown = false;
 
   @override
   @pragma('vm:prefer-inline')
   void _invalidate() {
     if (!_lifecycle.isActive) return;
 
-    if (leading && !_isLeadingCooldown) {
-      _isLeadingCooldown = true;
-      if (!_isCoalesceScheduled) {
-        _isCoalesceScheduled = true;
-        _Scheduler.instance._scheduleCoalesced(this);
-      }
+    if (leading && !_isCoalesceScheduled) {
+      _isCoalesceScheduled = true;
+      _Scheduler.instance._scheduleCoalesced(this);
       super._invalidate();
       return;
     }
@@ -161,7 +157,6 @@ final class _CoalescedBloom<T> extends _GatedRelayBloom<T> implements _Coalesced
   @override
   void _performCoalesce() {
     _isCoalesceScheduled = false;
-    _isLeadingCooldown = false;
     if (!_lifecycle.isActive) return;
 
     if (_hasTrailingPending && trailing) {
@@ -189,9 +184,7 @@ final class _DebouncedBloom<T> extends _TemporalRelayBloom<T> {
   void _invalidate() {
     if (!_lifecycle.isActive) return;
 
-    if (leading && !_isLeadingCooldown) {
-      _isLeadingCooldown = true;
-      _cancelTimer();
+    if (leading && _timer == null) {
       _timer = Timer(duration, _onTimerExpired);
       super._invalidate();
       return;
@@ -246,17 +239,13 @@ base mixin _UnaryEffectPrimeMixin on _Terminal, _UnaryEdgeMixin<Bloom> {
 
 ```dart
 // packages/blooming/lib/src/effect/_internal/_base.dart
-abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
+abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
   ...
   @override
-  @pragma('vm:prefer-inline')
-  void _invalidate() {
-    if (!_lifecycle.isActive) return;
-    if (_takeLimit != null && _remaining <= 0) return;
-
-    if (leading && !_isLeadingCooldown) {
-      _Scheduler.instance._scheduleTerminal(this);
-      _isLeadingCooldown = true;
+  void _onConfirmedInvalidation() {
+    if (leading && _debounceTimer == null) {
+      _executeAction();
+      if (!_lifecycle.isActive) return;
     } else if (trailing) {
       _hasTrailingPending = true;
     }
@@ -267,7 +256,6 @@ abstract base class _DebounceEffectTerminal extends _ManifestEffectTerminal {
 
   void _onDebounceTimerExpired() {
     _debounceTimer = null;
-    _isLeadingCooldown = false;
     if (!_lifecycle.isActive) return;
     if (_takeLimit != null && _remaining <= 0) return;
 
