@@ -486,19 +486,42 @@ abstract base class _TemporalEffectTerminal extends _ManifestEffectTerminal {
   bool _hasTrailingPending = false;
   bool _isTrailingExecution = false;
 
+  /// Handles a confirmed genuine upstream change in Phase 2 (pull).
+  void _onConfirmedInvalidation();
+
   @override
   @pragma('vm:prefer-inline')
   void _performScheduled() {
-    if (_lifecycle.isActive) {
-      final isTrailing = _isTrailingExecution;
-      _isTrailingExecution = false;
-      if (this case final _DirtyResolver e) {
-        final isDirty = e._resolveDirty();
-        if (!isDirty && !isTrailing) return;
+    if (!_lifecycle.isActive) return;
+    if (_takeLimit != null && _remaining <= 0) return;
+
+    final isTrailing = _isTrailingExecution;
+    _isTrailingExecution = false;
+
+    if (this case final _DirtyResolver e) {
+      final isDirty = e._resolveDirty();
+      if (isDirty) {
         e._pullVersion();
       }
+      if (isTrailing) {
+        _executeAction();
+        return;
+      }
+      if (!isDirty) return;
+    } else if (isTrailing) {
       _executeAction();
+      return;
     }
+
+    _onConfirmedInvalidation();
+  }
+
+  @mustCallSuper
+  @override
+  void _deactivate() {
+    _hasTrailingPending = false;
+    _isTrailingExecution = false;
+    super._deactivate();
   }
 }
 
@@ -518,18 +541,12 @@ abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
   bool _isLeadingCooldown = false;
 
   @override
-  @pragma('vm:prefer-inline')
-  void _invalidate() {
-    if (!_lifecycle.isActive) return;
-    if (_takeLimit != null && _remaining <= 0) return;
-
+  void _onConfirmedInvalidation() {
     if (leading && !_isLeadingCooldown) {
-      _Scheduler.instance._scheduleTerminal(this);
+      _executeAction();
       _isLeadingCooldown = true;
-    } else {
-      if (trailing) {
-        _hasTrailingPending = true;
-      }
+    } else if (trailing) {
+      _hasTrailingPending = true;
     }
 
     _debounceTimer?.cancel();
@@ -555,8 +572,6 @@ abstract base class _DebounceEffectTerminal extends _TemporalEffectTerminal {
     _debounceTimer?.cancel();
     _debounceTimer = null;
     _isLeadingCooldown = false;
-    _hasTrailingPending = false;
-    _isTrailingExecution = false;
     super._deactivate();
   }
 }
@@ -621,22 +636,16 @@ abstract base class _ThrottleEffectTerminal extends _TemporalEffectTerminal {
   Timer? _throttleTimer;
 
   @override
-  @pragma('vm:prefer-inline')
-  void _invalidate() {
-    if (!_lifecycle.isActive) return;
-    if (_takeLimit != null && _remaining <= 0) return;
-
+  void _onConfirmedInvalidation() {
     if (_throttleTimer == null) {
       if (leading) {
-        _Scheduler.instance._scheduleTerminal(this);
+        _executeAction();
       } else {
         _hasTrailingPending = true;
       }
       _throttleTimer = Timer(duration, _onThrottleTimerExpired);
-    } else {
-      if (trailing) {
-        _hasTrailingPending = true;
-      }
+    } else if (trailing) {
+      _hasTrailingPending = true;
     }
   }
 
@@ -658,8 +667,6 @@ abstract base class _ThrottleEffectTerminal extends _TemporalEffectTerminal {
   void _deactivate() {
     _throttleTimer?.cancel();
     _throttleTimer = null;
-    _hasTrailingPending = false;
-    _isTrailingExecution = false;
     super._deactivate();
   }
 }

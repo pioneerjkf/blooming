@@ -140,5 +140,5 @@ void main() {
 
       runner.stop();
     });
-  }, skip: 'TODO: 잔여 과제 - Temporal Effect false-alarm suppression');
+  });
 }

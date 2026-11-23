@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('Dual-Edge (leading: true, trailing: true) Same-Turn Multiple Mutations Suite', () {
-    test('Debounce effect: leading: true, trailing: true fires trailing after burst in same turn', () async {
+    test('Debounce effect: leading: true, trailing: true coalesces same-turn mutations into leading only', () async {
       final input = blooming<String>('');
       final observed = <String>[];
 
@@ -27,18 +27,18 @@ void main() {
 
       // Allow leading microtask to execute:
       await Future<void>.delayed(Duration.zero);
-      expect(observed, ['b'], reason: 'Leading edge must fire');
+      expect(observed, ['b'], reason: 'Leading edge must fire once with batched value');
 
       // Wait for debounce silence window to elapse:
       await Future<void>.delayed(const Duration(milliseconds: 70));
 
-      // Trailing edge must fire because a second mutation occurred!
-      expect(observed, ['b', 'b'], reason: 'Trailing edge must fire after silence window');
+      // No additional mutation occurred after leading, so trailing must not duplicate:
+      expect(observed, ['b'], reason: 'Same-turn batch must not trigger redundant trailing execution');
 
       runner.stop();
     });
 
-    test('Throttle effect: leading: true, trailing: true fires trailing after burst in same turn', () async {
+    test('Throttle effect: leading: true, trailing: true coalesces same-turn mutations into leading only', () async {
       final input = blooming<String>('');
       final observed = <String>[];
 
@@ -57,13 +57,13 @@ void main() {
 
       // Allow leading microtask to execute:
       await Future<void>.delayed(Duration.zero);
-      expect(observed, ['b'], reason: 'Leading edge must fire');
+      expect(observed, ['b'], reason: 'Leading edge must fire once with batched value');
 
       // Wait for throttle window to elapse:
       await Future<void>.delayed(const Duration(milliseconds: 70));
 
-      // Trailing edge must fire because a second mutation occurred!
-      expect(observed, ['b', 'b'], reason: 'Trailing edge must fire after throttle window');
+      // No additional mutation occurred after leading, so trailing must not duplicate:
+      expect(observed, ['b'], reason: 'Same-turn batch must not trigger redundant trailing execution');
 
       runner.stop();
     });
