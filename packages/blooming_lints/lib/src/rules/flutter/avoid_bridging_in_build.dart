@@ -62,8 +62,10 @@ class AvoidBridgingInBuild extends AnalysisRule {
     registry.addPrefixedIdentifier(this, visitor);
   }
 
-  /// Checks if the AST [node] is located within a Flutter `build()` method or a reactive derivation scope.
+  /// Checks if the AST [node] is located within a Flutter `build()` method or a reactive derivation scope
+  /// (excluding deferred event handlers or async callbacks).
   static bool isInsideBuildOrReactiveScope(AstNode node) {
+    if (FlutterAstUtils.isInsideEventOrDeferredClosure(node)) return false;
     if (FlutterAstUtils.isInsideBuildMethod(node)) return true;
     if (BloomTypeChecker.isInsideBloomViaScope(node)) return true;
     return false;

@@ -14,9 +14,9 @@ class _CatchClauseVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitTryStatement(TryStatement node) {
     if (BloomTypeChecker.isInsideBloomViaScope(node)) {
-      final finder = _ViaInvocationFinder();
-      node.body.accept(finder);
-      if (finder.hasViaInvocation) {
+      if (AvoidCatchingViaShortCircuit.containsViaShortCircuitInBody(
+        node.body,
+      )) {
         for (final catchClause in node.catchClauses) {
           if (!AvoidCatchingViaShortCircuit.isCatchClauseRethrowing(
             catchClause,
@@ -33,28 +33,6 @@ class _CatchClauseVisitor extends RecursiveAstVisitor<void> {
       }
     }
     super.visitTryStatement(node);
-  }
-}
-
-class _ViaInvocationFinder extends RecursiveAstVisitor<void> {
-  bool hasViaInvocation = false;
-
-  @override
-  void visitMethodInvocation(MethodInvocation node) {
-    if (BloomTypeChecker.isBloomViaInvocation(node)) {
-      hasViaInvocation = true;
-      return;
-    }
-    super.visitMethodInvocation(node);
-  }
-
-  @override
-  void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
-    if (BloomTypeChecker.isBloomViaInvocation(node)) {
-      hasViaInvocation = true;
-      return;
-    }
-    super.visitFunctionExpressionInvocation(node);
   }
 }
 
@@ -129,6 +107,28 @@ void test() {
     try {
       return via(count) + 1;
     } on FormatException catch (e) {
+      return 0;
+    }
+  });
+}
+''',
+      ).unit;
+
+      final visitor = _CatchClauseVisitor();
+      unit.accept(visitor);
+      expect(visitor.caughtNodes.length, equals(0));
+    });
+
+    test('permits via.state() and nested computed((via) => via(x)) inside try', () {
+      final unit = parseString(
+        content: '''
+void test() {
+  final d = computed((via) {
+    try {
+      final s = via.state(count);
+      final inner = computed((via) => via(other));
+      return s.dataOrNull ?? 0;
+    } catch (e) {
       return 0;
     }
   });

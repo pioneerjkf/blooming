@@ -108,9 +108,7 @@ class AvoidEscapingScopedController extends AnalysisRule {
     if (staticType != null &&
         staticType is! DynamicType &&
         staticType is! InvalidType) {
-      if (BloomTypeChecker.isScopedAnimationController(staticType)) {
-        return true;
-      }
+      return BloomTypeChecker.isScopedAnimationController(staticType);
     }
 
     if (expr is SimpleIdentifier) {

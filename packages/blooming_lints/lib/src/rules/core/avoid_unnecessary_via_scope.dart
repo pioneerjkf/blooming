@@ -70,13 +70,12 @@ class AvoidUnnecessaryViaScope extends AnalysisRule {
     if (viaParam == null) return false;
 
     final viaName = viaParam.name?.lexeme ?? 'via';
+    final viaElement = viaParam.declaredFragment?.element;
     var usesVia = false;
 
     closure.body.visitChildren(
-      _IdentifierVisitor((name) {
-        if (name == viaName) {
-          usesVia = true;
-        }
+      _IdentifierVisitor(viaName, viaElement, () {
+        usesVia = true;
       }),
     );
 
@@ -124,12 +123,41 @@ class _AvoidUnnecessaryViaScopeVisitor extends SimpleAstVisitor<void> {
 }
 
 class _IdentifierVisitor extends RecursiveAstVisitor<void> {
-  _IdentifierVisitor(this.onFound);
-  final void Function(String name) onFound;
+  _IdentifierVisitor(this.viaName, this.viaElement, this.onFound);
+  final String viaName;
+  final Element? viaElement;
+  final void Function() onFound;
+
+  @override
+  void visitFunctionExpression(FunctionExpression node) {
+    if (viaElement == null) {
+      final params = node.parameters?.parameters;
+      if (params != null && params.any((p) => p.name?.lexeme == viaName)) {
+        return; // Shadowed in unresolved AST
+      }
+    }
+    super.visitFunctionExpression(node);
+  }
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    onFound(node.name);
+    if (viaElement != null) {
+      if (node.element == viaElement) {
+        onFound();
+      }
+    } else if (node.name == viaName) {
+      final parent = node.parent;
+      final isNonReference =
+          (parent is PropertyAccess && identical(parent.propertyName, node)) ||
+          (parent is PrefixedIdentifier && identical(parent.identifier, node)) ||
+          (parent is NamedArgument && identical(parent.name, node)) ||
+          (parent is MethodInvocation &&
+              parent.target != null &&
+              identical(parent.methodName, node));
+      if (!isNonReference) {
+        onFound();
+      }
+    }
     super.visitSimpleIdentifier(node);
   }
 }

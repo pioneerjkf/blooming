@@ -551,5 +551,25 @@ void testSafeExit() {
         expect(visitor.untrackedNodes.length, equals(0));
       },
     );
+
+    test(
+      'flags untracked .data nested inside via(...) argument expression',
+      () {
+        final unit = parseString(
+          content: '''
+void test() {
+  final res = computed((via) {
+    return via(flagBloom.data ? aBloom : bBloom);
+  });
+}
+''',
+        ).unit;
+
+        final visitor = _UntrackedPayloadVisitor();
+        unit.accept(visitor);
+
+        expect(visitor.untrackedNodes.length, equals(1));
+      },
+    );
   });
 }

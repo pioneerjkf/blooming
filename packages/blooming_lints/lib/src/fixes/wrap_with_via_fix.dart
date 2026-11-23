@@ -91,11 +91,20 @@ class WrapWithViaFix extends ResolvedCorrectionProducer {
     Expression fullNode,
   ) async {
     if (target == null) return;
+    if (fullNode is PropertyAccess && fullNode.isNullAware) return;
 
     final targetType = target.staticType;
-    final isController = BloomTypeChecker.isControllerOrCouplerType(
-      targetType?.element?.name,
-    );
+    if (targetType != null &&
+        targetType.nullabilitySuffix.name == 'question') {
+      return;
+    }
+    if (BloomTypeChecker.isBloomStateClass(targetType)) return;
+
+    final isController =
+        BloomTypeChecker.isControllerOrCouplerDartType(targetType) ||
+        BloomTypeChecker.isControllerOrCouplerType(
+          targetType?.element?.name,
+        );
 
     if (propName == 'data') {
       _message = 'Wrap with via(...)';

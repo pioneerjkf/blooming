@@ -129,5 +129,33 @@ class GoodWidget extends StatelessWidget {
         }
       },
     );
+
+    test('permits bridging inside onPressed event callback within build()', () {
+      final unit = parseString(
+        content: '''
+class MyWidget extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        final l = myBloom.toListenable();
+      },
+      child: Text('Go'),
+    );
+  }
+}
+''',
+      ).unit;
+
+      final finder = _BridgingInvocationFinder();
+      unit.accept(finder);
+
+      expect(finder.methodCalls.length, equals(1));
+      expect(
+        AvoidBridgingInBuild.isInsideBuildOrReactiveScope(
+          finder.methodCalls.first,
+        ),
+        isFalse,
+      );
+    });
   });
 }

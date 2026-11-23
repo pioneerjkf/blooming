@@ -231,6 +231,32 @@ abstract final class BloomTypeChecker {
     return _coreControllerTypes.contains(typeName);
   }
 
+  /// Returns `true` if [type] is or extends/implements a stateful Bloom controller or coupler.
+  static bool isControllerOrCouplerDartType(DartType? type) {
+    if (type == null) return false;
+    for (final name in _coreControllerTypes) {
+      if (_isBloomClass(type, name)) return true;
+    }
+    return false;
+  }
+
+  /// Returns `true` if [type] is or implements `EffectRunner`.
+  static bool isEffectRunnerType(DartType? type) =>
+      _isBloomClass(type, 'EffectRunner');
+
+  /// Returns `true` if [typeStr] matches any of [names] at a full type boundary
+  /// (exact match, generic `<...>`, or nullable `?`).
+  static bool matchesTypeNameBoundary(String typeStr, Set<String> names) {
+    for (final name in names) {
+      if (typeStr == name ||
+          typeStr.startsWith('$name<') ||
+          typeStr.startsWith('$name?')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// Returns `true` if the [type] is a Bloom animation controller type.
   static bool isBloomAnimationController(DartType? type) {
     if (type == null) return false;
@@ -555,6 +581,20 @@ abstract final class BloomTypeChecker {
         return _isBloomClass(type, 'BloomVia') ||
             _isBloomClass(type, 'EffectVia');
       }
+      // For resolved dynamic parameters, only treat `via` as BloomVia when
+      // attached to an actual Bloom pipeline or widget context.
+      final name = param.name?.lexeme;
+      if (name != 'via') return false;
+      final fn = param.parent?.parent;
+      if (fn is FunctionExpression) {
+        AstNode? argOwner = fn.parent;
+        if (argOwner is NamedArgument) argOwner = argOwner.parent;
+        if (argOwner is ArgumentList) {
+          final invocation = argOwner.parent;
+          return invocation != null && isBloomPipelineInvocation(invocation);
+        }
+      }
+      return false;
     }
 
     final name = param.name?.lexeme;
@@ -584,9 +624,19 @@ abstract final class BloomTypeChecker {
   static bool isBloomViaTrackingInvocation(AstNode? node) =>
       _isBloomViaInvocationInternal(node, includeControlFlow: false);
 
+  /// Returns `true` if the invocation can throw `_ViaShortCircuit` (e.g. `via(bloom)`,
+  /// `via.of(context)`, `via.maybeOf(context)`), excluding `via.state(...)` which returns `BloomState<T>`.
+  static bool isBloomViaShortCircuitInvocation(AstNode? node) =>
+      _isBloomViaInvocationInternal(
+        node,
+        includeControlFlow: false,
+        includeState: false,
+      );
+
   static bool _isBloomViaInvocationInternal(
     AstNode? node, {
     required bool includeControlFlow,
+    bool includeState = true,
   }) {
     if (node == null) return false;
 
@@ -596,8 +646,8 @@ abstract final class BloomTypeChecker {
       final isMatchingMethod =
           methodName == 'of' ||
           methodName == 'maybeOf' ||
-          methodName == 'state' ||
-          methodName == 'tether' ||
+          (includeState && methodName == 'state') ||
+          (includeState && methodName == 'tether') ||
           (includeControlFlow &&
               (methodName == 'exit' ||
                   methodName == 'exitIfStale' ||

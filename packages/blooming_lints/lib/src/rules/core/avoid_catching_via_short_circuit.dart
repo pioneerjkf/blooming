@@ -77,6 +77,13 @@ class AvoidCatchingViaShortCircuit extends AnalysisRule {
     }
     return false;
   }
+
+  /// Checks whether [body] synchronously contains a short-circuiting `via` invocation.
+  static bool containsViaShortCircuitInBody(Block body) {
+    final finder = _ViaInvocationFinder();
+    body.accept(finder);
+    return finder.hasViaInvocation;
+  }
 }
 
 class _AvoidCatchingViaShortCircuitVisitor extends SimpleAstVisitor<void> {
@@ -90,10 +97,12 @@ class _AvoidCatchingViaShortCircuitVisitor extends SimpleAstVisitor<void> {
       return;
     }
 
-    // Check if node.body contains any via() or via.state() invocation
-    final finder = _ViaInvocationFinder();
-    node.body.accept(finder);
-    if (!finder.hasViaInvocation) return;
+    // Check if node.body contains any short-circuiting via() invocation
+    if (!AvoidCatchingViaShortCircuit.containsViaShortCircuitInBody(
+      node.body,
+    )) {
+      return;
+    }
 
     for (final catchClause in node.catchClauses) {
       if (AvoidCatchingViaShortCircuit.isCatchClauseRethrowing(catchClause)) {
@@ -113,8 +122,18 @@ class _ViaInvocationFinder extends RecursiveAstVisitor<void> {
   bool hasViaInvocation = false;
 
   @override
+  void visitFunctionExpression(FunctionExpression node) {
+    // Nested closures do not execute synchronously inside the enclosing try block.
+  }
+
+  @override
+  void visitFunctionDeclaration(FunctionDeclaration node) {
+    // Nested local functions do not execute synchronously inside the enclosing try block.
+  }
+
+  @override
   void visitMethodInvocation(MethodInvocation node) {
-    if (BloomTypeChecker.isBloomViaInvocation(node)) {
+    if (BloomTypeChecker.isBloomViaShortCircuitInvocation(node)) {
       hasViaInvocation = true;
       return;
     }
@@ -123,7 +142,7 @@ class _ViaInvocationFinder extends RecursiveAstVisitor<void> {
 
   @override
   void visitFunctionExpressionInvocation(FunctionExpressionInvocation node) {
-    if (BloomTypeChecker.isBloomViaInvocation(node)) {
+    if (BloomTypeChecker.isBloomViaShortCircuitInvocation(node)) {
       hasViaInvocation = true;
       return;
     }

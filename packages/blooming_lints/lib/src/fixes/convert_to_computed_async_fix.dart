@@ -100,16 +100,24 @@ class ConvertToComputedAsyncFix extends ResolvedCorrectionProducer {
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
-    final invocation = node.thisOrAncestorOfType<InvocationExpression>();
-    if (invocation == null) return;
-
-    final resolved = computeReplacement(invocation);
+    ({
+      AstNode targetNode,
+      Expression computeArg,
+      String replacement,
+      String message,
+    })? resolved;
+    var candidate = node.thisOrAncestorOfType<InvocationExpression>();
+    while (candidate != null) {
+      resolved = computeReplacement(candidate);
+      if (resolved != null) break;
+      candidate = candidate.parent?.thisOrAncestorOfType<InvocationExpression>();
+    }
     if (resolved == null) return;
     _resolved = resolved;
 
     await builder.addDartFileEdit(file, (builder) {
       builder.addSimpleReplacement(
-        range.node(resolved.targetNode),
+        range.node(resolved!.targetNode),
         resolved.replacement,
       );
     });

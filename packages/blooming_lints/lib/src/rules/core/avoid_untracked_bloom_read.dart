@@ -170,18 +170,15 @@ class AvoidUntrackedBloomRead extends MultiAnalysisRule {
       }
     }
 
-    // 2. If node is an argument to a dependency-tracking via call (e.g. via(node), via.state(node))
-    AstNode? current = node.parent;
-    while (current != null) {
-      if (BloomTypeChecker.isBloomViaTrackingInvocation(current)) {
-        return true;
-      }
-      // via(...) is an expression invocation, so searching beyond a statement
-      // or declaration boundary is unnecessary and wasteful.
-      if (current is Statement || current is Declaration) {
-        break;
-      }
-      current = current.parent;
+    // 2. If node is a direct argument to a dependency-tracking via call (e.g. via(node), via.state(node))
+    AstNode? argExpr = node;
+    while (argExpr?.parent is ParenthesizedExpression) {
+      argExpr = argExpr?.parent;
+    }
+    final parent = argExpr?.parent;
+    if (parent is ArgumentList &&
+        BloomTypeChecker.isBloomViaTrackingInvocation(parent.parent)) {
+      return true;
     }
     return false;
   }
@@ -218,8 +215,9 @@ class AvoidUntrackedBloomRead extends MultiAnalysisRule {
     if (expr is! SimpleIdentifier || aliasHops >= _maxAliasHops) return false;
     final element = expr.element;
 
-    // Search the enclosing root FunctionBody to support local variable lookups across closures
-    final body = _findEnclosingRootFunctionBody(expr);
+    // Search only the nearest enclosing FunctionBody so outer via.state() aliases
+    // are not treated as tracked inside nested reactive closures.
+    final body = expr.thisOrAncestorOfType<FunctionBody>();
     if (body == null) return false;
 
     bool isTracked = false;
@@ -249,24 +247,6 @@ class AvoidUntrackedBloomRead extends MultiAnalysisRule {
       );
     }
     return isTracked;
-  }
-
-  /// Finds the outermost enclosing [FunctionBody] within the lexical method or function scope.
-  static FunctionBody? _findEnclosingRootFunctionBody(Expression expr) {
-    FunctionBody? rootBody;
-    AstNode? current = expr.parent;
-    while (current != null) {
-      if (current is FunctionBody) {
-        rootBody = current;
-      }
-      if (current is MethodDeclaration ||
-          current is FunctionDeclaration ||
-          current is ConstructorDeclaration) {
-        break;
-      }
-      current = current.parent;
-    }
-    return rootBody;
   }
 }
 

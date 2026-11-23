@@ -74,10 +74,17 @@ class DeactivateEffectRunner extends AnalysisRule {
     for (final member in FlutterAstUtils.classMembers(clazz)) {
       if (member is FieldDeclaration) {
         final typeStr = member.fields.type?.toSource() ?? '';
-        final isRunner = typeStr.startsWith('EffectRunner');
+        final hasRunnerAnnotation = BloomTypeChecker.matchesTypeNameBoundary(
+          typeStr,
+          const {'EffectRunner'},
+        );
 
-        if (isRunner) {
-          for (final variable in member.fields.variables) {
+        for (final variable in member.fields.variables) {
+          final inferredType = variable.declaredFragment?.element.type;
+          final isRunner =
+              hasRunnerAnnotation ||
+              BloomTypeChecker.isEffectRunnerType(inferredType);
+          if (isRunner) {
             runnerFields[variable.name.lexeme] = variable;
           }
         }

@@ -109,13 +109,24 @@ class _PreferBloomOverControllerVisitor extends SimpleAstVisitor<void> {
     for (final member in FlutterAstUtils.classMembers(node)) {
       if (member is ConstructorDeclaration) {
         for (final param in member.parameters.parameters) {
+          final paramType = param.declaredFragment?.element.type;
+          if (paramType != null &&
+              paramType is! DynamicType &&
+              paramType is! InvalidType) {
+            if (BloomTypeChecker.isControllerOrCouplerDartType(paramType) ||
+                BloomTypeChecker.isBloomAnimationController(paramType)) {
+              rule.reportAtNode(param);
+            }
+            continue;
+          }
           final typeStr = PreferBloomOverController.getParameterTypeString(
             param,
             node,
           );
           if (typeStr != null &&
-              PreferBloomOverController._targetControllerTypes.any(
-                (t) => typeStr.startsWith(t),
+              BloomTypeChecker.matchesTypeNameBoundary(
+                typeStr,
+                PreferBloomOverController._targetControllerTypes,
               )) {
             rule.reportAtNode(param);
           }
