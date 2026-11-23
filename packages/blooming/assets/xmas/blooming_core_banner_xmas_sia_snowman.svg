@@ -4,6 +4,30 @@
   <defs>
     <!-- Pure Flat Edition - All Gradients Removed -->
     <clipPath id="xmas-card-clip"><rect x="8" y="8" width="1008" height="844" rx="28" /></clipPath>
+    <g id="crystal-lg" stroke="#E0F2FE" stroke-width="1.5" stroke-linecap="round" fill="none">
+      <line x1="0" y1="-11" x2="0" y2="11"/>
+      <line x1="-9.5" y1="-5.5" x2="9.5" y2="5.5"/>
+      <line x1="-9.5" y1="5.5" x2="9.5" y2="-5.5"/>
+      <path d="M-2.5 -7.5 L0 -5 L2.5 -7.5 M-2.5 7.5 L0 5 L2.5 7.5"/>
+      <path d="M-7.7 -1.6 L-4.3 -2.5 L-5.2 -5.9 M7.7 1.6 L4.3 2.5 L5.2 5.9"/>
+      <path d="M-5.2 5.9 L-4.3 2.5 L-7.7 1.6 M5.2 -5.9 L4.3 -2.5 L7.7 -1.6"/>
+      <circle cx="0" cy="0" r="2" fill="#FFFFFF" stroke="none"/>
+    </g>
+    <g id="crystal-md" stroke="#BAE6FD" stroke-width="1.3" stroke-linecap="round" fill="none">
+      <line x1="0" y1="-8" x2="0" y2="8"/>
+      <line x1="-6.9" y1="-4" x2="6.9" y2="4"/>
+      <line x1="-6.9" y1="4" x2="6.9" y2="-4"/>
+      <path d="M-1.8 -5.5 L0 -3.6 L1.8 -5.5 M-1.8 5.5 L0 3.6 L1.8 5.5"/>
+      <path d="M-5.7 -1.2 L-3.1 -1.8 L-3.8 -4.3 M5.7 1.2 L3.1 1.8 L3.8 4.3"/>
+      <path d="M-3.8 4.3 L-3.1 1.8 L-5.7 1.2 M3.8 -4.3 L3.1 -1.8 L5.7 -1.2"/>
+      <circle cx="0" cy="0" r="1.4" fill="#E0F2FE" stroke="none"/>
+    </g>
+    <g id="crystal-sm" stroke="#7DD3FC" stroke-width="1.2" stroke-linecap="round" fill="none">
+      <line x1="0" y1="-4.5" x2="0" y2="4.5"/>
+      <line x1="-3.9" y1="-2.25" x2="3.9" y2="2.25"/>
+      <line x1="-3.9" y1="2.25" x2="3.9" y2="-2.25"/>
+      <circle cx="0" cy="0" r="1" fill="#F0F9FF" stroke="none"/>
+    </g>
   </defs>
 
   <style>
@@ -305,21 +329,222 @@
   <text class="meta-label" x="70" y="814" font-size="10">2-PHASE LPDAG · SUBSCRIBER-DRIVEN DORMANCY</text>
   <text class="meta-label" x="954" y="814" font-size="10" text-anchor="end">APACHE 2.0</text>
   <g clip-path="url(#xmas-card-clip)">
-  <!-- Sia Snowman Edition Banner Decor -->
+  <!-- Sia Snowman Edition Banner Decor: Snowflake Crystal Chain Border -->
   <g id="sia-banner-decor" pointer-events="none">
-    <path d="M0 822 Q280 792 540 818 T1024 810 L1024 860 L0 860 Z" fill="#E0F2FE" opacity="0.12"/>
-      <g transform="translate(62, 95) rotate(-15) scale(0.78)" pointer-events="none">
-    <path d="M0 0 L0 -42 A12 12 0 0 1 24 -42 L24 -34" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
-    <path d="M0 0 L0 -42 A12 12 0 0 1 24 -42 L24 -34" fill="none" stroke="#E11D48" stroke-width="8" stroke-dasharray="6 6" stroke-linecap="butt"/>
+    <!-- Subtle Frosted Garland Thread -->
+    <rect x="19" y="19" width="986" height="822" rx="20" fill="none" stroke="#BAE6FD" stroke-width="1.2" stroke-dasharray="4 6" opacity="0.4"/>
+    <rect x="11" y="11" width="1002" height="838" rx="25" fill="none" stroke="#7DD3FC" stroke-width="1.2" opacity="0.28"/>
+    <!-- Bottom Snowdrift under Snowman Family -->
+    <path d="M0 822 Q280 792 540 818 T1024 810 L1024 860 L0 860 Z" fill="#E0F2FE" opacity="0.14"/>
+    <!-- Lined-Up Snowflake Crystal Border -->
+    <g id="crystal-border-chain">
+      <use href="#crystal-lg" x="22" y="18" opacity="0.92"/>
+      <use href="#crystal-lg" x="22" y="842" opacity="0.92"/>
+      <use href="#crystal-sm" x="42" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="42" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="62" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="62" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="82" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="82" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="102" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="102" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="122" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="122" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="142" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="142" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="162" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="162" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="182" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="182" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="202" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="202" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="222" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="222" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="242" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="242" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="262" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="262" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="282" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="282" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="302" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="302" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="322" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="322" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="342" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="342" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="362" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="362" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="382" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="382" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="402" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="402" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="422" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="422" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="442" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="442" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="462" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="462" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="482" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="482" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="502" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="502" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="522" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="522" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="542" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="542" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="562" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="562" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="582" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="582" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="602" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="602" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="622" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="622" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="642" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="642" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="662" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="662" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="682" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="682" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="702" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="702" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="722" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="722" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="742" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="742" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="762" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="762" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="782" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="782" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="802" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="802" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="822" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="822" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="842" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="842" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="862" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="862" y="842" opacity="0.82"/>
+      <use href="#crystal-sm" x="882" y="21" opacity="0.68"/>
+      <use href="#crystal-sm" x="882" y="839" opacity="0.68"/>
+      <use href="#crystal-md" x="902" y="18" opacity="0.78"/>
+      <use href="#crystal-md" x="902" y="842" opacity="0.78"/>
+      <use href="#crystal-lg" x="922" y="21" opacity="0.82"/>
+      <use href="#crystal-lg" x="922" y="839" opacity="0.82"/>
+      <use href="#crystal-sm" x="942" y="18" opacity="0.68"/>
+      <use href="#crystal-sm" x="942" y="842" opacity="0.68"/>
+      <use href="#crystal-md" x="962" y="21" opacity="0.78"/>
+      <use href="#crystal-md" x="962" y="839" opacity="0.78"/>
+      <use href="#crystal-lg" x="982" y="18" opacity="0.82"/>
+      <use href="#crystal-lg" x="982" y="842" opacity="0.82"/>
+      <use href="#crystal-lg" x="1002" y="21" opacity="0.92"/>
+      <use href="#crystal-lg" x="1002" y="839" opacity="0.92"/>
+      <use href="#crystal-md" x="18" y="42" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="42" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="62" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="62" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="82" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="82" opacity="0.82"/>
+      <use href="#crystal-md" x="21" y="102" opacity="0.78"/>
+      <use href="#crystal-md" x="1003" y="102" opacity="0.78"/>
+      <use href="#crystal-sm" x="18" y="122" opacity="0.68"/>
+      <use href="#crystal-sm" x="1006" y="122" opacity="0.68"/>
+      <use href="#crystal-lg" x="21" y="142" opacity="0.82"/>
+      <use href="#crystal-lg" x="1003" y="142" opacity="0.82"/>
+      <use href="#crystal-md" x="18" y="162" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="162" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="182" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="182" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="202" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="202" opacity="0.82"/>
+      <use href="#crystal-md" x="21" y="222" opacity="0.78"/>
+      <use href="#crystal-md" x="1003" y="222" opacity="0.78"/>
+      <use href="#crystal-sm" x="18" y="242" opacity="0.68"/>
+      <use href="#crystal-sm" x="1006" y="242" opacity="0.68"/>
+      <use href="#crystal-lg" x="21" y="262" opacity="0.82"/>
+      <use href="#crystal-lg" x="1003" y="262" opacity="0.82"/>
+      <use href="#crystal-md" x="18" y="282" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="282" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="302" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="302" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="322" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="322" opacity="0.82"/>
+      <use href="#crystal-md" x="21" y="342" opacity="0.78"/>
+      <use href="#crystal-md" x="1003" y="342" opacity="0.78"/>
+      <use href="#crystal-sm" x="18" y="362" opacity="0.68"/>
+      <use href="#crystal-sm" x="1006" y="362" opacity="0.68"/>
+      <use href="#crystal-lg" x="21" y="382" opacity="0.82"/>
+      <use href="#crystal-lg" x="1003" y="382" opacity="0.82"/>
+      <use href="#crystal-md" x="18" y="402" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="402" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="422" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="422" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="442" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="442" opacity="0.82"/>
+      <use href="#crystal-md" x="21" y="462" opacity="0.78"/>
+      <use href="#crystal-md" x="1003" y="462" opacity="0.78"/>
+      <use href="#crystal-sm" x="18" y="482" opacity="0.68"/>
+      <use href="#crystal-sm" x="1006" y="482" opacity="0.68"/>
+      <use href="#crystal-lg" x="21" y="502" opacity="0.82"/>
+      <use href="#crystal-lg" x="1003" y="502" opacity="0.82"/>
+      <use href="#crystal-md" x="18" y="522" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="522" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="542" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="542" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="562" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="562" opacity="0.82"/>
+      <use href="#crystal-md" x="21" y="582" opacity="0.78"/>
+      <use href="#crystal-md" x="1003" y="582" opacity="0.78"/>
+      <use href="#crystal-sm" x="18" y="602" opacity="0.68"/>
+      <use href="#crystal-sm" x="1006" y="602" opacity="0.68"/>
+      <use href="#crystal-lg" x="21" y="622" opacity="0.82"/>
+      <use href="#crystal-lg" x="1003" y="622" opacity="0.82"/>
+      <use href="#crystal-md" x="18" y="642" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="642" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="662" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="662" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="682" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="682" opacity="0.82"/>
+      <use href="#crystal-md" x="21" y="702" opacity="0.78"/>
+      <use href="#crystal-md" x="1003" y="702" opacity="0.78"/>
+      <use href="#crystal-sm" x="18" y="722" opacity="0.68"/>
+      <use href="#crystal-sm" x="1006" y="722" opacity="0.68"/>
+      <use href="#crystal-lg" x="21" y="742" opacity="0.82"/>
+      <use href="#crystal-lg" x="1003" y="742" opacity="0.82"/>
+      <use href="#crystal-md" x="18" y="762" opacity="0.78"/>
+      <use href="#crystal-md" x="1006" y="762" opacity="0.78"/>
+      <use href="#crystal-sm" x="21" y="782" opacity="0.68"/>
+      <use href="#crystal-sm" x="1003" y="782" opacity="0.68"/>
+      <use href="#crystal-lg" x="18" y="802" opacity="0.82"/>
+      <use href="#crystal-lg" x="1006" y="802" opacity="0.82"/>
+    </g>
+    <!-- Candy Cane Accent -->
+    <g transform="translate(62, 95) rotate(-15) scale(0.78)" pointer-events="none">
+      <path d="M0 0 L0 -42 A12 12 0 0 1 24 -42 L24 -34" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+      <path d="M0 0 L0 -42 A12 12 0 0 1 24 -42 L24 -34" fill="none" stroke="#E11D48" stroke-width="8" stroke-dasharray="6 6" stroke-linecap="butt"/>
+    </g>
   </g>
-  </g>
-  <!-- Sia Snowman Couple (Mr. & Mrs. Snow) -->
-  <g id="sia-snowman-couple" transform="translate(885, 795) scale(0.85)" pointer-events="none">
-    <!-- Floating Heart Between Couple -->
-    <path d="M36 -26 C36 -33 27 -35 27 -27 C27 -21 36 -15 36 -15 C36 -15 45 -21 45 -27 C45 -35 36 -33 36 -26 Z" fill="#FF4D6D" opacity="0.9"/>
+  <!-- Sia Snowman Family (Mr., Son #1, Mrs. Snow) with Popping Hearts -->
+  <g id="sia-snowman-couple" transform="translate(780, 793) scale(0.85)" pointer-events="none">
+    <!-- Popping Hearts Cluster ("하트 뿅뿅") -->
+    <g id="popping-hearts">
+      <!-- Center Main Heart above Son #1 -->
+      <path d="M40 -34 C40 -42 29 -44 29 -35 C29 -28 40 -20 40 -20 C40 -20 51 -28 51 -35 C51 -44 40 -42 40 -34 Z" fill="#FF4D6D" opacity="0.95"/>
+      <!-- Left Popping Heart -->
+      <path d="M18 -46 C18 -51 11 -52 11 -46.5 C11 -42 18 -37 18 -37 C18 -37 25 -42 25 -46.5 C25 -52 18 -51 18 -46 Z" fill="#FB7185" opacity="0.9" transform="rotate(-14 18 -44)"/>
+      <!-- Right Popping Heart -->
+      <path d="M62 -44 C62 -49 55 -50 55 -44.5 C55 -40 62 -35 62 -35 C62 -35 69 -40 69 -44.5 C69 -50 62 -49 62 -44 Z" fill="#FB7185" opacity="0.9" transform="rotate(14 62 -42)"/>
+      <!-- Mini Top Sparkle Hearts -->
+      <path d="M40 -58 C40 -61.5 35.5 -62 35.5 -58.5 C35.5 -55.5 40 -52 40 -52 C40 -52 44.5 -55.5 44.5 -58.5 C44.5 -62 40 -61.5 40 -58 Z" fill="#FDA4AF" opacity="0.92"/>
+      <path d="M26 -24 C26 -27 22 -27.5 22 -24.5 C22 -22 26 -19 26 -19 C26 -19 30 -22 30 -24.5 C30 -27.5 26 -27 26 -24 Z" fill="#FF4D6D" opacity="0.82"/>
+      <path d="M54 -22 C54 -25 50 -25.5 50 -22.5 C50 -20 54 -17 54 -17 C54 -17 58 -20 58 -22.5 C58 -25.5 54 -25 54 -22 Z" fill="#FF4D6D" opacity="0.82"/>
+      <!-- Tiny Pop Sparkles -->
+      <circle cx="29" cy="-54" r="1.6" fill="#FDA4AF" opacity="0.85"/>
+      <circle cx="51" cy="-52" r="1.6" fill="#FDA4AF" opacity="0.85"/>
+      <circle cx="40" cy="-67" r="1.3" fill="#BAE6FD" opacity="0.85"/>
+    </g>
 
     <!-- Mr. Snowman (Left) -->
-    <g transform="translate(0, 0)">
+    <g transform="translate(-8, 0)">
       <circle cx="0" cy="24" r="22" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.5"/>
       <circle cx="0" cy="-5" r="16" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.5"/>
       <rect x="-12" y="6" width="24" height="6" rx="3" fill="#E11D48"/>
@@ -334,8 +559,35 @@
       <rect x="-9" y="-23" width="18" height="3" fill="#E11D48"/>
     </g>
 
+    <!-- Son #1 (아들 1 - Center) -->
+    <g transform="translate(40, 16)">
+      <!-- Little Twig Arms reaching happily -->
+      <path d="M-12 10 L-22 3 M-19 5 L-23 0" stroke="#92400E" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M12 10 L22 3 M19 5 L23 0" stroke="#92400E" stroke-width="1.8" stroke-linecap="round"/>
+      <!-- Body & Head -->
+      <circle cx="0" cy="16" r="14" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.4"/>
+      <circle cx="0" cy="-3" r="10.5" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.4"/>
+      <!-- Cozy Striped Scarf -->
+      <rect x="-8.5" y="4" width="17" height="4.5" rx="2.2" fill="#FBBF24"/>
+      <path d="M3 7 L6 16 L1.5 17 L-1 8 Z" fill="#FBBF24"/>
+      <!-- Buttons -->
+      <circle cx="0" cy="14" r="1.5" fill="#0F172A"/>
+      <circle cx="0" cy="20" r="1.5" fill="#0F172A"/>
+      <!-- Rosy Cheeks & Happy Eyes -->
+      <circle cx="-5.5" cy="-2" r="2.2" fill="#FF4D6D" opacity="0.45"/>
+      <circle cx="5.5" cy="-2" r="2.2" fill="#FF4D6D" opacity="0.45"/>
+      <circle cx="-3.5" cy="-5.5" r="1.4" fill="#0F172A"/>
+      <circle cx="3.5" cy="-5.5" r="1.4" fill="#0F172A"/>
+      <!-- Tiny Carrot Nose & Smile -->
+      <polygon points="0,-3.5 6,-2 0,-0.5" fill="#F97316"/>
+      <!-- Cute Knit Beanie with Pom-Pom -->
+      <path d="M-10 -9 A10 10 0 0 1 10 -9 Z" fill="#38BDF8"/>
+      <rect x="-11" y="-11" width="22" height="4" rx="2" fill="#0284C7"/>
+      <circle cx="0" cy="-20" r="3.2" fill="#FFFFFF" stroke="#BAE6FD" stroke-width="0.8"/>
+    </g>
+
     <!-- Mrs. Snowman (Right) -->
-    <g transform="translate(72, 4)">
+    <g transform="translate(88, 4)">
       <circle cx="0" cy="22" r="20" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.5"/>
       <circle cx="0" cy="-4" r="14.5" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1.5"/>
       <rect x="-11" y="6" width="22" height="5.5" rx="2.5" fill="#38BDF8"/>

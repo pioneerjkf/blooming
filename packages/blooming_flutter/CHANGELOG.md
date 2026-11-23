@@ -1,3 +1,8 @@
+## 0.4.4
+
+- **Assets**: Updated Red Classic Christmas edition banner and square logo with holly & ornament borders, 3-family snowman hats, abundant gifts, red winter hat, and heavy snowfall.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.4.
+
 ## 0.4.3
 
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.3.

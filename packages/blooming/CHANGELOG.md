@@ -1,3 +1,8 @@
+## 0.4.4
+
+- **Assets**: Updated Sia Snowman Christmas edition banner and square card with snow-rimmed border, Son #1 snowman, and popping hearts.
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.4.
+
 ## 0.4.3
 
 - **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.3.

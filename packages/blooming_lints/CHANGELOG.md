@@ -1,3 +1,7 @@
+## 0.4.4
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.4.
+
 ## 0.4.3
 
 - **Dependencies**: Raised lower bounds of `analysis_server_plugin` (`^0.3.17`), `analyzer` (`>=13.2.0 <15.0.0`), and `analyzer_plugin` (`>=0.14.11 <0.15.0`) so `package:analysis_server_plugin/edit/range_factory.dart` is available on `dart pub downgrade`.
