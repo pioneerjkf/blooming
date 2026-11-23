@@ -1,3 +1,7 @@
+## 0.4.2
+
+- **Ecosystem**: Synchronized release with Blooming ecosystem v0.4.2.
+
 ## 0.4.1
 
 - **Lint Rules & Quick Fixes**:
